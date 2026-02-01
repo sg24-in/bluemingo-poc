@@ -1,0 +1,44 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mes-production-confirmation
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mes_production
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+# Application specific configuration
+app:
+  jwt:
+    secret: MES_Production_Confirmation_JWT_Secret_Key_2026_This_Should_Be_Long_Enough_256_Bits
+    expiration-ms: 86400000  # 24 hours
+    refresh-expiration-ms: 604800000  # 7 days
+
+  patch:
+    location: classpath:patches/
+    enabled: true
+
+# Logging
+logging:
+  level:
+    com.mes.production: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG

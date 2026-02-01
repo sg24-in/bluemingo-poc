@@ -1,0 +1,56 @@
+.filters {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-size: 14px;
+  color: #666;
+}
+
+.filter-group select,
+.filter-group input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.search-group input {
+  width: 300px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.no-data {
+  text-align: center;
+  color: #888;
+  padding: 40px;
+}
+
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-group input {
+    width: 100%;
+  }
+}

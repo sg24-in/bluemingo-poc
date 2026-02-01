@@ -1,0 +1,132 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+  </div>
+
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading dashboard..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-icon orders-icon">
+          <span>📋</span>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Available Orders</span>
+          <span class="card-value">{{ availableOrders.length }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-icon inventory-icon">
+          <span>📦</span>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Total Inventory</span>
+          <span class="card-value">{{ inventorySummary.total }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-icon available-icon">
+          <span>✅</span>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Available</span>
+          <span class="card-value">{{ inventorySummary.available }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-icon hold-icon">
+          <span>⏸️</span>
+        </div>
+        <div class="card-info">
+          <span class="card-label">On Hold</span>
+          <span class="card-value">{{ inventorySummary.onHold }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+      <!-- Available Orders -->
+      <div class="card">
+        <div class="card-header">
+          <span>Available Orders</span>
+          <a routerLink="/orders" class="view-all">View All</a>
+        </div>
+        <div class="card-body">
+          <table class="table" *ngIf="availableOrders.length > 0">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Product</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of availableOrders" class="clickable" (click)="navigateToOrder(order.orderId)">
+                <td>{{ order.orderNumber }}</td>
+                <td>{{ order.lineItems?.[0]?.productName || 'N/A' }}</td>
+                <td><app-status-badge [status]="order.status"></app-status-badge></td>
+              </tr>
+            </tbody>
+          </table>
+          <p *ngIf="availableOrders.length === 0" class="no-data">No available orders</p>
+        </div>
+      </div>
+
+      <!-- Recent Batches -->
+      <div class="card">
+        <div class="card-header">
+          <span>Recent Batches</span>
+          <a routerLink="/batches" class="view-all">View All</a>
+        </div>
+        <div class="card-body">
+          <table class="table" *ngIf="recentBatches.length > 0">
+            <thead>
+              <tr>
+                <th>Batch #</th>
+                <th>Material</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let batch of recentBatches" class="clickable" (click)="navigateToBatch(batch.batchId)">
+                <td>{{ batch.batchNumber }}</td>
+                <td>{{ batch.materialId }}</td>
+                <td><app-status-badge [status]="batch.state"></app-status-badge></td>
+              </tr>
+            </tbody>
+          </table>
+          <p *ngIf="recentBatches.length === 0" class="no-data">No batches found</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-header">Quick Actions</div>
+      <div class="quick-actions">
+        <a routerLink="/orders" class="action-btn">
+          <span class="action-icon">📋</span>
+          <span class="action-label">View Orders</span>
+        </a>
+        <a routerLink="/inventory" class="action-btn">
+          <span class="action-icon">📦</span>
+          <span class="action-label">View Inventory</span>
+        </a>
+        <a routerLink="/batches" class="action-btn">
+          <span class="action-icon">🏷️</span>
+          <span class="action-label">Batch Traceability</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

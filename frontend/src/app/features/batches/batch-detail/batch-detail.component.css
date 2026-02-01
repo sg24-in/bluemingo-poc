@@ -1,0 +1,149 @@
+.batch-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.batch-number {
+  font-size: 18px;
+  color: #1976d2;
+}
+
+.genealogy-container {
+  margin-top: 20px;
+}
+
+.genealogy-section {
+  margin-bottom: 32px;
+}
+
+.genealogy-section h4 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.section-description {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.current-batch-section {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+}
+
+.batch-tree {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+
+.tree-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.node-connector {
+  width: 2px;
+  height: 24px;
+  background: #ddd;
+}
+
+.node-connector.up {
+  margin-bottom: -1px;
+}
+
+.node-connector.down {
+  margin-top: -1px;
+}
+
+.node-card {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 220px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.node-card:hover {
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.node-card.current {
+  background: #e3f2fd;
+  border: 2px solid #1976d2;
+  cursor: default;
+}
+
+.node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.node-batch {
+  font-weight: 500;
+  color: #1976d2;
+}
+
+.node-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #666;
+}
+
+.no-relations {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.no-relations .hint {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.no-data {
+  text-align: center;
+  color: #888;
+  padding: 40px;
+}
+
+@media (max-width: 768px) {
+  .batch-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .batch-tree {
+    flex-direction: column;
+    align-items: center;
+  }
+}

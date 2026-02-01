@@ -1,0 +1,56 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Production Orders</h1>
+    <div class="filter-group">
+      <label>Filter by status:</label>
+      <select (change)="onFilterChange($any($event.target).value)" [value]="filterStatus">
+        <option value="all">All</option>
+        <option value="PLANNED">Planned</option>
+        <option value="RELEASED">Released</option>
+        <option value="IN_PROGRESS">In Progress</option>
+        <option value="COMPLETED">Completed</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading orders..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading" class="card">
+    <table class="table" *ngIf="filteredOrders.length > 0">
+      <thead>
+        <tr>
+          <th>Order Number</th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Due Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of filteredOrders">
+          <td>{{ order.orderNumber }}</td>
+          <td>{{ getProductInfo(order) }}</td>
+          <td>{{ getTotalQuantity(order) }}</td>
+          <td><app-status-badge [status]="order.status"></app-status-badge></td>
+          <td>{{ order.priority }}</td>
+          <td>{{ order.dueDate | date:'mediumDate' }}</td>
+          <td>
+            <button class="btn btn-primary btn-sm" (click)="viewOrder(order.orderId)">
+              View Details
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="filteredOrders.length === 0" class="no-data">
+      No orders found matching the selected filter.
+    </p>
+  </div>
+</div>

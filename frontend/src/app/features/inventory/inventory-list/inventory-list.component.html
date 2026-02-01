@@ -1,0 +1,94 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Inventory</h1>
+  </div>
+
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading inventory..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Summary Cards -->
+    <div class="summary-row">
+      <div class="summary-card" *ngFor="let item of getStateSummary()">
+        <span class="summary-label">{{ item.state }}</span>
+        <span class="summary-value">{{ item.count }}</span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+      <div class="filters">
+        <div class="filter-group">
+          <label>State:</label>
+          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterState">
+            <option value="all">All States</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="CONSUMED">Consumed</option>
+            <option value="ON_HOLD">On Hold</option>
+            <option value="QUARANTINE">Quarantine</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Type:</label>
+          <select (change)="onFilterTypeChange($any($event.target).value)" [value]="filterType">
+            <option value="all">All Types</option>
+            <option value="RM">Raw Material (RM)</option>
+            <option value="IM">Intermediate (IM)</option>
+            <option value="FG">Finished Goods (FG)</option>
+            <option value="WIP">Work in Progress (WIP)</option>
+          </select>
+        </div>
+
+        <div class="filter-group search-group">
+          <label>Search:</label>
+          <input
+            type="text"
+            placeholder="Search by batch or material..."
+            (input)="onSearchChange($any($event.target).value)"
+            [value]="searchTerm"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="card">
+      <table class="table" *ngIf="filteredInventory.length > 0">
+        <thead>
+          <tr>
+            <th>Batch Number</th>
+            <th>Material ID</th>
+            <th>Type</th>
+            <th>Quantity</th>
+            <th>UoM</th>
+            <th>State</th>
+            <th>Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredInventory">
+            <td>{{ item.batchNumber }}</td>
+            <td>{{ item.materialId }}</td>
+            <td>
+              <span class="type-badge" [class]="'type-' + item.inventoryType?.toLowerCase()">
+                {{ item.inventoryType }}
+              </span>
+            </td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.unitOfMeasure }}</td>
+            <td><app-status-badge [status]="item.state"></app-status-badge></td>
+            <td>{{ item.location || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p *ngIf="filteredInventory.length === 0" class="no-data">
+        No inventory items found matching the selected filters.
+      </p>
+    </div>
+  </div>
+</div>

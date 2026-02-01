@@ -1,0 +1,58 @@
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.badge-pending {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.badge-in-progress {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge-completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-available {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-consumed {
+  background-color: #fce4ec;
+  color: #c62828;
+}
+
+.badge-on-hold {
+  background-color: #fff8e1;
+  color: #f57f17;
+}
+
+.badge-released {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-planned {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.badge-active {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-inactive {
+  background-color: #efebe9;
+  color: #5d4037;
+}

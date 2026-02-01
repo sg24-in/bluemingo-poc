@@ -1,0 +1,17 @@
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      <a routerLink="/dashboard">MES Production</a>
+    </div>
+    <nav class="nav-menu">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/orders" routerLinkActive="active">Orders</a>
+      <a routerLink="/inventory" routerLinkActive="active">Inventory</a>
+      <a routerLink="/batches" routerLinkActive="active">Batches</a>
+    </nav>
+    <div class="user-menu" *ngIf="currentUser">
+      <span class="user-name">{{ currentUser.fullName }}</span>
+      <button class="btn-logout" (click)="logout()">Logout</button>
+    </div>
+  </div>
+</header>

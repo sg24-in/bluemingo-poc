@@ -1,0 +1,175 @@
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.order-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.order-info h2 {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.order-meta {
+  display: flex;
+  gap: 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.line-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
+}
+
+.line-item-header h3 {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.product-sku {
+  color: #888;
+  font-size: 13px;
+  margin: 0;
+}
+
+.quantity-info .quantity {
+  font-size: 20px;
+  font-weight: 500;
+  color: #1976d2;
+}
+
+.process-section {
+  margin-top: 20px;
+}
+
+.process-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.process-header h4 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.operations-list {
+  margin-left: 12px;
+}
+
+.operation-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.operation-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  background: #e0e0e0;
+  color: #666;
+}
+
+.step-line {
+  width: 2px;
+  flex: 1;
+  min-height: 40px;
+  background: #e0e0e0;
+}
+
+.step-completed .step-number {
+  background: #4caf50;
+  color: white;
+}
+
+.step-completed .step-line {
+  background: #4caf50;
+}
+
+.step-active .step-number {
+  background: #1976d2;
+  color: white;
+}
+
+.operation-content {
+  flex: 1;
+  padding: 8px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.step-active .operation-content {
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+}
+
+.step-completed .operation-content {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+}
+
+.operation-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.operation-name {
+  font-weight: 500;
+}
+
+.operation-code {
+  color: #888;
+  font-size: 13px;
+}
+
+.operation-details {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.operation-actions {
+  margin-top: 12px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.no-data {
+  text-align: center;
+  color: #888;
+  padding: 40px;
+}

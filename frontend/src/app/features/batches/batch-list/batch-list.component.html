@@ -1,0 +1,75 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Batch Traceability</h1>
+  </div>
+
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading batches..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Filters -->
+    <div class="card">
+      <div class="filters">
+        <div class="filter-group">
+          <label>State:</label>
+          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterState">
+            <option value="all">All States</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="CONSUMED">Consumed</option>
+            <option value="ON_HOLD">On Hold</option>
+            <option value="QUARANTINE">Quarantine</option>
+          </select>
+        </div>
+
+        <div class="filter-group search-group">
+          <label>Search:</label>
+          <input
+            type="text"
+            placeholder="Search by batch number or material..."
+            (input)="onSearchChange($any($event.target).value)"
+            [value]="searchTerm"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Batches Table -->
+    <div class="card">
+      <table class="table" *ngIf="filteredBatches.length > 0">
+        <thead>
+          <tr>
+            <th>Batch Number</th>
+            <th>Material ID</th>
+            <th>Quantity</th>
+            <th>UoM</th>
+            <th>State</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let batch of filteredBatches">
+            <td>{{ batch.batchNumber }}</td>
+            <td>{{ batch.materialId }}</td>
+            <td>{{ batch.quantity }}</td>
+            <td>{{ batch.unitOfMeasure }}</td>
+            <td><app-status-badge [status]="batch.state"></app-status-badge></td>
+            <td>{{ batch.createdAt | date:'medium' }}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" (click)="viewBatch(batch.batchId)">
+                View Genealogy
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p *ngIf="filteredBatches.length === 0" class="no-data">
+        No batches found matching the selected filters.
+      </p>
+    </div>
+  </div>
+</div>

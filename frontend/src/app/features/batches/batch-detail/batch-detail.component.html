@@ -1,0 +1,125 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="page-header">
+    <button class="btn btn-secondary" (click)="goBack()">← Back to Batches</button>
+  </div>
+
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading batch details..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading && batch">
+    <!-- Batch Info -->
+    <div class="card">
+      <div class="card-header">Batch Information</div>
+      <div class="batch-info-grid">
+        <div class="info-item">
+          <span class="info-label">Batch Number</span>
+          <span class="info-value batch-number">{{ batch.batchNumber }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Material ID</span>
+          <span class="info-value">{{ batch.materialId }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Quantity</span>
+          <span class="info-value">{{ batch.quantity }} {{ batch.unitOfMeasure }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">State</span>
+          <app-status-badge [status]="batch.state"></app-status-badge>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Created</span>
+          <span class="info-value">{{ batch.createdAt | date:'medium' }}</span>
+        </div>
+        <div class="info-item" *ngIf="batch.expiryDate">
+          <span class="info-label">Expiry Date</span>
+          <span class="info-value">{{ batch.expiryDate | date:'mediumDate' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Genealogy -->
+    <div class="card">
+      <div class="card-header">Batch Genealogy (Traceability)</div>
+
+      <div *ngIf="loadingGenealogy" class="text-center">
+        <app-loading-spinner message="Loading genealogy..."></app-loading-spinner>
+      </div>
+
+      <div *ngIf="!loadingGenealogy && genealogy" class="genealogy-container">
+        <!-- Parent Batches (Source Materials) -->
+        <div class="genealogy-section" *ngIf="genealogy.parentBatches?.length > 0">
+          <h4>Source Materials (Parent Batches)</h4>
+          <p class="section-description">Materials that were consumed to create this batch</p>
+
+          <div class="batch-tree">
+            <div class="tree-node parent-node" *ngFor="let parent of genealogy.parentBatches">
+              <div class="node-connector up"></div>
+              <div class="node-card" (click)="navigateToBatch(parent.batchId)">
+                <div class="node-header">
+                  <span class="node-batch">{{ parent.batchNumber }}</span>
+                  <app-status-badge [status]="parent.state"></app-status-badge>
+                </div>
+                <div class="node-details">
+                  <span>Material: {{ parent.materialId }}</span>
+                  <span>Consumed: {{ parent.quantityUsed }} {{ parent.unitOfMeasure }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Batch -->
+        <div class="current-batch-section">
+          <div class="current-batch-node">
+            <div class="node-card current">
+              <div class="node-header">
+                <span class="node-batch">{{ batch.batchNumber }}</span>
+                <app-status-badge [status]="batch.state"></app-status-badge>
+              </div>
+              <div class="node-details">
+                <span>Material: {{ batch.materialId }}</span>
+                <span>Quantity: {{ batch.quantity }} {{ batch.unitOfMeasure }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Child Batches (Derived Products) -->
+        <div class="genealogy-section" *ngIf="genealogy.childBatches?.length > 0">
+          <h4>Derived Products (Child Batches)</h4>
+          <p class="section-description">Batches that were created using this batch as source material</p>
+
+          <div class="batch-tree">
+            <div class="tree-node child-node" *ngFor="let child of genealogy.childBatches">
+              <div class="node-connector down"></div>
+              <div class="node-card" (click)="navigateToBatch(child.batchId)">
+                <div class="node-header">
+                  <span class="node-batch">{{ child.batchNumber }}</span>
+                  <app-status-badge [status]="child.state"></app-status-badge>
+                </div>
+                <div class="node-details">
+                  <span>Material: {{ child.materialId }}</span>
+                  <span>Quantity: {{ child.quantity }} {{ child.unitOfMeasure }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Relations -->
+        <div *ngIf="!genealogy.parentBatches?.length && !genealogy.childBatches?.length" class="no-relations">
+          <p>This batch has no parent or child relationships.</p>
+          <p class="hint">Relationships are created when materials are consumed during production confirmation.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !batch" class="card">
+    <p class="no-data">Batch not found</p>
+  </div>
+</div>

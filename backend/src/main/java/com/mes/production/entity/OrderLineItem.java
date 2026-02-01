@@ -1,0 +1,75 @@
+package com.mes.production.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "order_line_items")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class OrderLineItem {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_line_id")
+    private Long orderLineId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
+    @Column(name = "product_sku", nullable = false)
+    private String productSku;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(nullable = false, precision = 15, scale = 4)
+    private BigDecimal quantity;
+
+    @Column(nullable = false)
+    private String unit;
+
+    @Column(name = "delivery_date")
+    private LocalDate deliveryDate;
+
+    @Column(nullable = false)
+    private String status;
+
+    @Column(name = "created_on")
+    private LocalDateTime createdOn;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "updated_on")
+    private LocalDateTime updatedOn;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @OneToMany(mappedBy = "orderLineItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Process> processes;
+
+    @PrePersist
+    protected void onCreate() {
+        createdOn = LocalDateTime.now();
+        if (status == null) status = "CREATED";
+        if (unit == null) unit = "T";
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedOn = LocalDateTime.now();
+    }
+}

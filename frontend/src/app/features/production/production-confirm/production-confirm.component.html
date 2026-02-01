@@ -1,0 +1,278 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="page-header">
+    <button class="btn btn-secondary" (click)="goBack()">← Back to Order</button>
+    <h1 class="page-title">Production Confirmation</h1>
+  </div>
+
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading operation details..."></app-loading-spinner>
+  </div>
+
+  <!-- Success State -->
+  <div *ngIf="success && confirmationResult" class="success-container">
+    <div class="card success-card">
+      <div class="success-icon">✓</div>
+      <h2>Production Confirmed Successfully!</h2>
+
+      <div class="result-summary">
+        <div class="result-row">
+          <span class="result-label">Confirmation ID:</span>
+          <span class="result-value">{{ confirmationResult.confirmationId }}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Quantity Produced:</span>
+          <span class="result-value">{{ confirmationResult.quantityProduced }}</span>
+        </div>
+        <div class="result-row" *ngIf="confirmationResult.newBatchNumber">
+          <span class="result-label">New Batch Created:</span>
+          <span class="result-value">{{ confirmationResult.newBatchNumber }}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Materials Consumed:</span>
+          <span class="result-value">{{ confirmationResult.materialsConsumed?.length || 0 }} item(s)</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Operation Status:</span>
+          <app-status-badge [status]="confirmationResult.operationStatus"></app-status-badge>
+        </div>
+      </div>
+
+      <div class="success-actions">
+        <button class="btn btn-primary" (click)="goBack()">Back to Order</button>
+        <button class="btn btn-secondary" *ngIf="confirmationResult.newBatchId"
+                (click)="goToBatch(confirmationResult.newBatchId)">
+          View New Batch
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Form -->
+  <div *ngIf="!loading && !success && operation">
+    <!-- Operation Info -->
+    <div class="card">
+      <div class="card-header">Operation Details</div>
+      <div class="operation-info-grid">
+        <div class="info-item">
+          <span class="info-label">Operation</span>
+          <span class="info-value">{{ operation.operationName }} ({{ operation.operationCode }})</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Type</span>
+          <span class="info-value">{{ operation.operationType }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Status</span>
+          <app-status-badge [status]="operation.status"></app-status-badge>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Product</span>
+          <span class="info-value">{{ operation.order?.productName }} ({{ operation.order?.productSku }})</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Order Quantity</span>
+          <span class="info-value">{{ operation.order?.quantity }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Stage</span>
+          <span class="info-value">{{ operation.process?.stageName }}</span>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="confirmForm" (ngSubmit)="onSubmit()">
+      <!-- Production Quantities -->
+      <div class="card">
+        <div class="card-header">Production Quantities</div>
+        <div class="row">
+          <div class="col-6">
+            <div class="form-group">
+              <label for="quantityProduced">Quantity Produced *</label>
+              <input
+                type="number"
+                id="quantityProduced"
+                formControlName="quantityProduced"
+                class="form-control"
+                min="0"
+              />
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label for="quantityScrapped">Quantity Scrapped</label>
+              <input
+                type="number"
+                id="quantityScrapped"
+                formControlName="quantityScrapped"
+                class="form-control"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Material Consumption -->
+      <div class="card">
+        <div class="card-header">Material Consumption</div>
+
+        <div class="available-materials">
+          <h4>Available Inventory</h4>
+          <table class="table" *ngIf="availableInventory.length > 0">
+            <thead>
+              <tr>
+                <th>Batch #</th>
+                <th>Material ID</th>
+                <th>Available Qty</th>
+                <th>State</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let inv of availableInventory">
+                <td>{{ inv.batchNumber }}</td>
+                <td>{{ inv.materialId }}</td>
+                <td>{{ inv.quantity }} {{ inv.unitOfMeasure }}</td>
+                <td><app-status-badge [status]="inv.state"></app-status-badge></td>
+                <td>
+                  <button type="button" class="btn btn-primary btn-sm" (click)="addMaterial(inv)">
+                    Add
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p *ngIf="availableInventory.length === 0" class="no-data">No available inventory</p>
+        </div>
+
+        <div class="selected-materials" *ngIf="selectedMaterials.length > 0">
+          <h4>Selected Materials</h4>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Batch #</th>
+                <th>Material ID</th>
+                <th>Available</th>
+                <th>Qty to Consume</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let mat of selectedMaterials; let i = index">
+                <td>{{ mat.batchNumber }}</td>
+                <td>{{ mat.materialId }}</td>
+                <td>{{ mat.availableQuantity }}</td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-control consume-qty"
+                    [value]="mat.quantityToConsume"
+                    (change)="updateMaterialQuantity(i, $any($event.target).valueAsNumber)"
+                    [min]="0"
+                    [max]="mat.availableQuantity"
+                  />
+                </td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="removeMaterial(i)">
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Equipment & Operator -->
+      <div class="card">
+        <div class="card-header">Equipment & Operator</div>
+        <div class="row">
+          <div class="col-6">
+            <div class="form-group">
+              <label for="equipmentId">Equipment</label>
+              <select id="equipmentId" formControlName="equipmentId" class="form-control">
+                <option [value]="null">-- Select Equipment --</option>
+                <option *ngFor="let eq of availableEquipment" [value]="eq.equipmentId">
+                  {{ eq.equipmentName }} ({{ eq.equipmentCode }})
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label for="operatorId">Operator</label>
+              <select id="operatorId" formControlName="operatorId" class="form-control">
+                <option [value]="null">-- Select Operator --</option>
+                <option *ngFor="let op of activeOperators" [value]="op.operatorId">
+                  {{ op.operatorName }} ({{ op.operatorCode }})
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process Parameters -->
+      <div class="card" *ngIf="processParameters.length > 0">
+        <div class="card-header">Process Parameters</div>
+        <div formArrayName="processParameters">
+          <div *ngFor="let param of processParameters; let i = index" class="form-group">
+            <div [formGroupName]="i">
+              <label>{{ param.parameter_name }}
+                <span *ngIf="param.is_required" class="required">*</span>
+                <span class="param-hint" *ngIf="param.unit">({{ param.unit }})</span>
+                <span class="param-hint" *ngIf="param.min_value !== null || param.max_value !== null">
+                  [{{ param.min_value || '...' }} - {{ param.max_value || '...' }}]
+                </span>
+              </label>
+              <input
+                type="text"
+                formControlName="parameterValue"
+                class="form-control"
+                [placeholder]="param.default_value || ''"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="card">
+        <div class="card-header">Notes</div>
+        <div class="form-group">
+          <textarea
+            id="notes"
+            formControlName="notes"
+            class="form-control"
+            rows="3"
+            placeholder="Add any notes about this production confirmation..."
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="alert alert-error" *ngIf="error">
+        {{ error }}
+      </div>
+
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="goBack()">Cancel</button>
+        <button
+          type="submit"
+          class="btn btn-success"
+          [disabled]="confirmForm.invalid || submitting"
+        >
+          <span *ngIf="!submitting">Confirm Production</span>
+          <span *ngIf="submitting" class="spinner"></span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="!loading && !operation && !success" class="card">
+    <p class="no-data">{{ error || 'Operation not found' }}</p>
+  </div>
+</div>
