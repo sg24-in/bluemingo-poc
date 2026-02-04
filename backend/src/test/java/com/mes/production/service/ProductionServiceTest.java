@@ -189,6 +189,7 @@ class ProductionServiceTest {
         when(processRepository.save(any(Process.class))).thenAnswer(i -> i.getArgument(0));
         when(equipmentRepository.findAllById(anyList())).thenReturn(List.of());
         when(operatorRepository.findAllById(anyList())).thenReturn(List.of());
+        when(batchNumberService.generateBatchNumber(anyString(), anyString())).thenReturn("BATCH-TEST-001");
 
         // Act
         ProductionConfirmationDTO.Response response = productionService.confirmProduction(request);
@@ -506,6 +507,7 @@ class ProductionServiceTest {
         when(operationRepository.save(any(Operation.class))).thenAnswer(i -> i.getArgument(0));
         when(equipmentRepository.findAllById(anyList())).thenReturn(List.of());
         when(operatorRepository.findAllById(anyList())).thenReturn(List.of());
+        when(batchNumberService.generateBatchNumber(anyString(), anyString())).thenReturn("BATCH-TEST-001");
 
         // Act
         ProductionConfirmationDTO.Response response = productionService.confirmProduction(request);
@@ -566,6 +568,7 @@ class ProductionServiceTest {
         when(processRepository.save(any(Process.class))).thenAnswer(i -> i.getArgument(0));
         when(equipmentRepository.findAllById(anyList())).thenReturn(List.of());
         when(operatorRepository.findAllById(anyList())).thenReturn(List.of());
+        when(batchNumberService.generateBatchNumber(anyString(), anyString())).thenReturn("BATCH-TEST-001");
 
         // Act
         ProductionConfirmationDTO.Response response = productionService.confirmProduction(request);
