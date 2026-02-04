@@ -29,6 +29,7 @@ const { runBatchesTests } = require('./tests/06-batches.test');
 const { runHoldsTests } = require('./tests/07-holds.test');
 const { runEquipmentTests } = require('./tests/08-equipment.test');
 const { runQualityTests } = require('./tests/09-quality.test');
+const { runPaginationTests } = require('./tests/10-pagination.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -122,6 +123,7 @@ async function runAllTests() {
         await runHoldsTests(page, screenshots, results, runTest, submitActions);
         await runEquipmentTests(page, screenshots, results, runTest, submitActions);
         await runQualityTests(page, screenshots, results, runTest, submitActions);
+        await runPaginationTests(page, screenshots, results, runTest);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));

@@ -112,7 +112,7 @@ const DEMO_SCRIPT = [
             },
             {
                 title: 'Dashboard - Audit Trail',
-                description: 'The Audit Trail tracks all system activities including status changes, material consumption, production, and holds.',
+                description: 'The Audit Trail tracks all system activities with field-level change tracking. Every modification logs old value, new value, timestamp, and user for complete traceability.',
                 action: async (page) => {
                     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
                 },
@@ -127,7 +127,7 @@ const DEMO_SCRIPT = [
         steps: [
             {
                 title: 'Orders List',
-                description: 'The Orders module displays all customer orders. Each order has a status: CREATED, IN_PROGRESS, COMPLETED, or CANCELLED.',
+                description: 'The Orders module displays all customer orders with server-side pagination. Filter by status, search by order number, and navigate through pages.',
                 action: async (page) => {
                     await page.goto(`${BASE_URL}/orders`, { waitUntil: 'networkidle' });
                 },
@@ -141,6 +141,15 @@ const DEMO_SCRIPT = [
                     if (await filter.count() > 0) {
                         await filter.selectOption('IN_PROGRESS').catch(() => {});
                     }
+                },
+                wait: 2000
+            },
+            {
+                title: 'Pagination Controls',
+                description: 'Server-side pagination handles large datasets efficiently. Use page controls to navigate and change items per page (10, 20, 50, 100).',
+                action: async (page) => {
+                    // Show pagination controls at bottom of page
+                    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
                 },
                 wait: 2000
             },
@@ -192,7 +201,7 @@ const DEMO_SCRIPT = [
             },
             {
                 title: 'Select Operation',
-                description: 'Select the specific Operation to confirm. Each operation represents a production step like Melting or Rolling.',
+                description: 'Select the specific Operation to confirm. The system automatically suggests material consumption based on the Bill of Materials (BOM) configuration.',
                 action: async (page) => {
                     const opDropdown = page.locator('select#operation, select[formControlName="operation"]');
                     if (await opDropdown.count() > 0) {
@@ -214,7 +223,7 @@ const DEMO_SCRIPT = [
             },
             {
                 title: 'Enter Quantities',
-                description: 'Enter Produced Quantity (good output) and Scrap Quantity (rejected output). This tracks yield and waste.',
+                description: 'Enter Produced Quantity (good output) and Scrap Quantity (rejected output). Process parameters are validated against configurable min/max values with warnings for out-of-range values.',
                 action: async (page) => {
                     const producedQty = page.locator('input[formControlName="producedQty"]');
                     const scrapQty = page.locator('input[formControlName="scrapQty"]');
@@ -251,7 +260,7 @@ const DEMO_SCRIPT = [
         steps: [
             {
                 title: 'Inventory List',
-                description: 'The Inventory module tracks all materials in the system. Materials can be: AVAILABLE, BLOCKED, RESERVED, CONSUMED, or SCRAPPED.',
+                description: 'The Inventory module tracks all materials with server-side pagination. Filter by state (AVAILABLE, BLOCKED, etc.) and type (RM, IM, FG). Search across material IDs and batch numbers.',
                 action: async (page) => {
                     await page.goto(`${BASE_URL}/inventory`, { waitUntil: 'networkidle' });
                 },
@@ -314,7 +323,7 @@ const DEMO_SCRIPT = [
         steps: [
             {
                 title: 'Batches List',
-                description: 'Batches are trackable units of material that flow through production. Each batch has a unique number for traceability.',
+                description: 'Batches are trackable units of material. Each batch has a unique number generated based on configurable patterns (operation type, product, date sequence).',
                 action: async (page) => {
                     await page.goto(`${BASE_URL}/batches`, { waitUntil: 'networkidle' });
                 },
