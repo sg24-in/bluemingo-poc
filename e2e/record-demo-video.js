@@ -34,7 +34,7 @@ const DEMO_SCRIPT = [
                 title: 'Login Page',
                 description: 'The MES Production Confirmation system requires authentication. Users enter their credentials to access the system.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/login`, { waitUntil: 'networkidle' });
                 },
                 wait: 2000
             },
@@ -67,7 +67,7 @@ const DEMO_SCRIPT = [
                         localStorage.setItem('mes_token', loginData.accessToken);
                         localStorage.setItem('mes_user', JSON.stringify(loginData.user));
                     }, data);
-                    await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
                 },
                 wait: 2000
             }
@@ -82,7 +82,7 @@ const DEMO_SCRIPT = [
                 title: 'Dashboard - Key Metrics',
                 description: 'The Dashboard shows key production metrics at a glance: Total Orders, Operations Ready for production, Active Holds, Today\'s Confirmations, and Quality Pending items.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
                 },
                 wait: 3000
             },
@@ -129,7 +129,7 @@ const DEMO_SCRIPT = [
                 title: 'Orders List',
                 description: 'The Orders module displays all customer orders with server-side pagination. Filter by status, search by order number, and navigate through pages.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/orders`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/orders`, { waitUntil: 'networkidle' });
                 },
                 wait: 2500
             },
@@ -184,7 +184,7 @@ const DEMO_SCRIPT = [
                 title: 'Production Form',
                 description: 'The Production Confirmation form is used to record completed production work. This is the core workflow of the MES system.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/production/confirm`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/production/confirm`, { waitUntil: 'networkidle' });
                 },
                 wait: 2000
             },
@@ -278,7 +278,7 @@ const DEMO_SCRIPT = [
                 title: 'Inventory List',
                 description: 'The Inventory module tracks all materials with server-side pagination. Filter by state (AVAILABLE, BLOCKED, etc.) and type (RM, IM, FG). Search across material IDs and batch numbers.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/inventory`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/inventory`, { waitUntil: 'networkidle' });
                 },
                 wait: 2500
             },
@@ -381,7 +381,7 @@ const DEMO_SCRIPT = [
                 title: 'Batches List',
                 description: 'Batches are trackable units of material. Each batch has a unique number generated based on configurable patterns (operation type, product, date sequence).',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/batches`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/batches`, { waitUntil: 'networkidle' });
                 },
                 wait: 2500
             },
@@ -412,7 +412,7 @@ const DEMO_SCRIPT = [
                 title: 'Batch Operations',
                 description: 'Batches support SPLIT (divide into smaller portions) and MERGE (combine multiple batches). Each operation creates new batch numbers following configurable patterns.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/batches`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/batches`, { waitUntil: 'networkidle' });
                 },
                 wait: 2000
             },
@@ -435,7 +435,7 @@ const DEMO_SCRIPT = [
                 title: 'Active Holds',
                 description: 'The Holds module manages temporary blocks on materials, equipment, or operations. Active holds prevent production until released.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/holds`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/holds`, { waitUntil: 'networkidle' });
                 },
                 wait: 2500
             },
@@ -483,7 +483,7 @@ const DEMO_SCRIPT = [
                 title: 'Equipment List',
                 description: 'The Equipment module tracks all production equipment. Status can be: AVAILABLE, IN_USE, MAINTENANCE, or ON_HOLD.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/equipment`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/equipment`, { waitUntil: 'networkidle' });
                 },
                 wait: 2500
             },
@@ -542,7 +542,7 @@ const DEMO_SCRIPT = [
                 title: 'Quality Queue',
                 description: 'The Quality module shows processes pending quality inspection. Quality decisions determine if production can proceed.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/quality`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/quality`, { waitUntil: 'networkidle' });
                 },
                 wait: 2500
             },
@@ -601,7 +601,7 @@ const DEMO_SCRIPT = [
                 title: 'Audit Trail',
                 description: 'All changes are tracked with field-level auditing. Old value, new value, timestamp, and user are recorded for every modification. Critical for compliance and traceability.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
                 },
                 wait: 2000
             },
@@ -640,7 +640,7 @@ const DEMO_SCRIPT = [
                 title: 'Logout',
                 description: 'Click Logout to end your session. Your JWT token is invalidated and you are returned to the login page.',
                 action: async (page) => {
-                    await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+                    await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
                     const logoutBtn = page.locator('button:has-text("Logout"), .logout-btn');
                     if (await logoutBtn.count() > 0) {
                         await logoutBtn.first().click();

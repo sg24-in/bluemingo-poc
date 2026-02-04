@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { MainLayoutComponent } from './shared/components/main-layout/main-layout.component';
+import { AdminLayoutComponent } from './shared/components/admin-layout/admin-layout.component';
 
 const routes: Routes = [
   {
@@ -13,44 +15,67 @@ const routes: Routes = [
     loadChildren: () => import('./features/auth/auth.module').then(m => m.AuthModule)
   },
   {
-    path: 'dashboard',
-    loadChildren: () => import('./features/dashboard/dashboard.module').then(m => m.DashboardModule),
-    canActivate: [AuthGuard]
+    path: '',
+    component: MainLayoutComponent,
+    canActivate: [AuthGuard],
+    children: [
+      {
+        path: 'dashboard',
+        loadChildren: () => import('./features/dashboard/dashboard.module').then(m => m.DashboardModule)
+      },
+      {
+        path: 'orders',
+        loadChildren: () => import('./features/orders/orders.module').then(m => m.OrdersModule)
+      },
+      {
+        path: 'production',
+        loadChildren: () => import('./features/production/production.module').then(m => m.ProductionModule)
+      },
+      {
+        path: 'inventory',
+        loadChildren: () => import('./features/inventory/inventory.module').then(m => m.InventoryModule)
+      },
+      {
+        path: 'batches',
+        loadChildren: () => import('./features/batches/batches.module').then(m => m.BatchesModule)
+      },
+      {
+        path: 'holds',
+        loadChildren: () => import('./features/holds/holds.module').then(m => m.HoldsModule)
+      },
+      {
+        path: 'processes',
+        loadChildren: () => import('./features/processes/processes.module').then(m => m.ProcessesModule)
+      },
+      {
+        path: 'equipment',
+        loadChildren: () => import('./features/equipment/equipment.module').then(m => m.EquipmentModule)
+      }
+    ]
   },
   {
-    path: 'orders',
-    loadChildren: () => import('./features/orders/orders.module').then(m => m.OrdersModule),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'production',
-    loadChildren: () => import('./features/production/production.module').then(m => m.ProductionModule),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'inventory',
-    loadChildren: () => import('./features/inventory/inventory.module').then(m => m.InventoryModule),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'batches',
-    loadChildren: () => import('./features/batches/batches.module').then(m => m.BatchesModule),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'holds',
-    loadChildren: () => import('./features/holds/holds.module').then(m => m.HoldsModule),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'processes',
-    loadChildren: () => import('./features/processes/processes.module').then(m => m.ProcessesModule),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'equipment',
-    loadChildren: () => import('./features/equipment/equipment.module').then(m => m.EquipmentModule),
-    canActivate: [AuthGuard]
+    path: 'manage',
+    component: AdminLayoutComponent,
+    canActivate: [AuthGuard],
+    children: [
+      {
+        path: '',
+        redirectTo: 'customers',
+        pathMatch: 'full'
+      },
+      {
+        path: 'customers',
+        loadChildren: () => import('./features/customers/customers.module').then(m => m.CustomersModule)
+      },
+      {
+        path: 'materials',
+        loadChildren: () => import('./features/materials/materials.module').then(m => m.MaterialsModule)
+      },
+      {
+        path: 'products',
+        loadChildren: () => import('./features/products/products.module').then(m => m.ProductsModule)
+      }
+    ]
   },
   {
     path: '**',
@@ -59,7 +84,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
+  imports: [RouterModule.forRoot(routes, { useHash: true })],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { PAGE_SIZE_OPTIONS } from '../../models/pagination.model';
 
 /**
@@ -10,7 +10,7 @@ import { PAGE_SIZE_OPTIONS } from '../../models/pagination.model';
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.css']
 })
-export class PaginationComponent {
+export class PaginationComponent implements OnChanges {
 
   @Input() page = 0;
   @Input() size = 20;
@@ -23,6 +23,13 @@ export class PaginationComponent {
   @Output() sizeChange = new EventEmitter<number>();
 
   pageSizeOptions = PAGE_SIZE_OPTIONS;
+  selectedSize = 20;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['size'] && changes['size'].currentValue !== this.selectedSize) {
+      this.selectedSize = changes['size'].currentValue;
+    }
+  }
 
   get startIndex(): number {
     return this.page * this.size + 1;
@@ -60,6 +67,12 @@ export class PaginationComponent {
     const select = event.target as HTMLSelectElement;
     const newSize = parseInt(select.value, 10);
     this.sizeChange.emit(newSize);
+  }
+
+  onSizeSelectChange(newSize: number): void {
+    if (newSize !== this.size) {
+      this.sizeChange.emit(newSize);
+    }
   }
 
   /**

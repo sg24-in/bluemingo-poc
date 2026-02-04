@@ -47,7 +47,7 @@ const SCENES = [
         caption: 'Login Page',
         voiceover: 'MES Production Confirmation System. Secure login with email and password.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/login`, { waitUntil: 'networkidle' });
         }
     },
     {
@@ -83,7 +83,7 @@ const SCENES = [
         voiceover: 'Login successful. Redirected to Dashboard with key metrics.',
         action: async (page) => {
             await page.waitForURL('**/dashboard', { timeout: 5000 }).catch(() => {});
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         }
     },
 
@@ -127,7 +127,7 @@ const SCENES = [
         caption: 'Orders List',
         voiceover: 'Orders module displays all production orders with server-side pagination.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/orders`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/orders`, { waitUntil: 'networkidle' });
         }
     },
     {
@@ -168,7 +168,7 @@ const SCENES = [
         caption: 'Inventory List',
         voiceover: 'Inventory Management tracks all materials with batch numbers and status.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/inventory`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/inventory`, { waitUntil: 'networkidle' });
         }
     },
     {
@@ -211,7 +211,7 @@ const SCENES = [
         caption: 'Batch Traceability',
         voiceover: 'Batch Traceability tracks all batches with auto-generated unique numbers.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/batches`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/batches`, { waitUntil: 'networkidle' });
         }
     },
     {
@@ -244,7 +244,7 @@ const SCENES = [
         caption: 'Hold Management',
         voiceover: 'Hold Management shows active holds on materials, equipment, and operations.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/holds`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/holds`, { waitUntil: 'networkidle' });
         }
     },
     {
@@ -288,7 +288,7 @@ const SCENES = [
         caption: 'Equipment Management',
         voiceover: 'Equipment Management tracks production equipment with status tracking.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/equipment`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/equipment`, { waitUntil: 'networkidle' });
         }
     },
     {
@@ -317,7 +317,7 @@ const SCENES = [
         caption: 'Quality Inspection',
         voiceover: 'Quality Inspection shows processes pending quality approval.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/quality`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/quality`, { waitUntil: 'networkidle' });
         }
     },
     {
@@ -335,7 +335,7 @@ const SCENES = [
         caption: 'Session Complete',
         voiceover: 'Session complete. Click Logout to end the session securely.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         }
     },
     {

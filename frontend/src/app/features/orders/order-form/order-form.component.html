@@ -1,0 +1,174 @@
+<div class="order-form-page">
+  <div class="page-header">
+    <h1>{{ isEditMode ? 'Edit Order: ' + (form.get('orderNumber')?.value || 'ORD-' + orderId) : 'New Order' }}</h1>
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading order...</div>
+
+  <div class="form-container" *ngIf="!loading">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+      <div class="form-section">
+        <h2>Order Information</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customerId">Customer *</label>
+            <select
+              id="customerId"
+              formControlName="customerId"
+              [class.error]="hasError('customerId')"
+              (change)="onCustomerChange($event)"
+            >
+              <option value="">Select a customer...</option>
+              <option *ngFor="let customer of customers" [value]="customer.customerId">
+                {{ customer.customerCode }} - {{ customer.customerName }}
+              </option>
+            </select>
+            <!-- Hidden field to store customer name for form submission -->
+            <input type="hidden" formControlName="customerName" />
+            <span class="hint" *ngIf="loadingCustomers">Loading customers...</span>
+            <span class="error-text" *ngIf="hasError('customerId')">Customer is required</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="orderDate">Order Date *</label>
+            <input
+              type="date"
+              id="orderDate"
+              formControlName="orderDate"
+              [class.error]="hasError('orderDate')"
+            />
+            <span class="error-text" *ngIf="hasError('orderDate')">Order date is required</span>
+          </div>
+
+          <div class="form-group">
+            <label for="orderNumber">Order Number</label>
+            <input
+              type="text"
+              id="orderNumber"
+              formControlName="orderNumber"
+              placeholder="Auto-generated if empty"
+              [readonly]="isEditMode"
+            />
+            <span class="hint">Leave empty to auto-generate</span>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="isEditMode">
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" formControlName="status">
+              <option value="CREATED">Created</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-header">
+          <h2>Line Items</h2>
+          <button
+            type="button"
+            class="btn btn-sm btn-primary"
+            (click)="addLineItem()"
+            *ngIf="canEditLineItems()"
+          >
+            + Add Line Item
+          </button>
+        </div>
+
+        <div class="line-items-warning" *ngIf="isEditMode && !canEditLineItems()">
+          Line items can only be modified for orders with CREATED status.
+        </div>
+
+        <div formArrayName="lineItems">
+          <div
+            *ngFor="let item of lineItems.controls; let i = index"
+            class="line-item"
+            [formGroupName]="i"
+          >
+            <div class="line-item-header">
+              <span class="line-number">Line {{ i + 1 }}</span>
+              <button
+                type="button"
+                class="btn-icon btn-danger"
+                (click)="removeLineItem(i)"
+                *ngIf="lineItems.length > 1 && canEditLineItems()"
+                title="Remove line item"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div class="line-item-fields">
+              <div class="form-group product-group">
+                <label>Product *</label>
+                <select
+                  formControlName="productSku"
+                  [class.error]="hasLineItemError(i, 'productSku')"
+                  (change)="onProductChange(i, $event)"
+                >
+                  <option value="">Select a product...</option>
+                  <option *ngFor="let product of products" [value]="product.sku">
+                    {{ product.sku }} - {{ product.productName }}
+                  </option>
+                </select>
+                <!-- Hidden field to store product name for form submission -->
+                <input type="hidden" formControlName="productName" />
+              </div>
+
+              <div class="form-group quantity-group">
+                <label>Quantity *</label>
+                <input
+                  type="number"
+                  formControlName="quantity"
+                  [class.error]="hasLineItemError(i, 'quantity')"
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+
+              <div class="form-group unit-group">
+                <label>Unit</label>
+                <input
+                  type="text"
+                  formControlName="unit"
+                  [class.error]="hasLineItemError(i, 'unit')"
+                  readonly
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Delivery Date</label>
+                <input
+                  type="date"
+                  formControlName="deliveryDate"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-line-items" *ngIf="lineItems.length === 0">
+          No line items. Click "Add Line Item" to add products to this order.
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving || form.invalid">
+          {{ saving ? 'Saving...' : (isEditMode ? 'Update Order' : 'Create Order') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

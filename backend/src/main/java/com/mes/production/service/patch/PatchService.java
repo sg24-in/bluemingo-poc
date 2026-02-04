@@ -2,21 +2,24 @@ package com.mes.production.service.patch;
 
 import com.mes.production.entity.DatabasePatch;
 import com.mes.production.repository.DatabasePatchRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -25,10 +28,10 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class PatchService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final DataSource dataSource;
     private final DatabasePatchRepository patchRepository;
 
     @Value("${app.patch.location:classpath:patches/}")
@@ -39,6 +42,12 @@ public class PatchService {
 
     // Pattern: 001_description.sql, 002_another_patch.sql
     private static final Pattern PATCH_FILE_PATTERN = Pattern.compile("^(\\d{3})_(.+)\\.sql$");
+
+    public PatchService(JdbcTemplate jdbcTemplate, DataSource dataSource, DatabasePatchRepository patchRepository) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = dataSource;
+        this.patchRepository = patchRepository;
+    }
 
     /**
      * Initialize the patches table if it doesn't exist
@@ -66,19 +75,57 @@ public class PatchService {
     }
 
     /**
-     * Apply all pending patches
+     * Result of patch application
      */
-    @Transactional
-    public void applyPendingPatches() {
+    public static class PatchResult {
+        private final boolean success;
+        private final int successCount;
+        private final int failCount;
+        private final int failedPatchNumber;
+        private final String failedPatchName;
+        private final String errorMessage;
+
+        private PatchResult(boolean success, int successCount, int failCount,
+                           int failedPatchNumber, String failedPatchName, String errorMessage) {
+            this.success = success;
+            this.successCount = successCount;
+            this.failCount = failCount;
+            this.failedPatchNumber = failedPatchNumber;
+            this.failedPatchName = failedPatchName;
+            this.errorMessage = errorMessage;
+        }
+
+        public static PatchResult success(int count) {
+            return new PatchResult(true, count, 0, 0, null, null);
+        }
+
+        public static PatchResult failure(int successCount, int failedPatchNumber, String failedPatchName, String error) {
+            return new PatchResult(false, successCount, 1, failedPatchNumber, failedPatchName, error);
+        }
+
+        public boolean isSuccess() { return success; }
+        public int getSuccessCount() { return successCount; }
+        public int getFailCount() { return failCount; }
+        public int getFailedPatchNumber() { return failedPatchNumber; }
+        public String getFailedPatchName() { return failedPatchName; }
+        public String getErrorMessage() { return errorMessage; }
+    }
+
+    /**
+     * Apply all pending patches
+     * Each patch runs in its own connection to ensure isolation.
+     * Returns result indicating success/failure.
+     */
+    public PatchResult applyPendingPatches() {
         if (!patchEnabled) {
             log.info("Patch application is disabled.");
-            return;
+            return PatchResult.success(0);
         }
 
         log.info("Checking for pending database patches...");
 
-        // Get last applied patch number
-        Integer lastAppliedPatch = patchRepository.findLastAppliedPatchNumber().orElse(0);
+        // Get last applied patch number using direct JDBC to avoid transaction issues
+        int lastAppliedPatch = getLastAppliedPatchNumber();
         log.info("Last applied patch number: {}", lastAppliedPatch);
 
         // Get all patch files
@@ -86,7 +133,19 @@ public class PatchService {
 
         if (patchFiles.isEmpty()) {
             log.info("No patch files found in {}", patchLocation);
-            return;
+            return PatchResult.success(0);
+        }
+
+        // Check for duplicate patch numbers
+        Map<Integer, List<PatchFile>> patchesByNumber = patchFiles.stream()
+                .collect(Collectors.groupingBy(p -> p.patchNumber));
+        for (Map.Entry<Integer, List<PatchFile>> entry : patchesByNumber.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                String duplicates = entry.getValue().stream().map(p -> p.fileName).collect(Collectors.joining(", "));
+                log.error("DUPLICATE PATCH NUMBER DETECTED: Patch #{} has {} files: {}",
+                        entry.getKey(), entry.getValue().size(), duplicates);
+                return PatchResult.failure(0, entry.getKey(), "DUPLICATE", "Duplicate patch files: " + duplicates);
+            }
         }
 
         // Filter pending patches
@@ -97,17 +156,89 @@ public class PatchService {
 
         if (pendingPatches.isEmpty()) {
             log.info("No pending patches to apply. Database is up to date.");
-            return;
+            return PatchResult.success(0);
         }
 
         log.info("Found {} pending patches to apply.", pendingPatches.size());
 
-        // Apply each patch
+        int successCount = 0;
+        String lastError = null;
+        PatchFile failedPatch = null;
+
+        // Apply each patch in its own connection
         for (PatchFile patchFile : pendingPatches) {
-            applyPatch(patchFile);
+            lastError = applyPatchIsolated(patchFile);
+            if (lastError == null) {
+                successCount++;
+            } else {
+                failedPatch = patchFile;
+                log.error("Stopping patch application due to failure. Subsequent patches may depend on this one.");
+                break;
+            }
         }
 
-        log.info("All patches applied successfully.");
+        if (failedPatch != null) {
+            log.error("Patch application completed with errors. Success: {}, Failed: 1", successCount);
+            return PatchResult.failure(successCount, failedPatch.patchNumber, failedPatch.patchName, lastError);
+        } else {
+            log.info("All {} patches applied successfully.", successCount);
+            return PatchResult.success(successCount);
+        }
+    }
+
+    /**
+     * Get last applied patch number using direct JDBC
+     */
+    private int getLastAppliedPatchNumber() {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT MAX(patch_number) FROM database_patches WHERE success = true")) {
+            if (rs.next()) {
+                int result = rs.getInt(1);
+                return rs.wasNull() ? 0 : result;
+            }
+            return 0;
+        } catch (Exception e) {
+            log.debug("Could not get last patch number (table may not exist yet): {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Check if patch was already applied successfully
+     */
+    private boolean isPatchApplied(int patchNumber) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "SELECT COUNT(*) FROM database_patches WHERE patch_number = ? AND success = true")) {
+            stmt.setInt(1, patchNumber);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Delete failed patch record to allow retry
+     */
+    private void deleteFailedPatchRecord(int patchNumber) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "DELETE FROM database_patches WHERE patch_number = ? AND success = false")) {
+            stmt.setInt(1, patchNumber);
+            int deleted = stmt.executeUpdate();
+            if (deleted > 0) {
+                log.info("Deleted {} failed patch record(s) for patch #{}", deleted, patchNumber);
+            }
+        } catch (Exception e) {
+            log.warn("Could not delete failed patch record: {}", e.getMessage());
+        }
     }
 
     /**
@@ -143,61 +274,133 @@ public class PatchService {
     }
 
     /**
-     * Apply a single patch
+     * Apply a single patch in its own isolated connection.
+     * Returns null if successful, error message if failed.
      */
-    private void applyPatch(PatchFile patchFile) {
+    private String applyPatchIsolated(PatchFile patchFile) {
         log.info("Applying patch #{}: {} ({})", patchFile.patchNumber, patchFile.patchName, patchFile.fileName);
 
         long startTime = System.currentTimeMillis();
-        String errorMessage = null;
-        boolean success = false;
 
+        // Check if already applied successfully
+        if (isPatchApplied(patchFile.patchNumber)) {
+            log.warn("Patch #{} already applied successfully, skipping.", patchFile.patchNumber);
+            return null; // Success - already applied
+        }
+
+        // Delete any previous failed attempts
+        deleteFailedPatchRecord(patchFile.patchNumber);
+
+        String sqlContent;
+        String checksum;
         try {
-            // Read SQL content
-            String sqlContent = readResourceContent(patchFile.resource);
-            String checksum = calculateChecksum(sqlContent);
+            sqlContent = readResourceContent(patchFile.resource);
+            checksum = calculateChecksum(sqlContent);
+        } catch (IOException e) {
+            String errorMsg = "Error reading file: " + e.getMessage();
+            log.error("Error reading patch file #{}: {}", patchFile.patchNumber, e.getMessage());
+            recordPatchDirect(patchFile, System.currentTimeMillis() - startTime, null, false, errorMsg);
+            return errorMsg;
+        }
 
-            // Check if already applied (double-check)
-            if (patchRepository.existsByPatchNumber(patchFile.patchNumber)) {
-                log.warn("Patch #{} already exists in database, skipping.", patchFile.patchNumber);
-                return;
+        // Execute patch in its own connection with auto-commit off
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try {
+                executeSqlStatementsWithConnection(conn, sqlContent);
+                conn.commit();
+
+                long executionTime = System.currentTimeMillis() - startTime;
+                log.info("Patch #{} applied successfully in {}ms.", patchFile.patchNumber, executionTime);
+
+                // Record success
+                recordPatchDirect(patchFile, executionTime, checksum, true, null);
+                return null; // Success
+
+            } catch (Exception e) {
+                conn.rollback();
+                long executionTime = System.currentTimeMillis() - startTime;
+                String errorMsg = e.getMessage();
+                if (errorMsg != null && errorMsg.length() > 2000) {
+                    errorMsg = errorMsg.substring(0, 2000) + "...";
+                }
+                log.error("Error applying patch #{}: {}", patchFile.patchNumber, errorMsg);
+
+                // Record failure in a separate connection (so it commits even after rollback)
+                recordPatchDirect(patchFile, executionTime, checksum, false, errorMsg);
+                return errorMsg;
             }
-
-            // Execute the SQL
-            executeSqlStatements(sqlContent);
-            success = true;
-
-            log.info("Patch #{} applied successfully.", patchFile.patchNumber);
-
-            // Record the patch
-            long executionTime = System.currentTimeMillis() - startTime;
-            recordPatch(patchFile, executionTime, checksum, true, null);
-
         } catch (Exception e) {
-            errorMessage = e.getMessage();
-            log.error("Error applying patch #{}: {}", patchFile.patchNumber, errorMessage);
-
-            // Record failed patch
-            long executionTime = System.currentTimeMillis() - startTime;
-            recordPatch(patchFile, executionTime, null, false, errorMessage);
-
-            // Continue with next patch (as per requirement - no error checking)
-            log.warn("Continuing with next patch despite error...");
+            String errorMsg = "Connection error: " + e.getMessage();
+            log.error("Connection error for patch #{}: {}", patchFile.patchNumber, e.getMessage());
+            recordPatchDirect(patchFile, System.currentTimeMillis() - startTime, null, false, errorMsg);
+            return errorMsg;
         }
     }
 
     /**
-     * Execute SQL statements from content
+     * Execute SQL statements using a specific connection
      */
-    private void executeSqlStatements(String sqlContent) {
+    private void executeSqlStatementsWithConnection(Connection conn, String sqlContent) throws Exception {
         // Split by semicolon, but be careful with strings containing semicolons
         String[] statements = sqlContent.split(";(?=(?:[^']*'[^']*')*[^']*$)");
 
+        int statementCount = 0;
         for (String statement : statements) {
             String trimmed = statement.trim();
-            if (!trimmed.isEmpty() && !trimmed.startsWith("--")) {
-                jdbcTemplate.execute(trimmed);
+            // Skip empty statements and pure comment lines
+            if (trimmed.isEmpty()) continue;
+            if (trimmed.startsWith("--") && !trimmed.contains("\n")) continue;
+
+            // Remove leading comment lines but keep inline comments
+            String[] lines = trimmed.split("\n");
+            StringBuilder sb = new StringBuilder();
+            boolean foundCode = false;
+            for (String line : lines) {
+                String trimmedLine = line.trim();
+                if (!foundCode && trimmedLine.startsWith("--")) {
+                    continue; // Skip leading comments
+                }
+                foundCode = true;
+                sb.append(line).append("\n");
             }
+            String cleanedStatement = sb.toString().trim();
+            if (cleanedStatement.isEmpty()) continue;
+
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(cleanedStatement);
+                statementCount++;
+            }
+        }
+        log.debug("Executed {} SQL statements", statementCount);
+    }
+
+    /**
+     * Record patch using direct JDBC (separate connection to ensure it commits)
+     */
+    private void recordPatchDirect(PatchFile patchFile, long executionTimeMs, String checksum,
+                                   boolean success, String errorMessage) {
+        String sql = """
+            INSERT INTO database_patches
+            (patch_number, patch_name, file_name, applied_on, applied_by, execution_time_ms, checksum, success, error_message)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, patchFile.patchNumber);
+            stmt.setString(2, patchFile.patchName);
+            stmt.setString(3, patchFile.fileName);
+            stmt.setObject(4, LocalDateTime.now());
+            stmt.setString(5, "SYSTEM");
+            stmt.setLong(6, executionTimeMs);
+            stmt.setString(7, checksum);
+            stmt.setBoolean(8, success);
+            stmt.setString(9, errorMessage);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            log.error("Failed to record patch status: {}", e.getMessage());
         }
     }
 
@@ -229,37 +432,15 @@ public class PatchService {
     }
 
     /**
-     * Record patch in database
-     */
-    private void recordPatch(PatchFile patchFile, long executionTimeMs, String checksum,
-                            boolean success, String errorMessage) {
-        DatabasePatch patch = DatabasePatch.builder()
-                .patchNumber(patchFile.patchNumber)
-                .patchName(patchFile.patchName)
-                .fileName(patchFile.fileName)
-                .appliedOn(LocalDateTime.now())
-                .appliedBy("SYSTEM")
-                .executionTimeMs(executionTimeMs)
-                .checksum(checksum)
-                .success(success)
-                .errorMessage(errorMessage)
-                .build();
-
-        patchRepository.save(patch);
-    }
-
-    /**
      * Get patch status
      */
     public Map<String, Object> getPatchStatus() {
         Map<String, Object> status = new HashMap<>();
 
         List<PatchFile> allPatches = discoverPatchFiles();
-        Integer lastApplied = patchRepository.findLastAppliedPatchNumber().orElse(0);
-        long appliedCount = patchRepository.countAppliedPatches();
+        int lastApplied = getLastAppliedPatchNumber();
 
         status.put("totalPatchFiles", allPatches.size());
-        status.put("appliedPatches", appliedCount);
         status.put("lastAppliedPatchNumber", lastApplied);
         status.put("pendingPatches", allPatches.stream()
                 .filter(p -> p.patchNumber > lastApplied)

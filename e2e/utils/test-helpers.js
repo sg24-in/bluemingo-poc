@@ -65,7 +65,7 @@ class AuthHelper {
      * Login with credentials
      */
     async login(email, password) {
-        await this.page.goto(`${config.baseUrl}/login`, { waitUntil: 'networkidle' });
+        await this.page.goto(`${config.baseUrl}/#/login`, { waitUntil: 'networkidle' });
         await this.page.fill(SELECTORS.login.emailInput, email);
         await this.page.fill(SELECTORS.login.passwordInput, password);
 
@@ -102,7 +102,7 @@ class AuthHelper {
         const logoutBtn = this.page.locator(SELECTORS.header.logoutButton);
         if (await logoutBtn.isVisible()) {
             await logoutBtn.click();
-            await this.page.waitForURL('**/login');
+            await this.page.waitForURL('**/#/login');
         }
     }
 }

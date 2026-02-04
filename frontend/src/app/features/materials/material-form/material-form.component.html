@@ -1,0 +1,113 @@
+<div class="material-form-page">
+  <div class="page-header">
+    <h1>{{ isEditMode ? 'Edit Material' : 'New Material' }}</h1>
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading material...</div>
+
+  <div class="form-container" *ngIf="!loading">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+      <div class="form-section">
+        <h2>Material Information</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="materialCode">Material Code *</label>
+            <input
+              type="text"
+              id="materialCode"
+              formControlName="materialCode"
+              [class.error]="hasError('materialCode')"
+              placeholder="e.g., MAT-001"
+            />
+            <span class="error-text" *ngIf="hasError('materialCode')">
+              {{ getError('materialCode') }}
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="materialName">Material Name *</label>
+            <input
+              type="text"
+              id="materialName"
+              formControlName="materialName"
+              [class.error]="hasError('materialName')"
+              placeholder="Enter material name"
+            />
+            <span class="error-text" *ngIf="hasError('materialName')">
+              {{ getError('materialName') }}
+            </span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="materialType">Material Type *</label>
+            <select
+              id="materialType"
+              formControlName="materialType"
+              [class.error]="hasError('materialType')"
+            >
+              <option *ngFor="let type of materialTypes" [value]="type.value">
+                {{ type.label }}
+              </option>
+            </select>
+            <span class="error-text" *ngIf="hasError('materialType')">
+              {{ getError('materialType') }}
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="baseUnit">Unit of Measure *</label>
+            <select
+              id="baseUnit"
+              formControlName="baseUnit"
+              [class.error]="hasError('baseUnit')"
+            >
+              <option value="">Select a unit...</option>
+              <option *ngFor="let unit of units" [value]="unit.value">
+                {{ unit.label }}
+              </option>
+            </select>
+            <span class="error-text" *ngIf="hasError('baseUnit')">
+              {{ getError('baseUnit') }}
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="3"
+            placeholder="Optional description of the material"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-section" *ngIf="isEditMode">
+        <h2>Status</h2>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" formControlName="status">
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving || form.invalid">
+          {{ saving ? 'Saving...' : (isEditMode ? 'Update Material' : 'Create Material') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

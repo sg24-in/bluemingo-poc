@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'war'
     id 'org.springframework.boot' version '3.2.0'
     id 'io.spring.dependency-management' version '1.1.4'
     id 'jacoco'
@@ -24,6 +25,10 @@ repositories {
 
 ext {
     set('jjwtVersion', '0.12.3')
+    // Frontend build directory
+    frontendBuildDir = file("${project.rootDir}/../frontend/dist/mes-production")
+    // Static resources directory
+    staticDir = file("${project.projectDir}/src/main/resources/static")
 }
 
 dependencies {
@@ -48,16 +53,22 @@ dependencies {
     // DevTools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-    // H2 Database (for demo/screenshot mode)
-    runtimeOnly 'com.h2database:h2'
-
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+
+    // Tomcat provided (for WAR deployment)
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 }
+
+// =====================================================
+// Test Configuration
+// =====================================================
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Use test profile with PostgreSQL mes_test database
+    systemProperty 'spring.profiles.active', 'test'
     finalizedBy jacocoTestReport
 }
 
@@ -74,6 +85,118 @@ jacocoTestReport {
     }
 }
 
+// =====================================================
+// Frontend Integration Tasks
+// =====================================================
+
+// Task to copy frontend build to static folder
+task copyFrontendToStatic(type: Copy) {
+    description = 'Copies Angular frontend build to Spring Boot static resources'
+    group = 'build'
+
+    from frontendBuildDir
+    into staticDir
+
+    doFirst {
+        // Create static directory if it doesn't exist
+        staticDir.mkdirs()
+
+        // Clean existing static files (except .gitkeep)
+        staticDir.listFiles()?.each { file ->
+            if (file.name != '.gitkeep') {
+                if (file.isDirectory()) {
+                    file.deleteDir()
+                } else {
+                    file.delete()
+                }
+            }
+        }
+    }
+
+    doLast {
+        println "Frontend copied to: ${staticDir}"
+    }
+}
+
+// Task to build frontend
+task buildFrontend(type: Exec) {
+    description = 'Builds Angular frontend'
+    group = 'build'
+    workingDir file("${project.rootDir}/../frontend")
+
+    // Use npm.cmd on Windows, npm on Unix
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        commandLine 'cmd', '/c', 'npm', 'run', 'build'
+    } else {
+        commandLine 'npm', 'run', 'build'
+    }
+}
+
+// Task to build frontend and copy to static
+task integrateFrontend {
+    description = 'Builds frontend and copies to static folder'
+    group = 'build'
+    dependsOn buildFrontend, copyFrontendToStatic
+    copyFrontendToStatic.mustRunAfter buildFrontend
+}
+
+// =====================================================
+// Integrated Test Tasks
+// =====================================================
+
+// Task to run backend tests with PostgreSQL
+task testBackend(type: Test) {
+    description = 'Run backend tests with PostgreSQL mes_test database'
+    group = 'verification'
+    useJUnitPlatform()
+    systemProperty 'spring.profiles.active', 'test'
+}
+
+// Task to start server for E2E tests
+task startServerForE2E(type: JavaExec) {
+    description = 'Start Spring Boot server for E2E tests'
+    group = 'verification'
+    mainClass = 'com.mes.production.MesProductionApplication'
+    classpath = sourceSets.main.runtimeClasspath
+    // Use test profile
+    args = ['--spring.profiles.active=test']
+    // Don't wait for completion
+    standardOutput = System.out
+    errorOutput = System.err
+}
+
+// =====================================================
+// Full Build Tasks
+// =====================================================
+
+// Full build with frontend integration
+task fullBuild {
+    description = 'Build backend, frontend, and create integrated package'
+    group = 'build'
+    dependsOn clean, build, integrateFrontend
+    build.mustRunAfter clean
+    integrateFrontend.mustRunAfter build
+}
+
+// Full test: backend tests, then E2E tests
+task fullTest {
+    description = 'Run all tests: backend unit tests, then E2E tests'
+    group = 'verification'
+    dependsOn testBackend
+}
+
 bootJar {
     archiveBaseName = 'mes-production-confirmation'
+}
+
+bootWar {
+    archiveBaseName = 'mes-production'
+    archiveFileName = 'mes-production.war'
+    // Include frontend static files in WAR
+    dependsOn copyFrontendToStatic
+}
+
+war {
+    archiveBaseName = 'mes-production'
+    archiveFileName = 'mes-production.war'
 }

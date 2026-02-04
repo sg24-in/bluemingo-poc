@@ -51,7 +51,17 @@ import {
   AllocationInfo,
   AllocateRequest,
   UpdateAllocationQuantityRequest,
-  BatchAvailability
+  BatchAvailability,
+  // Master Data
+  Customer,
+  CreateCustomerRequest,
+  UpdateCustomerRequest,
+  Material,
+  CreateMaterialRequest,
+  UpdateMaterialRequest,
+  Product,
+  CreateProductRequest,
+  UpdateProductRequest
 } from '../../shared/models';
 
 /**
@@ -514,5 +524,132 @@ export class ApiService {
 
   unblockOperation(operationId: number): Observable<OperationStatusUpdateResponse> {
     return this.http.post<OperationStatusUpdateResponse>(`${environment.apiUrl}/operations/${operationId}/unblock`, {});
+  }
+
+  // ============================================================
+  // Customers
+  // ============================================================
+
+  getCustomersPaged(request: PageRequest = {}): Observable<PagedResponse<Customer>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<Customer>>(`${environment.apiUrl}/customers/paged`, { params });
+  }
+
+  getAllCustomers(): Observable<Customer[]> {
+    return this.http.get<Customer[]>(`${environment.apiUrl}/customers`);
+  }
+
+  getActiveCustomers(): Observable<Customer[]> {
+    return this.http.get<Customer[]>(`${environment.apiUrl}/customers/active`);
+  }
+
+  getCustomerById(customerId: number): Observable<Customer> {
+    return this.http.get<Customer>(`${environment.apiUrl}/customers/${customerId}`);
+  }
+
+  createCustomer(request: CreateCustomerRequest): Observable<Customer> {
+    return this.http.post<Customer>(`${environment.apiUrl}/customers`, request);
+  }
+
+  updateCustomer(customerId: number, request: UpdateCustomerRequest): Observable<Customer> {
+    return this.http.put<Customer>(`${environment.apiUrl}/customers/${customerId}`, request);
+  }
+
+  deleteCustomer(customerId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/customers/${customerId}`);
+  }
+
+  // ============================================================
+  // Materials
+  // ============================================================
+
+  getMaterialsPaged(request: PageRequest = {}): Observable<PagedResponse<Material>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<Material>>(`${environment.apiUrl}/materials/paged`, { params });
+  }
+
+  getAllMaterials(): Observable<Material[]> {
+    return this.http.get<Material[]>(`${environment.apiUrl}/materials`);
+  }
+
+  getActiveMaterials(): Observable<Material[]> {
+    return this.http.get<Material[]>(`${environment.apiUrl}/materials/active`);
+  }
+
+  getMaterialById(materialId: number): Observable<Material> {
+    return this.http.get<Material>(`${environment.apiUrl}/materials/${materialId}`);
+  }
+
+  createMaterial(request: CreateMaterialRequest): Observable<Material> {
+    return this.http.post<Material>(`${environment.apiUrl}/materials`, request);
+  }
+
+  updateMaterial(materialId: number, request: UpdateMaterialRequest): Observable<Material> {
+    return this.http.put<Material>(`${environment.apiUrl}/materials/${materialId}`, request);
+  }
+
+  deleteMaterial(materialId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/materials/${materialId}`);
+  }
+
+  // ============================================================
+  // Products
+  // ============================================================
+
+  getProductsPaged(request: PageRequest = {}): Observable<PagedResponse<Product>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<Product>>(`${environment.apiUrl}/products/paged`, { params });
+  }
+
+  getAllProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${environment.apiUrl}/products`);
+  }
+
+  getActiveProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${environment.apiUrl}/products/active`);
+  }
+
+  getProductById(productId: number): Observable<Product> {
+    return this.http.get<Product>(`${environment.apiUrl}/products/${productId}`);
+  }
+
+  createProduct(request: CreateProductRequest): Observable<Product> {
+    return this.http.post<Product>(`${environment.apiUrl}/products`, request);
+  }
+
+  updateProduct(productId: number, request: UpdateProductRequest): Observable<Product> {
+    return this.http.put<Product>(`${environment.apiUrl}/products/${productId}`, request);
+  }
+
+  deleteProduct(productId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/products/${productId}`);
+  }
+
+  // ============================================================
+  // Orders CRUD
+  // ============================================================
+
+  createOrder(request: { customerId: string; customerName: string; orderDate: string; orderNumber?: string; lineItems: { productSku: string; productName: string; quantity: number; unit: string; deliveryDate?: string }[] }): Observable<Order> {
+    return this.http.post<Order>(`${environment.apiUrl}/orders`, request);
+  }
+
+  updateOrder(orderId: number, request: { customerId: string; customerName: string; orderDate?: string; status?: string }): Observable<Order> {
+    return this.http.put<Order>(`${environment.apiUrl}/orders/${orderId}`, request);
+  }
+
+  deleteOrder(orderId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/orders/${orderId}`);
+  }
+
+  addOrderLineItem(orderId: number, request: { productSku: string; productName: string; quantity: number; unit: string; deliveryDate?: string }): Observable<Order> {
+    return this.http.post<Order>(`${environment.apiUrl}/orders/${orderId}/line-items`, request);
+  }
+
+  updateOrderLineItem(orderId: number, lineItemId: number, request: { productSku: string; productName: string; quantity: number; unit: string; deliveryDate?: string }): Observable<Order> {
+    return this.http.put<Order>(`${environment.apiUrl}/orders/${orderId}/line-items/${lineItemId}`, request);
+  }
+
+  deleteOrderLineItem(orderId: number, lineItemId: number): Observable<Order> {
+    return this.http.delete<Order>(`${environment.apiUrl}/orders/${orderId}/line-items/${lineItemId}`);
   }
 }

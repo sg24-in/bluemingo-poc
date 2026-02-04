@@ -95,7 +95,16 @@
       "Bash(D:repositoriesbluemingo-pocbackendgradlew.bat -p D:repositoriesbluemingo-pocbackend test)",
       "WebSearch",
       "Bash(cmd /c \"gradlew.bat bootRun --args=--spring.profiles.active=demo\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(move:*)",
+      "Bash(copy NUL \"D:\\\\repositories\\\\bluemingo-poc\\\\backend\\\\src\\\\main\\\\resources\\\\static\\\\favicon.ico\")",
+      "Bash(./gradlew compileJava:*)",
+      "Bash(gradlew.bat compileJava:*)",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat compileJava\")",
+      "Bash(cmd /c \"netstat -ano | findstr :4200\")",
+      "Bash(cmd /c \"netstat -ano | findstr :4200 | findstr LISTENING\")",
+      "Bash(cmd /c \"netstat -ano | findstr 4200\")",
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -aon ^| findstr :4200 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")"
     ]
   }
 }

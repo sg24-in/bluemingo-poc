@@ -2,7 +2,7 @@
 -- Supports different quantity types with conversion factors
 
 CREATE TABLE IF NOT EXISTS unit_of_measure (
-    unit_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    unit_id BIGSERIAL PRIMARY KEY,
     unit_code VARCHAR(20) NOT NULL UNIQUE,
     unit_name VARCHAR(50) NOT NULL,
     unit_type VARCHAR(20) NOT NULL, -- WEIGHT, LENGTH, VOLUME, PIECES, AREA
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS unit_of_measure (
 );
 
 CREATE TABLE IF NOT EXISTS unit_conversion (
-    conversion_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    conversion_id BIGSERIAL PRIMARY KEY,
     from_unit_code VARCHAR(20) NOT NULL,
     to_unit_code VARCHAR(20) NOT NULL,
     conversion_factor DECIMAL(20,10) NOT NULL,

@@ -53,8 +53,8 @@
   <div class="page-size-selector">
     <label>
       Items per page:
-      <select [value]="size" (change)="onSizeChange($event)">
-        <option *ngFor="let option of pageSizeOptions" [value]="option">
+      <select [(ngModel)]="selectedSize" (ngModelChange)="onSizeSelectChange($event)">
+        <option *ngFor="let option of pageSizeOptions" [ngValue]="option">
           {{ option }}
         </option>
       </select>

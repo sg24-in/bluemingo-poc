@@ -95,7 +95,7 @@ async function recordComprehensiveDemo() {
         console.log('\n🔐 SECTION 1: AUTHENTICATION');
 
         // Login page
-        await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/login`, { waitUntil: 'networkidle' });
         await showCaption(page, '1.1', 'Login Page', 'MES Production Confirmation - Secure user authentication');
         shotNum = await capture(page, screenshotDir, 'login-page', shotNum);
         await page.waitForTimeout(2000);
@@ -131,7 +131,7 @@ async function recordComprehensiveDemo() {
         } catch (e) {}
 
         await page.waitForTimeout(2000);
-        await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         await showCaption(page, '1.5', 'Login Success', 'JWT token stored - Redirected to Dashboard');
         shotNum = await capture(page, screenshotDir, 'login-success', shotNum);
         await page.waitForTimeout(2000);
@@ -166,7 +166,7 @@ async function recordComprehensiveDemo() {
         // ═══════════════════════════════════════════════════════════════
         console.log('\n📋 SECTION 3: ORDERS');
 
-        await page.goto(`${BASE_URL}/orders`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/orders`, { waitUntil: 'networkidle' });
         await showCaption(page, '3.1', 'Orders List', 'All production orders with server-side pagination');
         shotNum = await capture(page, screenshotDir, 'orders-list', shotNum);
         await page.waitForTimeout(2000);
@@ -213,7 +213,7 @@ async function recordComprehensiveDemo() {
         // ═══════════════════════════════════════════════════════════════
         console.log('\n📦 SECTION 4: INVENTORY');
 
-        await page.goto(`${BASE_URL}/inventory`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/inventory`, { waitUntil: 'networkidle' });
         await showCaption(page, '4.1', 'Inventory List', 'All materials with batch tracking and status badges');
         shotNum = await capture(page, screenshotDir, 'inventory-list', shotNum);
         await page.waitForTimeout(2000);
@@ -301,7 +301,7 @@ async function recordComprehensiveDemo() {
         // ═══════════════════════════════════════════════════════════════
         console.log('\n🏷️ SECTION 5: BATCHES');
 
-        await page.goto(`${BASE_URL}/batches`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/batches`, { waitUntil: 'networkidle' });
         await showCaption(page, '5.1', 'Batch Traceability', 'All batches with auto-generated numbers and tracking');
         shotNum = await capture(page, screenshotDir, 'batches-list', shotNum);
         await page.waitForTimeout(2000);
@@ -353,7 +353,7 @@ async function recordComprehensiveDemo() {
         // ═══════════════════════════════════════════════════════════════
         console.log('\n⏸️ SECTION 6: HOLDS');
 
-        await page.goto(`${BASE_URL}/holds`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/holds`, { waitUntil: 'networkidle' });
         await showCaption(page, '6.1', 'Hold Management', 'Active holds on materials, equipment, operations');
         shotNum = await capture(page, screenshotDir, 'holds-list', shotNum);
         await page.waitForTimeout(2000);
@@ -413,7 +413,7 @@ async function recordComprehensiveDemo() {
         // ═══════════════════════════════════════════════════════════════
         console.log('\n⚙️ SECTION 7: EQUIPMENT');
 
-        await page.goto(`${BASE_URL}/equipment`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/equipment`, { waitUntil: 'networkidle' });
         await showCaption(page, '7.1', 'Equipment Management', 'Production equipment with status tracking');
         shotNum = await capture(page, screenshotDir, 'equipment-list', shotNum);
         await page.waitForTimeout(2000);
@@ -467,7 +467,7 @@ async function recordComprehensiveDemo() {
         // ═══════════════════════════════════════════════════════════════
         console.log('\n✅ SECTION 8: QUALITY');
 
-        await page.goto(`${BASE_URL}/quality`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/quality`, { waitUntil: 'networkidle' });
         await showCaption(page, '8.1', 'Quality Inspection', 'Processes pending quality approval');
         shotNum = await capture(page, screenshotDir, 'quality-pending-list', shotNum);
         await page.waitForTimeout(2000);
@@ -507,7 +507,7 @@ async function recordComprehensiveDemo() {
         // ═══════════════════════════════════════════════════════════════
         console.log('\n🚪 SECTION 9: LOGOUT');
 
-        await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         await showCaption(page, '9.1', 'Session Complete', 'Click Logout to end session securely');
         shotNum = await capture(page, screenshotDir, 'before-logout', shotNum);
         await page.waitForTimeout(2000);

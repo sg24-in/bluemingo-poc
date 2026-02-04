@@ -21,20 +21,28 @@ public class PatchRunner implements ApplicationRunner {
         log.info("Starting Database Patch Application...");
         log.info("=================================================");
 
-        try {
-            // Initialize the patches table
-            patchService.initializePatchTable();
+        // Initialize the patches table
+        patchService.initializePatchTable();
 
-            // Apply pending patches
-            patchService.applyPendingPatches();
+        // Apply pending patches - throws exception if any fail
+        PatchService.PatchResult result = patchService.applyPendingPatches();
 
+        log.info("=================================================");
+        if (result.isSuccess()) {
+            log.info("Database Patch Application Completed Successfully.");
+            log.info("Applied: {} patches", result.getSuccessCount());
+        } else {
+            log.error("DATABASE PATCH APPLICATION FAILED!");
+            log.error("Success: {}, Failed: {}", result.getSuccessCount(), result.getFailCount());
+            log.error("Failed patch: #{} - {}", result.getFailedPatchNumber(), result.getFailedPatchName());
+            log.error("Error: {}", result.getErrorMessage());
             log.info("=================================================");
-            log.info("Database Patch Application Completed.");
-            log.info("=================================================");
 
-        } catch (Exception e) {
-            log.error("Error during patch application: {}", e.getMessage(), e);
-            // Don't throw - let application continue
+            throw new RuntimeException(
+                    "Database patch application failed at patch #" + result.getFailedPatchNumber() +
+                    " (" + result.getFailedPatchName() + "): " + result.getErrorMessage() +
+                    "\n\nFix the patch file and restart the application.");
         }
+        log.info("=================================================");
     }
 }

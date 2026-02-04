@@ -10,9 +10,16 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
-  email: string;
-  fullName: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
+  user: {
+    userId: number;
+    email: string;
+    name: string;
+    employeeId: string;
+  };
 }
 
 export interface User {
@@ -39,10 +46,10 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, credentials)
       .pipe(
         tap(response => {
-          this.setToken(response.token);
+          this.setToken(response.accessToken);
           const user: User = {
-            email: response.email,
-            fullName: response.fullName
+            email: response.user.email,
+            fullName: response.user.name
           };
           this.setUser(user);
           this.currentUserSubject.next(user);

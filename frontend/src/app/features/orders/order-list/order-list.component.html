@@ -1,8 +1,9 @@
-<app-header></app-header>
-
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title">Production Orders</h1>
+    <div class="page-title-section">
+      <h1 class="page-title">Production Orders</h1>
+      <button class="btn btn-primary" (click)="createOrder()">+ New Order</button>
+    </div>
     <div class="header-controls">
       <div class="search-group">
         <input
@@ -17,10 +18,10 @@
         <label>Filter by status:</label>
         <select (change)="onFilterChange($any($event.target).value)" [value]="filterStatus || 'all'">
           <option value="all">All</option>
-          <option value="PLANNED">Planned</option>
-          <option value="RELEASED">Released</option>
+          <option value="CREATED">Created</option>
           <option value="IN_PROGRESS">In Progress</option>
           <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
         </select>
       </div>
     </div>
@@ -45,15 +46,18 @@
       </thead>
       <tbody>
         <tr *ngFor="let order of orders">
-          <td>{{ order.orderNumber }}</td>
+          <td>{{ order.orderNumber || 'ORD-' + order.orderId }}</td>
           <td>{{ order.customerName || 'N/A' }}</td>
           <td>{{ getProductInfo(order) }}</td>
           <td>{{ getTotalQuantity(order) }}</td>
           <td><app-status-badge [status]="order.status"></app-status-badge></td>
           <td>{{ order.orderDate | date:'mediumDate' }}</td>
-          <td>
+          <td class="actions">
             <button class="btn btn-primary btn-sm" (click)="viewOrder(order.orderId)">
-              View Details
+              View
+            </button>
+            <button class="btn btn-secondary btn-sm" (click)="editOrder(order.orderId)">
+              Edit
             </button>
           </td>
         </tr>

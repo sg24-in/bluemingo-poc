@@ -1,3 +1,14 @@
+.page-title-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.page-title-section .btn {
+  white-space: nowrap;
+}
+
 .header-controls {
   display: flex;
   align-items: center;
@@ -56,4 +67,21 @@
   text-align: center;
   color: #888;
   padding: 40px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
 }

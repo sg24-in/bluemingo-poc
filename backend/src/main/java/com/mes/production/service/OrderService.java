@@ -3,19 +3,27 @@ package com.mes.production.service;
 import com.mes.production.dto.OrderDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.dto.order.CreateOrderRequest;
+import com.mes.production.dto.order.LineItemRequest;
+import com.mes.production.dto.order.UpdateOrderRequest;
+import com.mes.production.entity.AuditTrail;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.Order;
 import com.mes.production.entity.OrderLineItem;
 import com.mes.production.entity.Process;
+import com.mes.production.repository.AuditTrailRepository;
 import com.mes.production.repository.OperationRepository;
+import com.mes.production.repository.OrderLineItemRepository;
 import com.mes.production.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +35,9 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderLineItemRepository orderLineItemRepository;
     private final OperationRepository operationRepository;
+    private final AuditTrailRepository auditTrailRepository;
 
     /**
      * Get all orders with ready operations (available for production confirmation)
@@ -123,6 +133,7 @@ public class OrderService {
 
         return OrderDTO.builder()
                 .orderId(order.getOrderId())
+                .orderNumber(order.getOrderNumber())
                 .customerId(order.getCustomerId())
                 .customerName(order.getCustomerName())
                 .orderDate(order.getOrderDate())
@@ -189,5 +200,265 @@ public class OrderService {
                 .currentProcess(currentProcess)
                 .currentOperation(currentOperation)
                 .build();
+    }
+
+    // ==================== CRUD OPERATIONS ====================
+
+    /**
+     * Create a new order with line items
+     */
+    @Transactional
+    public OrderDTO createOrder(CreateOrderRequest request) {
+        log.info("Creating new order for customer: {}", request.getCustomerId());
+
+        String currentUser = getCurrentUsername();
+
+        // Generate order number if not provided
+        String orderNumber = request.getOrderNumber();
+        if (orderNumber == null || orderNumber.isBlank()) {
+            orderNumber = generateOrderNumber();
+        } else if (orderRepository.existsByOrderNumber(orderNumber)) {
+            throw new RuntimeException("Order number already exists: " + orderNumber);
+        }
+
+        // Create order
+        Order order = Order.builder()
+                .orderNumber(orderNumber)
+                .customerId(request.getCustomerId())
+                .customerName(request.getCustomerName())
+                .orderDate(request.getOrderDate())
+                .status("CREATED")
+                .createdBy(currentUser)
+                .build();
+
+        Order savedOrder = orderRepository.save(order);
+
+        // Create line items
+        List<OrderLineItem> lineItems = new ArrayList<>();
+        for (CreateOrderRequest.LineItemRequest lineReq : request.getLineItems()) {
+            OrderLineItem lineItem = OrderLineItem.builder()
+                    .order(savedOrder)
+                    .productSku(lineReq.getProductSku())
+                    .productName(lineReq.getProductName())
+                    .quantity(lineReq.getQuantity())
+                    .unit(lineReq.getUnit())
+                    .deliveryDate(lineReq.getDeliveryDate())
+                    .status("CREATED")
+                    .createdBy(currentUser)
+                    .build();
+            lineItems.add(orderLineItemRepository.save(lineItem));
+        }
+
+        savedOrder.setLineItems(lineItems);
+
+        // Audit
+        auditOrderAction(savedOrder.getOrderId(), AuditTrail.ACTION_CREATE, null, savedOrder.getOrderNumber(), currentUser);
+
+        log.info("Created order: {} with {} line items by {}", savedOrder.getOrderNumber(), lineItems.size(), currentUser);
+        return convertToDTO(savedOrder);
+    }
+
+    /**
+     * Update an existing order (basic info only, not line items)
+     */
+    @Transactional
+    public OrderDTO updateOrder(Long orderId, UpdateOrderRequest request) {
+        log.info("Updating order: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        String currentUser = getCurrentUsername();
+        String oldValues = String.format("customer=%s, status=%s", order.getCustomerId(), order.getStatus());
+
+        // Update fields
+        order.setCustomerId(request.getCustomerId());
+        order.setCustomerName(request.getCustomerName());
+        if (request.getOrderDate() != null) {
+            order.setOrderDate(request.getOrderDate());
+        }
+        if (request.getStatus() != null) {
+            order.setStatus(request.getStatus());
+        }
+        order.setUpdatedBy(currentUser);
+
+        Order saved = orderRepository.save(order);
+
+        String newValues = String.format("customer=%s, status=%s", saved.getCustomerId(), saved.getStatus());
+        auditOrderAction(saved.getOrderId(), AuditTrail.ACTION_UPDATE, oldValues, newValues, currentUser);
+
+        log.info("Updated order: {} by {}", saved.getOrderNumber(), currentUser);
+        return convertToDTO(saved);
+    }
+
+    /**
+     * Delete an order (soft delete - set status to CANCELLED)
+     */
+    @Transactional
+    public void deleteOrder(Long orderId) {
+        log.info("Deleting order: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        // Check if order can be deleted (only CREATED status)
+        if (!"CREATED".equals(order.getStatus())) {
+            throw new RuntimeException("Cannot delete order with status: " + order.getStatus() + ". Only CREATED orders can be deleted.");
+        }
+
+        String currentUser = getCurrentUsername();
+
+        order.setStatus("CANCELLED");
+        order.setUpdatedBy(currentUser);
+        orderRepository.save(order);
+
+        auditOrderAction(order.getOrderId(), AuditTrail.ACTION_DELETE, "CREATED", "CANCELLED", currentUser);
+
+        log.info("Deleted (cancelled) order: {} by {}", order.getOrderNumber(), currentUser);
+    }
+
+    /**
+     * Add a line item to an existing order
+     */
+    @Transactional
+    public OrderDTO addLineItem(Long orderId, LineItemRequest request) {
+        log.info("Adding line item to order: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        // Check if order can be modified
+        if (!"CREATED".equals(order.getStatus())) {
+            throw new RuntimeException("Cannot add line item to order with status: " + order.getStatus());
+        }
+
+        String currentUser = getCurrentUsername();
+
+        OrderLineItem lineItem = OrderLineItem.builder()
+                .order(order)
+                .productSku(request.getProductSku())
+                .productName(request.getProductName())
+                .quantity(request.getQuantity())
+                .unit(request.getUnit())
+                .deliveryDate(request.getDeliveryDate())
+                .status("CREATED")
+                .createdBy(currentUser)
+                .build();
+
+        orderLineItemRepository.save(lineItem);
+
+        auditOrderAction(order.getOrderId(), AuditTrail.ACTION_UPDATE,
+                "line_items_count=" + order.getLineItems().size(),
+                "added_line_item=" + request.getProductSku(), currentUser);
+
+        log.info("Added line item {} to order: {} by {}", request.getProductSku(), order.getOrderNumber(), currentUser);
+        return getOrderById(orderId);
+    }
+
+    /**
+     * Update a line item
+     */
+    @Transactional
+    public OrderDTO updateLineItem(Long orderId, Long lineItemId, LineItemRequest request) {
+        log.info("Updating line item {} in order: {}", lineItemId, orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        OrderLineItem lineItem = orderLineItemRepository.findById(lineItemId)
+                .orElseThrow(() -> new RuntimeException("Line item not found: " + lineItemId));
+
+        // Verify line item belongs to order
+        if (!lineItem.getOrder().getOrderId().equals(orderId)) {
+            throw new RuntimeException("Line item does not belong to order");
+        }
+
+        // Check if line item can be modified
+        if (!"CREATED".equals(lineItem.getStatus())) {
+            throw new RuntimeException("Cannot update line item with status: " + lineItem.getStatus());
+        }
+
+        String currentUser = getCurrentUsername();
+
+        lineItem.setProductSku(request.getProductSku());
+        lineItem.setProductName(request.getProductName());
+        lineItem.setQuantity(request.getQuantity());
+        lineItem.setUnit(request.getUnit());
+        lineItem.setDeliveryDate(request.getDeliveryDate());
+        lineItem.setUpdatedBy(currentUser);
+
+        orderLineItemRepository.save(lineItem);
+
+        log.info("Updated line item {} in order: {} by {}", lineItemId, order.getOrderNumber(), currentUser);
+        return getOrderById(orderId);
+    }
+
+    /**
+     * Delete a line item from an order
+     */
+    @Transactional
+    public OrderDTO deleteLineItem(Long orderId, Long lineItemId) {
+        log.info("Deleting line item {} from order: {}", lineItemId, orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        OrderLineItem lineItem = orderLineItemRepository.findById(lineItemId)
+                .orElseThrow(() -> new RuntimeException("Line item not found: " + lineItemId));
+
+        // Verify line item belongs to order
+        if (!lineItem.getOrder().getOrderId().equals(orderId)) {
+            throw new RuntimeException("Line item does not belong to order");
+        }
+
+        // Check if line item can be deleted
+        if (!"CREATED".equals(lineItem.getStatus())) {
+            throw new RuntimeException("Cannot delete line item with status: " + lineItem.getStatus());
+        }
+
+        // Check if this is the last line item
+        if (order.getLineItems().size() <= 1) {
+            throw new RuntimeException("Cannot delete the last line item. Delete the order instead.");
+        }
+
+        String currentUser = getCurrentUsername();
+
+        orderLineItemRepository.delete(lineItem);
+
+        auditOrderAction(order.getOrderId(), AuditTrail.ACTION_UPDATE,
+                "deleted_line_item=" + lineItem.getProductSku(),
+                "remaining_items=" + (order.getLineItems().size() - 1), currentUser);
+
+        log.info("Deleted line item {} from order: {} by {}", lineItemId, order.getOrderNumber(), currentUser);
+        return getOrderById(orderId);
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    private String generateOrderNumber() {
+        Integer maxSequence = orderRepository.findMaxOrderNumberSequence();
+        int nextSequence = (maxSequence != null ? maxSequence : 0) + 1;
+        return String.format("ORD-%05d", nextSequence);
+    }
+
+    private void auditOrderAction(Long orderId, String action, String oldValue, String newValue, String user) {
+        AuditTrail audit = AuditTrail.builder()
+                .entityType(AuditTrail.ENTITY_ORDER)
+                .entityId(orderId)
+                .action(action)
+                .oldValue(oldValue)
+                .newValue(newValue)
+                .changedBy(user)
+                .timestamp(LocalDateTime.now())
+                .build();
+        auditTrailRepository.save(audit);
+    }
+
+    private String getCurrentUsername() {
+        try {
+            return SecurityContextHolder.getContext().getAuthentication().getName();
+        } catch (Exception e) {
+            return "system";
+        }
     }
 }

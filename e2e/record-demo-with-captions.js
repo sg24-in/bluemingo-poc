@@ -31,7 +31,7 @@ const DEMO_SCENES = [
         caption: 'MES Production Confirmation System',
         subtext: 'Manufacturing Execution System for tracking production workflows',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/login`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -64,7 +64,7 @@ const DEMO_SCENES = [
                 }, data);
             } catch (e) {}
             await page.waitForTimeout(2000);
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -75,7 +75,7 @@ const DEMO_SCENES = [
         caption: 'Dashboard Overview',
         subtext: 'Key metrics: Orders, Operations Ready, Active Holds, Confirmations',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },
@@ -96,7 +96,7 @@ const DEMO_SCENES = [
         caption: 'Orders Management',
         subtext: 'View and manage production orders with server-side pagination',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/orders`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/orders`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -133,7 +133,7 @@ const DEMO_SCENES = [
         caption: 'Production Confirmation',
         subtext: 'Core workflow for recording completed production work',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/production/confirm`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/production/confirm`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -196,7 +196,7 @@ const DEMO_SCENES = [
         caption: 'Inventory Management',
         subtext: 'Track materials: Available, Blocked, On-Hold, Scrapped',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/inventory`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/inventory`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -238,7 +238,7 @@ const DEMO_SCENES = [
         caption: 'Batch Traceability',
         subtext: 'Track batches with unique auto-generated numbers',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/batches`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/batches`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -262,7 +262,7 @@ const DEMO_SCENES = [
         caption: 'Hold Management',
         subtext: 'Apply and release holds on materials, equipment, operations',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/holds`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/holds`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -290,7 +290,7 @@ const DEMO_SCENES = [
         caption: 'Equipment Management',
         subtext: 'Track equipment: Available, In-Use, Maintenance, On-Hold',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/equipment`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/equipment`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -318,7 +318,7 @@ const DEMO_SCENES = [
         caption: 'Quality Inspection',
         subtext: 'Accept or reject production pending quality approval',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/quality`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/quality`, { waitUntil: 'networkidle' });
         },
         duration: 3000
     },
@@ -329,7 +329,7 @@ const DEMO_SCENES = [
         caption: 'Test Coverage Summary',
         subtext: '499 Backend + 257 Frontend + 67 E2E Tests = 100% Passing',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },

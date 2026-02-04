@@ -1,0 +1,25 @@
+<app-header></app-header>
+<div class="admin-container">
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <h3>Administration</h3>
+    </div>
+    <nav class="sidebar-nav">
+      <a *ngFor="let item of menuItems"
+         [routerLink]="item.path"
+         routerLinkActive="active"
+         class="sidebar-link">
+        <i class="bi" [ngClass]="'bi-' + item.icon"></i>
+        <span class="link-text">{{ item.label }}</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a routerLink="/dashboard" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </aside>
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

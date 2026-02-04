@@ -1,0 +1,44 @@
+# Tomcat Deployment Configuration
+# Copy this to Tomcat conf folder or set SPRING_PROFILES_ACTIVE=tomcat
+
+server:
+  port: 8080
+  servlet:
+    context-path: /mes-production
+
+spring:
+  application:
+    name: mes-production-confirmation
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mes_production
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Application specific configuration
+app:
+  jwt:
+    secret: TUVTX1Byb2R1Y3Rpb25fQ29uZmlybWF0aW9uX0pXVF9TZWNyZXRfS2V5XzIwMjZfMjU2X0JpdHMh
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+
+  patch:
+    location: classpath:patches/
+    enabled: true
+
+# Logging - reduced for production
+logging:
+  level:
+    com.mes.production: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN

@@ -6,13 +6,17 @@ import { HeaderComponent } from './components/header/header.component';
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from './components/status-badge/status-badge.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
+import { MainLayoutComponent } from './components/main-layout/main-layout.component';
+import { AdminLayoutComponent } from './components/admin-layout/admin-layout.component';
 
 @NgModule({
   declarations: [
     HeaderComponent,
     LoadingSpinnerComponent,
     StatusBadgeComponent,
-    PaginationComponent
+    PaginationComponent,
+    MainLayoutComponent,
+    AdminLayoutComponent
   ],
   imports: [
     CommonModule,
@@ -28,7 +32,9 @@ import { PaginationComponent } from './components/pagination/pagination.componen
     HeaderComponent,
     LoadingSpinnerComponent,
     StatusBadgeComponent,
-    PaginationComponent
+    PaginationComponent,
+    MainLayoutComponent,
+    AdminLayoutComponent
   ]
 })
 export class SharedModule { }

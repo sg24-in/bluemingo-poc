@@ -1,3 +1,10 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 .order-header {
   display: flex;
   justify-content: space-between;
@@ -44,10 +51,22 @@
   margin: 0;
 }
 
+.quantity-info {
+  text-align: right;
+}
+
 .quantity-info .quantity {
+  display: block;
   font-size: 20px;
   font-weight: 500;
   color: #1976d2;
+}
+
+.quantity-info .delivery-date {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
 }
 
 .process-section {

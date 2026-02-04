@@ -41,6 +41,10 @@ export class OrderDetailComponent implements OnInit {
     this.router.navigate(['/orders']);
   }
 
+  editOrder(): void {
+    this.router.navigate(['/orders', this.orderId, 'edit']);
+  }
+
   startProduction(operationId: number): void {
     this.router.navigate(['/production/confirm', operationId]);
   }

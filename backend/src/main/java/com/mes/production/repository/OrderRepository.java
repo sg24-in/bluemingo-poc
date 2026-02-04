@@ -57,4 +57,11 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     Long countByStatusIn(@Param("statuses") List<String> statuses);
 
     Long countByStatus(String status);
+
+    boolean existsByOrderNumber(String orderNumber);
+
+    java.util.Optional<Order> findByOrderNumber(String orderNumber);
+
+    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(o.orderNumber, 5) AS integer)), 0) FROM Order o WHERE o.orderNumber LIKE 'ORD-%'")
+    Integer findMaxOrderNumberSequence();
 }

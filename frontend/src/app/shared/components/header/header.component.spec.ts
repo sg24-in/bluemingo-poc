@@ -101,4 +101,24 @@ describe('HeaderComponent', () => {
     fixture.detectChanges();
     expect(component.currentUser?.fullName).toBe('Operator User');
   });
+
+  describe('Admin Menu', () => {
+    it('should have admin menu hidden by default', () => {
+      expect(component.showAdminMenu).toBeFalse();
+    });
+
+    it('should toggle admin menu visibility', () => {
+      expect(component.showAdminMenu).toBeFalse();
+      component.toggleAdminMenu();
+      expect(component.showAdminMenu).toBeTrue();
+      component.toggleAdminMenu();
+      expect(component.showAdminMenu).toBeFalse();
+    });
+
+    it('should close admin menu', () => {
+      component.showAdminMenu = true;
+      component.closeAdminMenu();
+      expect(component.showAdminMenu).toBeFalse();
+    });
+  });
 });

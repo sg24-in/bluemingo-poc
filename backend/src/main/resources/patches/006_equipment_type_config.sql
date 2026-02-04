@@ -2,7 +2,7 @@
 -- Defines validation rules and parameters for different equipment types
 
 CREATE TABLE IF NOT EXISTS equipment_type_config (
-    config_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_id BIGSERIAL PRIMARY KEY,
     equipment_type VARCHAR(50) NOT NULL UNIQUE,
     display_name VARCHAR(100) NOT NULL,
     description VARCHAR(500),

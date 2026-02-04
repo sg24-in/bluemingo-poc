@@ -43,16 +43,34 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                // Auth endpoints
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/refresh",
                                 "/api/public/**",
+                                // Static resources (Angular frontend)
+                                "/",
+                                "/index.html",
+                                "/*.js",
+                                "/*.css",
+                                "/*.ico",
+                                "/*.png",
+                                "/*.svg",
+                                "/*.woff",
+                                "/*.woff2",
+                                "/*.ttf",
+                                "/assets/**",
+                                // H2 Console (demo mode)
+                                "/h2-console/**",
+                                // Swagger/OpenAPI
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
+                // Allow H2 console frames
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

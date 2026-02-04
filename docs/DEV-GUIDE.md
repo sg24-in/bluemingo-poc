@@ -28,7 +28,7 @@ This guide covers everything you need to set up, develop, test, and deploy the M
 | Java JDK | 17+ | Backend runtime |
 | Node.js | 18+ | Frontend runtime |
 | Gradle | 8.5+ | Backend build tool |
-| PostgreSQL | 14+ | Production database (optional for demo mode) |
+| PostgreSQL | 14+ | Database (all environments) |
 | Git | 2.x | Version control |
 
 ### Optional Tools
@@ -87,14 +87,23 @@ npx playwright install chromium
 
 ## Running the Application
 
-### Demo Mode (Recommended for Development)
+### Database Setup
 
-Demo mode uses an H2 in-memory database with pre-seeded data. No PostgreSQL required.
+**Create PostgreSQL Databases:**
+```bash
+# Create databases (one-time setup)
+psql -U postgres -c "CREATE DATABASE mes_production"
+psql -U postgres -c "CREATE DATABASE mes_test"
+```
+
+### Development Mode (PostgreSQL)
 
 **Terminal 1 - Backend:**
 ```bash
 cd backend
-./gradlew bootRun --args="--spring.profiles.active=demo"
+./gradlew bootRun
+# Uses mes_production database
+# Patches auto-apply on startup
 ```
 
 **Terminal 2 - Frontend:**
@@ -106,42 +115,40 @@ npm start
 **Access Points:**
 - Frontend: http://localhost:4200
 - Backend API: http://localhost:8080
-- H2 Console: http://localhost:8080/h2-console
-  - JDBC URL: `jdbc:h2:mem:mes_demo`
-  - Username: `sa`
-  - Password: (empty)
 
-### Production Mode (PostgreSQL)
+### Test Mode
 
-**1. Create PostgreSQL Database:**
-```sql
-CREATE DATABASE mes_production;
-CREATE USER mes_user WITH PASSWORD 'mes_password';
-GRANT ALL PRIVILEGES ON DATABASE mes_production TO mes_user;
-```
-
-**2. Configure Backend:**
-Edit `backend/src/main/resources/application.yml`:
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/mes_production
-    username: mes_user
-    password: mes_password
-```
-
-**3. Start Backend:**
+**Start with Test Profile:**
 ```bash
 cd backend
-./gradlew bootRun
+./gradlew bootRun -Dspring.profiles.active=test
+# Uses mes_test database
+# Schema is reset and rebuilt from patches
+```
+
+**Run Tests:**
+```bash
+# All tests (Windows)
+./run-tests.bat
+
+# All tests (Unix)
+./run-tests.sh
+
+# Backend only
+./run-tests.bat --backend
+
+# Frontend only
+./run-tests.bat --frontend
+
+# E2E only
+./run-tests.bat --e2e
 ```
 
 ### Login Credentials
 
 | Environment | Email | Password |
 |-------------|-------|----------|
-| Demo | admin@mes.com | admin123 |
-| Production | (configure in database) | |
+| All | admin@mes.com | admin123 |
 
 ---
 
@@ -257,10 +264,39 @@ this.api.post<ResponseDTO>('/my-endpoint', payload).subscribe(response => {
 
 ## Testing
 
-### Running E2E Tests
+### Full Test Suite
+
+The project uses PostgreSQL (`mes_test` database) for all testing. Schema is reset before each test run.
 
 ```bash
-# Ensure backend and frontend are running first
+# Run all tests (Windows)
+./run-tests.bat
+
+# Run all tests (Unix)
+./run-tests.sh
+
+# Options:
+./run-tests.bat --backend    # Backend tests only
+./run-tests.bat --frontend   # Frontend tests only
+./run-tests.bat --e2e        # E2E tests only (includes frontend build)
+```
+
+### Backend Tests (PostgreSQL)
+
+```bash
+cd backend
+
+# Run with test profile (resets schema)
+./gradlew test -Dspring.profiles.active=test
+
+# Run with coverage report
+./gradlew test jacocoTestReport -Dspring.profiles.active=test
+```
+
+### E2E Tests
+
+```bash
+# Ensure servers are running first
 
 # Run all tests (read-only, no submissions)
 node e2e/run-all-tests.js
@@ -282,6 +318,7 @@ node e2e/record-user-journey.js
 
 - **Screenshots:** `e2e/output/screenshots/{timestamp}/`
 - **Videos:** `e2e/output/videos/{timestamp}/`
+- **JaCoCo Coverage:** `backend/build/reports/jacoco/index.html`
 
 ### Adding New E2E Tests
 
@@ -567,11 +604,19 @@ Order (1) ─────> (N) OrderLineItem
 | operators | Personnel |
 | hold_records | Active/released holds |
 
-### Demo Data
+### Schema Management
 
-Demo mode loads seed data from:
-- Schema: `backend/src/main/resources/demo/schema.sql`
-- Data: `backend/src/main/resources/demo/data.sql`
+All schema changes are managed via SQL patches:
+- Location: `backend/src/main/resources/patches/`
+- Naming: `NNN_description.sql` (e.g., `001_initial_schema.sql`)
+- Auto-applied on startup by PatchService
+- Test mode resets schema (DROP/CREATE public) before patches
+
+### Seed Data
+
+Seed data is included in patches:
+- `002_seed_data.sql` - Initial master data and sample data
+- `004_additional_seed_data.sql` - Additional sample data
 
 ---
 
@@ -777,28 +822,39 @@ logging:
 ### Useful Commands
 
 ```bash
+# Full Test Suite
+./run-tests.bat                                           # Run all tests (Windows)
+./run-tests.sh                                            # Run all tests (Unix)
+./run-tests.bat --backend                                 # Backend tests only
+./run-tests.bat --frontend                                # Frontend tests only
+./run-tests.bat --e2e                                     # E2E tests only
+
 # Backend
-./gradlew bootRun --args="--spring.profiles.active=demo"  # Start in demo mode
-./gradlew bootRun                                          # Start in production mode (requires PostgreSQL)
-./gradlew clean build                                      # Build
-./gradlew test                                             # Run tests
-./gradlew test jacocoTestReport                           # Run tests with coverage report
+./gradlew bootRun                                         # Start (production database)
+./gradlew bootRun -Dspring.profiles.active=test          # Start (test database, schema reset)
+./gradlew clean build                                     # Build
+./gradlew test -Dspring.profiles.active=test             # Run tests
+./gradlew test jacocoTestReport -Dspring.profiles.active=test  # Tests with coverage
 
 # Frontend
-npm start                                              # Start dev server
-npm run build                                          # Production build
-npm test                                               # Run tests
-npm test -- --code-coverage                           # Run tests with coverage
+npm start                                                 # Start dev server
+npm run build                                             # Production build
+npm test                                                  # Run tests
+npm test -- --code-coverage                              # Tests with coverage
+
+# Frontend Integration
+./gradlew copyFrontendToStatic                           # Copy build to Spring Boot static
+./gradlew integrateFrontend                              # Build frontend and copy
 
 # E2E Tests
-node e2e/run-all-tests.js                             # Run all tests
-node e2e/run-all-tests.js --submit --video            # Full test with video
-node e2e/record-user-journey.js                       # Record user journey
+node e2e/run-all-tests.js                                # Run all tests
+node e2e/run-all-tests.js --submit --video               # Full test with video
+node e2e/record-user-journey.js                          # Record user journey
 
 # Demo Video Creation
-node e2e/create-final-demo.js                         # Create final demo with voiceover (recommended)
-node e2e/record-demo-video.js                         # Record video only (no audio)
-node e2e/generate-voiceover.js                        # Generate voiceover only (no video)
+node e2e/create-final-demo.js                            # Create final demo with voiceover
+node e2e/record-demo-video.js                            # Record video only
+node e2e/generate-voiceover.js                           # Generate voiceover only
 ```
 
 ---
@@ -991,7 +1047,6 @@ Page<Equipment> findByFilters(...);
 |---------|-----|
 | Frontend | http://localhost:4200 |
 | Backend API | http://localhost:8080 |
-| H2 Console (demo) | http://localhost:8080/h2-console |
 
 ### Credentials
 

@@ -2,7 +2,7 @@
 -- Tracks inventory in different physical forms with form-specific handling
 
 CREATE TABLE IF NOT EXISTS inventory_form_config (
-    form_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    form_id BIGSERIAL PRIMARY KEY,
     form_code VARCHAR(20) NOT NULL UNIQUE,
     form_name VARCHAR(50) NOT NULL,
     description VARCHAR(200),

@@ -29,20 +29,37 @@
 ### Backend
 - **Framework:** Spring Boot 3.2
 - **Language:** Java 17
-- **Database:** PostgreSQL 14+ (production), H2 (demo mode)
+- **Database:** PostgreSQL 14+ (all environments)
 - **ORM:** Spring Data JPA / Hibernate
 - **Security:** JWT Token Authentication (JJWT 0.12.3)
 - **Build:** Gradle 8.5
+- **Schema Management:** SQL Patch System
 
 ### Frontend
 - **Framework:** Angular 17 (Module-based architecture)
+- **Routing:** Hash-based (`useHash: true`) - URLs are `/#/dashboard`, `/#/orders`, etc.
+- **Layouts:** Two layout wrappers for authenticated pages
+  - `MainLayoutComponent` - Main pages (header + content)
+  - `AdminLayoutComponent` - Admin pages (header + sidebar + content)
 - **HTTP:** Angular HttpClient with RxJS 7.8.0
 - **Styling:** Custom CSS
 
+### Frontend Route Structure
+```
+/ → redirect to /dashboard
+/login → Auth module (no layout)
+MainLayoutComponent (with header):
+  /dashboard, /orders, /production, /inventory, /batches, /holds, /equipment
+AdminLayoutComponent (with header + sidebar):
+  /manage/customers, /manage/products, /manage/materials
+```
+
 ### Testing
+- **Backend Tests:** JUnit 5 with Spring Boot Test
+- **Frontend Tests:** Karma/Jasmine
 - **E2E Tests:** Playwright
-- **Test Runner:** Node.js scripts
-- **Video Recording:** Playwright built-in recorder
+- **Test Database:** PostgreSQL `mes_test`
+- **Test Runner:** `run-tests.bat` / `run-tests.sh`
 
 ## Project Structure
 
@@ -63,17 +80,20 @@ bluemingo-poc/
 ├── frontend/
 │   └── src/app/
 │       ├── core/            # Services, Guards, Interceptors
-│       ├── shared/          # Shared components
+│       ├── shared/          # Shared components, layouts (Header, MainLayout, AdminLayout)
 │       └── features/        # Feature modules
 │           ├── auth/
 │           ├── dashboard/
-│           ├── orders/
+│           ├── orders/         # Orders list, detail, form (create/edit)
 │           ├── production/
 │           ├── inventory/
 │           ├── batches/
 │           ├── holds/
 │           ├── equipment/
-│           └── quality/
+│           ├── quality/
+│           ├── customers/      # NEW: Customer CRUD (list, form)
+│           ├── materials/      # NEW: Material CRUD (list, form)
+│           └── products/       # NEW: Product CRUD (list, form)
 ├── e2e/                     # E2E test suite
 │   ├── config/              # Test configuration
 │   ├── tests/               # Feature-based test files
@@ -94,7 +114,10 @@ bluemingo-poc/
 ## Core Entities
 
 1. **User** - Authentication
-2. **Order** - Customer orders with status
+2. **Customer** - Customer master data (NEW)
+3. **Material** - Material master data with types RM/IM/FG/WIP (NEW)
+4. **Product** - Product master data with SKU (NEW)
+5. **Order** - Customer orders with status
 3. **OrderLineItem** - Products within orders
 4. **Process** - Production stages (Melting, Casting, Rolling)
 5. **Operation** - Steps within a process
@@ -186,30 +209,36 @@ AVAILABLE → IN_USE / MAINTENANCE / ON_HOLD
 cd backend
 ./gradlew bootRun
 # Starts on http://localhost:8080
-# Requires PostgreSQL running on localhost:5432
+# Requires PostgreSQL mes_production database
 ```
 
-### Backend (Demo Mode - H2 In-Memory)
+### Backend (Test Mode)
 ```bash
 cd backend
-./gradlew bootRun --args="--spring.profiles.active=demo"
+./gradlew bootRun -Dspring.profiles.active=test
 # Starts on http://localhost:8080
-# Uses H2 in-memory database
+# Uses PostgreSQL mes_test database
+# Schema is reset and rebuilt from patches
 ```
 
-**Demo Mode Features:**
-- Uses H2 in-memory database (no PostgreSQL required)
-- Pre-seeded with rich sample data for screenshots/demos
-- H2 Console: http://localhost:8080/h2-console
-  - JDBC URL: `jdbc:h2:mem:mes_demo`
-  - Username: `sa`, Password: (empty)
-
-### Frontend
+### Frontend Development
 ```bash
 cd frontend
 npm install
 npm start
 # Starts on http://localhost:4200
+```
+
+### Frontend Build & Integration
+```bash
+# Build frontend
+cd frontend && npm run build
+
+# Copy to Spring Boot static folder
+cd backend && ./gradlew copyFrontendToStatic
+
+# Or do both at once
+cd backend && ./gradlew integrateFrontend
 ```
 
 ## POC Credentials
@@ -218,21 +247,69 @@ npm start
 
 ---
 
-## E2E Testing
+## Database Setup
 
-### Running Tests
+### PostgreSQL Databases
+| Database | Purpose | Created By |
+|----------|---------|------------|
+| `mes_production` | Production | Manual |
+| `mes_test` | Testing | Manual or `run-tests.bat` |
+
+### Create Databases
 ```bash
-# Run all tests (read-only mode)
+psql -U postgres -c "CREATE DATABASE mes_production"
+psql -U postgres -c "CREATE DATABASE mes_test"
+```
+
+### Schema Management
+- All schema changes are managed via SQL patches in `backend/src/main/resources/patches/`
+- Patches are numbered (001, 002, etc.) and run automatically on startup
+- Test mode resets schema (DROP/CREATE public) before running patches
+
+---
+
+## Testing
+
+### Full Test Suite
+```bash
+# Run all tests (backend + frontend + E2E)
+./run-tests.bat         # Windows
+./run-tests.sh          # Unix
+
+# Backend tests only
+./run-tests.bat --backend
+
+# Frontend tests only
+./run-tests.bat --frontend
+
+# E2E tests only (includes frontend build)
+./run-tests.bat --e2e
+```
+
+### Backend Tests
+```bash
+cd backend
+./gradlew test -Dspring.profiles.active=test
+# Uses mes_test database
+# Schema reset before each run
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+### E2E Tests
+```bash
+# Ensure servers are running, then:
 node e2e/run-all-tests.js
 
-# Run all tests WITH form submissions
+# With form submissions
 node e2e/run-all-tests.js --submit
 
-# Record video of test run
+# Record video
 node e2e/run-all-tests.js --video
-
-# Record user journey with video
-node e2e/record-user-journey.js
 ```
 
 ### Test Structure
@@ -545,6 +622,12 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 | `GET /api/orders/paged` | **Paginated** orders with sorting/filtering |
 | `GET /api/orders/available` | Orders with READY operations |
 | `GET /api/orders/{id}` | Get order by ID |
+| `POST /api/orders` | **Create** new order with line items |
+| `PUT /api/orders/{id}` | **Update** order basic info |
+| `DELETE /api/orders/{id}` | **Delete** order (soft delete to CANCELLED) |
+| `POST /api/orders/{id}/line-items` | **Add** line item to order |
+| `PUT /api/orders/{id}/line-items/{lineId}` | **Update** line item |
+| `DELETE /api/orders/{id}/line-items/{lineId}` | **Delete** line item |
 
 ### Production
 | Endpoint | Description |
@@ -601,6 +684,39 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 |----------|-------------|
 | `GET /api/master/operators` | Operators list |
 | `GET /api/master/process-parameters` | Dynamic process parameters with min/max config |
+
+### Customers (NEW - Phase 1)
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/customers` | List all customers |
+| `GET /api/customers/paged` | **Paginated** customers with sorting/filtering |
+| `GET /api/customers/active` | Get active customers only |
+| `GET /api/customers/{id}` | Get customer by ID |
+| `POST /api/customers` | Create new customer |
+| `PUT /api/customers/{id}` | Update customer |
+| `DELETE /api/customers/{id}` | Delete customer (soft delete to INACTIVE) |
+
+### Materials (NEW - Phase 1)
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/materials` | List all materials |
+| `GET /api/materials/paged` | **Paginated** materials with sorting/filtering |
+| `GET /api/materials/active` | Get active materials only |
+| `GET /api/materials/{id}` | Get material by ID |
+| `POST /api/materials` | Create new material |
+| `PUT /api/materials/{id}` | Update material |
+| `DELETE /api/materials/{id}` | Delete material (soft delete to INACTIVE) |
+
+### Products (NEW - Phase 1)
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/products` | List all products |
+| `GET /api/products/paged` | **Paginated** products with sorting/filtering |
+| `GET /api/products/active` | Get active products only |
+| `GET /api/products/{id}` | Get product by ID |
+| `POST /api/products` | Create new product |
+| `PUT /api/products/{id}` | Update product |
+| `DELETE /api/products/{id}` | Delete product (soft delete to INACTIVE) |
 
 ### Dashboard
 | Endpoint | Description |

@@ -91,6 +91,14 @@ export class OrderListComponent implements OnInit {
     this.router.navigate(['/orders', orderId]);
   }
 
+  createOrder(): void {
+    this.router.navigate(['/orders/new']);
+  }
+
+  editOrder(orderId: number): void {
+    this.router.navigate(['/orders', orderId, 'edit']);
+  }
+
   getProductInfo(order: Order): string {
     if (order.lineItems && order.lineItems.length > 0) {
       return order.lineItems[0].productName;

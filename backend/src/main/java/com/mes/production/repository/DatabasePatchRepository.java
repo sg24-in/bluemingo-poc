@@ -14,6 +14,8 @@ public interface DatabasePatchRepository extends JpaRepository<DatabasePatch, Lo
 
     boolean existsByPatchNumber(Integer patchNumber);
 
+    boolean existsByPatchNumberAndSuccessTrue(Integer patchNumber);
+
     @Query("SELECT MAX(p.patchNumber) FROM DatabasePatch p WHERE p.success = true")
     Optional<Integer> findLastAppliedPatchNumber();
 

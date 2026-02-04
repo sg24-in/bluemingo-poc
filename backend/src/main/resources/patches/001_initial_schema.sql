@@ -349,19 +349,19 @@ CREATE TABLE IF NOT EXISTS process_parameters_config (
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Indexes
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_order_lines_order_id ON order_line_items(order_id);
-CREATE INDEX idx_order_lines_status ON order_line_items(status);
-CREATE INDEX idx_processes_order_line ON processes(order_line_id);
-CREATE INDEX idx_processes_status ON processes(status);
-CREATE INDEX idx_operations_process ON operations(process_id);
-CREATE INDEX idx_operations_status ON operations(status);
-CREATE INDEX idx_inventory_state ON inventory(state);
-CREATE INDEX idx_inventory_type ON inventory(inventory_type);
-CREATE INDEX idx_inventory_batch ON inventory(batch_id);
-CREATE INDEX idx_batches_status ON batches(status);
-CREATE INDEX idx_batches_material ON batches(material_id);
-CREATE INDEX idx_production_confirm_operation ON production_confirmation(operation_id);
-CREATE INDEX idx_audit_entity ON audit_trail(entity_type, entity_id);
-CREATE INDEX idx_hold_entity ON hold_records(entity_type, entity_id);
+-- Create Indexes (using IF NOT EXISTS for idempotency)
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_order_lines_order_id ON order_line_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_lines_status ON order_line_items(status);
+CREATE INDEX IF NOT EXISTS idx_processes_order_line ON processes(order_line_id);
+CREATE INDEX IF NOT EXISTS idx_processes_status ON processes(status);
+CREATE INDEX IF NOT EXISTS idx_operations_process ON operations(process_id);
+CREATE INDEX IF NOT EXISTS idx_operations_status ON operations(status);
+CREATE INDEX IF NOT EXISTS idx_inventory_state ON inventory(state);
+CREATE INDEX IF NOT EXISTS idx_inventory_type ON inventory(inventory_type);
+CREATE INDEX IF NOT EXISTS idx_inventory_batch ON inventory(batch_id);
+CREATE INDEX IF NOT EXISTS idx_batches_status ON batches(status);
+CREATE INDEX IF NOT EXISTS idx_batches_material ON batches(material_id);
+CREATE INDEX IF NOT EXISTS idx_production_confirm_operation ON production_confirmation(operation_id);
+CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_trail(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_hold_entity ON hold_records(entity_type, entity_id);

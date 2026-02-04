@@ -18,3 +18,9 @@ export * from './production.model';
 export * from './bom.model';
 export * from './pagination.model';
 export * from './batch-allocation.model';
+
+// Master Data
+export * from './customer.model';
+export * from './material.model';
+export * from './product.model';
+export * from './unit-of-measure.model';

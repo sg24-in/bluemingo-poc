@@ -2,19 +2,31 @@
  * Constants and Test Data for MES E2E Tests
  */
 
-// Navigation routes
+// Navigation routes (using hash-based routing)
 const ROUTES = {
-    LOGIN: '/login',
-    DASHBOARD: '/dashboard',
-    ORDERS: '/orders',
-    ORDER_DETAIL: (id) => `/orders/${id}`,
-    PRODUCTION: '/production/confirm',
-    INVENTORY: '/inventory',
-    BATCHES: '/batches',
-    BATCH_DETAIL: (id) => `/batches/${id}`,
-    HOLDS: '/holds',
-    EQUIPMENT: '/equipment',
-    QUALITY: '/quality'
+    LOGIN: '/#/login',
+    DASHBOARD: '/#/dashboard',
+    ORDERS: '/#/orders',
+    ORDER_DETAIL: (id) => `/#/orders/${id}`,
+    ORDER_NEW: '/#/orders/new',
+    ORDER_EDIT: (id) => `/#/orders/${id}/edit`,
+    PRODUCTION: '/#/production/confirm',
+    INVENTORY: '/#/inventory',
+    BATCHES: '/#/batches',
+    BATCH_DETAIL: (id) => `/#/batches/${id}`,
+    HOLDS: '/#/holds',
+    EQUIPMENT: '/#/equipment',
+    QUALITY: '/#/quality',
+    MANAGE: '/#/manage',
+    CUSTOMERS: '/#/manage/customers',
+    CUSTOMER_NEW: '/#/manage/customers/new',
+    CUSTOMER_EDIT: (id) => `/#/manage/customers/${id}/edit`,
+    MATERIALS: '/#/manage/materials',
+    MATERIAL_NEW: '/#/manage/materials/new',
+    MATERIAL_EDIT: (id) => `/#/manage/materials/${id}/edit`,
+    PRODUCTS: '/#/manage/products',
+    PRODUCT_NEW: '/#/manage/products/new',
+    PRODUCT_EDIT: (id) => `/#/manage/products/${id}/edit`
 };
 
 // CSS Selectors

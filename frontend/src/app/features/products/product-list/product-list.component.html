@@ -1,0 +1,128 @@
+<div class="product-list-page">
+  <div class="page-header">
+    <h1>Products</h1>
+    <button class="btn btn-primary" (click)="createProduct()">
+      + New Product
+    </button>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label for="status-filter">Status:</label>
+      <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
+        <option value="all">All</option>
+        <option value="ACTIVE">Active</option>
+        <option value="INACTIVE">Inactive</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="search">Search:</label>
+      <input
+        type="text"
+        id="search"
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange(searchTerm)"
+        placeholder="Search by SKU or name..."
+      />
+    </div>
+  </div>
+
+  <div class="table-container" *ngIf="!loading; else loadingTpl">
+    <table class="data-table" *ngIf="products.length > 0; else emptyTpl">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Name</th>
+          <th>Unit</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of products">
+          <td class="sku-cell">{{ product.sku }}</td>
+          <td>{{ product.productName }}</td>
+          <td>{{ getUnitLabel(product.baseUnit) }}</td>
+          <td class="description-cell">{{ product.description || '-' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="product.status.toLowerCase()">
+              {{ product.status }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="btn btn-sm btn-secondary" (click)="editProduct(product)">
+              Edit
+            </button>
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="openDeleteModal(product)"
+              [disabled]="product.status === 'INACTIVE'"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyTpl>
+      <div class="empty-state">
+        <p>No products found.</p>
+        <button class="btn btn-primary" (click)="createProduct()">Create First Product</button>
+      </div>
+    </ng-template>
+
+    <div class="pagination-controls" *ngIf="products.length > 0">
+      <div class="page-info">
+        Showing {{ page * size + 1 }} - {{ page * size + products.length }} of {{ totalElements }}
+      </div>
+      <div class="page-buttons">
+        <button class="btn btn-sm" (click)="onPageChange(page - 1)" [disabled]="!hasPrevious">
+          Previous
+        </button>
+        <span class="page-number">Page {{ page + 1 }} of {{ totalPages }}</span>
+        <button class="btn btn-sm" (click)="onPageChange(page + 1)" [disabled]="!hasNext">
+          Next
+        </button>
+      </div>
+      <div class="page-size">
+        <label for="page-size">Show:</label>
+        <select id="page-size" [(ngModel)]="size" (change)="onSizeChange(size)">
+          <option [value]="10">10</option>
+          <option [value]="20">20</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Loading products...</div>
+  </ng-template>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete Product</h2>
+        <button class="close-btn" (click)="closeDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete product <strong>{{ productToDelete?.productName }}</strong>?</p>
+        <p class="warning">This will mark the product as inactive.</p>
+        <div class="error" *ngIf="deleteError">{{ deleteError }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDeleteModal()" [disabled]="deleteLoading">
+          Cancel
+        </button>
+        <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="deleteLoading">
+          {{ deleteLoading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

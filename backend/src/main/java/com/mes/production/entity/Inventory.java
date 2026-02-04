@@ -40,6 +40,9 @@ public class Inventory {
     @Column(name = "inventory_type", nullable = false)
     private String inventoryType;
 
+    @Column(name = "inventory_form")
+    private String inventoryForm;
+
     @Column(nullable = false)
     private String state;
 
@@ -54,6 +57,15 @@ public class Inventory {
     private Batch batch;
 
     private String location;
+
+    @Column(name = "current_temperature", precision = 10, scale = 2)
+    private java.math.BigDecimal currentTemperature;
+
+    @Column(name = "moisture_content", precision = 5, scale = 2)
+    private java.math.BigDecimal moistureContent;
+
+    @Column(precision = 10, scale = 4)
+    private java.math.BigDecimal density;
 
     @Column(name = "block_reason", length = 500)
     private String blockReason;

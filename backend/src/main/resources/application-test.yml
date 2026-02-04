@@ -1,0 +1,55 @@
+# =====================================================
+# MES Production Confirmation - Test Profile
+# Uses PostgreSQL mes_test database
+# Schema is dropped and recreated on each test run
+# Run with: ./gradlew test -Dspring.profiles.active=test
+# =====================================================
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mes-production-confirmation-test
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mes_test
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none  # We manage schema via patches
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+# Application specific configuration
+app:
+  jwt:
+    # Base64 encoded secret for test environment
+    secret: TUVTX1Rlc3RfSldUX1NlY3JldF9LZXlfMjAyNl9Gb3JfVGVzdGluZ19Pbmx5IQ==
+    expiration-ms: 86400000  # 24 hours
+    refresh-expiration-ms: 604800000  # 7 days
+
+  patch:
+    location: classpath:patches/
+    enabled: true
+
+  test:
+    reset-schema: true  # Enable schema reset for tests
+
+# Logging - minimal for tests
+logging:
+  level:
+    com.mes.production: WARN
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN

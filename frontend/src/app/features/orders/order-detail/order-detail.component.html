@@ -1,8 +1,7 @@
-<app-header></app-header>
-
 <div class="container">
   <div class="page-header">
     <button class="btn btn-secondary" (click)="goBack()">← Back to Orders</button>
+    <button class="btn btn-primary" (click)="editOrder()" *ngIf="order">Edit Order</button>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -14,12 +13,12 @@
     <div class="card">
       <div class="order-header">
         <div class="order-info">
-          <h2>Order: {{ order.orderNumber }}</h2>
+          <h2>Order: {{ order.orderNumber || 'ORD-' + order.orderId }}</h2>
           <app-status-badge [status]="order.status"></app-status-badge>
         </div>
         <div class="order-meta">
-          <span>Priority: <strong>{{ order.priority }}</strong></span>
-          <span>Due: <strong>{{ order.dueDate | date:'mediumDate' }}</strong></span>
+          <span *ngIf="order.customerName">Customer: <strong>{{ order.customerName }}</strong></span>
+          <span *ngIf="order.orderDate">Order Date: <strong>{{ order.orderDate | date:'mediumDate' }}</strong></span>
         </div>
       </div>
     </div>
@@ -32,7 +31,8 @@
           <p class="product-sku">SKU: {{ lineItem.productSku }}</p>
         </div>
         <div class="quantity-info">
-          <span class="quantity">{{ lineItem.quantity }} {{ lineItem.unitOfMeasure }}</span>
+          <span class="quantity">{{ lineItem.quantity }} {{ lineItem.unit }}</span>
+          <span class="delivery-date" *ngIf="lineItem.deliveryDate">Delivery: {{ lineItem.deliveryDate | date:'mediumDate' }}</span>
         </div>
       </div>
 

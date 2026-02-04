@@ -49,7 +49,7 @@ const DEMO_SCENES = [
         title: 'Introduction',
         voiceover: 'Welcome to the MES Production Confirmation system. This Manufacturing Execution System helps track production workflows, material consumption, and batch traceability.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/login`, { waitUntil: 'networkidle' });
         },
         duration: 5000
     },
@@ -77,7 +77,7 @@ const DEMO_SCENES = [
                 localStorage.setItem('mes_token', loginData.accessToken);
                 localStorage.setItem('mes_user', JSON.stringify(loginData.user));
             }, data);
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },
@@ -86,7 +86,7 @@ const DEMO_SCENES = [
         title: 'Dashboard',
         voiceover: 'The Dashboard shows key production metrics: Total Orders, Operations Ready, Active Holds, and Today\'s Confirmations.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
         },
         duration: 6000
     },
@@ -95,7 +95,7 @@ const DEMO_SCENES = [
         title: 'Orders List',
         voiceover: 'The Orders module displays all customer orders with server-side pagination. Filter by status and search by order number.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/orders`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/orders`, { waitUntil: 'networkidle' });
         },
         duration: 5000
     },
@@ -117,7 +117,7 @@ const DEMO_SCENES = [
         title: 'Production Form',
         voiceover: 'The Production Confirmation form is the core workflow. Operators record completed production work here.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/production/confirm`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/production/confirm`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },
@@ -157,7 +157,7 @@ const DEMO_SCENES = [
         title: 'Inventory List',
         voiceover: 'The Inventory module tracks all materials. Filter by state and type. Block or scrap inventory as needed.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/inventory`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/inventory`, { waitUntil: 'networkidle' });
         },
         duration: 5000
     },
@@ -166,7 +166,7 @@ const DEMO_SCENES = [
         title: 'Batches List',
         voiceover: 'Batches are trackable units of material with unique auto-generated numbers.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/batches`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/batches`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },
@@ -188,7 +188,7 @@ const DEMO_SCENES = [
         title: 'Holds Management',
         voiceover: 'The Holds module manages temporary blocks on materials, equipment, or operations.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/holds`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/holds`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },
@@ -197,7 +197,7 @@ const DEMO_SCENES = [
         title: 'Equipment List',
         voiceover: 'The Equipment module tracks production equipment status: available, in use, maintenance, or on hold.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/equipment`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/equipment`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },
@@ -206,7 +206,7 @@ const DEMO_SCENES = [
         title: 'Quality Inspection',
         voiceover: 'The Quality module shows processes pending inspection. Accept or reject items to control production flow.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/quality`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/quality`, { waitUntil: 'networkidle' });
         },
         duration: 4000
     },
@@ -215,7 +215,7 @@ const DEMO_SCENES = [
         title: 'Conclusion',
         voiceover: 'The system includes 499 backend tests, 257 frontend tests, and 65 E2E tests. All passing at 100 percent. Thank you for watching.',
         action: async (page) => {
-            await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
+            await page.goto(`${BASE_URL}/#/dashboard`, { waitUntil: 'networkidle' });
             const logoutBtn = page.locator('button:has-text("Logout")');
             if (await logoutBtn.count() > 0) {
                 await logoutBtn.click();
