@@ -7,6 +7,8 @@ import { of, throwError } from 'rxjs';
 import { OrderListComponent } from './order-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { PagedResponse } from '../../../shared/models/pagination.model';
+import { Order } from '../../../shared/models';
 
 describe('OrderListComponent', () => {
   let component: OrderListComponent;
@@ -14,23 +16,35 @@ describe('OrderListComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
   let router: Router;
 
-  const mockOrders = [
+  const mockOrders: Order[] = [
     {
       orderId: 1,
       orderNumber: 'ORD-001',
       status: 'IN_PROGRESS',
-      lineItems: [{ productName: 'Steel Rod', quantity: 100 }]
+      lineItems: [{ orderLineId: 1, productSku: 'SKU-001', productName: 'Steel Rod', quantity: 100, unit: 'KG', status: 'ACTIVE' }]
     },
     {
       orderId: 2,
       orderNumber: 'ORD-002',
       status: 'COMPLETED',
-      lineItems: [{ productName: 'Steel Plate', quantity: 50 }]
+      lineItems: [{ orderLineId: 2, productSku: 'SKU-002', productName: 'Steel Plate', quantity: 50, unit: 'KG', status: 'ACTIVE' }]
     }
   ];
 
+  const mockPagedResponse: PagedResponse<Order> = {
+    content: mockOrders,
+    page: 0,
+    size: 20,
+    totalElements: 2,
+    totalPages: 1,
+    hasNext: false,
+    hasPrevious: false,
+    first: true,
+    last: true
+  };
+
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('ApiService', ['getOrders']);
+    const spy = jasmine.createSpyObj('ApiService', ['getOrdersPaged']);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -49,7 +63,7 @@ describe('OrderListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getOrders.and.returnValue(of(mockOrders as any));
+    apiServiceSpy.getOrdersPaged.and.returnValue(of(mockPagedResponse));
     fixture = TestBed.createComponent(OrderListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -60,27 +74,55 @@ describe('OrderListComponent', () => {
   });
 
   it('should load orders on init', () => {
-    expect(apiServiceSpy.getOrders).toHaveBeenCalled();
+    expect(apiServiceSpy.getOrdersPaged).toHaveBeenCalled();
     expect(component.orders.length).toBe(2);
     expect(component.loading).toBeFalse();
   });
 
-  it('should apply filter to show all orders', () => {
-    component.filterStatus = 'all';
-    component.applyFilter();
-    expect(component.filteredOrders.length).toBe(2);
+  it('should set pagination state from response', () => {
+    expect(component.page).toBe(0);
+    expect(component.size).toBe(20);
+    expect(component.totalElements).toBe(2);
+    expect(component.totalPages).toBe(1);
+    expect(component.hasNext).toBeFalse();
+    expect(component.hasPrevious).toBeFalse();
   });
 
-  it('should filter orders by status', () => {
+  it('should reload orders when filter changes', () => {
+    apiServiceSpy.getOrdersPaged.calls.reset();
     component.onFilterChange('IN_PROGRESS');
-    expect(component.filteredOrders.length).toBe(1);
-    expect(component.filteredOrders[0].status).toBe('IN_PROGRESS');
+    expect(apiServiceSpy.getOrdersPaged).toHaveBeenCalled();
+    expect(component.filterStatus).toBe('IN_PROGRESS');
+    expect(component.page).toBe(0);
   });
 
-  it('should filter orders by COMPLETED status', () => {
-    component.onFilterChange('COMPLETED');
-    expect(component.filteredOrders.length).toBe(1);
-    expect(component.filteredOrders[0].status).toBe('COMPLETED');
+  it('should clear filter when selecting all', () => {
+    component.onFilterChange('all');
+    expect(component.filterStatus).toBe('');
+  });
+
+  it('should reload orders when search changes', () => {
+    apiServiceSpy.getOrdersPaged.calls.reset();
+    component.onSearch('test');
+    expect(apiServiceSpy.getOrdersPaged).toHaveBeenCalled();
+    expect(component.searchTerm).toBe('test');
+    expect(component.page).toBe(0);
+  });
+
+  it('should reload orders when page changes', () => {
+    apiServiceSpy.getOrdersPaged.calls.reset();
+    component.onPageChange(1);
+    expect(apiServiceSpy.getOrdersPaged).toHaveBeenCalled();
+    expect(component.page).toBe(1);
+  });
+
+  it('should reload orders and reset page when size changes', () => {
+    component.page = 2;
+    apiServiceSpy.getOrdersPaged.calls.reset();
+    component.onSizeChange(50);
+    expect(apiServiceSpy.getOrdersPaged).toHaveBeenCalled();
+    expect(component.size).toBe(50);
+    expect(component.page).toBe(0);
   });
 
   it('should navigate to order detail', () => {
@@ -91,17 +133,17 @@ describe('OrderListComponent', () => {
 
   describe('getProductInfo', () => {
     it('should return product name from line items', () => {
-      const order = { lineItems: [{ productName: 'Steel Rod' }] };
+      const order = { lineItems: [{ productName: 'Steel Rod' }] } as any;
       expect(component.getProductInfo(order)).toBe('Steel Rod');
     });
 
     it('should return N/A when no line items', () => {
-      const order = { lineItems: [] };
+      const order = { lineItems: [] } as any;
       expect(component.getProductInfo(order)).toBe('N/A');
     });
 
     it('should return N/A when line items undefined', () => {
-      const order = {};
+      const order = {} as any;
       expect(component.getProductInfo(order)).toBe('N/A');
     });
   });
@@ -110,23 +152,23 @@ describe('OrderListComponent', () => {
     it('should calculate total quantity', () => {
       const order = {
         lineItems: [{ quantity: 100 }, { quantity: 50 }]
-      };
+      } as any;
       expect(component.getTotalQuantity(order)).toBe(150);
     });
 
     it('should return 0 when no line items', () => {
-      const order = { lineItems: [] };
+      const order = { lineItems: [] } as any;
       expect(component.getTotalQuantity(order)).toBe(0);
     });
 
     it('should return 0 when line items undefined', () => {
-      const order = {};
+      const order = {} as any;
       expect(component.getTotalQuantity(order)).toBe(0);
     });
   });
 
   it('should handle error loading orders', () => {
-    apiServiceSpy.getOrders.and.returnValue(throwError(() => new Error('Error')));
+    apiServiceSpy.getOrdersPaged.and.returnValue(throwError(() => new Error('Error')));
 
     component.loadOrders();
 

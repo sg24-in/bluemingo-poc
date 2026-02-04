@@ -7,6 +7,8 @@ import { of, throwError } from 'rxjs';
 import { BatchListComponent } from './batch-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { PagedResponse } from '../../../shared/models/pagination.model';
+import { Batch } from '../../../shared/models';
 
 describe('BatchListComponent', () => {
   let component: BatchListComponent;
@@ -14,7 +16,7 @@ describe('BatchListComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
   let router: Router;
 
-  const mockBatches = [
+  const mockBatches: Batch[] = [
     {
       batchId: 1,
       batchNumber: 'BATCH-001',
@@ -23,7 +25,8 @@ describe('BatchListComponent', () => {
       quantity: 100,
       unit: 'KG',
       state: 'AVAILABLE',
-      status: 'AVAILABLE'
+      status: 'AVAILABLE',
+      createdOn: '2026-01-15T10:00:00'
     },
     {
       batchId: 2,
@@ -33,7 +36,8 @@ describe('BatchListComponent', () => {
       quantity: 500,
       unit: 'KG',
       state: 'CONSUMED',
-      status: 'CONSUMED'
+      status: 'CONSUMED',
+      createdOn: '2026-01-16T10:00:00'
     },
     {
       batchId: 3,
@@ -43,12 +47,25 @@ describe('BatchListComponent', () => {
       quantity: 450,
       unit: 'KG',
       state: 'AVAILABLE',
-      status: 'AVAILABLE'
+      status: 'AVAILABLE',
+      createdOn: '2026-01-17T10:00:00'
     }
   ];
 
+  const mockPagedResponse: PagedResponse<Batch> = {
+    content: mockBatches,
+    page: 0,
+    size: 20,
+    totalElements: 3,
+    totalPages: 1,
+    hasNext: false,
+    hasPrevious: false,
+    first: true,
+    last: true
+  };
+
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('ApiService', ['getAllBatches']);
+    const spy = jasmine.createSpyObj('ApiService', ['getBatchesPaged']);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -67,7 +84,7 @@ describe('BatchListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getAllBatches.and.returnValue(of(mockBatches as any));
+    apiServiceSpy.getBatchesPaged.and.returnValue(of(mockPagedResponse));
     fixture = TestBed.createComponent(BatchListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -78,53 +95,58 @@ describe('BatchListComponent', () => {
   });
 
   it('should load batches on init', () => {
-    expect(apiServiceSpy.getAllBatches).toHaveBeenCalled();
+    expect(apiServiceSpy.getBatchesPaged).toHaveBeenCalled();
     expect(component.batches.length).toBe(3);
     expect(component.loading).toBeFalse();
   });
 
+  it('should set pagination state from response', () => {
+    expect(component.page).toBe(0);
+    expect(component.size).toBe(20);
+    expect(component.totalElements).toBe(3);
+    expect(component.totalPages).toBe(1);
+    expect(component.hasNext).toBeFalse();
+    expect(component.hasPrevious).toBeFalse();
+  });
+
   describe('Filtering', () => {
-    it('should show all batches when filter is all', () => {
-      component.filterState = 'all';
-      component.searchTerm = '';
-      component.applyFilters();
-      expect(component.filteredBatches.length).toBe(3);
-    });
-
-    it('should filter by state', () => {
+    it('should reload batches when state filter changes', () => {
+      apiServiceSpy.getBatchesPaged.calls.reset();
       component.onFilterStateChange('AVAILABLE');
-      expect(component.filteredBatches.length).toBe(2);
-      expect(component.filteredBatches.every(b => b.state === 'AVAILABLE')).toBeTrue();
+      expect(apiServiceSpy.getBatchesPaged).toHaveBeenCalled();
+      expect(component.filterStatus).toBe('AVAILABLE');
+      expect(component.page).toBe(0);
     });
 
-    it('should filter by search term (batch number)', () => {
+    it('should clear filter when selecting all', () => {
+      component.onFilterStateChange('all');
+      expect(component.filterStatus).toBe('');
+    });
+
+    it('should reload batches when search changes', () => {
+      apiServiceSpy.getBatchesPaged.calls.reset();
       component.onSearchChange('BATCH-001');
-      expect(component.filteredBatches.length).toBe(1);
-      expect(component.filteredBatches[0].batchNumber).toBe('BATCH-001');
+      expect(apiServiceSpy.getBatchesPaged).toHaveBeenCalled();
+      expect(component.searchTerm).toBe('BATCH-001');
+      expect(component.page).toBe(0);
+    });
+  });
+
+  describe('Pagination', () => {
+    it('should reload batches when page changes', () => {
+      apiServiceSpy.getBatchesPaged.calls.reset();
+      component.onPageChange(1);
+      expect(apiServiceSpy.getBatchesPaged).toHaveBeenCalled();
+      expect(component.page).toBe(1);
     });
 
-    it('should filter by search term (material ID)', () => {
-      component.onSearchChange('IM-001');
-      expect(component.filteredBatches.length).toBe(1);
-      expect(component.filteredBatches[0].materialId).toBe('IM-001');
-    });
-
-    it('should combine state filter and search', () => {
-      component.filterState = 'AVAILABLE';
-      component.searchTerm = 'RM';
-      component.applyFilters();
-      expect(component.filteredBatches.length).toBe(1);
-      expect(component.filteredBatches[0].batchNumber).toBe('BATCH-001');
-    });
-
-    it('should handle case-insensitive search', () => {
-      component.onSearchChange('batch-002');
-      expect(component.filteredBatches.length).toBe(1);
-    });
-
-    it('should return empty when no matches', () => {
-      component.onSearchChange('NONEXISTENT');
-      expect(component.filteredBatches.length).toBe(0);
+    it('should reload batches and reset page when size changes', () => {
+      component.page = 2;
+      apiServiceSpy.getBatchesPaged.calls.reset();
+      component.onSizeChange(50);
+      expect(apiServiceSpy.getBatchesPaged).toHaveBeenCalled();
+      expect(component.size).toBe(50);
+      expect(component.page).toBe(0);
     });
   });
 
@@ -135,7 +157,7 @@ describe('BatchListComponent', () => {
   });
 
   it('should handle error loading batches', () => {
-    apiServiceSpy.getAllBatches.and.returnValue(throwError(() => new Error('Error')));
+    apiServiceSpy.getBatchesPaged.and.returnValue(throwError(() => new Error('Error')));
 
     component.loadBatches();
 

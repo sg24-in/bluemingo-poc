@@ -7,13 +7,15 @@ import { of, throwError } from 'rxjs';
 import { InventoryListComponent } from './inventory-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { PagedResponse } from '../../../shared/models/pagination.model';
+import { Inventory } from '../../../shared/models';
 
 describe('InventoryListComponent', () => {
   let component: InventoryListComponent;
   let fixture: ComponentFixture<InventoryListComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
-  const mockInventory = [
+  const mockInventory: Inventory[] = [
     {
       inventoryId: 1,
       materialId: 'RM-001',
@@ -46,9 +48,21 @@ describe('InventoryListComponent', () => {
     }
   ];
 
+  const mockPagedResponse: PagedResponse<Inventory> = {
+    content: mockInventory,
+    page: 0,
+    size: 20,
+    totalElements: 3,
+    totalPages: 1,
+    hasNext: false,
+    hasPrevious: false,
+    first: true,
+    last: true
+  };
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
-      'getAllInventory',
+      'getInventoryPaged',
       'blockInventory',
       'unblockInventory',
       'scrapInventory'
@@ -71,7 +85,7 @@ describe('InventoryListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getAllInventory.and.returnValue(of(mockInventory as any));
+    apiServiceSpy.getInventoryPaged.and.returnValue(of(mockPagedResponse));
     fixture = TestBed.createComponent(InventoryListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -82,90 +96,80 @@ describe('InventoryListComponent', () => {
   });
 
   it('should load inventory on init', () => {
-    expect(apiServiceSpy.getAllInventory).toHaveBeenCalled();
+    expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
     expect(component.inventory.length).toBe(3);
     expect(component.loading).toBeFalse();
   });
 
+  it('should set pagination state from response', () => {
+    expect(component.page).toBe(0);
+    expect(component.size).toBe(20);
+    expect(component.totalElements).toBe(3);
+    expect(component.totalPages).toBe(1);
+    expect(component.hasNext).toBeFalse();
+    expect(component.hasPrevious).toBeFalse();
+  });
+
   describe('Filtering', () => {
-    it('should filter by state', () => {
+    it('should reload inventory when state filter changes', () => {
+      apiServiceSpy.getInventoryPaged.calls.reset();
       component.onFilterStateChange('AVAILABLE');
-      expect(component.filteredInventory.length).toBe(2);
-      expect(component.filteredInventory.every(i => i.state === 'AVAILABLE')).toBeTrue();
+      expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
+      expect(component.filterState).toBe('AVAILABLE');
+      expect(component.page).toBe(0);
     });
 
-    it('should filter by type', () => {
+    it('should clear state filter when selecting all', () => {
+      component.onFilterStateChange('all');
+      expect(component.filterState).toBe('');
+    });
+
+    it('should reload inventory when type filter changes', () => {
+      apiServiceSpy.getInventoryPaged.calls.reset();
       component.onFilterTypeChange('RM');
-      expect(component.filteredInventory.length).toBe(1);
-      expect(component.filteredInventory[0].inventoryType).toBe('RM');
+      expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
+      expect(component.filterType).toBe('RM');
+      expect(component.page).toBe(0);
     });
 
-    it('should filter by search term (batch number)', () => {
+    it('should clear type filter when selecting all', () => {
+      component.onFilterTypeChange('all');
+      expect(component.filterType).toBe('');
+    });
+
+    it('should reload inventory when search changes', () => {
+      apiServiceSpy.getInventoryPaged.calls.reset();
       component.onSearchChange('BATCH-001');
-      expect(component.filteredInventory.length).toBe(1);
-      expect(component.filteredInventory[0].batchNumber).toBe('BATCH-001');
-    });
-
-    it('should filter by search term (material ID)', () => {
-      component.onSearchChange('RM-001');
-      expect(component.filteredInventory.length).toBe(1);
-      expect(component.filteredInventory[0].materialId).toBe('RM-001');
-    });
-
-    it('should combine multiple filters', () => {
-      component.filterState = 'AVAILABLE';
-      component.filterType = 'FG';
-      component.applyFilters();
-      expect(component.filteredInventory.length).toBe(1);
-      expect(component.filteredInventory[0].materialId).toBe('FG-001');
-    });
-
-    it('should show all when filter is all', () => {
-      component.filterState = 'all';
-      component.filterType = 'all';
-      component.searchTerm = '';
-      component.applyFilters();
-      expect(component.filteredInventory.length).toBe(3);
+      expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
+      expect(component.searchTerm).toBe('BATCH-001');
+      expect(component.page).toBe(0);
     });
   });
 
-  describe('Summary Methods', () => {
-    it('should get state summary', () => {
-      const summary = component.getStateSummary();
-      expect(summary.length).toBe(2);
-
-      const available = summary.find(s => s.state === 'AVAILABLE');
-      expect(available?.count).toBe(2);
-
-      const consumed = summary.find(s => s.state === 'CONSUMED');
-      expect(consumed?.count).toBe(1);
+  describe('Pagination', () => {
+    it('should reload inventory when page changes', () => {
+      apiServiceSpy.getInventoryPaged.calls.reset();
+      component.onPageChange(1);
+      expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
+      expect(component.page).toBe(1);
     });
 
-    it('should get type summary', () => {
-      const summary = component.getTypeSummary();
-      expect(summary.length).toBe(3);
-
-      const rm = summary.find(s => s.type === 'RM');
-      expect(rm?.count).toBe(1);
+    it('should reload inventory and reset page when size changes', () => {
+      component.page = 2;
+      apiServiceSpy.getInventoryPaged.calls.reset();
+      component.onSizeChange(50);
+      expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
+      expect(component.size).toBe(50);
+      expect(component.page).toBe(0);
     });
   });
 
   it('should handle error loading inventory', () => {
-    apiServiceSpy.getAllInventory.and.returnValue(throwError(() => new Error('Error')));
+    apiServiceSpy.getInventoryPaged.and.returnValue(throwError(() => new Error('Error')));
 
     component.loadInventory();
 
     expect(component.loading).toBeFalse();
-  });
-
-  it('should handle case-insensitive search', () => {
-    component.onSearchChange('batch-001');
-    expect(component.filteredInventory.length).toBe(1);
-  });
-
-  it('should handle empty search term', () => {
-    component.onSearchChange('');
-    expect(component.filteredInventory.length).toBe(3);
   });
 
   describe('Block Inventory', () => {
@@ -217,10 +221,10 @@ describe('InventoryListComponent', () => {
     });
 
     it('should determine if item can be blocked', () => {
-      expect(component.canBlock({ state: 'AVAILABLE' })).toBeTrue();
-      expect(component.canBlock({ state: 'BLOCKED' })).toBeFalse();
-      expect(component.canBlock({ state: 'CONSUMED' })).toBeFalse();
-      expect(component.canBlock({ state: 'SCRAPPED' })).toBeFalse();
+      expect(component.canBlock({ state: 'AVAILABLE' } as any)).toBeTrue();
+      expect(component.canBlock({ state: 'BLOCKED' } as any)).toBeFalse();
+      expect(component.canBlock({ state: 'CONSUMED' } as any)).toBeFalse();
+      expect(component.canBlock({ state: 'SCRAPPED' } as any)).toBeFalse();
     });
   });
 
@@ -230,7 +234,7 @@ describe('InventoryListComponent', () => {
       const mockResponse = { inventoryId: 1, previousState: 'BLOCKED', newState: 'AVAILABLE' } as any;
       apiServiceSpy.unblockInventory.and.returnValue(of(mockResponse));
 
-      const blockedItem = { inventoryId: 1, batchNumber: 'BATCH-001', state: 'BLOCKED' };
+      const blockedItem = { inventoryId: 1, batchNumber: 'BATCH-001', state: 'BLOCKED' } as any;
       component.unblockInventory(blockedItem);
 
       expect(apiServiceSpy.unblockInventory).toHaveBeenCalledWith(1);
@@ -239,15 +243,15 @@ describe('InventoryListComponent', () => {
     it('should not unblock if user cancels confirmation', () => {
       spyOn(window, 'confirm').and.returnValue(false);
 
-      const blockedItem = { inventoryId: 1, batchNumber: 'BATCH-001', state: 'BLOCKED' };
+      const blockedItem = { inventoryId: 1, batchNumber: 'BATCH-001', state: 'BLOCKED' } as any;
       component.unblockInventory(blockedItem);
 
       expect(apiServiceSpy.unblockInventory).not.toHaveBeenCalled();
     });
 
     it('should determine if item can be unblocked', () => {
-      expect(component.canUnblock({ state: 'BLOCKED' })).toBeTrue();
-      expect(component.canUnblock({ state: 'AVAILABLE' })).toBeFalse();
+      expect(component.canUnblock({ state: 'BLOCKED' } as any)).toBeTrue();
+      expect(component.canUnblock({ state: 'AVAILABLE' } as any)).toBeFalse();
     });
   });
 
@@ -289,10 +293,10 @@ describe('InventoryListComponent', () => {
     });
 
     it('should determine if item can be scrapped', () => {
-      expect(component.canScrap({ state: 'AVAILABLE' })).toBeTrue();
-      expect(component.canScrap({ state: 'BLOCKED' })).toBeTrue();
-      expect(component.canScrap({ state: 'CONSUMED' })).toBeFalse();
-      expect(component.canScrap({ state: 'SCRAPPED' })).toBeFalse();
+      expect(component.canScrap({ state: 'AVAILABLE' } as any)).toBeTrue();
+      expect(component.canScrap({ state: 'BLOCKED' } as any)).toBeTrue();
+      expect(component.canScrap({ state: 'CONSUMED' } as any)).toBeFalse();
+      expect(component.canScrap({ state: 'SCRAPPED' } as any)).toBeFalse();
     });
   });
 });

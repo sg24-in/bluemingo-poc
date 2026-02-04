@@ -12,6 +12,7 @@ import { OperationBrief } from './operation.model';
  */
 export interface Order {
   orderId: number;
+  orderNumber?: string;
   customerId?: string;
   customerName?: string;
   orderDate?: string; // LocalDate

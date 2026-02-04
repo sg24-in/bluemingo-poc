@@ -19,6 +19,7 @@ export interface Batch {
   materialName: string;
   quantity: number;
   unit: string;
+  state?: string; // Used by UI for filtering
   status: string; // Flexible to allow all batch status values including ON_HOLD
   createdOn: string; // LocalDateTime
   approvedBy?: string;
