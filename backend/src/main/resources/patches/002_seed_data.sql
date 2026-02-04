@@ -73,10 +73,10 @@ INSERT INTO bill_of_material (product_sku, material_id, material_name, quantity_
 ('STEEL-COIL-001', 'FG-COIL', 'Finished Steel Coil', 1.00, 'T', 1.00, 6, 'ACTIVE');
 
 -- 7. Insert Sample Orders
-INSERT INTO orders (customer_id, customer_name, order_date, status, created_by) VALUES
-('CUST-001', 'ABC Steel Corporation', '2026-01-15', 'IN_PROGRESS', 'SYSTEM'),
-('CUST-002', 'XYZ Manufacturing', '2026-01-18', 'CREATED', 'SYSTEM'),
-('CUST-003', 'Steel Works Inc', '2026-01-20', 'CREATED', 'SYSTEM');
+INSERT INTO orders (order_number, customer_id, customer_name, order_date, status, created_by) VALUES
+('ORD-000001', 'CUST-001', 'ABC Steel Corporation', '2026-01-15', 'IN_PROGRESS', 'SYSTEM'),
+('ORD-000002', 'CUST-002', 'XYZ Manufacturing', '2026-01-18', 'CREATED', 'SYSTEM'),
+('ORD-000003', 'CUST-003', 'Steel Works Inc', '2026-01-20', 'CREATED', 'SYSTEM');
 
 -- 8. Insert Order Line Items
 INSERT INTO order_line_items (order_id, product_sku, product_name, quantity, unit, delivery_date, status, created_by) VALUES

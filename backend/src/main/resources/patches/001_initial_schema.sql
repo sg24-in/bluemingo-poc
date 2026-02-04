@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- 2. Orders Table
 CREATE TABLE IF NOT EXISTS orders (
     order_id BIGSERIAL PRIMARY KEY,
+    order_number VARCHAR(50) UNIQUE,
     customer_id VARCHAR(100),
     customer_name VARCHAR(255),
     order_date DATE NOT NULL,

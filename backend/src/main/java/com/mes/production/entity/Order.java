@@ -21,6 +21,9 @@ public class Order {
     @Column(name = "order_id")
     private Long orderId;
 
+    @Column(name = "order_number", unique = true)
+    private String orderNumber;
+
     @Column(name = "customer_id")
     private String customerId;
 

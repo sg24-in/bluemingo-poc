@@ -34,6 +34,12 @@ class BatchServiceTest {
     @Mock
     private OperationRepository operationRepository;
 
+    @Mock
+    private AuditService auditService;
+
+    @Mock
+    private BatchNumberService batchNumberService;
+
     @InjectMocks
     private BatchService batchService;
 
@@ -447,6 +453,7 @@ class BatchServiceTest {
             return b;
         });
         when(batchRelationRepository.save(any(BatchRelation.class))).thenAnswer(i -> i.getArgument(0));
+        when(batchNumberService.generateMergeBatchNumber()).thenReturn("MERGE-001");
 
         // Act
         BatchDTO.MergeResponse result = batchService.mergeBatches(request, "test-user");

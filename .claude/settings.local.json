@@ -76,7 +76,11 @@
       "Bash(node:*)",
       "Bash(del D:repositoriesbluemingo-poclogin-test.json)",
       "Bash(dir:*)",
-      "Bash(mvn clean compile:*)"
+      "Bash(mvn clean compile:*)",
+      "Bash(D:\\\\repositories\\\\bluemingo-poc\\\\backend\\\\gradlew.bat:*)",
+      "Bash(cmd.exe /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test 2>&1\")",
+      "Bash(cmd.exe /c \"D: && cd D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test\")",
+      "Bash(cmd /c \"pushd D:\\\\repositories\\\\bluemingo-poc\\\\backend && call gradlew.bat test 2>&1\")"
     ]
   }
 }
