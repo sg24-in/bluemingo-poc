@@ -55,9 +55,9 @@
             <td>{{ batch.batchNumber }}</td>
             <td>{{ batch.materialId }}</td>
             <td>{{ batch.quantity }}</td>
-            <td>{{ batch.unitOfMeasure }}</td>
-            <td><app-status-badge [status]="batch.state"></app-status-badge></td>
-            <td>{{ batch.createdAt | date:'medium' }}</td>
+            <td>{{ batch.unit }}</td>
+            <td><app-status-badge [status]="batch.state || batch.status"></app-status-badge></td>
+            <td>{{ batch.createdOn | date:'medium' }}</td>
             <td>
               <button class="btn btn-primary btn-sm" (click)="viewBatch(batch.batchId)">
                 View Genealogy

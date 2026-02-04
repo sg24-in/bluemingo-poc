@@ -45,7 +45,7 @@ export class InventoryListComponent implements OnInit {
     const request: PageRequest = {
       page: this.page,
       size: this.size,
-      sortBy: 'createdAt',
+      sortBy: 'createdOn',
       sortDirection: 'DESC',
       status: this.filterState || undefined,
       type: this.filterType || undefined,

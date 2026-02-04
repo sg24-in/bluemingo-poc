@@ -35,22 +35,22 @@
       <thead>
         <tr>
           <th>Order Number</th>
+          <th>Customer</th>
           <th>Product</th>
           <th>Quantity</th>
           <th>Status</th>
-          <th>Priority</th>
-          <th>Due Date</th>
+          <th>Order Date</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let order of orders">
           <td>{{ order.orderNumber }}</td>
+          <td>{{ order.customerName || 'N/A' }}</td>
           <td>{{ getProductInfo(order) }}</td>
           <td>{{ getTotalQuantity(order) }}</td>
           <td><app-status-badge [status]="order.status"></app-status-badge></td>
-          <td>{{ order.priority }}</td>
-          <td>{{ order.dueDate | date:'mediumDate' }}</td>
+          <td>{{ order.orderDate | date:'mediumDate' }}</td>
           <td>
             <button class="btn btn-primary btn-sm" (click)="viewOrder(order.orderId)">
               View Details
