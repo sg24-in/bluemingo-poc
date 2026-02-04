@@ -1,6 +1,8 @@
 package com.mes.production.controller;
 
 import com.mes.production.dto.EquipmentDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.service.EquipmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +30,39 @@ public class EquipmentController {
     }
 
     /**
+     * Get equipment with pagination, sorting, and filtering.
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<EquipmentDTO>> getEquipmentPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type) {
+
+        log.info("GET /api/equipment/paged - page={}, size={}, status={}, type={}, search={}",
+                page, size, status, type, search);
+
+        PageRequestDTO pageRequest = PageRequestDTO.builder()
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .search(search)
+                .status(status)
+                .type(type)
+                .build();
+
+        PagedResponseDTO<EquipmentDTO> result = equipmentService.getEquipmentPaged(pageRequest);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * Get equipment by ID
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<EquipmentDTO> getEquipmentById(@PathVariable Long id) {
         log.info("GET /api/equipment/{}", id);
         EquipmentDTO equipment = equipmentService.getEquipmentById(id);
@@ -70,7 +102,7 @@ public class EquipmentController {
     /**
      * Start maintenance for equipment
      */
-    @PostMapping("/{id}/maintenance/start")
+    @PostMapping("/{id:\\d+}/maintenance/start")
     public ResponseEntity<EquipmentDTO.StatusUpdateResponse> startMaintenance(
             @PathVariable Long id,
             @RequestBody EquipmentDTO.MaintenanceRequest request) {
@@ -83,7 +115,7 @@ public class EquipmentController {
     /**
      * End maintenance for equipment
      */
-    @PostMapping("/{id}/maintenance/end")
+    @PostMapping("/{id:\\d+}/maintenance/end")
     public ResponseEntity<EquipmentDTO.StatusUpdateResponse> endMaintenance(@PathVariable Long id) {
         log.info("POST /api/equipment/{}/maintenance/end", id);
         EquipmentDTO.StatusUpdateResponse response = equipmentService.endMaintenance(id);
@@ -93,7 +125,7 @@ public class EquipmentController {
     /**
      * Put equipment on hold
      */
-    @PostMapping("/{id}/hold")
+    @PostMapping("/{id:\\d+}/hold")
     public ResponseEntity<EquipmentDTO.StatusUpdateResponse> putOnHold(
             @PathVariable Long id,
             @RequestBody EquipmentDTO.HoldRequest request) {
@@ -105,7 +137,7 @@ public class EquipmentController {
     /**
      * Release equipment from hold
      */
-    @PostMapping("/{id}/release")
+    @PostMapping("/{id:\\d+}/release")
     public ResponseEntity<EquipmentDTO.StatusUpdateResponse> releaseFromHold(@PathVariable Long id) {
         log.info("POST /api/equipment/{}/release", id);
         EquipmentDTO.StatusUpdateResponse response = equipmentService.releaseFromHold(id);

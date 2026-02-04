@@ -248,6 +248,14 @@ export class ApiService {
     return this.http.get<Equipment[]>(`${environment.apiUrl}/master/equipment`);
   }
 
+  /**
+   * Get equipment with pagination, sorting, and filtering.
+   */
+  getEquipmentPaged(request: PageRequest = {}): Observable<PagedResponse<Equipment>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<Equipment>>(`${environment.apiUrl}/equipment/paged`, { params });
+  }
+
   getAvailableEquipment(): Observable<Equipment[]> {
     return this.http.get<Equipment[]>(`${environment.apiUrl}/master/equipment/available`);
   }
@@ -328,6 +336,14 @@ export class ApiService {
 
   getActiveHolds(): Observable<Hold[]> {
     return this.http.get<Hold[]>(`${environment.apiUrl}/holds/active`);
+  }
+
+  /**
+   * Get holds with pagination, sorting, and filtering.
+   */
+  getHoldsPaged(request: PageRequest = {}): Observable<PagedResponse<Hold>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<Hold>>(`${environment.apiUrl}/holds/paged`, { params });
   }
 
   getActiveHoldCount(): Observable<HoldCountResponse> {

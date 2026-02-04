@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
+import { Equipment } from '../../../shared/models';
+import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-equipment-list',
@@ -7,18 +9,26 @@ import { ApiService } from '../../../core/services/api.service';
   styleUrls: ['./equipment-list.component.css']
 })
 export class EquipmentListComponent implements OnInit {
-  equipment: any[] = [];
-  filteredEquipment: any[] = [];
+  equipment: Equipment[] = [];
   loading = true;
 
-  filterStatus = 'all';
-  filterType = 'all';
+  // Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  filterStatus = '';
+  filterType = '';
   searchTerm = '';
 
   // Modal states
   showMaintenanceModal = false;
   showHoldModal = false;
-  selectedEquipment: any = null;
+  selectedEquipment: Equipment | null = null;
   actionReason = '';
   expectedEndTime = '';
   actionLoading = false;
@@ -32,10 +42,26 @@ export class EquipmentListComponent implements OnInit {
 
   loadEquipment(): void {
     this.loading = true;
-    this.apiService.getAllEquipment().subscribe({
-      next: (data) => {
-        this.equipment = data;
-        this.applyFilters();
+
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'equipmentCode',
+      sortDirection: 'ASC',
+      status: this.filterStatus || undefined,
+      type: this.filterType || undefined,
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getEquipmentPaged(request).subscribe({
+      next: (response: PagedResponse<Equipment>) => {
+        this.equipment = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
@@ -45,43 +71,37 @@ export class EquipmentListComponent implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.filteredEquipment = this.equipment.filter(item => {
-      const matchStatus = this.filterStatus === 'all' || item.status === this.filterStatus;
-      const matchType = this.filterType === 'all' || item.equipmentType === this.filterType;
-      const matchSearch = !this.searchTerm ||
-        item.equipmentCode?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        item.name?.toLowerCase().includes(this.searchTerm.toLowerCase());
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadEquipment();
+  }
 
-      return matchStatus && matchType && matchSearch;
-    });
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadEquipment();
   }
 
   onFilterStatusChange(status: string): void {
-    this.filterStatus = status;
-    this.applyFilters();
+    this.filterStatus = status === 'all' ? '' : status;
+    this.page = 0;
+    this.loadEquipment();
   }
 
   onFilterTypeChange(type: string): void {
-    this.filterType = type;
-    this.applyFilters();
+    this.filterType = type === 'all' ? '' : type;
+    this.page = 0;
+    this.loadEquipment();
   }
 
   onSearchChange(term: string): void {
     this.searchTerm = term;
-    this.applyFilters();
-  }
-
-  getStatusSummary(): { status: string; count: number }[] {
-    const summary: { [key: string]: number } = {};
-    this.equipment.forEach(item => {
-      summary[item.status] = (summary[item.status] || 0) + 1;
-    });
-    return Object.entries(summary).map(([status, count]) => ({ status, count }));
+    this.page = 0;
+    this.loadEquipment();
   }
 
   // Maintenance actions
-  openMaintenanceModal(item: any): void {
+  openMaintenanceModal(item: Equipment): void {
     this.selectedEquipment = item;
     this.actionReason = '';
     this.expectedEndTime = '';
@@ -103,6 +123,8 @@ export class EquipmentListComponent implements OnInit {
       return;
     }
 
+    if (!this.selectedEquipment) return;
+
     this.actionLoading = true;
     this.actionError = '';
 
@@ -123,7 +145,7 @@ export class EquipmentListComponent implements OnInit {
     });
   }
 
-  endMaintenance(item: any): void {
+  endMaintenance(item: Equipment): void {
     if (!confirm(`End maintenance for ${item.equipmentCode}?`)) {
       return;
     }
@@ -141,7 +163,7 @@ export class EquipmentListComponent implements OnInit {
   }
 
   // Hold actions
-  openHoldModal(item: any): void {
+  openHoldModal(item: Equipment): void {
     this.selectedEquipment = item;
     this.actionReason = '';
     this.actionError = '';
@@ -161,6 +183,8 @@ export class EquipmentListComponent implements OnInit {
       return;
     }
 
+    if (!this.selectedEquipment) return;
+
     this.actionLoading = true;
     this.actionError = '';
 
@@ -177,7 +201,7 @@ export class EquipmentListComponent implements OnInit {
     });
   }
 
-  releaseFromHold(item: any): void {
+  releaseFromHold(item: Equipment): void {
     if (!confirm(`Release ${item.equipmentCode} from hold?`)) {
       return;
     }
@@ -195,19 +219,19 @@ export class EquipmentListComponent implements OnInit {
   }
 
   // Helpers
-  canStartMaintenance(item: any): boolean {
+  canStartMaintenance(item: Equipment): boolean {
     return item.status === 'AVAILABLE' || item.status === 'ON_HOLD';
   }
 
-  canEndMaintenance(item: any): boolean {
+  canEndMaintenance(item: Equipment): boolean {
     return item.status === 'MAINTENANCE';
   }
 
-  canPutOnHold(item: any): boolean {
+  canPutOnHold(item: Equipment): boolean {
     return item.status === 'AVAILABLE' || item.status === 'MAINTENANCE';
   }
 
-  canReleaseFromHold(item: any): boolean {
+  canReleaseFromHold(item: Equipment): boolean {
     return item.status === 'ON_HOLD';
   }
 }

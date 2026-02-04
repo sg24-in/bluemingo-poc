@@ -26,7 +26,7 @@ This guide covers everything you need to set up, develop, test, and deploy the M
 |----------|---------|---------|
 | Java JDK | 17+ | Backend runtime |
 | Node.js | 18+ | Frontend runtime |
-| Maven | 3.8+ | Backend build tool |
+| Gradle | 8.5+ | Backend build tool |
 | PostgreSQL | 14+ | Production database (optional for demo mode) |
 | Git | 2.x | Version control |
 
@@ -56,10 +56,10 @@ cd bluemingo-poc
 cd backend
 
 # Install dependencies and build
-mvn clean install
+./gradlew clean build
 
 # Verify build
-mvn test
+./gradlew test
 ```
 
 ### 3. Frontend Setup
@@ -93,7 +93,7 @@ Demo mode uses an H2 in-memory database with pre-seeded data. No PostgreSQL requ
 **Terminal 1 - Backend:**
 ```bash
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=demo
+./gradlew bootRun --args="--spring.profiles.active=demo"
 ```
 
 **Terminal 2 - Frontend:**
@@ -132,7 +132,7 @@ spring:
 **3. Start Backend:**
 ```bash
 cd backend
-mvn spring-boot:run
+./gradlew bootRun
 ```
 
 ### Login Credentials
@@ -309,7 +309,7 @@ module.exports = { runMyTests };
 **Backend:**
 ```bash
 cd backend
-mvn test
+./gradlew test
 ```
 
 **Frontend:**
@@ -415,6 +415,7 @@ Response: { "accessToken": "...", "user": {...} }
 
 ```
 GET /api/orders                    # List all orders
+GET /api/orders/paged              # Paginated orders (page, size, sortBy, sortDirection, search, status)
 GET /api/orders/{id}               # Get order details
 GET /api/orders/available          # Orders with READY operations
 ```
@@ -439,6 +440,7 @@ Body: {
 
 ```
 GET /api/inventory                      # List inventory
+GET /api/inventory/paged                # Paginated inventory (page, size, sortBy, sortDirection, search, status, type)
 GET /api/inventory?state=AVAILABLE      # Filter by state
 POST /api/inventory/{id}/block          # Block inventory
 POST /api/inventory/{id}/unblock        # Unblock inventory
@@ -449,26 +451,33 @@ POST /api/inventory/{id}/scrap          # Scrap inventory
 
 ```
 GET /api/batches                   # List batches
+GET /api/batches/paged             # Paginated batches (page, size, sortBy, sortDirection, search, status)
 GET /api/batches/{id}              # Batch details
 GET /api/batches/{id}/genealogy    # Batch traceability
+POST /api/batches/{id}/split       # Split batch
+POST /api/batches/merge            # Merge batches
 ```
 
 ### Holds
 
 ```
-GET /api/holds                     # Active holds
+GET /api/holds/active              # Active holds
+GET /api/holds/paged               # Paginated holds (page, size, sortBy, sortDirection, search, status, type)
 POST /api/holds                    # Apply hold
 PUT /api/holds/{id}/release        # Release hold
+GET /api/holds/count               # Active hold count
 ```
 
 ### Equipment
 
 ```
-GET /api/master/equipment          # Equipment list
-PUT /api/equipment/{id}/maintenance/start
-PUT /api/equipment/{id}/maintenance/end
-PUT /api/equipment/{id}/hold
-PUT /api/equipment/{id}/release
+GET /api/equipment                 # Equipment list
+GET /api/equipment/paged           # Paginated equipment (page, size, sortBy, sortDirection, search, status, type)
+GET /api/equipment/{id}            # Equipment details
+POST /api/equipment/{id}/maintenance/start   # Start maintenance (body: { reason, expectedEndTime })
+POST /api/equipment/{id}/maintenance/end     # End maintenance
+POST /api/equipment/{id}/hold      # Put on hold (body: { reason })
+POST /api/equipment/{id}/release   # Release from hold
 ```
 
 ---
@@ -576,20 +585,208 @@ logging:
 
 ```bash
 # Backend
-mvn spring-boot:run -Dspring-boot.run.profiles=demo  # Start in demo mode
-mvn clean install                                      # Build
-mvn test                                               # Run tests
+./gradlew bootRun --args="--spring.profiles.active=demo"  # Start in demo mode
+./gradlew bootRun                                          # Start in production mode (requires PostgreSQL)
+./gradlew clean build                                      # Build
+./gradlew test                                             # Run tests
+./gradlew test jacocoTestReport                           # Run tests with coverage report
 
 # Frontend
 npm start                                              # Start dev server
 npm run build                                          # Production build
 npm test                                               # Run tests
+npm test -- --code-coverage                           # Run tests with coverage
 
 # E2E Tests
 node e2e/run-all-tests.js                             # Run all tests
 node e2e/run-all-tests.js --submit --video            # Full test with video
 node e2e/record-user-journey.js                       # Record user journey
+node e2e/record-demo-video.js                         # Record demo video with narration
 ```
+
+---
+
+## Test Coverage
+
+### Backend Tests (261 tests)
+
+Coverage report location: `backend/build/reports/jacoco/index.html`
+
+| Test Class | Tests | Description |
+|------------|-------|-------------|
+| AuthControllerTest | 9 | Authentication endpoints |
+| BatchControllerTest | 8 | Batch management endpoints |
+| BomControllerTest | 5 | BOM validation endpoints |
+| DashboardControllerTest | 5 | Dashboard statistics |
+| EquipmentControllerTest | 14 | Equipment management (including pagination) |
+| HoldControllerTest | 12 | Hold management (including pagination) |
+| InventoryControllerTest | 14 | Inventory management |
+| MasterDataControllerTest | 10 | Master data endpoints |
+| OperationControllerTest | 7 | Operation endpoints |
+| OrderControllerTest | 6 | Order endpoints |
+| ProcessControllerTest | 6 | Process endpoints |
+| ProductionControllerTest | 6 | Production confirmation |
+| Service Tests | ~70 | Service layer tests |
+
+### Frontend Tests (249 tests)
+
+Coverage location: `frontend/coverage/`
+
+### E2E Tests (65 tests)
+
+Screenshot output: `e2e/output/screenshots/{timestamp}/`
+
+---
+
+## PostgreSQL vs H2 Compatibility
+
+### JPQL Queries
+
+All paginated queries use standard JPQL syntax that works with both databases:
+
+```java
+@Query("SELECT e FROM Equipment e WHERE " +
+       "(:status IS NULL OR e.status = :status) AND " +
+       "(:type IS NULL OR e.equipmentType = :type) AND " +
+       "(:search IS NULL OR LOWER(e.equipmentCode) LIKE :search OR LOWER(e.name) LIKE :search)")
+Page<Equipment> findByFilters(...);
+```
+
+**Key points:**
+- NULL parameter handling: `:param IS NULL OR ...` works on both databases
+- LOWER() function: Standard SQL supported by both
+- LIKE with wildcards: Add `%` in service layer, not query
+- Pageable: Spring Data handles database-specific pagination
+
+### Testing with PostgreSQL
+
+1. **Start PostgreSQL:**
+   ```bash
+   # Using Docker
+   docker run -d --name mes-postgres \
+     -e POSTGRES_DB=mes_production \
+     -e POSTGRES_USER=mes_user \
+     -e POSTGRES_PASSWORD=mes_password \
+     -p 5432:5432 postgres:14
+   ```
+
+2. **Run application:**
+   ```bash
+   cd backend
+   ./gradlew bootRun
+   ```
+
+3. **Verify with curl:**
+   ```bash
+   # Login
+   TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"admin@mes.com","password":"admin123"}' \
+     | jq -r '.accessToken')
+
+   # Test paginated endpoint
+   curl -s "http://localhost:8080/api/orders/paged?page=0&size=20" \
+     -H "Authorization: Bearer $TOKEN" | jq '.totalElements'
+   ```
+
+---
+
+## Development Hints
+
+### Adding Pagination to a New Entity
+
+1. **Repository - Add findByFilters method:**
+   ```java
+   @Query("SELECT e FROM MyEntity e WHERE " +
+          "(:status IS NULL OR e.status = :status) AND " +
+          "(:search IS NULL OR LOWER(e.name) LIKE :search)")
+   Page<MyEntity> findByFilters(
+       @Param("status") String status,
+       @Param("search") String search,
+       Pageable pageable);
+   ```
+
+2. **Service - Add paged method:**
+   ```java
+   public PagedResponseDTO<MyDTO> getEntitiesPaged(PageRequestDTO pageRequest) {
+       Pageable pageable = pageRequest.toPageable("defaultSortField");
+       Page<MyEntity> page;
+       if (pageRequest.hasFilters()) {
+           page = repository.findByFilters(
+               pageRequest.getStatus(),
+               pageRequest.getSearchPattern(),
+               pageable);
+       } else {
+           page = repository.findAll(pageable);
+       }
+       Page<MyDTO> dtoPage = page.map(this::convertToDTO);
+       return PagedResponseDTO.fromPage(dtoPage, ...);
+   }
+   ```
+
+3. **Controller - Add endpoint:**
+   ```java
+   @GetMapping("/paged")
+   public ResponseEntity<PagedResponseDTO<MyDTO>> getEntitiesPaged(
+       @RequestParam(defaultValue = "0") int page,
+       @RequestParam(defaultValue = "20") int size,
+       @RequestParam(required = false) String sortBy,
+       @RequestParam(defaultValue = "ASC") String sortDirection,
+       @RequestParam(required = false) String search,
+       @RequestParam(required = false) String status) {
+
+       PageRequestDTO pageRequest = PageRequestDTO.builder()
+           .page(page).size(size).sortBy(sortBy)
+           .sortDirection(sortDirection).search(search).status(status)
+           .build();
+       return ResponseEntity.ok(service.getEntitiesPaged(pageRequest));
+   }
+   ```
+
+4. **Frontend API Service:**
+   ```typescript
+   getEntitiesPaged(request: PageRequest = {}): Observable<PagedResponse<MyDTO>> {
+     const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+     return this.http.get<PagedResponse<MyDTO>>(`${environment.apiUrl}/my-entity/paged`, { params });
+   }
+   ```
+
+5. **Frontend Component:**
+   ```typescript
+   // State
+   page = 0;
+   size = DEFAULT_PAGE_SIZE;
+   totalElements = 0;
+
+   // Load data
+   loadData(): void {
+     const request: PageRequest = {
+       page: this.page,
+       size: this.size,
+       sortBy: 'createdOn',  // Match entity field name!
+       sortDirection: 'DESC'
+     };
+     this.api.getEntitiesPaged(request).subscribe(response => {
+       this.items = response.content;
+       this.totalElements = response.totalElements;
+       // ... update other pagination state
+     });
+   }
+   ```
+
+### Common Pitfalls
+
+1. **sortBy field mismatch:** Frontend sends `sortBy: 'createdAt'` but entity has `createdOn`
+   - **Fix:** Always use exact entity field names
+
+2. **Path variable conflicts:** `/paged` conflicts with `/{id}`
+   - **Fix:** Add regex constraint: `@GetMapping("/{id:\\d+}")`
+
+3. **Search pattern:** Forgot to add wildcards for LIKE
+   - **Fix:** Use `pageRequest.getSearchPattern()` which adds `%` prefix/suffix
+
+4. **NULL handling in JPQL:** Query fails when filter is null
+   - **Fix:** Use `(:param IS NULL OR e.field = :param)` pattern
 
 ### URLs
 

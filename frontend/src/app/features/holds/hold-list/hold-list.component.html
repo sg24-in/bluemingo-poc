@@ -1,6 +1,8 @@
-<div class="hold-list-container">
+<app-header></app-header>
+
+<div class="container">
   <div class="page-header">
-    <h2>Hold Management</h2>
+    <h1 class="page-title">Hold Management</h1>
     <button class="btn btn-primary" (click)="openApplyHoldModal()">
       Apply Hold
     </button>
@@ -9,46 +11,103 @@
   <div *ngIf="error" class="alert alert-error">{{ error }}</div>
   <div *ngIf="success" class="alert alert-success">{{ success }}</div>
 
-  <div *ngIf="loading" class="loading">
+  <div *ngIf="loading" class="text-center">
     <app-loading-spinner message="Loading holds..."></app-loading-spinner>
   </div>
 
-  <div class="holds-table" *ngIf="!loading">
-    <table *ngIf="activeHolds.length > 0">
-      <thead>
-        <tr>
-          <th>Entity Type</th>
-          <th>Entity</th>
-          <th>Reason</th>
-          <th>Applied By</th>
-          <th>Applied On</th>
-          <th>Duration</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let hold of activeHolds">
-          <td>
-            <span class="entity-type-badge" [ngClass]="hold.entityType.toLowerCase()">
-              {{ hold.entityType }}
-            </span>
-          </td>
-          <td>{{ hold.entityName }}</td>
-          <td>{{ hold.reason }}</td>
-          <td>{{ hold.appliedBy }}</td>
-          <td>{{ hold.appliedOn | date:'short' }}</td>
-          <td>{{ formatDuration(hold.durationMinutes) }}</td>
-          <td>
-            <button class="btn btn-sm btn-success" (click)="openReleaseHoldModal(hold)">
-              Release
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div *ngIf="!loading">
+    <!-- Filters -->
+    <div class="card">
+      <div class="filters">
+        <div class="filter-group">
+          <label>Status:</label>
+          <select (change)="onFilterStatusChange($any($event.target).value)" [value]="filterStatus || 'all'">
+            <option value="all">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="RELEASED">Released</option>
+          </select>
+        </div>
 
-    <div *ngIf="activeHolds.length === 0" class="no-data">
-      <p>No active holds found.</p>
+        <div class="filter-group">
+          <label>Entity Type:</label>
+          <select (change)="onFilterEntityTypeChange($any($event.target).value)" [value]="filterEntityType || 'all'">
+            <option value="all">All Types</option>
+            <option value="OPERATION">Operation</option>
+            <option value="PROCESS">Process</option>
+            <option value="ORDER_LINE">Order Line</option>
+            <option value="INVENTORY">Inventory</option>
+            <option value="BATCH">Batch</option>
+          </select>
+        </div>
+
+        <div class="filter-group search-group">
+          <label>Search:</label>
+          <input
+            type="text"
+            placeholder="Search by reason or comments..."
+            (input)="onSearchChange($any($event.target).value)"
+            [value]="searchTerm"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Holds Table -->
+    <div class="card">
+      <table class="table" *ngIf="holds.length > 0">
+        <thead>
+          <tr>
+            <th>Entity Type</th>
+            <th>Entity</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Applied By</th>
+            <th>Applied On</th>
+            <th>Duration</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let hold of holds">
+            <td>
+              <span class="entity-type-badge" [ngClass]="hold.entityType.toLowerCase()">
+                {{ hold.entityType }}
+              </span>
+            </td>
+            <td>{{ hold.entityName }}</td>
+            <td>{{ hold.reason }}</td>
+            <td>
+              <app-status-badge [status]="hold.status"></app-status-badge>
+            </td>
+            <td>{{ hold.appliedBy }}</td>
+            <td>{{ hold.appliedOn | date:'short' }}</td>
+            <td>{{ formatDuration(hold.durationMinutes) }}</td>
+            <td>
+              <button *ngIf="hold.status === 'ACTIVE'" class="btn btn-small btn-success" (click)="openReleaseHoldModal(hold)">
+                Release
+              </button>
+              <span *ngIf="hold.status !== 'ACTIVE'" class="text-muted">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p *ngIf="holds.length === 0" class="no-data">
+        No holds found matching the selected filters.
+      </p>
+
+      <!-- Pagination -->
+      <app-pagination
+        *ngIf="holds.length > 0"
+        [page]="page"
+        [size]="size"
+        [totalElements]="totalElements"
+        [totalPages]="totalPages"
+        [hasNext]="hasNext"
+        [hasPrevious]="hasPrevious"
+        (pageChange)="onPageChange($event)"
+        (sizeChange)="onSizeChange($event)"
+      ></app-pagination>
     </div>
   </div>
 </div>

@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { Hold } from '../../../shared/models';
+import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-hold-list',
@@ -8,15 +10,28 @@ import { ApiService } from '../../../core/services/api.service';
   styleUrls: ['./hold-list.component.css']
 })
 export class HoldListComponent implements OnInit {
-  activeHolds: any[] = [];
+  holds: Hold[] = [];
   holdReasons: any[] = [];
   loading = false;
   error = '';
   success = '';
 
+  // Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  filterStatus = '';
+  filterEntityType = '';
+  searchTerm = '';
+
   showApplyHoldModal = false;
   showReleaseHoldModal = false;
-  selectedHold: any = null;
+  selectedHold: Hold | null = null;
 
   applyHoldForm: FormGroup;
   releaseComments = '';
@@ -48,24 +63,70 @@ export class HoldListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadActiveHolds();
+    this.loadHolds();
     this.loadHoldReasons();
     this.loadEntities();
   }
 
-  loadActiveHolds(): void {
+  loadHolds(): void {
     this.loading = true;
-    this.apiService.getActiveHolds().subscribe({
-      next: (data) => {
-        this.activeHolds = data;
+
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'appliedOn',
+      sortDirection: 'DESC',
+      status: this.filterStatus || undefined,
+      type: this.filterEntityType || undefined,
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getHoldsPaged(request).subscribe({
+      next: (response: PagedResponse<Hold>) => {
+        this.holds = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error loading active holds:', err);
-        this.error = 'Failed to load active holds';
+        console.error('Error loading holds:', err);
+        this.error = 'Failed to load holds';
         this.loading = false;
       }
     });
+  }
+
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadHolds();
+  }
+
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadHolds();
+  }
+
+  onFilterStatusChange(status: string): void {
+    this.filterStatus = status === 'all' ? '' : status;
+    this.page = 0;
+    this.loadHolds();
+  }
+
+  onFilterEntityTypeChange(type: string): void {
+    this.filterEntityType = type === 'all' ? '' : type;
+    this.page = 0;
+    this.loadHolds();
+  }
+
+  onSearchChange(term: string): void {
+    this.searchTerm = term;
+    this.page = 0;
+    this.loadHolds();
   }
 
   loadHoldReasons(): void {
@@ -153,7 +214,7 @@ export class HoldListComponent implements OnInit {
     this.showApplyHoldModal = false;
   }
 
-  openReleaseHoldModal(hold: any): void {
+  openReleaseHoldModal(hold: Hold): void {
     this.selectedHold = hold;
     this.releaseComments = '';
     this.showReleaseHoldModal = true;
@@ -179,7 +240,7 @@ export class HoldListComponent implements OnInit {
       next: () => {
         this.success = 'Hold applied successfully';
         this.closeApplyHoldModal();
-        this.loadActiveHolds();
+        this.loadHolds();
         this.loadEntities();
         this.loading = false;
       },
@@ -201,7 +262,7 @@ export class HoldListComponent implements OnInit {
       next: () => {
         this.success = 'Hold released successfully';
         this.closeReleaseHoldModal();
-        this.loadActiveHolds();
+        this.loadHolds();
         this.loadEntities();
         this.loading = false;
       },
@@ -213,7 +274,7 @@ export class HoldListComponent implements OnInit {
     });
   }
 
-  formatDuration(minutes: number): string {
+  formatDuration(minutes: number | undefined): string {
     if (!minutes) return '-';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;

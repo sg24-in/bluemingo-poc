@@ -2,6 +2,8 @@ package com.mes.production.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.production.dto.HoldDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.security.JwtService;
 import com.mes.production.service.HoldService;
 import org.junit.jupiter.api.BeforeEach;
@@ -187,5 +189,113 @@ class HoldControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(applyRequest)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should get paginated holds")
+    @WithMockUser(username = "admin@mes.com")
+    void getHoldsPaged_ReturnsPagedResult() throws Exception {
+        PagedResponseDTO<HoldDTO.HoldResponse> pagedResponse = PagedResponseDTO.<HoldDTO.HoldResponse>builder()
+                .content(List.of(holdResponse))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(holdService.getHoldsPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/holds/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("sortBy", "appliedOn")
+                        .param("sortDirection", "DESC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].holdId").value(1))
+                .andExpect(jsonPath("$.content[0].entityType").value("OPERATION"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.page").value(0));
+
+        verify(holdService, times(1)).getHoldsPaged(any(PageRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated holds with status filter")
+    @WithMockUser(username = "admin@mes.com")
+    void getHoldsPaged_WithStatusFilter_ReturnsFiltered() throws Exception {
+        PagedResponseDTO<HoldDTO.HoldResponse> pagedResponse = PagedResponseDTO.<HoldDTO.HoldResponse>builder()
+                .content(List.of(holdResponse))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(holdService.getHoldsPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/holds/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("status", "ACTIVE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].status").value("ACTIVE"));
+
+        verify(holdService, times(1)).getHoldsPaged(any(PageRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated holds with entity type filter")
+    @WithMockUser(username = "admin@mes.com")
+    void getHoldsPaged_WithEntityTypeFilter_ReturnsFiltered() throws Exception {
+        PagedResponseDTO<HoldDTO.HoldResponse> pagedResponse = PagedResponseDTO.<HoldDTO.HoldResponse>builder()
+                .content(List.of(holdResponse))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(holdService.getHoldsPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/holds/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("type", "OPERATION"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].entityType").value("OPERATION"));
+
+        verify(holdService, times(1)).getHoldsPaged(any(PageRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated holds with search")
+    @WithMockUser(username = "admin@mes.com")
+    void getHoldsPaged_WithSearch_ReturnsFiltered() throws Exception {
+        PagedResponseDTO<HoldDTO.HoldResponse> pagedResponse = PagedResponseDTO.<HoldDTO.HoldResponse>builder()
+                .content(List.of(holdResponse))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(holdService.getHoldsPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/holds/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("search", "Breakdown"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].reason").value("Equipment Breakdown"));
+
+        verify(holdService, times(1)).getHoldsPaged(any(PageRequestDTO.class));
     }
 }

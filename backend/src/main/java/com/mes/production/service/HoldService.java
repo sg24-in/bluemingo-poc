@@ -1,9 +1,14 @@
 package com.mes.production.service;
 
 import com.mes.production.dto.HoldDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.entity.*;
 import com.mes.production.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HoldService {
 
     private final HoldRecordRepository holdRecordRepository;
@@ -93,6 +99,39 @@ public class HoldService {
                     return convertToResponse(hold, entityName);
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get holds with pagination, sorting, and filtering
+     */
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<HoldDTO.HoldResponse> getHoldsPaged(PageRequestDTO pageRequest) {
+        log.info("Fetching holds with pagination: page={}, size={}, status={}, type={}, search={}",
+                pageRequest.getPage(), pageRequest.getSize(),
+                pageRequest.getStatus(), pageRequest.getType(), pageRequest.getSearch());
+
+        Pageable pageable = pageRequest.toPageable("appliedOn");
+
+        Page<HoldRecord> page;
+        if (pageRequest.hasFilters()) {
+            page = holdRecordRepository.findByFilters(
+                    pageRequest.getStatus(),
+                    pageRequest.getType(), // entityType filter
+                    pageRequest.getSearchPattern(),
+                    pageable);
+        } else {
+            page = holdRecordRepository.findAll(pageable);
+        }
+
+        Page<HoldDTO.HoldResponse> dtoPage = page.map(hold -> {
+            String entityName = getEntityName(hold.getEntityType(), hold.getEntityId());
+            return convertToResponse(hold, entityName);
+        });
+
+        return PagedResponseDTO.fromPage(dtoPage,
+                pageRequest.getSortBy(),
+                pageRequest.getSortDirection(),
+                pageRequest.getSearch());
     }
 
     @Transactional(readOnly = true)

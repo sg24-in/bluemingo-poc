@@ -1,10 +1,14 @@
 package com.mes.production.service;
 
 import com.mes.production.dto.EquipmentDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.entity.Equipment;
 import com.mes.production.repository.EquipmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +33,35 @@ public class EquipmentService {
         return equipmentRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get equipment with pagination, sorting, and filtering
+     */
+    public PagedResponseDTO<EquipmentDTO> getEquipmentPaged(PageRequestDTO pageRequest) {
+        log.info("Fetching equipment with pagination: page={}, size={}, status={}, type={}, search={}",
+                pageRequest.getPage(), pageRequest.getSize(),
+                pageRequest.getStatus(), pageRequest.getType(), pageRequest.getSearch());
+
+        Pageable pageable = pageRequest.toPageable("equipmentCode");
+
+        Page<Equipment> page;
+        if (pageRequest.hasFilters()) {
+            page = equipmentRepository.findByFilters(
+                    pageRequest.getStatus(),
+                    pageRequest.getType(),
+                    pageRequest.getSearchPattern(),
+                    pageable);
+        } else {
+            page = equipmentRepository.findAll(pageable);
+        }
+
+        Page<EquipmentDTO> dtoPage = page.map(this::convertToDTO);
+
+        return PagedResponseDTO.fromPage(dtoPage,
+                pageRequest.getSortBy(),
+                pageRequest.getSortDirection(),
+                pageRequest.getSearch());
     }
 
     /**

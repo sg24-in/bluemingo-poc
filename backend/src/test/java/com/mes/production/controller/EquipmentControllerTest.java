@@ -2,6 +2,8 @@ package com.mes.production.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.production.dto.EquipmentDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.security.JwtService;
 import com.mes.production.service.EquipmentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -256,5 +258,113 @@ class EquipmentControllerTest {
     void getAllEquipment_NotAuthenticated_Returns401() throws Exception {
         mockMvc.perform(get("/api/equipment"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should get paginated equipment")
+    @WithMockUser(username = "admin@mes.com")
+    void getEquipmentPaged_ReturnsPagedResult() throws Exception {
+        PagedResponseDTO<EquipmentDTO> pagedResponse = PagedResponseDTO.<EquipmentDTO>builder()
+                .content(List.of(testEquipment))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(equipmentService.getEquipmentPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/equipment/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("sortBy", "equipmentCode")
+                        .param("sortDirection", "ASC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].equipmentId").value(1))
+                .andExpect(jsonPath("$.content[0].equipmentCode").value("EQ-001"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.page").value(0));
+
+        verify(equipmentService, times(1)).getEquipmentPaged(any(PageRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated equipment with status filter")
+    @WithMockUser(username = "admin@mes.com")
+    void getEquipmentPaged_WithStatusFilter_ReturnsFiltered() throws Exception {
+        PagedResponseDTO<EquipmentDTO> pagedResponse = PagedResponseDTO.<EquipmentDTO>builder()
+                .content(List.of(testEquipment))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(equipmentService.getEquipmentPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/equipment/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("status", "AVAILABLE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].status").value("AVAILABLE"));
+
+        verify(equipmentService, times(1)).getEquipmentPaged(any(PageRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated equipment with type filter")
+    @WithMockUser(username = "admin@mes.com")
+    void getEquipmentPaged_WithTypeFilter_ReturnsFiltered() throws Exception {
+        PagedResponseDTO<EquipmentDTO> pagedResponse = PagedResponseDTO.<EquipmentDTO>builder()
+                .content(List.of(testEquipment))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(equipmentService.getEquipmentPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/equipment/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("type", "FURNACE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].equipmentType").value("FURNACE"));
+
+        verify(equipmentService, times(1)).getEquipmentPaged(any(PageRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated equipment with search")
+    @WithMockUser(username = "admin@mes.com")
+    void getEquipmentPaged_WithSearch_ReturnsFiltered() throws Exception {
+        PagedResponseDTO<EquipmentDTO> pagedResponse = PagedResponseDTO.<EquipmentDTO>builder()
+                .content(List.of(testEquipment))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(equipmentService.getEquipmentPaged(any(PageRequestDTO.class))).thenReturn(pagedResponse);
+
+        mockMvc.perform(get("/api/equipment/paged")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("search", "Furnace"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("Furnace 1"));
+
+        verify(equipmentService, times(1)).getEquipmentPaged(any(PageRequestDTO.class));
     }
 }

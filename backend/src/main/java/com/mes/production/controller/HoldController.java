@@ -1,6 +1,8 @@
 package com.mes.production.controller;
 
 import com.mes.production.dto.HoldDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.service.HoldService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +39,7 @@ public class HoldController {
     /**
      * Release a hold
      */
-    @PutMapping("/{holdId}/release")
+    @PutMapping("/{holdId:\\d+}/release")
     public ResponseEntity<HoldDTO.HoldResponse> releaseHold(
             @PathVariable Long holdId,
             @RequestBody(required = false) HoldDTO.ReleaseHoldRequest request,
@@ -56,6 +58,36 @@ public class HoldController {
     public ResponseEntity<List<HoldDTO.HoldResponse>> getActiveHolds() {
         log.info("GET /api/holds/active");
         return ResponseEntity.ok(holdService.getActiveHolds());
+    }
+
+    /**
+     * Get holds with pagination, sorting, and filtering.
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<HoldDTO.HoldResponse>> getHoldsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type) {
+
+        log.info("GET /api/holds/paged - page={}, size={}, status={}, entityType={}, search={}",
+                page, size, status, type, search);
+
+        PageRequestDTO pageRequest = PageRequestDTO.builder()
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .search(search)
+                .status(status)
+                .type(type)
+                .build();
+
+        PagedResponseDTO<HoldDTO.HoldResponse> result = holdService.getHoldsPaged(pageRequest);
+        return ResponseEntity.ok(result);
     }
 
     /**

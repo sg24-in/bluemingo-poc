@@ -82,7 +82,8 @@
       "Bash(cmd.exe /c \"D: && cd D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test\")",
       "Bash(cmd /c \"pushd D:\\\\repositories\\\\bluemingo-poc\\\\backend && call gradlew.bat test 2>&1\")",
       "Bash(cd:*)",
-      "Bash(git fsck:*)"
+      "Bash(git fsck:*)",
+      "Bash(bc:*)"
     ]
   }
 }

@@ -224,14 +224,26 @@ frontend/src/app/
 ### Holds
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /api/holds | List holds |
+| GET | /api/holds/active | Active holds |
+| GET | /api/holds/paged | Paginated holds |
+| GET | /api/holds/count | Active hold count |
 | POST | /api/holds | Apply hold |
 | PUT | /api/holds/{id}/release | Release hold |
+
+### Equipment
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/equipment | Equipment list |
+| GET | /api/equipment/paged | Paginated equipment |
+| GET | /api/equipment/{id} | Equipment detail |
+| POST | /api/equipment/{id}/maintenance/start | Start maintenance |
+| POST | /api/equipment/{id}/maintenance/end | End maintenance |
+| POST | /api/equipment/{id}/hold | Put on hold |
+| POST | /api/equipment/{id}/release | Release from hold |
 
 ### Master Data
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /api/master/equipment | Equipment list |
 | GET | /api/master/operators | Operators list |
 | GET | /api/master/process-parameters | Process parameters |
 
@@ -247,20 +259,40 @@ frontend/src/app/
 ## 4. Test Coverage
 
 ### Backend Tests
-- **Total Tests:** 253
-- **Passing:** 253 (100%)
+- **Total Tests:** 261
+- **Passing:** 261 (100%)
 - **Framework:** JUnit 5 + Mockito
+- **Coverage Tool:** JaCoCo
+- **Coverage Report:** `backend/build/reports/jacoco/index.html`
+
+| Test Category | Tests |
+|--------------|-------|
+| Controller Tests | 98 |
+| Service Tests | 70 |
+| Integration Tests | 93 |
 
 ### Frontend Tests
 - **Total Tests:** 249
 - **Passing:** 249 (100%)
 - **Framework:** Jasmine + Karma
+- **Coverage:** `frontend/coverage/`
 - **Note:** Tests updated to use new paginated API methods
 
 ### E2E Tests
 - **Total Tests:** 65
 - **Passing:** 65 (100%)
-- **Test Files:** 10 feature-based files (including pagination tests)
+- **Test Files:** 10 feature-based files
+  - 01-auth.test.js (5 tests)
+  - 02-dashboard.test.js (4 tests)
+  - 03-orders.test.js (5 tests)
+  - 04-production.test.js (7 tests)
+  - 05-inventory.test.js (9 tests)
+  - 06-batches.test.js (8 tests)
+  - 07-holds.test.js (5 tests)
+  - 08-equipment.test.js (7 tests)
+  - 09-quality.test.js (6 tests)
+  - 10-pagination.test.js (8 tests)
+  - Navigation flow test (1 test)
 - **Framework:** Playwright
 - **Output:** Screenshots + Videos
 
@@ -327,4 +359,5 @@ The POC includes a demo mode using H2 in-memory database:
 | Date | Author | Changes |
 |------|--------|---------|
 | 2026-02-04 | Claude Code | Initial document creation |
-| 2026-02-04 | Claude Code | Updated test counts (E2E: 57 tests 100% passing, Frontend: 249 tests 100% passing) |
+| 2026-02-04 | Claude Code | Updated test counts (E2E: 65 tests 100% passing) |
+| 2026-02-04 | Claude Code | Added paginated endpoints for Equipment and Holds, updated API reference |

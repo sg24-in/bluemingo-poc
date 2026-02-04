@@ -328,28 +328,35 @@ e2e/
 - Shows stock availability status (Sufficient/Insufficient)
 - "Apply Suggestions" button to auto-fill material selections
 
-### Pagination & Sorting (In Progress)
+### Pagination & Sorting (Completed)
 **Files Created/Modified:**
 - `backend/src/main/java/com/mes/production/dto/PagedResponseDTO.java` - NEW: Generic paged response
 - `backend/src/main/java/com/mes/production/dto/PageRequestDTO.java` - NEW: Pagination request params
-- `backend/src/main/java/com/mes/production/repository/OrderRepository.java` - Added Pageable methods
-- `backend/src/main/java/com/mes/production/service/OrderService.java` - Added paginated methods
-- `backend/src/main/java/com/mes/production/controller/OrderController.java` - Added /paged endpoint
+- All repository classes - Added Pageable methods with `findByFilters()` queries
+- All service classes - Added `get*Paged()` methods
+- All controllers - Added `/paged` endpoints
 - `frontend/src/app/shared/models/pagination.model.ts` - NEW: TypeScript interfaces
 - `frontend/src/app/shared/components/pagination/` - NEW: Reusable pagination component
-- `frontend/src/app/core/services/api.service.ts` - Added getOrdersPaged method
+- `frontend/src/app/core/services/api.service.ts` - Added paginated API methods
 
 **Features:**
-- Server-side pagination with configurable page size
+- Server-side pagination with configurable page size (10, 20, 50, 100)
 - Sorting by field with ASC/DESC direction
-- Search/filter support
+- Combined search/filter support
 - Reusable PaginationComponent for all list pages
+- Page size dropdown and navigation controls
 
-**API Endpoint:**
-`GET /api/orders/paged?page=0&size=20&sortBy=orderDate&sortDirection=DESC&search=&status=`
+**Paginated API Endpoints:**
+| Endpoint | Query Params |
+|----------|-------------|
+| `GET /api/orders/paged` | page, size, sortBy, sortDirection, search, status |
+| `GET /api/batches/paged` | page, size, sortBy, sortDirection, search, status |
+| `GET /api/inventory/paged` | page, size, sortBy, sortDirection, search, status, type |
+| `GET /api/equipment/paged` | page, size, sortBy, sortDirection, search, status, type |
+| `GET /api/holds/paged` | page, size, sortBy, sortDirection, search, status, type |
 
-**Pattern to apply to other entities:**
-- Batches, Inventory, Equipment, Holds, Operations
+**E2E Tests:**
+- `e2e/tests/10-pagination.test.js` - 8 tests covering pagination controls, navigation, and combined filters
 
 ### GAP-007: Field-Level Audit Trail (Completed)
 **Files Created/Modified:**
@@ -406,27 +413,80 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 
 ## Key API Endpoints (Updated)
 
+### Authentication
 | Endpoint | Description |
 |----------|-------------|
 | `POST /api/auth/login` | User login (JWT) |
-| `GET /api/orders` | List orders |
+
+### Orders
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/orders` | List all orders |
+| `GET /api/orders/paged` | **Paginated** orders with sorting/filtering |
 | `GET /api/orders/available` | Orders with READY operations |
+| `GET /api/orders/{id}` | Get order by ID |
+
+### Production
+| Endpoint | Description |
+|----------|-------------|
 | `POST /api/production/confirm` | Submit production confirmation |
-| `GET /api/inventory` | Inventory list with filters |
+| `GET /api/production/confirmations` | List production confirmations |
+
+### Inventory
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/inventory` | List all inventory |
+| `GET /api/inventory/paged` | **Paginated** inventory with sorting/filtering |
 | `POST /api/inventory/{id}/block` | Block inventory |
 | `POST /api/inventory/{id}/unblock` | Unblock inventory |
 | `POST /api/inventory/{id}/scrap` | Scrap inventory |
-| `GET /api/batches` | Batch list |
+
+### Batches
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/batches` | List all batches |
+| `GET /api/batches/paged` | **Paginated** batches with sorting/filtering |
 | `GET /api/batches/{id}/genealogy` | Batch traceability |
+| `POST /api/batches/{id}/split` | Split a batch |
+| `POST /api/batches/merge` | Merge batches |
+
+### BOM (Bill of Materials)
+| Endpoint | Description |
+|----------|-------------|
 | `GET /api/bom/{productSku}/requirements` | BOM requirements tree |
 | `POST /api/bom/validate` | Validate BOM consumption |
-| `GET /api/bom/operation/{id}/suggested-consumption` | **NEW:** Suggested consumption from BOM |
-| `GET /api/holds` | Active holds list |
+| `GET /api/bom/operation/{id}/suggested-consumption` | Suggested consumption from BOM |
+
+### Holds
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/holds/active` | Active holds list |
+| `GET /api/holds/paged` | **Paginated** holds with sorting/filtering |
 | `POST /api/holds` | Apply hold |
 | `PUT /api/holds/{id}/release` | Release hold |
-| `GET /api/master/equipment` | Equipment list |
+| `GET /api/holds/count` | Active hold count |
+
+### Equipment
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/equipment` | List all equipment |
+| `GET /api/equipment/paged` | **Paginated** equipment with sorting/filtering |
+| `POST /api/equipment/{id}/maintenance/start` | Start maintenance |
+| `POST /api/equipment/{id}/maintenance/end` | End maintenance |
+| `POST /api/equipment/{id}/hold` | Put on hold |
+| `POST /api/equipment/{id}/release` | Release from hold |
+
+### Master Data
+| Endpoint | Description |
+|----------|-------------|
 | `GET /api/master/operators` | Operators list |
 | `GET /api/master/process-parameters` | Dynamic process parameters with min/max config |
+
+### Dashboard
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/dashboard/stats` | Dashboard statistics |
+| `GET /api/dashboard/recent-confirmations` | Recent production confirmations |
 
 ---
 
