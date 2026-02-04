@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { AllocationInfo, BatchAvailability } from '../../../shared/models';
 
 interface SplitPortion {
   quantity: number;
@@ -32,6 +33,15 @@ export class BatchDetailComponent implements OnInit {
   success = '';
   submitting = false;
 
+  // Allocation UI (GAP-001: Multi-Order Batch Confirmation)
+  allocations: AllocationInfo[] = [];
+  batchAvailability: BatchAvailability | null = null;
+  loadingAllocations = false;
+  showAllocationModal = false;
+  allocationOrderLineId: number | null = null;
+  allocationQuantity: number = 0;
+  availableOrderLines: any[] = [];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -42,6 +52,7 @@ export class BatchDetailComponent implements OnInit {
     this.batchId = Number(this.route.snapshot.paramMap.get('batchId'));
     this.loadBatch();
     this.loadGenealogy();
+    this.loadAllocations();
   }
 
   loadBatch(): void {
@@ -223,5 +234,121 @@ export class BatchDetailComponent implements OnInit {
         this.submitting = false;
       }
     });
+  }
+
+  // ============================================================
+  // Allocation functionality (GAP-001: Multi-Order Batch Confirmation)
+  // ============================================================
+
+  loadAllocations(): void {
+    this.loadingAllocations = true;
+    this.apiService.getBatchAllocations(this.batchId).subscribe({
+      next: (allocations) => {
+        this.allocations = allocations;
+        this.loadingAllocations = false;
+      },
+      error: (err) => {
+        console.error('Error loading allocations:', err);
+        this.loadingAllocations = false;
+      }
+    });
+
+    this.apiService.getBatchAvailability(this.batchId).subscribe({
+      next: (availability) => {
+        this.batchAvailability = availability;
+      },
+      error: (err) => {
+        console.error('Error loading batch availability:', err);
+      }
+    });
+  }
+
+  openAllocationModal(): void {
+    this.showAllocationModal = true;
+    this.allocationOrderLineId = null;
+    this.allocationQuantity = this.batchAvailability?.availableQuantity || 0;
+    this.error = '';
+    this.loadAvailableOrderLines();
+  }
+
+  closeAllocationModal(): void {
+    this.showAllocationModal = false;
+  }
+
+  loadAvailableOrderLines(): void {
+    // Load orders with READY operations to get available order lines
+    this.apiService.getAvailableOrders().subscribe({
+      next: (orders) => {
+        this.availableOrderLines = [];
+        orders.forEach(order => {
+          if (order.lineItems) {
+            order.lineItems.forEach((line: any) => {
+              this.availableOrderLines.push({
+                orderLineId: line.orderLineId,
+                orderId: order.orderId,
+                orderNumber: order.orderNumber,
+                productSku: line.productSku,
+                productName: line.productName,
+                orderedQty: line.quantity,
+                unit: line.unit
+              });
+            });
+          }
+        });
+      },
+      error: (err) => console.error('Error loading order lines:', err)
+    });
+  }
+
+  canAllocate(): boolean {
+    return this.allocationOrderLineId !== null &&
+           this.allocationQuantity > 0 &&
+           this.allocationQuantity <= (this.batchAvailability?.availableQuantity || 0);
+  }
+
+  submitAllocation(): void {
+    if (!this.canAllocate() || !this.allocationOrderLineId) return;
+
+    this.submitting = true;
+    this.error = '';
+
+    this.apiService.allocateBatchToOrder({
+      batchId: this.batchId,
+      orderLineId: this.allocationOrderLineId,
+      quantity: this.allocationQuantity
+    }).subscribe({
+      next: (result) => {
+        this.success = `Successfully allocated ${result.allocatedQty} ${result.unit} to order`;
+        this.submitting = false;
+        this.closeAllocationModal();
+        this.loadAllocations();
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Failed to allocate batch';
+        this.submitting = false;
+      }
+    });
+  }
+
+  releaseAllocation(allocationId: number): void {
+    if (!confirm('Are you sure you want to release this allocation?')) return;
+
+    this.apiService.releaseAllocation(allocationId).subscribe({
+      next: () => {
+        this.success = 'Allocation released successfully';
+        this.loadAllocations();
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Failed to release allocation';
+      }
+    });
+  }
+
+  getActiveAllocations(): AllocationInfo[] {
+    return this.allocations.filter(a => a.status === 'ALLOCATED');
+  }
+
+  getReleasedAllocations(): AllocationInfo[] {
+    return this.allocations.filter(a => a.status === 'RELEASED');
   }
 }

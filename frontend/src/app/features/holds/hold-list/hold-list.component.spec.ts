@@ -1,18 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 
 import { HoldListComponent } from './hold-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { Hold } from '../../../shared/models';
+import { PagedResponse } from '../../../shared/models/pagination.model';
 
 describe('HoldListComponent', () => {
   let component: HoldListComponent;
   let fixture: ComponentFixture<HoldListComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
-  const mockHolds = [
+  const mockHolds: Hold[] = [
     {
       holdId: 1,
       entityType: 'OPERATION',
@@ -25,6 +28,18 @@ describe('HoldListComponent', () => {
       durationMinutes: 30
     }
   ];
+
+  const mockPagedResponse: PagedResponse<Hold> = {
+    content: mockHolds,
+    page: 0,
+    size: 20,
+    totalElements: 1,
+    totalPages: 1,
+    first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false
+  };
 
   const mockHoldReasons = [
     { reasonCode: 'EQUIPMENT', reasonDescription: 'Equipment Breakdown' },
@@ -49,7 +64,7 @@ describe('HoldListComponent', () => {
 
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
-      'getActiveHolds',
+      'getHoldsPaged',
       'getHoldReasons',
       'getAvailableOrders',
       'getAllInventory',
@@ -62,6 +77,7 @@ describe('HoldListComponent', () => {
       imports: [
         ReactiveFormsModule,
         HttpClientTestingModule,
+        RouterTestingModule,
         SharedModule
       ],
       declarations: [HoldListComponent],
@@ -74,7 +90,7 @@ describe('HoldListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getActiveHolds.and.returnValue(of(mockHolds as any));
+    apiServiceSpy.getHoldsPaged.and.returnValue(of(mockPagedResponse));
     apiServiceSpy.getHoldReasons.and.returnValue(of(mockHoldReasons as any));
     apiServiceSpy.getAvailableOrders.and.returnValue(of(mockOrders as any));
     apiServiceSpy.getAllInventory.and.returnValue(of([] as any));
@@ -89,9 +105,9 @@ describe('HoldListComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load active holds on init', () => {
-    expect(apiServiceSpy.getActiveHolds).toHaveBeenCalled();
-    expect(component.activeHolds.length).toBe(1);
+  it('should load holds on init', () => {
+    expect(apiServiceSpy.getHoldsPaged).toHaveBeenCalled();
+    expect(component.holds.length).toBe(1);
   });
 
   it('should load hold reasons on init', () => {
@@ -100,8 +116,14 @@ describe('HoldListComponent', () => {
   });
 
   it('should display holds in table', () => {
-    expect(component.activeHolds[0].entityType).toBe('OPERATION');
-    expect(component.activeHolds[0].reason).toBe('Equipment Breakdown');
+    expect(component.holds[0].entityType).toBe('OPERATION');
+    expect(component.holds[0].reason).toBe('Equipment Breakdown');
+  });
+
+  it('should set pagination state from response', () => {
+    expect(component.page).toBe(0);
+    expect(component.totalElements).toBe(1);
+    expect(component.totalPages).toBe(1);
   });
 
   describe('Apply Hold', () => {
@@ -161,9 +183,10 @@ describe('HoldListComponent', () => {
 
   describe('Release Hold', () => {
     it('should open release hold modal', () => {
-      component.openReleaseHoldModal(mockHolds[0]);
+      const hold = mockHolds[0];
+      component.openReleaseHoldModal(hold);
       expect(component.showReleaseHoldModal).toBe(true);
-      expect(component.selectedHold).toBe(mockHolds[0]);
+      expect(component.selectedHold).toEqual(hold);
     });
 
     it('should close release hold modal', () => {
@@ -200,6 +223,63 @@ describe('HoldListComponent', () => {
       component.selectedHold = null;
       component.releaseHold();
       expect(apiServiceSpy.releaseHold).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Pagination', () => {
+    beforeEach(() => {
+      // Reset call counts
+      apiServiceSpy.getHoldsPaged.calls.reset();
+    });
+
+    it('should change page', () => {
+      // Mock response with new page
+      const page1Response: PagedResponse<Hold> = {
+        ...mockPagedResponse,
+        page: 1
+      };
+      apiServiceSpy.getHoldsPaged.and.returnValue(of(page1Response));
+
+      component.onPageChange(1);
+      expect(component.page).toBe(1);
+      expect(apiServiceSpy.getHoldsPaged).toHaveBeenCalledTimes(1);
+    });
+
+    it('should change page size and reset to first page', () => {
+      // Mock response with new size
+      const size50Response: PagedResponse<Hold> = {
+        ...mockPagedResponse,
+        size: 50,
+        page: 0
+      };
+      apiServiceSpy.getHoldsPaged.and.returnValue(of(size50Response));
+
+      component.page = 2;
+      component.onSizeChange(50);
+      expect(component.size).toBe(50);
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getHoldsPaged).toHaveBeenCalledTimes(1);
+    });
+
+    it('should filter by status', () => {
+      component.onFilterStatusChange('ACTIVE');
+      expect(component.filterStatus).toBe('ACTIVE');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getHoldsPaged).toHaveBeenCalledTimes(1);
+    });
+
+    it('should filter by entity type', () => {
+      component.onFilterEntityTypeChange('OPERATION');
+      expect(component.filterEntityType).toBe('OPERATION');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getHoldsPaged).toHaveBeenCalledTimes(1);
+    });
+
+    it('should search', () => {
+      component.onSearchChange('test');
+      expect(component.searchTerm).toBe('test');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getHoldsPaged).toHaveBeenCalledTimes(1);
     });
   });
 

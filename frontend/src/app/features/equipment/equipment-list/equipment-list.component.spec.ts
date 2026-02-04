@@ -7,13 +7,15 @@ import { of, throwError } from 'rxjs';
 import { EquipmentListComponent } from './equipment-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { Equipment } from '../../../shared/models';
+import { PagedResponse } from '../../../shared/models/pagination.model';
 
 describe('EquipmentListComponent', () => {
   let component: EquipmentListComponent;
   let fixture: ComponentFixture<EquipmentListComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
-  const mockEquipment = [
+  const mockEquipment: Equipment[] = [
     {
       equipmentId: 1,
       equipmentCode: 'EQ-001',
@@ -48,9 +50,21 @@ describe('EquipmentListComponent', () => {
     }
   ];
 
+  const mockPagedResponse: PagedResponse<Equipment> = {
+    content: mockEquipment,
+    page: 0,
+    size: 20,
+    totalElements: 3,
+    totalPages: 1,
+    first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false
+  };
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
-      'getAllEquipment',
+      'getEquipmentPaged',
       'startEquipmentMaintenance',
       'endEquipmentMaintenance',
       'putEquipmentOnHold',
@@ -74,7 +88,7 @@ describe('EquipmentListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getAllEquipment.and.returnValue(of(mockEquipment as any));
+    apiServiceSpy.getEquipmentPaged.and.returnValue(of(mockPagedResponse));
     fixture = TestBed.createComponent(EquipmentListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -85,28 +99,78 @@ describe('EquipmentListComponent', () => {
   });
 
   it('should load equipment on init', () => {
-    expect(apiServiceSpy.getAllEquipment).toHaveBeenCalled();
+    expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalled();
     expect(component.equipment.length).toBe(3);
     expect(component.loading).toBeFalse();
   });
 
+  it('should set pagination state from response', () => {
+    expect(component.page).toBe(0);
+    expect(component.totalElements).toBe(3);
+    expect(component.totalPages).toBe(1);
+  });
+
   describe('Filtering', () => {
+    beforeEach(() => {
+      // Reset call counts
+      apiServiceSpy.getEquipmentPaged.calls.reset();
+    });
+
     it('should filter by status', () => {
       component.onFilterStatusChange('AVAILABLE');
-      expect(component.filteredEquipment.length).toBe(1);
-      expect(component.filteredEquipment[0].status).toBe('AVAILABLE');
+      expect(component.filterStatus).toBe('AVAILABLE');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
     });
 
     it('should filter by type', () => {
       component.onFilterTypeChange('FURNACE');
-      expect(component.filteredEquipment.length).toBe(1);
-      expect(component.filteredEquipment[0].equipmentType).toBe('FURNACE');
+      expect(component.filterType).toBe('FURNACE');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
     });
 
     it('should filter by search term', () => {
       component.onSearchChange('EQ-001');
-      expect(component.filteredEquipment.length).toBe(1);
-      expect(component.filteredEquipment[0].equipmentCode).toBe('EQ-001');
+      expect(component.searchTerm).toBe('EQ-001');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Pagination', () => {
+    beforeEach(() => {
+      // Reset call counts
+      apiServiceSpy.getEquipmentPaged.calls.reset();
+    });
+
+    it('should change page', () => {
+      // Mock response with new page
+      const page1Response: PagedResponse<Equipment> = {
+        ...mockPagedResponse,
+        page: 1
+      };
+      apiServiceSpy.getEquipmentPaged.and.returnValue(of(page1Response));
+
+      component.onPageChange(1);
+      expect(component.page).toBe(1);
+      expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
+    });
+
+    it('should change page size and reset to first page', () => {
+      // Mock response with new size
+      const size50Response: PagedResponse<Equipment> = {
+        ...mockPagedResponse,
+        size: 50,
+        page: 0
+      };
+      apiServiceSpy.getEquipmentPaged.and.returnValue(of(size50Response));
+
+      component.page = 2;
+      component.onSizeChange(50);
+      expect(component.size).toBe(50);
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -144,15 +208,15 @@ describe('EquipmentListComponent', () => {
     });
 
     it('should determine if maintenance can be started', () => {
-      expect(component.canStartMaintenance({ status: 'AVAILABLE' })).toBeTrue();
-      expect(component.canStartMaintenance({ status: 'ON_HOLD' })).toBeTrue();
-      expect(component.canStartMaintenance({ status: 'MAINTENANCE' })).toBeFalse();
-      expect(component.canStartMaintenance({ status: 'IN_USE' })).toBeFalse();
+      expect(component.canStartMaintenance({ status: 'AVAILABLE' } as Equipment)).toBeTrue();
+      expect(component.canStartMaintenance({ status: 'ON_HOLD' } as Equipment)).toBeTrue();
+      expect(component.canStartMaintenance({ status: 'MAINTENANCE' } as Equipment)).toBeFalse();
+      expect(component.canStartMaintenance({ status: 'IN_USE' } as Equipment)).toBeFalse();
     });
 
     it('should determine if maintenance can be ended', () => {
-      expect(component.canEndMaintenance({ status: 'MAINTENANCE' })).toBeTrue();
-      expect(component.canEndMaintenance({ status: 'AVAILABLE' })).toBeFalse();
+      expect(component.canEndMaintenance({ status: 'MAINTENANCE' } as Equipment)).toBeTrue();
+      expect(component.canEndMaintenance({ status: 'AVAILABLE' } as Equipment)).toBeFalse();
     });
   });
 
@@ -160,7 +224,7 @@ describe('EquipmentListComponent', () => {
     it('should open hold modal', () => {
       component.openHoldModal(mockEquipment[0]);
       expect(component.showHoldModal).toBeTrue();
-      expect(component.selectedEquipment).toBe(mockEquipment[0]);
+      expect(component.selectedEquipment).toEqual(mockEquipment[0]);
     });
 
     it('should close hold modal', () => {
@@ -190,31 +254,20 @@ describe('EquipmentListComponent', () => {
     });
 
     it('should determine if equipment can be put on hold', () => {
-      expect(component.canPutOnHold({ status: 'AVAILABLE' })).toBeTrue();
-      expect(component.canPutOnHold({ status: 'MAINTENANCE' })).toBeTrue();
-      expect(component.canPutOnHold({ status: 'ON_HOLD' })).toBeFalse();
-      expect(component.canPutOnHold({ status: 'IN_USE' })).toBeFalse();
+      expect(component.canPutOnHold({ status: 'AVAILABLE' } as Equipment)).toBeTrue();
+      expect(component.canPutOnHold({ status: 'MAINTENANCE' } as Equipment)).toBeTrue();
+      expect(component.canPutOnHold({ status: 'ON_HOLD' } as Equipment)).toBeFalse();
+      expect(component.canPutOnHold({ status: 'IN_USE' } as Equipment)).toBeFalse();
     });
 
     it('should determine if equipment can be released from hold', () => {
-      expect(component.canReleaseFromHold({ status: 'ON_HOLD' })).toBeTrue();
-      expect(component.canReleaseFromHold({ status: 'AVAILABLE' })).toBeFalse();
+      expect(component.canReleaseFromHold({ status: 'ON_HOLD' } as Equipment)).toBeTrue();
+      expect(component.canReleaseFromHold({ status: 'AVAILABLE' } as Equipment)).toBeFalse();
     });
   });
 
-  it('should get status summary', () => {
-    const summary = component.getStatusSummary();
-    expect(summary.length).toBe(3);
-
-    const available = summary.find(s => s.status === 'AVAILABLE');
-    expect(available?.count).toBe(1);
-
-    const maintenance = summary.find(s => s.status === 'MAINTENANCE');
-    expect(maintenance?.count).toBe(1);
-  });
-
   it('should handle error loading equipment', () => {
-    apiServiceSpy.getAllEquipment.and.returnValue(throwError(() => new Error('Error')));
+    apiServiceSpy.getEquipmentPaged.and.returnValue(throwError(() => new Error('Error')));
     component.loadEquipment();
     expect(component.loading).toBeFalse();
   });

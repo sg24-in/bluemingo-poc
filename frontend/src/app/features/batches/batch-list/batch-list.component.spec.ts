@@ -134,15 +134,30 @@ describe('BatchListComponent', () => {
 
   describe('Pagination', () => {
     it('should reload batches when page changes', () => {
+      // Mock response with new page
+      const page1Response: PagedResponse<Batch> = {
+        ...mockPagedResponse,
+        page: 1
+      };
+      apiServiceSpy.getBatchesPaged.and.returnValue(of(page1Response));
       apiServiceSpy.getBatchesPaged.calls.reset();
+
       component.onPageChange(1);
       expect(apiServiceSpy.getBatchesPaged).toHaveBeenCalled();
       expect(component.page).toBe(1);
     });
 
     it('should reload batches and reset page when size changes', () => {
-      component.page = 2;
+      // Mock response with new size
+      const size50Response: PagedResponse<Batch> = {
+        ...mockPagedResponse,
+        size: 50,
+        page: 0
+      };
+      apiServiceSpy.getBatchesPaged.and.returnValue(of(size50Response));
       apiServiceSpy.getBatchesPaged.calls.reset();
+
+      component.page = 2;
       component.onSizeChange(50);
       expect(apiServiceSpy.getBatchesPaged).toHaveBeenCalled();
       expect(component.size).toBe(50);

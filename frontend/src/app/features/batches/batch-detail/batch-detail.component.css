@@ -377,3 +377,142 @@
 .batch-item-info .batch-qty {
   color: #666;
 }
+
+/* Allocation Styles (GAP-001: Multi-Order Batch Confirmation) */
+.allocation-summary {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.allocation-summary .summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.allocation-summary .label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.allocation-summary .value {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.allocation-summary .value.allocated {
+  color: #f57c00;
+}
+
+.allocation-summary .value.available {
+  color: #388e3c;
+}
+
+.allocations-section {
+  margin-bottom: 24px;
+}
+
+.allocations-section h4 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.no-allocations {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.no-allocations .hint {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* Data Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.data-table td {
+  font-size: 14px;
+}
+
+.data-table tr:hover {
+  background: #fafafa;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-info {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.badge-secondary {
+  background: #f5f5f5;
+  color: #666;
+}
+
+/* Allocation Modal Specific */
+.allocation-info {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.allocation-info p {
+  margin: 4px 0;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.form-text {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.text-muted {
+  color: #888;
+}

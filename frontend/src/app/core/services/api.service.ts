@@ -46,7 +46,12 @@ import {
   BomValidationRequest,
   BomValidationResult,
   BomRequirement,
-  SuggestedConsumptionResponse
+  SuggestedConsumptionResponse,
+  // Batch Allocation
+  AllocationInfo,
+  AllocateRequest,
+  UpdateAllocationQuantityRequest,
+  BatchAvailability
 } from '../../shared/models';
 
 /**
@@ -238,6 +243,52 @@ export class ApiService {
 
   rejectBatch(batchId: number, reason: string): Observable<BatchStatusUpdateResponse> {
     return this.http.post<BatchStatusUpdateResponse>(`${environment.apiUrl}/batches/${batchId}/reject`, { batchId, reason });
+  }
+
+  // ============================================================
+  // Batch Allocations (GAP-001: Multi-Order Batch Confirmation)
+  // ============================================================
+
+  /**
+   * Allocate batch to order line
+   */
+  allocateBatchToOrder(request: AllocateRequest): Observable<AllocationInfo> {
+    return this.http.post<AllocationInfo>(`${environment.apiUrl}/batch-allocations`, request);
+  }
+
+  /**
+   * Release an allocation
+   */
+  releaseAllocation(allocationId: number): Observable<AllocationInfo> {
+    return this.http.put<AllocationInfo>(`${environment.apiUrl}/batch-allocations/${allocationId}/release`, {});
+  }
+
+  /**
+   * Update allocation quantity
+   */
+  updateAllocationQuantity(allocationId: number, request: UpdateAllocationQuantityRequest): Observable<AllocationInfo> {
+    return this.http.put<AllocationInfo>(`${environment.apiUrl}/batch-allocations/${allocationId}/quantity`, request);
+  }
+
+  /**
+   * Get allocations for a batch
+   */
+  getBatchAllocations(batchId: number): Observable<AllocationInfo[]> {
+    return this.http.get<AllocationInfo[]>(`${environment.apiUrl}/batch-allocations/batch/${batchId}`);
+  }
+
+  /**
+   * Get allocations for an order line
+   */
+  getOrderLineAllocations(orderLineId: number): Observable<AllocationInfo[]> {
+    return this.http.get<AllocationInfo[]>(`${environment.apiUrl}/batch-allocations/order-line/${orderLineId}`);
+  }
+
+  /**
+   * Get batch availability (total, allocated, available)
+   */
+  getBatchAvailability(batchId: number): Observable<BatchAvailability> {
+    return this.http.get<BatchAvailability>(`${environment.apiUrl}/batch-allocations/batch/${batchId}/availability`);
   }
 
   // ============================================================

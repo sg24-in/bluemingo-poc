@@ -259,24 +259,30 @@ frontend/src/app/
 ## 4. Test Coverage
 
 ### Backend Tests
-- **Total Tests:** 261
-- **Passing:** 261 (100%)
+- **Total Tests:** 306
+- **Passing:** 306 (100%)
 - **Framework:** JUnit 5 + Mockito
 - **Coverage Tool:** JaCoCo
 - **Coverage Report:** `backend/build/reports/jacoco/index.html`
 
 | Test Category | Tests |
 |--------------|-------|
-| Controller Tests | 98 |
+| Controller Tests | 143 |
 | Service Tests | 70 |
 | Integration Tests | 93 |
 
+**New Controller Tests Added:**
+- BatchAllocationControllerTest (11 tests)
+- EquipmentUsageControllerTest (12 tests)
+- InventoryMovementControllerTest (13 tests)
+- RoutingControllerTest (12 tests)
+
 ### Frontend Tests
-- **Total Tests:** 249
-- **Passing:** 249 (100%)
+- **Total Tests:** 257
+- **Passing:** 257 (100%)
 - **Framework:** Jasmine + Karma
 - **Coverage:** `frontend/coverage/`
-- **Note:** Tests updated to use new paginated API methods
+- **Note:** Tests updated to use new paginated API methods with proper mock response handling
 
 ### E2E Tests
 - **Total Tests:** 65

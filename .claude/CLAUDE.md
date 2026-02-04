@@ -78,7 +78,13 @@ bluemingo-poc/
 │   ├── config/              # Test configuration
 │   ├── tests/               # Feature-based test files
 │   ├── utils/               # Test utilities
-│   └── output/              # Screenshots & videos
+│   ├── output/              # Screenshots & videos
+│   │   ├── screenshots/     # Test screenshots
+│   │   └── comprehensive-demo/  # Demo video output
+│   ├── record-comprehensive-demo.js  # 33-scene demo recorder
+│   ├── create-synced-voiceover.js    # Voiceover generator
+│   ├── run-all-tests.js     # Master test runner
+│   └── record-user-journey.js        # User journey recorder
 ├── docs/                    # Documentation
 │   ├── DEV-GUIDE.md        # Development instructions
 │   └── USER-GUIDE.md       # User journey documentation
@@ -255,6 +261,80 @@ e2e/
 - Screenshots: `e2e/output/screenshots/{timestamp}/`
 - Videos: `e2e/output/videos/{timestamp}/`
 
+### Demo Video Creation Tools
+
+#### Quick Start: Create Demo with Voiceover
+```bash
+# 1. Start servers (both terminals)
+cd backend && ./gradlew bootRun --args="--spring.profiles.active=demo"
+cd frontend && npm start
+
+# 2. Install demo dependencies (one-time)
+cd e2e && npm install google-tts-api ffmpeg-static ffprobe-static fluent-ffmpeg
+
+# 3. Record comprehensive demo (33 scenes with captions)
+node e2e/record-comprehensive-demo.js
+
+# 4. Add synced voiceover to recorded video
+node e2e/create-synced-voiceover.js <demo-folder-path>
+# OR auto-detect latest:
+node e2e/create-synced-voiceover.js
+```
+
+#### Demo Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `e2e/record-comprehensive-demo.js` | Records 33-scene demo with text captions, captures all features |
+| `e2e/create-synced-voiceover.js` | Generates voiceover matching exact screenshots, combines with video |
+| `e2e/add-voiceover-to-demo.js` | Alternative voiceover with timed script (for custom timing) |
+| `e2e/record-demo-with-captions.js` | Simpler 24-scene demo with caption overlays |
+| `e2e/create-final-demo.js` | All-in-one: record + voiceover in single run |
+
+#### Output Structure
+```
+e2e/output/comprehensive-demo/{timestamp}/
+├── *.webm                              # Raw recorded video
+├── synced-voiceover.mp3                # Combined audio track
+├── MES-Demo-Synced-{timestamp}.mp4     # Final video with voiceover
+├── screenshots/                        # 33 scene screenshots
+│   ├── 001-login-page.png
+│   ├── 002-login-email-entered.png
+│   └── ... (33 total)
+└── synced-audio/                       # Individual voiceover segments
+    ├── 001-voice.mp3
+    ├── 001-pad.mp3 (silence padding)
+    └── ...
+```
+
+#### 33 Demo Scenes
+| # | Scene | Description |
+|---|-------|-------------|
+| 001-005 | Authentication | Login page, credentials, JWT auth, redirect |
+| 006-009 | Dashboard | Metrics, inventory summary, orders ready, audit trail |
+| 010-014 | Orders | List, filters, detail, line items, operations timeline |
+| 015-019 | Inventory | List, status cards, filter available/blocked/type |
+| 020-021 | Batches | List, filter consumed |
+| 022-026 | Holds | List, filter, apply modal, entity type, release modal |
+| 027-029 | Equipment | List, status summary, filter maintenance |
+| 030 | Quality | Pending inspection queue |
+| 031-033 | Logout | Session complete, logged out, demo complete |
+
+#### Dependencies
+```bash
+# Required for voiceover generation
+npm install google-tts-api         # Text-to-speech API
+npm install ffmpeg-static          # FFmpeg binary
+npm install ffprobe-static         # FFprobe binary
+npm install fluent-ffmpeg          # FFmpeg wrapper
+```
+
+#### Troubleshooting Demo Recording
+- **Server check failing**: Scripts accept any HTTP response (not just 200)
+- **ffprobe not found**: Install `ffprobe-static` package
+- **Filter timeout errors**: Wrapped in try-catch, non-fatal
+- **Audio out of sync**: Use `create-synced-voiceover.js` (matches screenshots exactly)
+
 ---
 
 ## Key Workflows
@@ -409,6 +489,46 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 - `backend/src/main/java/com/mes/production/controller/InventoryController.java` - Block/unblock/scrap endpoints
 - `frontend/src/app/features/inventory/` - UI for state management
 
+### Holds Management UI Fix (Completed)
+**Files Modified:**
+- `frontend/src/app/features/holds/hold-list/hold-list.component.css` - Fixed filter layout
+- `frontend/src/app/features/holds/hold-list/hold-list.component.html` - Added Equipment entity type
+
+**Issue:** Filter controls were stacked vertically instead of horizontal alignment
+
+**Fix Applied:**
+```css
+.filters {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+```
+
+### Comprehensive Demo Video System (Completed)
+**Files Created:**
+- `e2e/record-comprehensive-demo.js` - Records 33-scene demo with captions
+- `e2e/create-synced-voiceover.js` - Generates synced voiceover matching screenshots
+- `e2e/add-voiceover-to-demo.js` - Alternative timed voiceover script
+- `e2e/record-demo-with-captions.js` - Simpler 24-scene demo
+
+**Features:**
+- 33 scenes covering all application features
+- Text caption overlays showing scene descriptions
+- Google TTS voiceover generation with proper sync
+- FFmpeg video/audio combination
+- Screenshot capture for each scene
+- Automatic server health checks
+
+**Final Output Example:**
+- `e2e/output/comprehensive-demo/2026-02-04T13-54-41/MES-Demo-Synced-2026-02-04T14-05-59.mp4` (3.1 MB)
+
 ---
 
 ## Key API Endpoints (Updated)
@@ -487,6 +607,18 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 |----------|-------------|
 | `GET /api/dashboard/stats` | Dashboard statistics |
 | `GET /api/dashboard/recent-confirmations` | Recent production confirmations |
+
+### Audit Trail (GAP-013)
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/audit/entity/{type}/{id}` | Get audit history for specific entity |
+| `GET /api/audit/recent?limit=50` | Get recent audit activity |
+| `GET /api/audit/production-confirmations?limit=10` | Recent production confirmations |
+| `GET /api/audit/user/{username}?limit=50` | Get activity by user |
+| `GET /api/audit/range?startDate=...&endDate=...` | Activity within date range |
+| `GET /api/audit/summary` | Today's count + recent activity |
+| `GET /api/audit/entity-types` | Valid entity types for filtering |
+| `GET /api/audit/action-types` | Valid action types for filtering |
 
 ---
 

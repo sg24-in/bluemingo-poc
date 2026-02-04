@@ -17,3 +17,4 @@ export * from './hold.model';
 export * from './production.model';
 export * from './bom.model';
 export * from './pagination.model';
+export * from './batch-allocation.model';

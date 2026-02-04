@@ -110,15 +110,30 @@ describe('OrderListComponent', () => {
   });
 
   it('should reload orders when page changes', () => {
+    // Mock response with new page
+    const page1Response: PagedResponse<Order> = {
+      ...mockPagedResponse,
+      page: 1
+    };
+    apiServiceSpy.getOrdersPaged.and.returnValue(of(page1Response));
     apiServiceSpy.getOrdersPaged.calls.reset();
+
     component.onPageChange(1);
     expect(apiServiceSpy.getOrdersPaged).toHaveBeenCalled();
     expect(component.page).toBe(1);
   });
 
   it('should reload orders and reset page when size changes', () => {
-    component.page = 2;
+    // Mock response with new size
+    const size50Response: PagedResponse<Order> = {
+      ...mockPagedResponse,
+      size: 50,
+      page: 0
+    };
+    apiServiceSpy.getOrdersPaged.and.returnValue(of(size50Response));
     apiServiceSpy.getOrdersPaged.calls.reset();
+
+    component.page = 2;
     component.onSizeChange(50);
     expect(apiServiceSpy.getOrdersPaged).toHaveBeenCalled();
     expect(component.size).toBe(50);

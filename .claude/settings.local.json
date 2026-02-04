@@ -83,7 +83,19 @@
       "Bash(cmd /c \"pushd D:\\\\repositories\\\\bluemingo-poc\\\\backend && call gradlew.bat test 2>&1\")",
       "Bash(cd:*)",
       "Bash(git fsck:*)",
-      "Bash(bc:*)"
+      "Bash(bc:*)",
+      "Bash(xargs:*)",
+      "Bash(comm:*)",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test --tests com.mes.production.controller.AuditControllerTest 2>&1\")",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew test --tests com.mes.production.controller.AuditControllerTest\")",
+      "Bash(cmd.exe /c \"D: && cd D:\\\\repositories\\\\bluemingo-poc\\\\backend && .\\\\gradlew test 2>&1\")",
+      "Bash(pwsh -Command \"Set-Location D:\\\\repositories\\\\bluemingo-poc\\\\backend; .\\\\gradlew test 2>&1\")",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test --tests com.mes.production.service.EquipmentTypeServiceTest --tests com.mes.production.service.UnitConversionServiceTest --tests com.mes.production.service.InventoryFormServiceTest\")",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test 2>&1\")",
+      "Bash(D:repositoriesbluemingo-pocbackendgradlew.bat -p D:repositoriesbluemingo-pocbackend test)",
+      "WebSearch",
+      "Bash(cmd /c \"gradlew.bat bootRun --args=--spring.profiles.active=demo\")",
+      "Bash(npm install:*)"
     ]
   }
 }

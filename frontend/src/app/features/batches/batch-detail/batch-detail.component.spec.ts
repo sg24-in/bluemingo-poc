@@ -54,8 +54,29 @@ describe('BatchDetailComponent', () => {
     }
   };
 
+  const mockAllocations: any[] = [];
+  const mockAvailability = {
+    batchId: 1,
+    batchNumber: 'BATCH-001',
+    totalQuantity: 500,
+    allocatedQuantity: 0,
+    availableQuantity: 500,
+    fullyAllocated: false
+  };
+
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('ApiService', ['getBatchById', 'getBatchGenealogy']);
+    const spy = jasmine.createSpyObj('ApiService', [
+      'getBatchById',
+      'getBatchGenealogy',
+      'getBatchAllocations',
+      'getBatchAvailability',
+      'allocateBatchToOrder',
+      'releaseAllocation',
+      'getAvailableOrders',
+      'splitBatch',
+      'getAvailableBatches',
+      'mergeBatches'
+    ]);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -86,6 +107,10 @@ describe('BatchDetailComponent', () => {
   beforeEach(() => {
     apiServiceSpy.getBatchById.and.returnValue(of(mockBatch));
     apiServiceSpy.getBatchGenealogy.and.returnValue(of(mockGenealogy));
+    apiServiceSpy.getBatchAllocations.and.returnValue(of(mockAllocations));
+    apiServiceSpy.getBatchAvailability.and.returnValue(of(mockAvailability));
+    apiServiceSpy.getAvailableOrders.and.returnValue(of([]));
+    apiServiceSpy.getAvailableBatches.and.returnValue(of([]));
     fixture = TestBed.createComponent(BatchDetailComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

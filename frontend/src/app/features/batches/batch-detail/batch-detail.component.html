@@ -127,6 +127,101 @@
         </div>
       </div>
     </div>
+
+    <!-- Batch Allocations (GAP-001: Multi-Order Batch Confirmation) -->
+    <div class="card">
+      <div class="card-header">
+        Order Allocations
+        <div class="header-actions" *ngIf="batch.status === 'AVAILABLE' && batchAvailability && !batchAvailability.fullyAllocated">
+          <button class="btn btn-primary btn-sm" (click)="openAllocationModal()">+ Allocate to Order</button>
+        </div>
+      </div>
+
+      <div *ngIf="loadingAllocations" class="text-center">
+        <app-loading-spinner message="Loading allocations..."></app-loading-spinner>
+      </div>
+
+      <div *ngIf="!loadingAllocations">
+        <!-- Availability Summary -->
+        <div class="allocation-summary" *ngIf="batchAvailability">
+          <div class="summary-item">
+            <span class="label">Total Quantity:</span>
+            <span class="value">{{ batchAvailability.totalQuantity }} {{ batch.unit }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Allocated:</span>
+            <span class="value allocated">{{ batchAvailability.allocatedQuantity }} {{ batch.unit }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Available:</span>
+            <span class="value available">{{ batchAvailability.availableQuantity }} {{ batch.unit }}</span>
+          </div>
+          <div class="summary-item" *ngIf="batchAvailability.fullyAllocated">
+            <span class="badge badge-info">Fully Allocated</span>
+          </div>
+        </div>
+
+        <!-- Active Allocations -->
+        <div class="allocations-section" *ngIf="getActiveAllocations().length > 0">
+          <h4>Active Allocations</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let alloc of getActiveAllocations()">
+                <td>Order #{{ alloc.orderId }}</td>
+                <td>{{ alloc.productSku }} - {{ alloc.productName }}</td>
+                <td>{{ alloc.allocatedQty }} {{ alloc.unit }}</td>
+                <td>{{ alloc.timestamp | date:'short' }}</td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" (click)="releaseAllocation(alloc.allocationId)">
+                    Release
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Released Allocations -->
+        <div class="allocations-section" *ngIf="getReleasedAllocations().length > 0">
+          <h4>Released Allocations (History)</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let alloc of getReleasedAllocations()">
+                <td>Order #{{ alloc.orderId }}</td>
+                <td>{{ alloc.productSku }} - {{ alloc.productName }}</td>
+                <td>{{ alloc.allocatedQty }} {{ alloc.unit }}</td>
+                <td>{{ alloc.timestamp | date:'short' }}</td>
+                <td><span class="badge badge-secondary">Released</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- No Allocations -->
+        <div *ngIf="allocations.length === 0" class="no-allocations">
+          <p>No allocations for this batch.</p>
+          <p class="hint">Allocate this batch to fulfill customer orders.</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="!loading && !batch" class="card">
@@ -240,6 +335,54 @@
       <button class="btn btn-secondary" (click)="closeMergeModal()">Cancel</button>
       <button class="btn btn-primary" (click)="submitMerge()" [disabled]="!canMerge() || submitting">
         {{ submitting ? 'Merging...' : 'Merge Batches' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Allocation Modal (GAP-001: Multi-Order Batch Confirmation) -->
+<div class="modal-overlay" *ngIf="showAllocationModal" (click)="closeAllocationModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Allocate Batch to Order</h3>
+      <button class="close-btn" (click)="closeAllocationModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="allocation-info">
+        <p><strong>Batch:</strong> {{ batch?.batchNumber }}</p>
+        <p><strong>Material:</strong> {{ batch?.materialId }} - {{ batch?.materialName }}</p>
+        <p><strong>Available Quantity:</strong> {{ batchAvailability?.availableQuantity }} {{ batch?.unit }}</p>
+      </div>
+
+      <div class="form-group">
+        <label>Select Order Line *</label>
+        <select [(ngModel)]="allocationOrderLineId" class="form-control">
+          <option [ngValue]="null">-- Select an order line --</option>
+          <option *ngFor="let line of availableOrderLines" [ngValue]="line.orderLineId">
+            Order {{ line.orderNumber }} - {{ line.productSku }} ({{ line.productName }}) - {{ line.orderedQty }} {{ line.unit }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Allocation Quantity *</label>
+        <input type="number"
+               [(ngModel)]="allocationQuantity"
+               [max]="batchAvailability?.availableQuantity || 0"
+               min="0.01"
+               step="0.01"
+               class="form-control">
+        <small class="form-text text-muted">
+          Max: {{ batchAvailability?.availableQuantity }} {{ batch?.unit }}
+        </small>
+      </div>
+
+      <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeAllocationModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="submitAllocation()" [disabled]="!canAllocate() || submitting">
+        {{ submitting ? 'Allocating...' : 'Allocate' }}
       </button>
     </div>
   </div>

@@ -1,0 +1,34 @@
+
+# Combine voiceover with video using FFmpeg
+#
+# Prerequisites: Install FFmpeg (https://ffmpeg.org/download.html)
+#
+# Usage:
+#   1. Concatenate all audio files:
+#      ffmpeg -f concat -safe 0 -i filelist.txt -c copy combined_voiceover.mp3
+#
+#   2. Combine video and audio:
+#      ffmpeg -i demo_video.webm -i combined_voiceover.mp3 -c:v copy -c:a aac final_demo.mp4
+
+# File list for concatenation:
+file '01-intro.mp3'
+file '02-login.mp3'
+file '03-dashboard-metrics.mp3'
+file '04-dashboard-inventory.mp3'
+file '05-dashboard-audit.mp3'
+file '06-orders-list.mp3'
+file '07-orders-detail.mp3'
+file '08-production-form.mp3'
+file '09-production-select.mp3'
+file '10-production-bom.mp3'
+file '11-production-params.mp3'
+file '12-production-complete.mp3'
+file '13-inventory-list.mp3'
+file '14-inventory-block.mp3'
+file '15-batches-list.mp3'
+file '16-batches-genealogy.mp3'
+file '17-holds-management.mp3'
+file '18-equipment-list.mp3'
+file '19-quality-queue.mp3'
+file '20-summary.mp3'
+file '21-outro.mp3'

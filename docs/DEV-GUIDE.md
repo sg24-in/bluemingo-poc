@@ -14,7 +14,8 @@ This guide covers everything you need to set up, develop, test, and deploy the M
 6. [Code Conventions](#code-conventions)
 7. [API Reference](#api-reference)
 8. [Database](#database)
-9. [Troubleshooting](#troubleshooting)
+9. [Demo Video & Voiceover](#demo-video--voiceover) - **Create demo videos with automated voiceover**
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -306,17 +307,64 @@ module.exports = { runMyTests };
 
 ### Running Unit Tests
 
-**Backend:**
+**Backend (306 tests):**
 ```bash
 cd backend
+
+# Run all tests
 ./gradlew test
+
+# Run tests with coverage report
+./gradlew test jacocoTestReport
+# Coverage report: backend/build/reports/jacoco/index.html
+
+# Run specific test class
+./gradlew test --tests "com.mes.production.controller.EquipmentControllerTest"
+
+# Run tests matching pattern
+./gradlew test --tests "*ControllerTest"
+
+# Run with verbose output
+./gradlew test --info
 ```
 
-**Frontend:**
+**Frontend (257 tests):**
 ```bash
 cd frontend
+
+# Run all tests in watch mode
 npm test
+
+# Run tests once (CI mode)
+npm test -- --no-watch --browsers=ChromeHeadless
+
+# Run tests with coverage
+npm test -- --no-watch --code-coverage
+# Coverage report: frontend/coverage/index.html
+
+# Run specific test file
+npm test -- --no-watch --include="**/equipment-list.component.spec.ts"
 ```
+
+### Test Categories
+
+| Category | Backend | Frontend | E2E |
+|----------|---------|----------|-----|
+| Authentication | 9 | 8 | 5 |
+| Dashboard | 5 | 15 | 4 |
+| Orders | 10 | 22 | 5 |
+| Production | 20 | 47 | 7 |
+| Inventory | 14 | 30 | 9 |
+| Batches | 14 | 20 | 8 |
+| Holds | 12 | 28 | 5 |
+| Equipment | 14 | 20 | 7 |
+| Quality | - | 10 | 6 |
+| Pagination | - | 8 | 8 |
+| Batch Allocation | 11 | - | - |
+| Equipment Usage | 12 | - | - |
+| Inventory Movement | 13 | - | - |
+| Routing | 12 | - | - |
+| **Total** | **306** | **257** | **65** |
 
 ---
 
@@ -527,6 +575,151 @@ Demo mode loads seed data from:
 
 ---
 
+## Demo Video & Voiceover
+
+### Quick Start: Create Final Demo (Recommended)
+
+The easiest way to create a complete demo video with synchronized voiceover:
+
+```bash
+# Step 1: Install dependencies (from project root)
+npm install ffmpeg-static ffprobe-static fluent-ffmpeg google-tts-api
+
+# Step 2: Start backend in demo mode
+cd backend
+./gradlew bootRun --args="--spring.profiles.active=demo"
+
+# Step 3: Start frontend (new terminal)
+cd frontend
+npm start
+
+# Step 4: Create final demo (new terminal)
+node e2e/create-final-demo.js
+```
+
+**Output:** `e2e/output/final/{timestamp}/MES-Demo-{timestamp}.mp4`
+
+### What the Script Does
+
+1. **Generates voiceover audio** - 16 MP3 segments using Google Text-to-Speech (free, no API key)
+2. **Concatenates audio** - Combines all segments into one track
+3. **Records video** - 1920x1080 HD recording with Playwright
+4. **Combines video + audio** - Creates final MP4 with synchronized voiceover
+
+### Output Files
+
+```
+e2e/output/final/{timestamp}/
+├── MES-Demo-{timestamp}.mp4    # Final video with voiceover (2-3 MB)
+├── combined_voiceover.mp3       # Combined audio track (500 KB)
+├── audio/                       # Individual voiceover segments
+│   ├── 01.mp3                   # Introduction
+│   ├── 02.mp3                   # Login
+│   └── ...                      # 16 segments total
+└── video/
+    └── *.webm                   # Source video recording (7-8 MB)
+```
+
+### Demo Content (16 Scenes)
+
+| Scene | Title | Duration | Content |
+|-------|-------|----------|---------|
+| 01 | Introduction | 5s | System overview |
+| 02 | Login | 4s | Email/password authentication |
+| 03 | Sign In | 4s | JWT token handling |
+| 04 | Dashboard | 6s | Key metrics, statistics |
+| 05 | Orders List | 5s | Server-side pagination |
+| 06 | Order Detail | 5s | Line items, timeline |
+| 07 | Production Form | 4s | Core workflow introduction |
+| 08 | Select Order/Operation | 5s | BOM suggestions |
+| 09 | Enter Details | 5s | Parameter validation |
+| 10 | Inventory List | 5s | Filters, search |
+| 11 | Batches List | 4s | Batch tracking |
+| 12 | Batch Genealogy | 5s | Traceability view |
+| 13 | Holds Management | 4s | Apply/release holds |
+| 14 | Equipment List | 4s | Status tracking |
+| 15 | Quality Inspection | 4s | Accept/reject workflow |
+| 16 | Conclusion | 6s | Test coverage summary |
+
+### Alternative: Manual Steps
+
+#### Generate Voiceover Only (No servers required)
+```bash
+npm install google-tts-api
+node e2e/generate-voiceover.js
+```
+Output: `e2e/output/voiceover/{timestamp}/*.mp3`
+
+#### Record Video Only
+```bash
+# With servers running:
+node e2e/record-demo-video.js
+```
+Output:
+- Video: `e2e/output/videos/demo-{timestamp}/*.webm`
+- Screenshots: `e2e/output/screenshots/demo-{timestamp}/*.png`
+
+#### Combine Manually with FFmpeg
+```bash
+# Concatenate audio files
+cd e2e/output/voiceover/{timestamp}
+ffmpeg -f concat -safe 0 -i filelist.txt -c copy combined.mp3
+
+# Combine video and audio
+ffmpeg -i ../videos/demo-{timestamp}/*.webm -i combined.mp3 \
+  -c:v libx264 -c:a aac -shortest final.mp4
+```
+
+### Customizing the Demo
+
+#### Modify Demo Script
+Edit `e2e/create-final-demo.js`:
+- `DEMO_SCENES` array - Add/remove scenes
+- `voiceover` property - Change narration text
+- `duration` property - Adjust scene timing (milliseconds)
+- `action` function - Modify Playwright actions
+
+#### Change Voice Settings
+In the script, modify google-tts-api options:
+```javascript
+await googleTTS.getAudioBase64(text, {
+    lang: 'en',      // Language: en, es, fr, de, etc.
+    slow: false      // Set true for slower speech
+});
+```
+
+### Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `ffmpeg-static` | Bundled FFmpeg binary (no manual install) |
+| `ffprobe-static` | Media file analysis |
+| `fluent-ffmpeg` | FFmpeg Node.js wrapper |
+| `google-tts-api` | Free Google Text-to-Speech |
+| `playwright` | Browser automation & recording |
+
+### Troubleshooting
+
+**"Servers not running" error:**
+- Ensure backend responds at http://localhost:8080
+- Ensure frontend responds at http://localhost:4200
+
+**Audio generation fails:**
+- Check internet connection (uses Google TTS API)
+- Script has rate limiting (500ms delay between requests)
+
+**Video recording fails:**
+- Check browser can access the application
+- Try running with `headless: false` for debugging
+
+**Final video has no audio:**
+- Ensure `combined_voiceover.mp3` was created
+- Check ffprobe-static is installed
+
+For more details, see [DEMO-GUIDE.md](DEMO-GUIDE.md).
+
+---
+
 ## Troubleshooting
 
 ### Common Issues
@@ -601,7 +794,11 @@ npm test -- --code-coverage                           # Run tests with coverage
 node e2e/run-all-tests.js                             # Run all tests
 node e2e/run-all-tests.js --submit --video            # Full test with video
 node e2e/record-user-journey.js                       # Record user journey
-node e2e/record-demo-video.js                         # Record demo video with narration
+
+# Demo Video Creation
+node e2e/create-final-demo.js                         # Create final demo with voiceover (recommended)
+node e2e/record-demo-video.js                         # Record video only (no audio)
+node e2e/generate-voiceover.js                        # Generate voiceover only (no video)
 ```
 
 ---
@@ -628,7 +825,7 @@ Coverage report location: `backend/build/reports/jacoco/index.html`
 | ProductionControllerTest | 6 | Production confirmation |
 | Service Tests | ~70 | Service layer tests |
 
-### Frontend Tests (249 tests)
+### Frontend Tests (257 tests)
 
 Coverage location: `frontend/coverage/`
 

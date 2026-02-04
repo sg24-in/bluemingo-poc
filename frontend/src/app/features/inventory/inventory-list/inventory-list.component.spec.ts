@@ -148,15 +148,30 @@ describe('InventoryListComponent', () => {
 
   describe('Pagination', () => {
     it('should reload inventory when page changes', () => {
+      // Mock response with new page
+      const page1Response: PagedResponse<Inventory> = {
+        ...mockPagedResponse,
+        page: 1
+      };
+      apiServiceSpy.getInventoryPaged.and.returnValue(of(page1Response));
       apiServiceSpy.getInventoryPaged.calls.reset();
+
       component.onPageChange(1);
       expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
       expect(component.page).toBe(1);
     });
 
     it('should reload inventory and reset page when size changes', () => {
-      component.page = 2;
+      // Mock response with new size
+      const size50Response: PagedResponse<Inventory> = {
+        ...mockPagedResponse,
+        size: 50,
+        page: 0
+      };
+      apiServiceSpy.getInventoryPaged.and.returnValue(of(size50Response));
       apiServiceSpy.getInventoryPaged.calls.reset();
+
+      component.page = 2;
       component.onSizeChange(50);
       expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
       expect(component.size).toBe(50);

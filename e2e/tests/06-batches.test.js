@@ -189,6 +189,56 @@ async function runBatchesTests(page, screenshots, results, runTest) {
             await page.waitForTimeout(300);
         }
     }, page, results, screenshots);
+
+    // Test 9: Batch Allocations Section (GAP-001)
+    await runTest('Batches - View Allocations', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.BATCHES}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        const rows = page.locator('table tbody tr');
+        if (await rows.count() > 0) {
+            await rows.first().click();
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(1000);
+
+            // Check for allocations section
+            const allocationSection = page.locator('.allocation-summary, [class*="allocation"], .card:has-text("Allocations")');
+            if (await allocationSection.count() > 0) {
+                await screenshots.capture(page, 'batches-allocations-section');
+            }
+        }
+    }, page, results, screenshots);
+
+    // Test 10: Batch Allocation Modal (GAP-001)
+    await runTest('Batches - Allocation Modal', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.BATCHES}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        const rows = page.locator('table tbody tr');
+        if (await rows.count() > 0) {
+            await rows.first().click();
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+
+            const allocateBtn = page.locator('button:has-text("Allocate"), button:has-text("Allocate to Order")');
+            if (await allocateBtn.count() > 0 && await allocateBtn.first().isEnabled()) {
+                await screenshots.capture(page, 'batches-allocation-before');
+
+                await allocateBtn.first().click();
+                await page.waitForTimeout(500);
+
+                await screenshots.capture(page, 'batches-allocation-modal');
+
+                // Cancel
+                const cancelBtn = page.locator('.modal button:has-text("Cancel"), .modal-footer button:has-text("Cancel")');
+                if (await cancelBtn.count() > 0) {
+                    await cancelBtn.click();
+                }
+            } else {
+                console.log('   ⏭️  Allocate button not available (batch may be fully allocated or not available)');
+            }
+        }
+    }, page, results, screenshots);
 }
 
 module.exports = { runBatchesTests };
