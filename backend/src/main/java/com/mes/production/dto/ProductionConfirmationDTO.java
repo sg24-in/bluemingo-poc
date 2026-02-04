@@ -13,10 +13,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ProductionConfirmationDTO {
 
     // Request DTO for creating production confirmation
@@ -54,6 +50,8 @@ public class ProductionConfirmationDTO {
         private String delayReason;
 
         private Map<String, Object> processParameters;
+
+        private String notes;
     }
 
     @Data
@@ -88,14 +86,59 @@ public class ProductionConfirmationDTO {
         private Integer delayMinutes;
         private String delayReason;
         private Map<String, Object> processParameters;
+        private String notes;
         private String status;
         private LocalDateTime createdOn;
+
+        // Rejection fields
+        private String rejectionReason;
+        private String rejectedBy;
+        private LocalDateTime rejectedOn;
 
         // Output batch info
         private BatchInfo outputBatch;
 
         // Next operation info
         private NextOperationInfo nextOperation;
+
+        // Equipment and operator info
+        private List<EquipmentInfo> equipment;
+        private List<OperatorInfo> operators;
+
+        // Materials consumed
+        private List<MaterialConsumedInfo> materialsConsumed;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MaterialConsumedInfo {
+        private Long batchId;
+        private String batchNumber;
+        private Long inventoryId;
+        private String materialId;
+        private BigDecimal quantityConsumed;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class EquipmentInfo {
+        private Long equipmentId;
+        private String equipmentCode;
+        private String name;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OperatorInfo {
+        private Long operatorId;
+        private String operatorCode;
+        private String name;
     }
 
     @Data
@@ -120,5 +163,34 @@ public class ProductionConfirmationDTO {
         private String operationName;
         private String status;
         private String processName;
+    }
+
+    // Rejection request DTO
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RejectionRequest {
+        @NotNull(message = "Confirmation ID is required")
+        private Long confirmationId;
+
+        @NotNull(message = "Rejection reason is required")
+        private String reason;
+
+        private String notes;
+    }
+
+    // Status update response DTO
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StatusUpdateResponse {
+        private Long confirmationId;
+        private String previousStatus;
+        private String newStatus;
+        private String message;
+        private String updatedBy;
+        private LocalDateTime updatedOn;
     }
 }

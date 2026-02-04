@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+backend/build/
+backend/.gradle/
+frontend/dist/
+frontend/.angular/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test outputs
+e2e/output/videos/
+e2e/output/screenshots/
+backend/build/test-results/
+backend/build/reports/
+frontend/test-results/
+frontend/coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Compiled files
+*.class
+*.jar
+target/
+
+# H2 Database files
+*.db
+*.mv.db
+*.trace.db

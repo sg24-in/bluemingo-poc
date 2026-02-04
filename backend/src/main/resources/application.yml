@@ -28,7 +28,8 @@ spring:
 # Application specific configuration
 app:
   jwt:
-    secret: MES_Production_Confirmation_JWT_Secret_Key_2026_This_Should_Be_Long_Enough_256_Bits
+    # Base64 encoded secret for JJWT compatibility
+    secret: TUVTX1Byb2R1Y3Rpb25fQ29uZmlybWF0aW9uX0pXVF9TZWNyZXRfS2V5XzIwMjZfMjU2X0JpdHMh
     expiration-ms: 86400000  # 24 hours
     refresh-expiration-ms: 604800000  # 7 days
 

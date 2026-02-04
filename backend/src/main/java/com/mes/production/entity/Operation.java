@@ -1,10 +1,8 @@
 package com.mes.production.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.EqualsAndHashCode.Exclude;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +15,14 @@ import java.util.List;
 @AllArgsConstructor
 public class Operation {
 
+    // Status constants
+    public static final String STATUS_NOT_STARTED = "NOT_STARTED";
+    public static final String STATUS_READY = "READY";
+    public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
+    public static final String STATUS_CONFIRMED = "CONFIRMED";
+    public static final String STATUS_ON_HOLD = "ON_HOLD";
+    public static final String STATUS_BLOCKED = "BLOCKED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "operation_id")
@@ -24,6 +30,8 @@ public class Operation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "process_id", nullable = false)
+    @ToString.Exclude
+    @Exclude
     private Process process;
 
     @Column(name = "routing_step_id")
@@ -44,6 +52,22 @@ public class Operation {
     @Column(nullable = false)
     private String status;
 
+    @Column(name = "target_qty", precision = 15, scale = 4)
+    private java.math.BigDecimal targetQty;
+
+    @Column(name = "confirmed_qty", precision = 15, scale = 4)
+    private java.math.BigDecimal confirmedQty;
+
+    // Block tracking
+    @Column(name = "block_reason", length = 500)
+    private String blockReason;
+
+    @Column(name = "blocked_by")
+    private String blockedBy;
+
+    @Column(name = "blocked_on")
+    private LocalDateTime blockedOn;
+
     @Column(name = "created_on")
     private LocalDateTime createdOn;
 
@@ -57,6 +81,8 @@ public class Operation {
     private String updatedBy;
 
     @OneToMany(mappedBy = "operation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @Exclude
     private List<ProductionConfirmation> confirmations;
 
     @PrePersist

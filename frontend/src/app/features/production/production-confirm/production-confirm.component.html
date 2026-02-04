@@ -83,6 +83,41 @@
     </div>
 
     <form [formGroup]="confirmForm" (ngSubmit)="onSubmit()">
+      <!-- Start/End Time -->
+      <div class="card">
+        <div class="card-header">Production Time</div>
+        <div class="row">
+          <div class="col-6">
+            <div class="form-group">
+              <label for="startTime">Start Time *</label>
+              <input
+                type="datetime-local"
+                id="startTime"
+                formControlName="startTime"
+                class="form-control"
+              />
+              <div class="field-error" *ngIf="confirmForm.get('startTime')?.errors?.['futureStartTime']">
+                Start time cannot be in the future
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label for="endTime">End Time *</label>
+              <input
+                type="datetime-local"
+                id="endTime"
+                formControlName="endTime"
+                class="form-control"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="field-error" *ngIf="confirmForm.errors?.['invalidTimeRange']">
+          End time must be after start time
+        </div>
+      </div>
+
       <!-- Production Quantities -->
       <div class="card">
         <div class="card-header">Production Quantities</div>
@@ -117,6 +152,55 @@
       <!-- Material Consumption -->
       <div class="card">
         <div class="card-header">Material Consumption</div>
+
+        <!-- BOM Suggested Consumption -->
+        <div class="suggested-consumption" *ngIf="showSuggestions && suggestedConsumption">
+          <div class="suggestion-header">
+            <h4>BOM Suggested Consumption</h4>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="applySuggestedConsumption()"
+              [disabled]="!hasSufficientStock()"
+            >
+              Apply Suggestions
+            </button>
+          </div>
+          <div class="suggestion-info">
+            <span class="suggestion-label">Target Quantity:</span>
+            <span class="suggestion-value">{{ suggestedConsumption.targetQuantity }} T</span>
+            <span class="suggestion-label">Total Required:</span>
+            <span class="suggestion-value">{{ suggestedConsumption.totalRequiredQuantity }} T</span>
+          </div>
+          <table class="table suggestion-table">
+            <thead>
+              <tr>
+                <th>Material</th>
+                <th>Required Qty</th>
+                <th>Available</th>
+                <th>Yield Ratio</th>
+                <th>Stock Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let mat of suggestedConsumption.suggestedMaterials"
+                  [class.insufficient]="!mat.sufficientStock">
+                <td>{{ mat.materialName }} ({{ mat.materialId }})</td>
+                <td>{{ mat.requiredQuantity }} {{ mat.unit }}</td>
+                <td>{{ mat.availableQuantity }} {{ mat.unit }}</td>
+                <td>{{ mat.yieldLossRatio }}</td>
+                <td>
+                  <span class="stock-status" [class.ok]="mat.sufficientStock" [class.low]="!mat.sufficientStock">
+                    {{ mat.sufficientStock ? 'Sufficient' : 'Insufficient' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="alert alert-warning" *ngIf="!hasSufficientStock()">
+            <strong>Warning:</strong> Insufficient stock for some materials. Please review before proceeding.
+          </div>
+        </div>
 
         <div class="available-materials">
           <h4>Available Inventory</h4>
@@ -183,6 +267,49 @@
             </tbody>
           </table>
         </div>
+
+        <!-- BOM Requirements -->
+        <div class="bom-requirements" *ngIf="bomRequirements.length > 0">
+          <h4>BOM Requirements</h4>
+          <table class="table bom-table">
+            <thead>
+              <tr>
+                <th>Material</th>
+                <th>Required Qty</th>
+                <th>Selected Qty</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let req of bomRequirements" [ngClass]="'bom-' + getRequirementStatus(req)">
+                <td>{{ req.materialName }} ({{ req.materialId }})</td>
+                <td>{{ req.quantityRequired }} {{ req.unit }}</td>
+                <td>{{ getTotalSelectedByMaterial(req.materialId) }} {{ req.unit }}</td>
+                <td>
+                  <span class="bom-status" [ngClass]="getRequirementStatus(req)">
+                    {{ getRequirementStatus(req) | uppercase }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- BOM Validation Warnings -->
+        <div class="bom-validation" *ngIf="bomValidationResult">
+          <div class="alert alert-warning" *ngIf="bomValidationResult.warnings?.length > 0">
+            <strong>Warnings:</strong>
+            <ul>
+              <li *ngFor="let warning of bomValidationResult.warnings">{{ warning }}</li>
+            </ul>
+          </div>
+          <div class="alert alert-error" *ngIf="bomValidationResult.errors?.length > 0">
+            <strong>Errors:</strong>
+            <ul>
+              <li *ngFor="let err of bomValidationResult.errors">{{ err }}</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <!-- Equipment & Operator -->
@@ -191,24 +318,75 @@
         <div class="row">
           <div class="col-6">
             <div class="form-group">
-              <label for="equipmentId">Equipment</label>
-              <select id="equipmentId" formControlName="equipmentId" class="form-control">
-                <option [value]="null">-- Select Equipment --</option>
-                <option *ngFor="let eq of availableEquipment" [value]="eq.equipmentId">
-                  {{ eq.equipmentName }} ({{ eq.equipmentCode }})
-                </option>
-              </select>
+              <label>Equipment * <span class="selection-count">({{ getSelectedEquipmentCount() }} selected)</span></label>
+              <div class="checkbox-group">
+                <div *ngFor="let eq of availableEquipment; let i = index" class="checkbox-item">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      [checked]="eq.selected"
+                      (change)="toggleEquipment(i)"
+                    />
+                    <span class="checkbox-text">{{ eq.equipmentName }} ({{ eq.equipmentCode }})</span>
+                  </label>
+                </div>
+                <p *ngIf="availableEquipment.length === 0" class="no-data-small">No equipment available</p>
+              </div>
             </div>
           </div>
           <div class="col-6">
             <div class="form-group">
-              <label for="operatorId">Operator</label>
-              <select id="operatorId" formControlName="operatorId" class="form-control">
-                <option [value]="null">-- Select Operator --</option>
-                <option *ngFor="let op of activeOperators" [value]="op.operatorId">
-                  {{ op.operatorName }} ({{ op.operatorCode }})
+              <label>Operator * <span class="selection-count">({{ getSelectedOperatorCount() }} selected)</span></label>
+              <div class="checkbox-group">
+                <div *ngFor="let op of activeOperators; let i = index" class="checkbox-item">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      [checked]="op.selected"
+                      (change)="toggleOperator(i)"
+                    />
+                    <span class="checkbox-text">{{ op.operatorName }} ({{ op.operatorCode }})</span>
+                  </label>
+                </div>
+                <p *ngIf="activeOperators.length === 0" class="no-data-small">No operators available</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delay Tracking -->
+      <div class="card">
+        <div class="card-header">Delay Tracking</div>
+        <div class="row">
+          <div class="col-6">
+            <div class="form-group">
+              <label for="delayMinutes">Delay Duration (minutes)</label>
+              <input
+                type="number"
+                id="delayMinutes"
+                formControlName="delayMinutes"
+                class="form-control"
+                min="0"
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label for="delayReason">
+                Delay Reason
+                <span *ngIf="isDelayReasonRequired()" class="required">*</span>
+              </label>
+              <select id="delayReason" formControlName="delayReason" class="form-control">
+                <option value="">-- Select Reason --</option>
+                <option *ngFor="let reason of delayReasons" [value]="reason.reason_code">
+                  {{ reason.reason_description }}
                 </option>
               </select>
+              <div class="field-error" *ngIf="isDelayReasonRequired() && !confirmForm.get('delayReason')?.value">
+                Delay reason is required when delay duration is entered
+              </div>
             </div>
           </div>
         </div>
@@ -228,11 +406,23 @@
                 </span>
               </label>
               <input
-                type="text"
+                type="number"
                 formControlName="parameterValue"
                 class="form-control"
                 [placeholder]="param.default_value || ''"
+                [attr.min]="param.min_value"
+                [attr.max]="param.max_value"
+                step="any"
               />
+              <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['required'] && processParamsFormArray.at(i).get('parameterValue')?.touched">
+                {{ param.parameter_name }} is required
+              </div>
+              <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['min']">
+                {{ param.parameter_name }} must be at least {{ param.min_value }} {{ param.unit || '' }}
+              </div>
+              <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['max']">
+                {{ param.parameter_name }} must not exceed {{ param.max_value }} {{ param.unit || '' }}
+              </div>
             </div>
           </div>
         </div>

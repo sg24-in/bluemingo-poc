@@ -1,10 +1,8 @@
 package com.mes.production.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.EqualsAndHashCode.Exclude;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +15,19 @@ import java.util.List;
 @AllArgsConstructor
 public class Process {
 
+    // Status constants
+    public static final String STATUS_READY = "READY";
+    public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
+    public static final String STATUS_QUALITY_PENDING = "QUALITY_PENDING";
+    public static final String STATUS_COMPLETED = "COMPLETED";
+    public static final String STATUS_REJECTED = "REJECTED";
+    public static final String STATUS_ON_HOLD = "ON_HOLD";
+
+    // Usage decision constants
+    public static final String DECISION_PENDING = "PENDING";
+    public static final String DECISION_ACCEPT = "ACCEPT";
+    public static final String DECISION_REJECT = "REJECT";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "process_id")
@@ -24,6 +35,8 @@ public class Process {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_line_id", nullable = false)
+    @ToString.Exclude
+    @Exclude
     private OrderLineItem orderLineItem;
 
     @Column(name = "bom_id")
@@ -55,6 +68,8 @@ public class Process {
 
     @OneToMany(mappedBy = "process", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("sequenceNumber ASC")
+    @ToString.Exclude
+    @Exclude
     private List<Operation> operations;
 
     @PrePersist

@@ -12,40 +12,83 @@
   <div *ngIf="!loading">
     <!-- Summary Cards -->
     <div class="summary-cards">
-      <div class="summary-card">
+      <div class="summary-card clickable" (click)="navigateToOrders()">
         <div class="card-icon orders-icon">
           <span>📋</span>
         </div>
         <div class="card-info">
-          <span class="card-label">Available Orders</span>
-          <span class="card-value">{{ availableOrders.length }}</span>
+          <span class="card-label">Total Orders</span>
+          <span class="card-value">{{ summary.totalOrders }}</span>
+          <span class="card-subtitle">{{ summary.ordersInProgress }} in progress</span>
+        </div>
+      </div>
+
+      <div class="summary-card ready-card">
+        <div class="card-icon ready-icon">
+          <span>▶️</span>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Operations Ready</span>
+          <span class="card-value">{{ summary.operationsReady }}</span>
+          <span class="card-subtitle">ready to start</span>
+        </div>
+      </div>
+
+      <div class="summary-card clickable" [ngClass]="{'warning-card': summary.activeHolds > 0}" (click)="navigateToHolds()">
+        <div class="card-icon hold-icon">
+          <span>⏸️</span>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Active Holds</span>
+          <span class="card-value">{{ summary.activeHolds }}</span>
+          <span class="card-subtitle">items on hold</span>
         </div>
       </div>
 
       <div class="summary-card">
-        <div class="card-icon inventory-icon">
-          <span>📦</span>
+        <div class="card-icon confirm-icon">
+          <span>✅</span>
         </div>
+        <div class="card-info">
+          <span class="card-label">Today's Confirmations</span>
+          <span class="card-value">{{ summary.todayConfirmations }}</span>
+          <span class="card-subtitle">confirmed today</span>
+        </div>
+      </div>
+
+      <div class="summary-card clickable" [ngClass]="{'quality-pending-card': summary.qualityPendingProcesses > 0}" (click)="navigateToQualityPending()">
+        <div class="card-icon quality-icon">
+          <span>🔍</span>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Quality Pending</span>
+          <span class="card-value">{{ summary.qualityPendingProcesses }}</span>
+          <span class="card-subtitle">awaiting inspection</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Summary -->
+    <div class="inventory-summary">
+      <div class="summary-card small">
         <div class="card-info">
           <span class="card-label">Total Inventory</span>
           <span class="card-value">{{ inventorySummary.total }}</span>
         </div>
       </div>
-
-      <div class="summary-card">
-        <div class="card-icon available-icon">
-          <span>✅</span>
-        </div>
+      <div class="summary-card small available">
         <div class="card-info">
           <span class="card-label">Available</span>
           <span class="card-value">{{ inventorySummary.available }}</span>
         </div>
       </div>
-
-      <div class="summary-card">
-        <div class="card-icon hold-icon">
-          <span>⏸️</span>
+      <div class="summary-card small consumed">
+        <div class="card-info">
+          <span class="card-label">Consumed</span>
+          <span class="card-value">{{ inventorySummary.consumed }}</span>
         </div>
+      </div>
+      <div class="summary-card small on-hold">
         <div class="card-info">
           <span class="card-label">On Hold</span>
           <span class="card-value">{{ inventorySummary.onHold }}</span>
@@ -58,7 +101,7 @@
       <!-- Available Orders -->
       <div class="card">
         <div class="card-header">
-          <span>Available Orders</span>
+          <span>Orders Ready for Production</span>
           <a routerLink="/orders" class="view-all">View All</a>
         </div>
         <div class="card-body">
@@ -78,35 +121,84 @@
               </tr>
             </tbody>
           </table>
-          <p *ngIf="availableOrders.length === 0" class="no-data">No available orders</p>
+          <p *ngIf="availableOrders.length === 0" class="no-data">No orders ready for production</p>
         </div>
       </div>
 
-      <!-- Recent Batches -->
+      <!-- Recent Activity -->
       <div class="card">
         <div class="card-header">
-          <span>Recent Batches</span>
-          <a routerLink="/batches" class="view-all">View All</a>
+          <span>Recent Confirmations</span>
         </div>
         <div class="card-body">
-          <table class="table" *ngIf="recentBatches.length > 0">
-            <thead>
-              <tr>
-                <th>Batch #</th>
-                <th>Material</th>
-                <th>State</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let batch of recentBatches" class="clickable" (click)="navigateToBatch(batch.batchId)">
-                <td>{{ batch.batchNumber }}</td>
-                <td>{{ batch.materialId }}</td>
-                <td><app-status-badge [status]="batch.state"></app-status-badge></td>
-              </tr>
-            </tbody>
-          </table>
-          <p *ngIf="recentBatches.length === 0" class="no-data">No batches found</p>
+          <div class="activity-list" *ngIf="summary.recentActivity && summary.recentActivity.length > 0">
+            <div class="activity-item" *ngFor="let activity of summary.recentActivity">
+              <div class="activity-icon">✓</div>
+              <div class="activity-info">
+                <div class="activity-title">{{ activity.operationName }}</div>
+                <div class="activity-details">
+                  <span>{{ activity.productSku }}</span>
+                  <span>{{ activity.producedQty }} units</span>
+                </div>
+                <div class="activity-time">{{ activity.confirmedAt | date:'short' }}</div>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="!summary.recentActivity?.length" class="no-data">No recent activity</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Audit Trail -->
+    <div class="card">
+      <div class="card-header">
+        <span>Audit Trail</span>
+      </div>
+      <div class="card-body">
+        <div class="audit-list" *ngIf="summary.auditActivity && summary.auditActivity.length > 0">
+          <div class="audit-item" *ngFor="let audit of summary.auditActivity">
+            <div class="audit-icon" [ngClass]="getAuditIconClass(audit.action)">
+              {{ getAuditIcon(audit.action) }}
+            </div>
+            <div class="audit-info">
+              <div class="audit-description">{{ audit.description }}</div>
+              <div class="audit-meta">
+                <span class="audit-user">{{ audit.changedBy }}</span>
+                <span class="audit-time">{{ audit.timestamp | date:'short' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p *ngIf="!summary.auditActivity?.length" class="no-data">No audit entries</p>
+      </div>
+    </div>
+
+    <!-- Recent Batches -->
+    <div class="card">
+      <div class="card-header">
+        <span>Recent Batches</span>
+        <a routerLink="/batches" class="view-all">View All</a>
+      </div>
+      <div class="card-body">
+        <table class="table" *ngIf="recentBatches.length > 0">
+          <thead>
+            <tr>
+              <th>Batch #</th>
+              <th>Material</th>
+              <th>Quantity</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let batch of recentBatches" class="clickable" (click)="navigateToBatch(batch.batchId)">
+              <td>{{ batch.batchNumber }}</td>
+              <td>{{ batch.materialName || batch.materialId }}</td>
+              <td>{{ batch.quantity }} {{ batch.unit }}</td>
+              <td><app-status-badge [status]="batch.status"></app-status-badge></td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="recentBatches.length === 0" class="no-data">No batches found</p>
       </div>
     </div>
 
@@ -125,6 +217,10 @@
         <a routerLink="/batches" class="action-btn">
           <span class="action-icon">🏷️</span>
           <span class="action-label">Batch Traceability</span>
+        </a>
+        <a routerLink="/holds" class="action-btn">
+          <span class="action-icon">⏸️</span>
+          <span class="action-label">Manage Holds</span>
         </a>
       </div>
     </div>

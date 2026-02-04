@@ -24,6 +24,13 @@ public class BatchDTO {
     private String status;
     private LocalDateTime createdOn;
 
+    // Approval info
+    private String approvedBy;
+    private LocalDateTime approvedOn;
+    private String rejectionReason;
+    private String rejectedBy;
+    private LocalDateTime rejectedOn;
+
     // For genealogy
     @Data
     @Builder
@@ -70,5 +77,92 @@ public class BatchDTO {
         private String processName;
         private String orderId;
         private LocalDateTime productionDate;
+    }
+
+    // Split request - split one batch into multiple
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SplitRequest {
+        private Long sourceBatchId;
+        private List<SplitPortion> portions;
+        private String reason;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SplitPortion {
+        private BigDecimal quantity;
+        private String batchNumberSuffix; // Optional, e.g., "A", "B"
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SplitResponse {
+        private Long sourceBatchId;
+        private String sourceBatchNumber;
+        private BigDecimal originalQuantity;
+        private BigDecimal remainingQuantity;
+        private List<BatchDTO> newBatches;
+        private String status;
+    }
+
+    // Merge request - merge multiple batches into one
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MergeRequest {
+        private List<Long> sourceBatchIds;
+        private String targetBatchNumber; // Optional, auto-generated if not provided
+        private String reason;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MergeResponse {
+        private List<BatchDTO> sourceBatches;
+        private BatchDTO mergedBatch;
+        private BigDecimal totalQuantity;
+        private String status;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StatusUpdateResponse {
+        private Long batchId;
+        private String batchNumber;
+        private String previousStatus;
+        private String newStatus;
+        private String message;
+        private String updatedBy;
+        private LocalDateTime updatedOn;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ApprovalRequest {
+        private Long batchId;
+        private String notes;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RejectionRequest {
+        private Long batchId;
+        private String reason;
     }
 }

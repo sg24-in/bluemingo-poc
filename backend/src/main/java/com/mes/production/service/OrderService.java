@@ -1,6 +1,8 @@
 package com.mes.production.service;
 
 import com.mes.production.dto.OrderDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.Order;
 import com.mes.production.entity.OrderLineItem;
@@ -9,6 +11,8 @@ import com.mes.production.repository.OperationRepository;
 import com.mes.production.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +66,49 @@ public class OrderService {
         return orderRepository.findActiveOrders().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all orders with pagination, sorting, and filtering
+     */
+    public PagedResponseDTO<OrderDTO> getOrdersPaged(PageRequestDTO pageRequest) {
+        log.info("Fetching orders with pagination: page={}, size={}, sortBy={}, search={}",
+                pageRequest.getPage(), pageRequest.getSize(),
+                pageRequest.getSortBy(), pageRequest.getSearch());
+
+        Pageable pageable = pageRequest.toPageable("orderDate");
+
+        Page<Order> page;
+        if (pageRequest.hasFilters()) {
+            page = orderRepository.findByFilters(
+                    pageRequest.getStatus(),
+                    pageRequest.getSearchPattern(),
+                    pageable);
+        } else {
+            page = orderRepository.findAll(pageable);
+        }
+
+        Page<OrderDTO> dtoPage = page.map(this::convertToDTO);
+
+        return PagedResponseDTO.fromPage(dtoPage,
+                pageRequest.getSortBy(),
+                pageRequest.getSortDirection(),
+                pageRequest.getSearch());
+    }
+
+    /**
+     * Get active orders with pagination
+     */
+    public PagedResponseDTO<OrderDTO> getActiveOrdersPaged(PageRequestDTO pageRequest) {
+        log.info("Fetching active orders with pagination");
+
+        Pageable pageable = pageRequest.toPageable("orderDate");
+        Page<Order> page = orderRepository.findActiveOrders(pageable);
+        Page<OrderDTO> dtoPage = page.map(this::convertToDTO);
+
+        return PagedResponseDTO.fromPage(dtoPage,
+                pageRequest.getSortBy(),
+                pageRequest.getSortDirection());
     }
 
     private OrderDTO convertToDTO(Order order) {

@@ -1,0 +1,188 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Equipment Management</h1>
+  </div>
+
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading equipment..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Summary Cards -->
+    <div class="summary-row">
+      <div class="summary-card" *ngFor="let item of getStatusSummary()">
+        <span class="summary-label">{{ item.status }}</span>
+        <span class="summary-value">{{ item.count }}</span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+      <div class="filters">
+        <div class="filter-group">
+          <label>Status:</label>
+          <select (change)="onFilterStatusChange($any($event.target).value)" [value]="filterStatus">
+            <option value="all">All Statuses</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="IN_USE">In Use</option>
+            <option value="MAINTENANCE">Maintenance</option>
+            <option value="ON_HOLD">On Hold</option>
+            <option value="UNAVAILABLE">Unavailable</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Type:</label>
+          <select (change)="onFilterTypeChange($any($event.target).value)" [value]="filterType">
+            <option value="all">All Types</option>
+            <option value="FURNACE">Furnace</option>
+            <option value="CASTER">Caster</option>
+            <option value="ROLLING_MILL">Rolling Mill</option>
+            <option value="BATCH">Batch</option>
+          </select>
+        </div>
+
+        <div class="filter-group search-group">
+          <label>Search:</label>
+          <input
+            type="text"
+            placeholder="Search by code or name..."
+            (input)="onSearchChange($any($event.target).value)"
+            [value]="searchTerm"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Equipment Table -->
+    <div class="card">
+      <table class="table" *ngIf="filteredEquipment.length > 0">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Capacity</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredEquipment">
+            <td>{{ item.equipmentCode }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.equipmentType }}</td>
+            <td>{{ item.capacity }} {{ item.capacityUnit }}</td>
+            <td>{{ item.location || '-' }}</td>
+            <td>
+              <app-status-badge [status]="item.status"></app-status-badge>
+              <div *ngIf="item.status === 'MAINTENANCE' && item.maintenanceReason" class="reason-text">
+                {{ item.maintenanceReason }}
+              </div>
+              <div *ngIf="item.status === 'ON_HOLD' && item.holdReason" class="reason-text">
+                {{ item.holdReason }}
+              </div>
+            </td>
+            <td class="actions-cell">
+              <button *ngIf="canStartMaintenance(item)" class="btn btn-small btn-warning" (click)="openMaintenanceModal(item)">
+                Maintenance
+              </button>
+              <button *ngIf="canEndMaintenance(item)" class="btn btn-small btn-success" (click)="endMaintenance(item)">
+                End Maintenance
+              </button>
+              <button *ngIf="canPutOnHold(item)" class="btn btn-small btn-secondary" (click)="openHoldModal(item)">
+                Hold
+              </button>
+              <button *ngIf="canReleaseFromHold(item)" class="btn btn-small btn-info" (click)="releaseFromHold(item)">
+                Release
+              </button>
+              <span *ngIf="item.status === 'IN_USE'" class="no-actions">In use</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p *ngIf="filteredEquipment.length === 0" class="no-data">
+        No equipment found matching the selected filters.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div class="modal-overlay" *ngIf="showMaintenanceModal" (click)="closeMaintenanceModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Start Maintenance</h3>
+      <button class="close-btn" (click)="closeMaintenanceModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Starting maintenance for:</p>
+      <p><strong>Equipment:</strong> {{ selectedEquipment?.equipmentCode }}</p>
+      <p><strong>Name:</strong> {{ selectedEquipment?.name }}</p>
+
+      <div class="form-group">
+        <label for="maintenanceReason">Reason for Maintenance *</label>
+        <textarea
+          id="maintenanceReason"
+          [(ngModel)]="actionReason"
+          placeholder="Enter reason for maintenance..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="expectedEndTime">Expected End Time (Optional)</label>
+        <input
+          type="datetime-local"
+          id="expectedEndTime"
+          [(ngModel)]="expectedEndTime"
+        />
+      </div>
+
+      <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeMaintenanceModal()" [disabled]="actionLoading">Cancel</button>
+      <button class="btn btn-warning" (click)="confirmStartMaintenance()" [disabled]="actionLoading">
+        {{ actionLoading ? 'Starting...' : 'Start Maintenance' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Hold Modal -->
+<div class="modal-overlay" *ngIf="showHoldModal" (click)="closeHoldModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Put Equipment on Hold</h3>
+      <button class="close-btn" (click)="closeHoldModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Putting equipment on hold:</p>
+      <p><strong>Equipment:</strong> {{ selectedEquipment?.equipmentCode }}</p>
+      <p><strong>Name:</strong> {{ selectedEquipment?.name }}</p>
+
+      <div class="form-group">
+        <label for="holdReason">Reason for Hold *</label>
+        <textarea
+          id="holdReason"
+          [(ngModel)]="actionReason"
+          placeholder="Enter reason for putting equipment on hold..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div *ngIf="actionError" class="error-message">{{ actionError }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeHoldModal()" [disabled]="actionLoading">Cancel</button>
+      <button class="btn btn-warning" (click)="confirmPutOnHold()" [disabled]="actionLoading">
+        {{ actionLoading ? 'Processing...' : 'Put on Hold' }}
+      </button>
+    </div>
+  </div>
+</div>

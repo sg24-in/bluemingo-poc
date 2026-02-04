@@ -17,6 +17,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Inventory {
 
+    // State constants
+    public static final String STATE_AVAILABLE = "AVAILABLE";
+    public static final String STATE_RESERVED = "RESERVED";
+    public static final String STATE_CONSUMED = "CONSUMED";
+    public static final String STATE_PRODUCED = "PRODUCED";
+    public static final String STATE_BLOCKED = "BLOCKED";
+    public static final String STATE_SCRAPPED = "SCRAPPED";
+    public static final String STATE_ON_HOLD = "ON_HOLD";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "inventory_id")
@@ -46,6 +55,40 @@ public class Inventory {
 
     private String location;
 
+    @Column(name = "block_reason", length = 500)
+    private String blockReason;
+
+    @Column(name = "blocked_by")
+    private String blockedBy;
+
+    @Column(name = "blocked_on")
+    private LocalDateTime blockedOn;
+
+    @Column(name = "scrap_reason", length = 500)
+    private String scrapReason;
+
+    @Column(name = "scrapped_by")
+    private String scrappedBy;
+
+    @Column(name = "scrapped_on")
+    private LocalDateTime scrappedOn;
+
+    // Reservation tracking
+    @Column(name = "reserved_for_order_id")
+    private Long reservedForOrderId;
+
+    @Column(name = "reserved_for_operation_id")
+    private Long reservedForOperationId;
+
+    @Column(name = "reserved_by")
+    private String reservedBy;
+
+    @Column(name = "reserved_on")
+    private LocalDateTime reservedOn;
+
+    @Column(name = "reserved_qty", precision = 15, scale = 4)
+    private BigDecimal reservedQty;
+
     @Column(name = "created_on")
     private LocalDateTime createdOn;
 
@@ -61,7 +104,7 @@ public class Inventory {
     @PrePersist
     protected void onCreate() {
         createdOn = LocalDateTime.now();
-        if (state == null) state = "AVAILABLE";
+        if (state == null) state = STATE_AVAILABLE;
         if (unit == null) unit = "T";
     }
 

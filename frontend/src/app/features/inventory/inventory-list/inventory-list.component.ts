@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
+import { Inventory } from '../../../shared/models';
+import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-inventory-list',
@@ -7,13 +9,29 @@ import { ApiService } from '../../../core/services/api.service';
   styleUrls: ['./inventory-list.component.css']
 })
 export class InventoryListComponent implements OnInit {
-  inventory: any[] = [];
-  filteredInventory: any[] = [];
+  inventory: Inventory[] = [];
   loading = true;
 
-  filterState = 'all';
-  filterType = 'all';
+  // Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  filterState = '';
+  filterType = '';
   searchTerm = '';
+
+  // Modal states
+  showBlockModal = false;
+  showScrapModal = false;
+  selectedInventory: Inventory | null = null;
+  actionReason = '';
+  actionLoading = false;
+  actionError = '';
 
   constructor(private apiService: ApiService) {}
 
@@ -23,10 +41,26 @@ export class InventoryListComponent implements OnInit {
 
   loadInventory(): void {
     this.loading = true;
-    this.apiService.getAllInventory().subscribe({
-      next: (data) => {
-        this.inventory = data;
-        this.applyFilters();
+
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'createdAt',
+      sortDirection: 'DESC',
+      status: this.filterState || undefined,
+      type: this.filterType || undefined,
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getInventoryPaged(request).subscribe({
+      next: (response: PagedResponse<Inventory>) => {
+        this.inventory = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
@@ -36,46 +70,141 @@ export class InventoryListComponent implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.filteredInventory = this.inventory.filter(item => {
-      const matchState = this.filterState === 'all' || item.state === this.filterState;
-      const matchType = this.filterType === 'all' || item.inventoryType === this.filterType;
-      const matchSearch = !this.searchTerm ||
-        item.batchNumber?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        item.materialId?.toLowerCase().includes(this.searchTerm.toLowerCase());
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadInventory();
+  }
 
-      return matchState && matchType && matchSearch;
-    });
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadInventory();
   }
 
   onFilterStateChange(state: string): void {
-    this.filterState = state;
-    this.applyFilters();
+    this.filterState = state === 'all' ? '' : state;
+    this.page = 0;
+    this.loadInventory();
   }
 
   onFilterTypeChange(type: string): void {
-    this.filterType = type;
-    this.applyFilters();
+    this.filterType = type === 'all' ? '' : type;
+    this.page = 0;
+    this.loadInventory();
   }
 
   onSearchChange(term: string): void {
     this.searchTerm = term;
-    this.applyFilters();
+    this.page = 0;
+    this.loadInventory();
   }
 
-  getStateSummary(): { state: string; count: number }[] {
-    const summary: { [key: string]: number } = {};
-    this.inventory.forEach(item => {
-      summary[item.state] = (summary[item.state] || 0) + 1;
-    });
-    return Object.entries(summary).map(([state, count]) => ({ state, count }));
+  // Block actions
+  openBlockModal(item: Inventory): void {
+    this.selectedInventory = item;
+    this.actionReason = '';
+    this.actionError = '';
+    this.showBlockModal = true;
   }
 
-  getTypeSummary(): { type: string; count: number }[] {
-    const summary: { [key: string]: number } = {};
-    this.inventory.forEach(item => {
-      summary[item.inventoryType] = (summary[item.inventoryType] || 0) + 1;
+  closeBlockModal(): void {
+    this.showBlockModal = false;
+    this.selectedInventory = null;
+    this.actionReason = '';
+    this.actionError = '';
+  }
+
+  confirmBlock(): void {
+    if (!this.actionReason.trim()) {
+      this.actionError = 'Please provide a reason for blocking.';
+      return;
+    }
+
+    if (!this.selectedInventory) return;
+
+    this.actionLoading = true;
+    this.actionError = '';
+
+    this.apiService.blockInventory(this.selectedInventory.inventoryId, this.actionReason).subscribe({
+      next: () => {
+        this.actionLoading = false;
+        this.closeBlockModal();
+        this.loadInventory();
+      },
+      error: (err) => {
+        this.actionLoading = false;
+        this.actionError = err.error?.message || 'Failed to block inventory.';
+      }
     });
-    return Object.entries(summary).map(([type, count]) => ({ type, count }));
+  }
+
+  // Unblock actions
+  unblockInventory(item: Inventory): void {
+    if (!confirm(`Are you sure you want to unblock inventory ${item.batchNumber}?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.apiService.unblockInventory(item.inventoryId).subscribe({
+      next: () => {
+        this.loadInventory();
+      },
+      error: (err) => {
+        this.loading = false;
+        alert(err.error?.message || 'Failed to unblock inventory.');
+      }
+    });
+  }
+
+  // Scrap actions
+  openScrapModal(item: Inventory): void {
+    this.selectedInventory = item;
+    this.actionReason = '';
+    this.actionError = '';
+    this.showScrapModal = true;
+  }
+
+  closeScrapModal(): void {
+    this.showScrapModal = false;
+    this.selectedInventory = null;
+    this.actionReason = '';
+    this.actionError = '';
+  }
+
+  confirmScrap(): void {
+    if (!this.actionReason.trim()) {
+      this.actionError = 'Please provide a reason for scrapping.';
+      return;
+    }
+
+    if (!this.selectedInventory) return;
+
+    this.actionLoading = true;
+    this.actionError = '';
+
+    this.apiService.scrapInventory(this.selectedInventory.inventoryId, this.actionReason).subscribe({
+      next: () => {
+        this.actionLoading = false;
+        this.closeScrapModal();
+        this.loadInventory();
+      },
+      error: (err) => {
+        this.actionLoading = false;
+        this.actionError = err.error?.message || 'Failed to scrap inventory.';
+      }
+    });
+  }
+
+  // Helpers
+  canBlock(item: Inventory): boolean {
+    return item.state !== 'BLOCKED' && item.state !== 'CONSUMED' && item.state !== 'SCRAPPED';
+  }
+
+  canUnblock(item: Inventory): boolean {
+    return item.state === 'BLOCKED';
+  }
+
+  canScrap(item: Inventory): boolean {
+    return item.state !== 'CONSUMED' && item.state !== 'SCRAPPED';
   }
 }

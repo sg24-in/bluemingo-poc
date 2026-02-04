@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { Order } from '../../../shared/models';
+import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-order-list',
@@ -8,10 +10,20 @@ import { ApiService } from '../../../core/services/api.service';
   styleUrls: ['./order-list.component.css']
 })
 export class OrderListComponent implements OnInit {
-  orders: any[] = [];
-  filteredOrders: any[] = [];
+  orders: Order[] = [];
   loading = true;
-  filterStatus = 'all';
+
+  // Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  filterStatus = '';
+  searchTerm = '';
 
   constructor(
     private apiService: ApiService,
@@ -24,10 +36,25 @@ export class OrderListComponent implements OnInit {
 
   loadOrders(): void {
     this.loading = true;
-    this.apiService.getOrders().subscribe({
-      next: (orders) => {
-        this.orders = orders;
-        this.applyFilter();
+
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'orderDate',
+      sortDirection: 'DESC',
+      status: this.filterStatus || undefined,
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getOrdersPaged(request).subscribe({
+      next: (response: PagedResponse<Order>) => {
+        this.orders = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
@@ -37,31 +64,41 @@ export class OrderListComponent implements OnInit {
     });
   }
 
-  applyFilter(): void {
-    if (this.filterStatus === 'all') {
-      this.filteredOrders = this.orders;
-    } else {
-      this.filteredOrders = this.orders.filter(o => o.status === this.filterStatus);
-    }
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadOrders();
+  }
+
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0; // Reset to first page when page size changes
+    this.loadOrders();
   }
 
   onFilterChange(status: string): void {
-    this.filterStatus = status;
-    this.applyFilter();
+    this.filterStatus = status === 'all' ? '' : status;
+    this.page = 0; // Reset to first page when filter changes
+    this.loadOrders();
+  }
+
+  onSearch(term: string): void {
+    this.searchTerm = term;
+    this.page = 0; // Reset to first page when search changes
+    this.loadOrders();
   }
 
   viewOrder(orderId: number): void {
     this.router.navigate(['/orders', orderId]);
   }
 
-  getProductInfo(order: any): string {
+  getProductInfo(order: Order): string {
     if (order.lineItems && order.lineItems.length > 0) {
       return order.lineItems[0].productName;
     }
     return 'N/A';
   }
 
-  getTotalQuantity(order: any): number {
+  getTotalQuantity(order: Order): number {
     if (order.lineItems && order.lineItems.length > 0) {
       return order.lineItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
     }

@@ -15,7 +15,7 @@
       <div class="filters">
         <div class="filter-group">
           <label>State:</label>
-          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterState">
+          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterStatus || 'all'">
             <option value="all">All States</option>
             <option value="AVAILABLE">Available</option>
             <option value="CONSUMED">Consumed</option>
@@ -38,7 +38,7 @@
 
     <!-- Batches Table -->
     <div class="card">
-      <table class="table" *ngIf="filteredBatches.length > 0">
+      <table class="table" *ngIf="batches.length > 0">
         <thead>
           <tr>
             <th>Batch Number</th>
@@ -51,7 +51,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let batch of filteredBatches">
+          <tr *ngFor="let batch of batches">
             <td>{{ batch.batchNumber }}</td>
             <td>{{ batch.materialId }}</td>
             <td>{{ batch.quantity }}</td>
@@ -67,9 +67,22 @@
         </tbody>
       </table>
 
-      <p *ngIf="filteredBatches.length === 0" class="no-data">
+      <p *ngIf="batches.length === 0" class="no-data">
         No batches found matching the selected filters.
       </p>
+
+      <!-- Pagination -->
+      <app-pagination
+        *ngIf="batches.length > 0"
+        [page]="page"
+        [size]="size"
+        [totalElements]="totalElements"
+        [totalPages]="totalPages"
+        [hasNext]="hasNext"
+        [hasPrevious]="hasPrevious"
+        (pageChange)="onPageChange($event)"
+        (sizeChange)="onSizeChange($event)"
+      ></app-pagination>
     </div>
   </div>
 </div>

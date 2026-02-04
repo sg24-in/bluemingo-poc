@@ -56,6 +56,52 @@ public class ProductionController {
         ));
     }
 
+    /**
+     * Reject a production confirmation
+     */
+    @PostMapping("/confirmations/{confirmationId}/reject")
+    public ResponseEntity<ProductionConfirmationDTO.StatusUpdateResponse> rejectConfirmation(
+            @PathVariable Long confirmationId,
+            @RequestBody java.util.Map<String, String> body) {
+        log.info("POST /api/production/confirmations/{}/reject", confirmationId);
+
+        ProductionConfirmationDTO.RejectionRequest request = ProductionConfirmationDTO.RejectionRequest.builder()
+                .confirmationId(confirmationId)
+                .reason(body.get("reason"))
+                .notes(body.get("notes"))
+                .build();
+
+        return ResponseEntity.ok(productionService.rejectConfirmation(request));
+    }
+
+    /**
+     * Get production confirmation by ID
+     */
+    @GetMapping("/confirmations/{confirmationId}")
+    public ResponseEntity<ProductionConfirmationDTO.Response> getConfirmation(@PathVariable Long confirmationId) {
+        log.info("GET /api/production/confirmations/{}", confirmationId);
+        return ResponseEntity.ok(productionService.getConfirmationById(confirmationId));
+    }
+
+    /**
+     * Get confirmations by status
+     */
+    @GetMapping("/confirmations/status/{status}")
+    public ResponseEntity<java.util.List<ProductionConfirmationDTO.Response>> getConfirmationsByStatus(
+            @PathVariable String status) {
+        log.info("GET /api/production/confirmations/status/{}", status);
+        return ResponseEntity.ok(productionService.getConfirmationsByStatus(status.toUpperCase()));
+    }
+
+    /**
+     * Get rejected confirmations
+     */
+    @GetMapping("/confirmations/rejected")
+    public ResponseEntity<java.util.List<ProductionConfirmationDTO.Response>> getRejectedConfirmations() {
+        log.info("GET /api/production/confirmations/rejected");
+        return ResponseEntity.ok(productionService.getConfirmationsByStatus("REJECTED"));
+    }
+
     // Need to import Map
     private static final class Map {
         static java.util.Map<String, Object> of(Object... keyValues) {

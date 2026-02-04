@@ -2,12 +2,48 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 
+interface DashboardSummary {
+  totalOrders: number;
+  ordersInProgress: number;
+  operationsReady: number;
+  operationsInProgress: number;
+  activeHolds: number;
+  todayConfirmations: number;
+  qualityPendingProcesses: number;
+  recentActivity: any[];
+  auditActivity: AuditActivity[];
+}
+
+interface AuditActivity {
+  auditId: number;
+  entityType: string;
+  entityId: number;
+  action: string;
+  description: string;
+  changedBy: string;
+  timestamp: string;
+}
+
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+  summary: DashboardSummary = {
+    totalOrders: 0,
+    ordersInProgress: 0,
+    operationsReady: 0,
+    operationsInProgress: 0,
+    activeHolds: 0,
+    todayConfirmations: 0,
+    qualityPendingProcesses: 0,
+    recentActivity: [],
+    auditActivity: []
+  };
+
+  qualityPendingProcesses: any[] = [];
+
   availableOrders: any[] = [];
   recentBatches: any[] = [];
   inventorySummary = {
@@ -30,10 +66,18 @@ export class DashboardComponent implements OnInit {
   loadDashboardData(): void {
     this.loading = true;
 
+    // Load dashboard summary
+    this.apiService.getDashboardSummary().subscribe({
+      next: (data) => {
+        this.summary = data;
+      },
+      error: (err) => console.error('Error loading dashboard summary:', err)
+    });
+
     // Load available orders
     this.apiService.getAvailableOrders().subscribe({
       next: (orders) => {
-        this.availableOrders = orders.slice(0, 5); // Show top 5
+        this.availableOrders = orders.slice(0, 5);
       },
       error: (err) => console.error('Error loading orders:', err)
     });
@@ -41,7 +85,7 @@ export class DashboardComponent implements OnInit {
     // Load recent batches
     this.apiService.getAllBatches().subscribe({
       next: (batches) => {
-        this.recentBatches = batches.slice(0, 5); // Show top 5
+        this.recentBatches = batches.slice(0, 5);
       },
       error: (err) => console.error('Error loading batches:', err)
     });
@@ -60,6 +104,19 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       }
     });
+
+    // Load quality pending processes
+    this.apiService.getQualityPendingProcesses().subscribe({
+      next: (processes) => {
+        this.qualityPendingProcesses = processes;
+        this.summary.qualityPendingProcesses = processes.length;
+      },
+      error: (err) => console.error('Error loading quality pending processes:', err)
+    });
+  }
+
+  navigateToQualityPending(): void {
+    this.router.navigate(['/processes/quality-pending']);
   }
 
   navigateToOrder(orderId: number): void {
@@ -68,5 +125,55 @@ export class DashboardComponent implements OnInit {
 
   navigateToBatch(batchId: number): void {
     this.router.navigate(['/batches', batchId]);
+  }
+
+  navigateToHolds(): void {
+    this.router.navigate(['/holds']);
+  }
+
+  navigateToOrders(): void {
+    this.router.navigate(['/orders']);
+  }
+
+  getAuditIcon(action: string): string {
+    switch (action) {
+      case 'CREATE':
+        return '+';
+      case 'STATUS_CHANGE':
+        return '↔';
+      case 'CONSUME':
+        return '−';
+      case 'PRODUCE':
+        return '⚙';
+      case 'HOLD':
+        return '⏸';
+      case 'RELEASE':
+        return '▶';
+      case 'UPDATE':
+        return '✎';
+      default:
+        return '•';
+    }
+  }
+
+  getAuditIconClass(action: string): string {
+    switch (action) {
+      case 'CREATE':
+        return 'audit-icon-create';
+      case 'STATUS_CHANGE':
+        return 'audit-icon-status';
+      case 'CONSUME':
+        return 'audit-icon-consume';
+      case 'PRODUCE':
+        return 'audit-icon-produce';
+      case 'HOLD':
+        return 'audit-icon-hold';
+      case 'RELEASE':
+        return 'audit-icon-release';
+      case 'UPDATE':
+        return 'audit-icon-update';
+      default:
+        return 'audit-icon-default';
+    }
   }
 }

@@ -1,14 +1,19 @@
 package com.mes.production.service;
 
 import com.mes.production.dto.InventoryDTO;
+import com.mes.production.dto.PagedResponseDTO;
+import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.entity.Inventory;
 import com.mes.production.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,6 +23,17 @@ import java.util.stream.Collectors;
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
+    private final AuditService auditService;
+
+    private static final Set<String> VALID_STATES = Set.of(
+            Inventory.STATE_AVAILABLE,
+            Inventory.STATE_RESERVED,
+            Inventory.STATE_CONSUMED,
+            Inventory.STATE_PRODUCED,
+            Inventory.STATE_BLOCKED,
+            Inventory.STATE_SCRAPPED,
+            Inventory.STATE_ON_HOLD
+    );
 
     /**
      * Get all available inventory for consumption (RM and IM)
@@ -53,6 +69,35 @@ public class InventoryService {
     }
 
     /**
+     * Get inventory with pagination, sorting, and filtering
+     */
+    public PagedResponseDTO<InventoryDTO> getInventoryPaged(PageRequestDTO pageRequest) {
+        log.info("Fetching inventory with pagination: page={}, size={}, state={}, type={}, search={}",
+                pageRequest.getPage(), pageRequest.getSize(),
+                pageRequest.getStatus(), pageRequest.getType(), pageRequest.getSearch());
+
+        org.springframework.data.domain.Pageable pageable = pageRequest.toPageable("createdOn");
+
+        org.springframework.data.domain.Page<Inventory> page;
+        if (pageRequest.hasFilters()) {
+            page = inventoryRepository.findByFilters(
+                    pageRequest.getStatus(), // state filter
+                    pageRequest.getType(),   // inventory type filter
+                    pageRequest.getSearchPattern(),
+                    pageable);
+        } else {
+            page = inventoryRepository.findAll(pageable);
+        }
+
+        org.springframework.data.domain.Page<InventoryDTO> dtoPage = page.map(this::convertToDTO);
+
+        return PagedResponseDTO.fromPage(dtoPage,
+                pageRequest.getSortBy(),
+                pageRequest.getSortDirection(),
+                pageRequest.getSearch());
+    }
+
+    /**
      * Get inventory by state
      */
     public List<InventoryDTO> getInventoryByState(String state) {
@@ -74,6 +119,263 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Block inventory
+     */
+    @Transactional
+    public InventoryDTO.StateUpdateResponse blockInventory(Long inventoryId, String reason) {
+        log.info("Blocking inventory: {}", inventoryId);
+
+        String currentUser = getCurrentUser();
+        Inventory inventory = getInventoryEntity(inventoryId);
+        String oldState = inventory.getState();
+
+        // Validate current state
+        if (Inventory.STATE_CONSUMED.equals(oldState) || Inventory.STATE_SCRAPPED.equals(oldState)) {
+            throw new RuntimeException("Cannot block inventory in state: " + oldState);
+        }
+
+        if (Inventory.STATE_BLOCKED.equals(oldState)) {
+            throw new RuntimeException("Inventory is already blocked");
+        }
+
+        // Update state
+        inventory.setState(Inventory.STATE_BLOCKED);
+        inventory.setBlockReason(reason);
+        inventory.setBlockedBy(currentUser);
+        inventory.setBlockedOn(LocalDateTime.now());
+        inventory.setUpdatedBy(currentUser);
+        inventoryRepository.save(inventory);
+
+        log.info("Inventory {} blocked by {}", inventoryId, currentUser);
+        auditService.logStatusChange("INVENTORY", inventoryId, oldState, Inventory.STATE_BLOCKED);
+
+        return InventoryDTO.StateUpdateResponse.builder()
+                .inventoryId(inventoryId)
+                .previousState(oldState)
+                .newState(Inventory.STATE_BLOCKED)
+                .message("Inventory blocked. Reason: " + reason)
+                .updatedBy(currentUser)
+                .updatedOn(inventory.getUpdatedOn())
+                .build();
+    }
+
+    /**
+     * Unblock inventory
+     */
+    @Transactional
+    public InventoryDTO.StateUpdateResponse unblockInventory(Long inventoryId) {
+        log.info("Unblocking inventory: {}", inventoryId);
+
+        String currentUser = getCurrentUser();
+        Inventory inventory = getInventoryEntity(inventoryId);
+        String oldState = inventory.getState();
+
+        if (!Inventory.STATE_BLOCKED.equals(oldState)) {
+            throw new RuntimeException("Inventory is not blocked. Current state: " + oldState);
+        }
+
+        // Update state back to AVAILABLE
+        inventory.setState(Inventory.STATE_AVAILABLE);
+        inventory.setBlockReason(null);
+        inventory.setBlockedBy(null);
+        inventory.setBlockedOn(null);
+        inventory.setUpdatedBy(currentUser);
+        inventoryRepository.save(inventory);
+
+        log.info("Inventory {} unblocked by {}", inventoryId, currentUser);
+        auditService.logStatusChange("INVENTORY", inventoryId, oldState, Inventory.STATE_AVAILABLE);
+
+        return InventoryDTO.StateUpdateResponse.builder()
+                .inventoryId(inventoryId)
+                .previousState(oldState)
+                .newState(Inventory.STATE_AVAILABLE)
+                .message("Inventory unblocked and available")
+                .updatedBy(currentUser)
+                .updatedOn(inventory.getUpdatedOn())
+                .build();
+    }
+
+    /**
+     * Scrap inventory
+     */
+    @Transactional
+    public InventoryDTO.StateUpdateResponse scrapInventory(Long inventoryId, String reason) {
+        log.info("Scrapping inventory: {}", inventoryId);
+
+        String currentUser = getCurrentUser();
+        Inventory inventory = getInventoryEntity(inventoryId);
+        String oldState = inventory.getState();
+
+        // Validate current state
+        if (Inventory.STATE_CONSUMED.equals(oldState)) {
+            throw new RuntimeException("Cannot scrap already consumed inventory");
+        }
+
+        if (Inventory.STATE_SCRAPPED.equals(oldState)) {
+            throw new RuntimeException("Inventory is already scrapped");
+        }
+
+        // Update state
+        inventory.setState(Inventory.STATE_SCRAPPED);
+        inventory.setScrapReason(reason);
+        inventory.setScrappedBy(currentUser);
+        inventory.setScrappedOn(LocalDateTime.now());
+        inventory.setUpdatedBy(currentUser);
+        inventoryRepository.save(inventory);
+
+        log.info("Inventory {} scrapped by {}", inventoryId, currentUser);
+        auditService.logStatusChange("INVENTORY", inventoryId, oldState, Inventory.STATE_SCRAPPED);
+
+        return InventoryDTO.StateUpdateResponse.builder()
+                .inventoryId(inventoryId)
+                .previousState(oldState)
+                .newState(Inventory.STATE_SCRAPPED)
+                .message("Inventory scrapped. Reason: " + reason)
+                .updatedBy(currentUser)
+                .updatedOn(inventory.getUpdatedOn())
+                .build();
+    }
+
+    /**
+     * Get inventory by ID
+     */
+    public InventoryDTO getInventoryById(Long inventoryId) {
+        Inventory inventory = getInventoryEntity(inventoryId);
+        return convertToDTO(inventory);
+    }
+
+    /**
+     * Get blocked inventory
+     */
+    public List<InventoryDTO> getBlockedInventory() {
+        return inventoryRepository.findByState(Inventory.STATE_BLOCKED).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get scrapped inventory
+     */
+    public List<InventoryDTO> getScrappedInventory() {
+        return inventoryRepository.findByState(Inventory.STATE_SCRAPPED).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get reserved inventory
+     */
+    public List<InventoryDTO> getReservedInventory() {
+        return inventoryRepository.findByState(Inventory.STATE_RESERVED).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Reserve inventory for an order/operation
+     */
+    @Transactional
+    public InventoryDTO.StateUpdateResponse reserveInventory(Long inventoryId, Long orderId, Long operationId, java.math.BigDecimal quantity) {
+        log.info("Reserving inventory: {} for order: {}, operation: {}", inventoryId, orderId, operationId);
+
+        String currentUser = getCurrentUser();
+        Inventory inventory = getInventoryEntity(inventoryId);
+        String oldState = inventory.getState();
+
+        // Validate current state
+        if (!Inventory.STATE_AVAILABLE.equals(oldState)) {
+            throw new RuntimeException("Only AVAILABLE inventory can be reserved. Current state: " + oldState);
+        }
+
+        // Validate quantity if specified
+        if (quantity != null && quantity.compareTo(inventory.getQuantity()) > 0) {
+            throw new RuntimeException("Reservation quantity exceeds available quantity");
+        }
+
+        // Update state
+        inventory.setState(Inventory.STATE_RESERVED);
+        inventory.setReservedForOrderId(orderId);
+        inventory.setReservedForOperationId(operationId);
+        inventory.setReservedBy(currentUser);
+        inventory.setReservedOn(LocalDateTime.now());
+        inventory.setReservedQty(quantity != null ? quantity : inventory.getQuantity());
+        inventory.setUpdatedBy(currentUser);
+        inventoryRepository.save(inventory);
+
+        log.info("Inventory {} reserved by {}", inventoryId, currentUser);
+        auditService.logStatusChange("INVENTORY", inventoryId, oldState, Inventory.STATE_RESERVED);
+
+        return InventoryDTO.StateUpdateResponse.builder()
+                .inventoryId(inventoryId)
+                .previousState(oldState)
+                .newState(Inventory.STATE_RESERVED)
+                .message("Inventory reserved for order: " + orderId)
+                .updatedBy(currentUser)
+                .updatedOn(inventory.getUpdatedOn())
+                .build();
+    }
+
+    /**
+     * Release reserved inventory back to available
+     */
+    @Transactional
+    public InventoryDTO.StateUpdateResponse releaseReservation(Long inventoryId) {
+        log.info("Releasing reservation for inventory: {}", inventoryId);
+
+        String currentUser = getCurrentUser();
+        Inventory inventory = getInventoryEntity(inventoryId);
+        String oldState = inventory.getState();
+
+        if (!Inventory.STATE_RESERVED.equals(oldState)) {
+            throw new RuntimeException("Inventory is not reserved. Current state: " + oldState);
+        }
+
+        // Update state back to AVAILABLE
+        inventory.setState(Inventory.STATE_AVAILABLE);
+        inventory.setReservedForOrderId(null);
+        inventory.setReservedForOperationId(null);
+        inventory.setReservedBy(null);
+        inventory.setReservedOn(null);
+        inventory.setReservedQty(null);
+        inventory.setUpdatedBy(currentUser);
+        inventoryRepository.save(inventory);
+
+        log.info("Inventory {} reservation released by {}", inventoryId, currentUser);
+        auditService.logStatusChange("INVENTORY", inventoryId, oldState, Inventory.STATE_AVAILABLE);
+
+        return InventoryDTO.StateUpdateResponse.builder()
+                .inventoryId(inventoryId)
+                .previousState(oldState)
+                .newState(Inventory.STATE_AVAILABLE)
+                .message("Reservation released, inventory available")
+                .updatedBy(currentUser)
+                .updatedOn(inventory.getUpdatedOn())
+                .build();
+    }
+
+    /**
+     * Get reserved inventory for a specific order
+     */
+    public List<InventoryDTO> getReservedForOrder(Long orderId) {
+        return inventoryRepository.findByReservedForOrderId(orderId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private Inventory getInventoryEntity(Long inventoryId) {
+        return inventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found: " + inventoryId));
+    }
+
+    private String getCurrentUser() {
+        try {
+            return SecurityContextHolder.getContext().getAuthentication().getName();
+        } catch (Exception e) {
+            return "SYSTEM";
+        }
+    }
+
     private InventoryDTO convertToDTO(Inventory inventory) {
         return InventoryDTO.builder()
                 .inventoryId(inventory.getInventoryId())
@@ -86,6 +388,17 @@ public class InventoryService {
                 .location(inventory.getLocation())
                 .batchId(inventory.getBatch() != null ? inventory.getBatch().getBatchId() : null)
                 .batchNumber(inventory.getBatch() != null ? inventory.getBatch().getBatchNumber() : null)
+                .blockReason(inventory.getBlockReason())
+                .blockedBy(inventory.getBlockedBy())
+                .blockedOn(inventory.getBlockedOn())
+                .scrapReason(inventory.getScrapReason())
+                .scrappedBy(inventory.getScrappedBy())
+                .scrappedOn(inventory.getScrappedOn())
+                .reservedForOrderId(inventory.getReservedForOrderId())
+                .reservedForOperationId(inventory.getReservedForOperationId())
+                .reservedBy(inventory.getReservedBy())
+                .reservedOn(inventory.getReservedOn())
+                .reservedQty(inventory.getReservedQty())
                 .build();
     }
 }

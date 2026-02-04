@@ -17,6 +17,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Equipment {
 
+    // Status constants
+    public static final String STATUS_AVAILABLE = "AVAILABLE";
+    public static final String STATUS_IN_USE = "IN_USE";
+    public static final String STATUS_MAINTENANCE = "MAINTENANCE";
+    public static final String STATUS_ON_HOLD = "ON_HOLD";
+    public static final String STATUS_UNAVAILABLE = "UNAVAILABLE";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "equipment_id")
@@ -41,6 +48,29 @@ public class Equipment {
 
     @Column(nullable = false)
     private String status;
+
+    // Maintenance tracking
+    @Column(name = "maintenance_reason", length = 500)
+    private String maintenanceReason;
+
+    @Column(name = "maintenance_start")
+    private LocalDateTime maintenanceStart;
+
+    @Column(name = "maintenance_by")
+    private String maintenanceBy;
+
+    @Column(name = "expected_maintenance_end")
+    private LocalDateTime expectedMaintenanceEnd;
+
+    // Hold tracking
+    @Column(name = "hold_reason", length = 500)
+    private String holdReason;
+
+    @Column(name = "hold_start")
+    private LocalDateTime holdStart;
+
+    @Column(name = "held_by")
+    private String heldBy;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn;

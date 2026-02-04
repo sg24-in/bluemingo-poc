@@ -10,9 +10,19 @@
   </div>
 
   <div *ngIf="!loading && batch">
+    <!-- Success/Error Messages -->
+    <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+    <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
     <!-- Batch Info -->
     <div class="card">
-      <div class="card-header">Batch Information</div>
+      <div class="card-header">
+        Batch Information
+        <div class="header-actions" *ngIf="batch.status === 'AVAILABLE'">
+          <button class="btn btn-secondary btn-sm" (click)="openSplitModal()">Split Batch</button>
+          <button class="btn btn-secondary btn-sm" (click)="openMergeModal()">Merge Batches</button>
+        </div>
+      </div>
       <div class="batch-info-grid">
         <div class="info-item">
           <span class="info-label">Batch Number</span>
@@ -24,15 +34,15 @@
         </div>
         <div class="info-item">
           <span class="info-label">Quantity</span>
-          <span class="info-value">{{ batch.quantity }} {{ batch.unitOfMeasure }}</span>
+          <span class="info-value">{{ batch.quantity }} {{ batch.unit || batch.unitOfMeasure }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">State</span>
-          <app-status-badge [status]="batch.state"></app-status-badge>
+          <span class="info-label">Status</span>
+          <app-status-badge [status]="batch.status || batch.state"></app-status-badge>
         </div>
         <div class="info-item">
           <span class="info-label">Created</span>
-          <span class="info-value">{{ batch.createdAt | date:'medium' }}</span>
+          <span class="info-value">{{ batch.createdOn || batch.createdAt | date:'medium' }}</span>
         </div>
         <div class="info-item" *ngIf="batch.expiryDate">
           <span class="info-label">Expiry Date</span>
@@ -121,5 +131,116 @@
 
   <div *ngIf="!loading && !batch" class="card">
     <p class="no-data">Batch not found</p>
+  </div>
+</div>
+
+<!-- Split Modal -->
+<div class="modal-overlay" *ngIf="showSplitModal" (click)="closeSplitModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Split Batch</h3>
+      <button class="close-btn" (click)="closeSplitModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="split-info">
+        <p><strong>Source Batch:</strong> {{ batch?.batchNumber }}</p>
+        <p><strong>Available Quantity:</strong> {{ batch?.quantity }} {{ batch?.unit }}</p>
+      </div>
+
+      <div class="split-portions">
+        <h4>Split Portions</h4>
+        <div class="portion-row" *ngFor="let portion of splitPortions; let i = index">
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" [(ngModel)]="portion.quantity" min="0" [max]="batch?.quantity">
+          </div>
+          <div class="form-group">
+            <label>Suffix</label>
+            <input type="text" [(ngModel)]="portion.suffix" maxlength="5">
+          </div>
+          <button class="btn btn-icon" (click)="removeSplitPortion(i)" *ngIf="splitPortions.length > 1">
+            &times;
+          </button>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="addSplitPortion()">+ Add Portion</button>
+      </div>
+
+      <div class="split-summary">
+        <p>
+          <strong>Total Split:</strong> {{ getTotalSplitQuantity() }} {{ batch?.unit }}
+          <span *ngIf="getTotalSplitQuantity() > batch?.quantity" class="text-danger">
+            (Exceeds available)
+          </span>
+        </p>
+        <p><strong>Remaining:</strong> {{ batch?.quantity - getTotalSplitQuantity() }} {{ batch?.unit }}</p>
+      </div>
+
+      <div class="form-group">
+        <label>Reason (optional)</label>
+        <textarea [(ngModel)]="splitReason" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeSplitModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="submitSplit()" [disabled]="!canSplit() || submitting">
+        {{ submitting ? 'Splitting...' : 'Split Batch' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Merge Modal -->
+<div class="modal-overlay" *ngIf="showMergeModal" (click)="closeMergeModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Merge Batches</h3>
+      <button class="close-btn" (click)="closeMergeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="merge-info">
+        <p><strong>Current Batch:</strong> {{ batch?.batchNumber }} ({{ batch?.quantity }} {{ batch?.unit }})</p>
+        <p><strong>Material:</strong> {{ batch?.materialId }} - {{ batch?.materialName }}</p>
+      </div>
+
+      <div class="merge-selection">
+        <h4>Select batches to merge with:</h4>
+        <div *ngIf="availableBatchesForMerge.length === 0" class="no-data">
+          No other available batches with the same material found.
+        </div>
+        <div class="batch-selection-list" *ngIf="availableBatchesForMerge.length > 0">
+          <div class="batch-selection-item" *ngFor="let b of availableBatchesForMerge"
+               [class.selected]="isBatchSelectedForMerge(b)"
+               (click)="toggleBatchForMerge(b)">
+            <input type="checkbox" [checked]="isBatchSelectedForMerge(b)">
+            <div class="batch-item-info">
+              <span class="batch-number">{{ b.batchNumber }}</span>
+              <span class="batch-qty">{{ b.quantity }} {{ b.unit }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="merge-summary" *ngIf="mergeSelectedBatches.length > 0">
+        <h4>Merge Summary</h4>
+        <p><strong>Batches to merge:</strong> {{ mergeSelectedBatches.length + 1 }}</p>
+        <p><strong>Total Quantity:</strong> {{ getTotalMergeQuantity() }} {{ batch?.unit }}</p>
+      </div>
+
+      <div class="form-group">
+        <label>Target Batch Number (optional, auto-generated if empty)</label>
+        <input type="text" [(ngModel)]="mergeTargetBatchNumber" placeholder="e.g., MRG-2024-001">
+      </div>
+
+      <div class="form-group">
+        <label>Reason (optional)</label>
+        <textarea [(ngModel)]="mergeReason" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeMergeModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="submitMerge()" [disabled]="!canMerge() || submitting">
+        {{ submitting ? 'Merging...' : 'Merge Batches' }}
+      </button>
+    </div>
   </div>
 </div>

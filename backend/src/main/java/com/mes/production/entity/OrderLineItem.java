@@ -1,10 +1,8 @@
 package com.mes.production.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.EqualsAndHashCode.Exclude;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +24,8 @@ public class OrderLineItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @ToString.Exclude
+    @Exclude
     private Order order;
 
     @Column(name = "product_sku", nullable = false)
@@ -59,6 +59,8 @@ public class OrderLineItem {
     private String updatedBy;
 
     @OneToMany(mappedBy = "orderLineItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @Exclude
     private List<Process> processes;
 
     @PrePersist

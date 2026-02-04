@@ -38,6 +38,21 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'holds',
+    loadChildren: () => import('./features/holds/holds.module').then(m => m.HoldsModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'processes',
+    loadChildren: () => import('./features/processes/processes.module').then(m => m.ProcessesModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'equipment',
+    loadChildren: () => import('./features/equipment/equipment.module').then(m => m.EquipmentModule),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '**',
     redirectTo: 'dashboard'
   }

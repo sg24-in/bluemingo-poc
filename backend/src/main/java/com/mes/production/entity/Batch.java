@@ -17,6 +17,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Batch {
 
+    // Status constants
+    public static final String STATUS_PRODUCED = "PRODUCED";
+    public static final String STATUS_AVAILABLE = "AVAILABLE";
+    public static final String STATUS_CONSUMED = "CONSUMED";
+    public static final String STATUS_BLOCKED = "BLOCKED";
+    public static final String STATUS_SCRAPPED = "SCRAPPED";
+    public static final String STATUS_QUALITY_PENDING = "QUALITY_PENDING";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "batch_id")
@@ -42,6 +50,22 @@ public class Batch {
 
     @Column(nullable = false)
     private String status;
+
+    // Quality approval tracking
+    @Column(name = "approved_by")
+    private String approvedBy;
+
+    @Column(name = "approved_on")
+    private LocalDateTime approvedOn;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
+    @Column(name = "rejected_by")
+    private String rejectedBy;
+
+    @Column(name = "rejected_on")
+    private LocalDateTime rejectedOn;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn;

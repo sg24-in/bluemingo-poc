@@ -1,10 +1,8 @@
 package com.mes.production.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.EqualsAndHashCode.Exclude;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,6 +46,8 @@ public class Order {
     private String updatedBy;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @Exclude
     private List<OrderLineItem> lineItems;
 
     @PrePersist

@@ -6,7 +6,7 @@
 
 -- 1. Insert Admin User (password: admin123 - BCrypt hashed)
 INSERT INTO users (email, password_hash, name, employee_id, status, created_by)
-VALUES ('admin@mes.com', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MqrqIuH.1Y9CrWKpxJqmvZrFfU1Aq5W', 'Admin User', 'EMP-001', 'ACTIVE', 'SYSTEM')
+VALUES ('admin@mes.com', '$2a$10$QOowoTebIWE8lpcFwYRUkOfJlLXf4joSBXPzGrFETthgFr/i0I9OW', 'Admin User', 'EMP-001', 'ACTIVE', 'SYSTEM')
 ON CONFLICT (email) DO NOTHING;
 
 -- 2. Insert Delay Reasons

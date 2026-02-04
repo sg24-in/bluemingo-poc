@@ -5,12 +5,14 @@ import { RouterModule } from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from './components/status-badge/status-badge.component';
+import { PaginationComponent } from './components/pagination/pagination.component';
 
 @NgModule({
   declarations: [
     HeaderComponent,
     LoadingSpinnerComponent,
-    StatusBadgeComponent
+    StatusBadgeComponent,
+    PaginationComponent
   ],
   imports: [
     CommonModule,
@@ -25,7 +27,8 @@ import { StatusBadgeComponent } from './components/status-badge/status-badge.com
     RouterModule,
     HeaderComponent,
     LoadingSpinnerComponent,
-    StatusBadgeComponent
+    StatusBadgeComponent,
+    PaginationComponent
   ]
 })
 export class SharedModule { }

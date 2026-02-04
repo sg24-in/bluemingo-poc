@@ -33,4 +33,6 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
            "JOIN FETCH oli.order o " +
            "WHERE op.operationId = :operationId")
     Optional<Operation> findByIdWithDetails(@Param("operationId") Long operationId);
+
+    Long countByStatus(String status);
 }

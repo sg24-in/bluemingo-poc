@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { Batch } from '../../../shared/models';
+import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-batch-list',
@@ -8,11 +10,19 @@ import { ApiService } from '../../../core/services/api.service';
   styleUrls: ['./batch-list.component.css']
 })
 export class BatchListComponent implements OnInit {
-  batches: any[] = [];
-  filteredBatches: any[] = [];
+  batches: Batch[] = [];
   loading = true;
 
-  filterState = 'all';
+  // Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  filterStatus = '';
   searchTerm = '';
 
   constructor(
@@ -26,10 +36,25 @@ export class BatchListComponent implements OnInit {
 
   loadBatches(): void {
     this.loading = true;
-    this.apiService.getAllBatches().subscribe({
-      next: (data) => {
-        this.batches = data;
-        this.applyFilters();
+
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'createdAt',
+      sortDirection: 'DESC',
+      status: this.filterStatus || undefined,
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getBatchesPaged(request).subscribe({
+      next: (response: PagedResponse<Batch>) => {
+        this.batches = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
@@ -39,25 +64,27 @@ export class BatchListComponent implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.filteredBatches = this.batches.filter(batch => {
-      const matchState = this.filterState === 'all' || batch.state === this.filterState;
-      const matchSearch = !this.searchTerm ||
-        batch.batchNumber?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        batch.materialId?.toLowerCase().includes(this.searchTerm.toLowerCase());
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadBatches();
+  }
 
-      return matchState && matchSearch;
-    });
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadBatches();
   }
 
   onFilterStateChange(state: string): void {
-    this.filterState = state;
-    this.applyFilters();
+    this.filterStatus = state === 'all' ? '' : state;
+    this.page = 0;
+    this.loadBatches();
   }
 
   onSearchChange(term: string): void {
     this.searchTerm = term;
-    this.applyFilters();
+    this.page = 0;
+    this.loadBatches();
   }
 
   viewBatch(batchId: number): void {

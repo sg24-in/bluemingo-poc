@@ -1,14 +1,39 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { SuggestedConsumptionResponse, SuggestedMaterial, AvailableBatch } from '../../../shared/models';
 
 interface MaterialConsumption {
   inventoryId: number;
+  batchId: number;
   batchNumber: string;
   materialId: string;
   availableQuantity: number;
   quantityToConsume: number;
+}
+
+interface BomRequirement {
+  bomId: number;
+  materialId: string;
+  materialName: string;
+  quantityRequired: number;
+  unit: string;
+  sequenceLevel: number;
+}
+
+interface EquipmentSelection {
+  equipmentId: number;
+  equipmentCode: string;
+  equipmentName: string;
+  selected: boolean;
+}
+
+interface OperatorSelection {
+  operatorId: number;
+  operatorCode: string;
+  operatorName: string;
+  selected: boolean;
 }
 
 @Component({
@@ -26,12 +51,23 @@ export class ProductionConfirmComponent implements OnInit {
 
   confirmForm!: FormGroup;
   availableInventory: any[] = [];
-  availableEquipment: any[] = [];
-  activeOperators: any[] = [];
+  availableEquipment: EquipmentSelection[] = [];
+  activeOperators: OperatorSelection[] = [];
   processParameters: any[] = [];
+  delayReasons: any[] = [];
 
   selectedMaterials: MaterialConsumption[] = [];
   confirmationResult: any = null;
+
+  // BOM validation
+  bomRequirements: BomRequirement[] = [];
+  bomValidationResult: any = null;
+  showBomWarning = false;
+
+  // Suggested consumption from BOM
+  suggestedConsumption: SuggestedConsumptionResponse | null = null;
+  loadingSuggestions = false;
+  showSuggestions = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -47,15 +83,59 @@ export class ProductionConfirmComponent implements OnInit {
   }
 
   initForm(): void {
+    const now = new Date();
+    const localDateTime = this.formatDateTimeLocal(now);
+
     this.confirmForm = this.fb.group({
       operationId: [this.operationId],
+      startTime: [localDateTime, [Validators.required, this.startTimeValidator()]],
+      endTime: [localDateTime, [Validators.required]],
       quantityProduced: [0, [Validators.required, Validators.min(1)]],
       quantityScrapped: [0, [Validators.min(0)]],
-      equipmentId: [null],
-      operatorId: [null],
+      delayMinutes: [0, [Validators.min(0)]],
+      delayReason: [''],
       notes: [''],
       processParameters: this.fb.array([])
-    });
+    }, { validators: this.timeRangeValidator() });
+  }
+
+  // Custom validator: Start time must be <= current time
+  startTimeValidator() {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value) return null;
+      const startTime = new Date(control.value);
+      const now = new Date();
+      if (startTime > now) {
+        return { futureStartTime: true };
+      }
+      return null;
+    };
+  }
+
+  // Custom validator: End time must be > Start time
+  timeRangeValidator() {
+    return (group: AbstractControl): ValidationErrors | null => {
+      const startTime = group.get('startTime')?.value;
+      const endTime = group.get('endTime')?.value;
+      if (startTime && endTime) {
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+        if (end <= start) {
+          return { invalidTimeRange: true };
+        }
+      }
+      return null;
+    };
+  }
+
+  // Format date to datetime-local input format
+  formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   get processParamsFormArray(): FormArray {
@@ -80,20 +160,38 @@ export class ProductionConfirmComponent implements OnInit {
   }
 
   loadMasterData(): void {
-    // Load available equipment
+    // Load available equipment as selection array
     this.apiService.getAvailableEquipment().subscribe({
       next: (equipment) => {
-        this.availableEquipment = equipment;
+        this.availableEquipment = equipment.map((eq: any) => ({
+          equipmentId: eq.equipmentId,
+          equipmentCode: eq.equipmentCode,
+          equipmentName: eq.equipmentName,
+          selected: false
+        }));
       },
       error: (err) => console.error('Error loading equipment:', err)
     });
 
-    // Load active operators
+    // Load active operators as selection array
     this.apiService.getActiveOperators().subscribe({
       next: (operators) => {
-        this.activeOperators = operators;
+        this.activeOperators = operators.map((op: any) => ({
+          operatorId: op.operatorId,
+          operatorCode: op.operatorCode,
+          operatorName: op.operatorName,
+          selected: false
+        }));
       },
       error: (err) => console.error('Error loading operators:', err)
+    });
+
+    // Load delay reasons
+    this.apiService.getDelayReasons().subscribe({
+      next: (reasons) => {
+        this.delayReasons = reasons;
+      },
+      error: (err) => console.error('Error loading delay reasons:', err)
     });
 
     // Load available inventory for consumption
@@ -119,14 +217,101 @@ export class ProductionConfirmComponent implements OnInit {
           error: (err) => console.error('Error loading process parameters:', err)
         });
     }
+
+    // Load BOM requirements
+    if (this.operation?.order?.productSku) {
+      this.apiService.getBomRequirements(this.operation.order.productSku).subscribe({
+        next: (result) => {
+          this.bomRequirements = result.requirements || [];
+        },
+        error: (err) => console.error('Error loading BOM requirements:', err)
+      });
+    }
+
+    // Load suggested consumption from BOM
+    this.loadSuggestedConsumption();
+  }
+
+  loadSuggestedConsumption(): void {
+    this.loadingSuggestions = true;
+    this.apiService.getSuggestedConsumption(this.operationId).subscribe({
+      next: (result) => {
+        this.suggestedConsumption = result;
+        this.loadingSuggestions = false;
+        this.showSuggestions = result.suggestedMaterials?.length > 0;
+
+        // Pre-fill target quantity if available
+        if (result.targetQuantity && !this.confirmForm.get('quantityProduced')?.value) {
+          this.confirmForm.patchValue({ quantityProduced: result.targetQuantity });
+        }
+      },
+      error: (err) => {
+        console.error('Error loading suggested consumption:', err);
+        this.loadingSuggestions = false;
+      }
+    });
+  }
+
+  applySuggestedConsumption(): void {
+    if (!this.suggestedConsumption) return;
+
+    // Clear existing selections
+    this.selectedMaterials = [];
+
+    // Apply suggested materials
+    for (const material of this.suggestedConsumption.suggestedMaterials) {
+      for (const batch of material.availableBatches) {
+        if (batch.suggestedConsumption > 0) {
+          this.selectedMaterials.push({
+            inventoryId: batch.inventoryId,
+            batchId: batch.batchId || 0,
+            batchNumber: batch.batchNumber || '',
+            materialId: material.materialId,
+            availableQuantity: batch.availableQuantity,
+            quantityToConsume: batch.suggestedConsumption
+          });
+        }
+      }
+    }
+
+    this.validateBom();
+  }
+
+  getTotalSuggestedQuantity(): number {
+    if (!this.suggestedConsumption) return 0;
+    return this.suggestedConsumption.suggestedMaterials
+      .reduce((sum, m) => sum + m.requiredQuantity, 0);
+  }
+
+  hasSufficientStock(): boolean {
+    if (!this.suggestedConsumption) return true;
+    return this.suggestedConsumption.suggestedMaterials
+      .every(m => m.sufficientStock);
   }
 
   initProcessParams(): void {
     this.processParamsFormArray.clear();
     this.processParameters.forEach(param => {
+      const validators: any[] = [];
+
+      // Required validator
+      if (param.is_required) {
+        validators.push(Validators.required);
+      }
+
+      // Min value validator
+      if (param.min_value !== null && param.min_value !== undefined) {
+        validators.push(Validators.min(param.min_value));
+      }
+
+      // Max value validator
+      if (param.max_value !== null && param.max_value !== undefined) {
+        validators.push(Validators.max(param.max_value));
+      }
+
       this.processParamsFormArray.push(this.fb.group({
         parameterName: [param.parameter_name],
-        parameterValue: [param.default_value || '', param.is_required ? Validators.required : []]
+        parameterValue: [param.default_value || '', validators]
       }));
     });
   }
@@ -136,11 +321,13 @@ export class ProductionConfirmComponent implements OnInit {
     if (!existing) {
       this.selectedMaterials.push({
         inventoryId: inventory.inventoryId,
+        batchId: inventory.batchId,
         batchNumber: inventory.batchNumber,
         materialId: inventory.materialId,
         availableQuantity: inventory.quantity,
         quantityToConsume: 0
       });
+      this.validateBom();
     }
   }
 
@@ -151,39 +338,138 @@ export class ProductionConfirmComponent implements OnInit {
   updateMaterialQuantity(index: number, quantity: number): void {
     if (quantity >= 0 && quantity <= this.selectedMaterials[index].availableQuantity) {
       this.selectedMaterials[index].quantityToConsume = quantity;
+      this.validateBom();
     }
+  }
+
+  // Equipment selection methods
+  toggleEquipment(index: number): void {
+    this.availableEquipment[index].selected = !this.availableEquipment[index].selected;
+  }
+
+  getSelectedEquipmentIds(): number[] {
+    return this.availableEquipment
+      .filter(eq => eq.selected)
+      .map(eq => eq.equipmentId);
+  }
+
+  getSelectedEquipmentCount(): number {
+    return this.availableEquipment.filter(eq => eq.selected).length;
+  }
+
+  // Operator selection methods
+  toggleOperator(index: number): void {
+    this.activeOperators[index].selected = !this.activeOperators[index].selected;
+  }
+
+  getSelectedOperatorIds(): number[] {
+    return this.activeOperators
+      .filter(op => op.selected)
+      .map(op => op.operatorId);
+  }
+
+  getSelectedOperatorCount(): number {
+    return this.activeOperators.filter(op => op.selected).length;
+  }
+
+  // Check if delay reason is required
+  isDelayReasonRequired(): boolean {
+    const delayMinutes = this.confirmForm.get('delayMinutes')?.value;
+    return delayMinutes && delayMinutes > 0;
+  }
+
+  validateBom(): void {
+    if (!this.operation?.order?.productSku || this.selectedMaterials.length === 0) {
+      this.bomValidationResult = null;
+      return;
+    }
+
+    const request = {
+      productSku: this.operation.order.productSku,
+      targetQuantity: this.confirmForm.get('quantityProduced')?.value || 0,
+      materialsConsumed: this.selectedMaterials
+        .filter(m => m.quantityToConsume > 0)
+        .map(m => ({
+          materialId: m.materialId,
+          quantity: m.quantityToConsume
+        }))
+    };
+
+    this.apiService.validateBomConsumption(request).subscribe({
+      next: (result) => {
+        this.bomValidationResult = result;
+        this.showBomWarning = result.warnings?.length > 0 || result.errors?.length > 0;
+      },
+      error: (err) => console.error('Error validating BOM:', err)
+    });
+  }
+
+  getTotalSelectedByMaterial(materialId: string): number {
+    return this.selectedMaterials
+      .filter(m => m.materialId === materialId)
+      .reduce((sum, m) => sum + m.quantityToConsume, 0);
+  }
+
+  getRequirementStatus(req: BomRequirement): string {
+    const selected = this.getTotalSelectedByMaterial(req.materialId);
+    if (selected >= req.quantityRequired) return 'met';
+    if (selected > 0) return 'partial';
+    return 'missing';
   }
 
   onSubmit(): void {
     if (this.confirmForm.invalid) {
+      this.error = 'Please fill in all required fields correctly.';
+      return;
+    }
+
+    // Validate at least one equipment selected
+    if (this.getSelectedEquipmentCount() === 0) {
+      this.error = 'Please select at least one equipment.';
+      return;
+    }
+
+    // Validate at least one operator selected
+    if (this.getSelectedOperatorCount() === 0) {
+      this.error = 'Please select at least one operator.';
+      return;
+    }
+
+    // Validate delay reason if delay > 0
+    const formValue = this.confirmForm.value;
+    if (formValue.delayMinutes > 0 && !formValue.delayReason) {
+      this.error = 'Please select a delay reason when delay duration is greater than 0.';
       return;
     }
 
     this.submitting = true;
     this.error = '';
 
-    const formValue = this.confirmForm.value;
-
-    // Build request
+    // Build request with new fields
     const request = {
       operationId: this.operationId,
-      quantityProduced: formValue.quantityProduced,
-      quantityScrapped: formValue.quantityScrapped || 0,
-      equipmentId: formValue.equipmentId,
-      operatorId: formValue.operatorId,
-      notes: formValue.notes,
-      materialConsumptions: this.selectedMaterials
+      producedQty: formValue.quantityProduced,
+      scrapQty: formValue.quantityScrapped || 0,
+      startTime: new Date(formValue.startTime).toISOString(),
+      endTime: new Date(formValue.endTime).toISOString(),
+      equipmentIds: this.getSelectedEquipmentIds(),
+      operatorIds: this.getSelectedOperatorIds(),
+      materialsConsumed: this.selectedMaterials
         .filter(m => m.quantityToConsume > 0)
         .map(m => ({
+          batchId: m.batchId,
           inventoryId: m.inventoryId,
-          quantityConsumed: m.quantityToConsume
+          quantity: m.quantityToConsume
         })),
       processParameters: formValue.processParameters
         .filter((p: any) => p.parameterValue)
         .reduce((acc: any, p: any) => {
           acc[p.parameterName] = p.parameterValue;
           return acc;
-        }, {})
+        }, {}),
+      delayMinutes: formValue.delayMinutes || 0,
+      delayReason: formValue.delayReason || null,
+      notes: formValue.notes
     };
 
     this.apiService.confirmProduction(request).subscribe({
