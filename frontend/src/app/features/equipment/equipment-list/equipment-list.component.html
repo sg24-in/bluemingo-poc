@@ -1,6 +1,9 @@
 <div class="container">
   <div class="page-header">
     <h1 class="page-title">Equipment Management</h1>
+    <button class="btn btn-primary" (click)="createEquipment()">
+      + New Equipment
+    </button>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -77,6 +80,9 @@
               </div>
             </td>
             <td class="actions-cell">
+              <button class="btn btn-small btn-primary" (click)="editEquipment(item)">
+                Edit
+              </button>
               <button *ngIf="canStartMaintenance(item)" class="btn btn-small btn-warning" (click)="openMaintenanceModal(item)">
                 Maintenance
               </button>
@@ -88,6 +94,13 @@
               </button>
               <button *ngIf="canReleaseFromHold(item)" class="btn btn-small btn-info" (click)="releaseFromHold(item)">
                 Release
+              </button>
+              <button
+                class="btn btn-small btn-danger"
+                (click)="deleteEquipment(item)"
+                [disabled]="item.status === 'IN_USE' || item.status === 'UNAVAILABLE'"
+              >
+                Delete
               </button>
               <span *ngIf="item.status === 'IN_USE'" class="no-actions">In use</span>
             </td>

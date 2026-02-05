@@ -10,6 +10,7 @@ export class AdminLayoutComponent {
     { path: '/manage/customers', label: 'Customers', icon: 'people' },
     { path: '/manage/products', label: 'Products', icon: 'box-seam' },
     { path: '/manage/materials', label: 'Materials', icon: 'stack' },
+    { path: '/manage/equipment', label: 'Equipment', icon: 'gear' },
     { path: '/manage/bom', label: 'Bill of Materials', icon: 'diagram-3' }
   ];
 }

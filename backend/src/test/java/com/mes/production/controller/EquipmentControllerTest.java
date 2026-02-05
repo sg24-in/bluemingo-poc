@@ -8,6 +8,7 @@ import com.mes.production.security.JwtService;
 import com.mes.production.service.EquipmentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -370,5 +371,152 @@ class EquipmentControllerTest {
                 .andExpect(jsonPath("$.content[0].name").value("Furnace 1"));
 
         verify(equipmentService, times(1)).getEquipmentPaged(any(PageRequestDTO.class));
+    }
+
+    @Nested
+    @DisplayName("Create Equipment Tests")
+    class CreateEquipmentTests {
+
+        @Test
+        @DisplayName("Should create equipment successfully")
+        @WithMockUser(username = "admin@mes.com")
+        void createEquipment_ValidData_ReturnsCreated() throws Exception {
+            EquipmentDTO.CreateEquipmentRequest request = EquipmentDTO.CreateEquipmentRequest.builder()
+                    .equipmentCode("EQ-002")
+                    .name("Caster 1")
+                    .equipmentType("CASTER")
+                    .capacity(new BigDecimal("50.00"))
+                    .capacityUnit("T")
+                    .location("Plant B")
+                    .build();
+
+            when(equipmentService.createEquipment(any(EquipmentDTO.CreateEquipmentRequest.class))).thenReturn(testEquipment);
+
+            mockMvc.perform(post("/api/equipment")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.equipmentId").value(1));
+
+            verify(equipmentService).createEquipment(any(EquipmentDTO.CreateEquipmentRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return bad request for invalid data")
+        @WithMockUser(username = "admin@mes.com")
+        void createEquipment_InvalidData_ReturnsBadRequest() throws Exception {
+            EquipmentDTO.CreateEquipmentRequest request = EquipmentDTO.CreateEquipmentRequest.builder()
+                    .equipmentCode("")  // Invalid - blank
+                    .name("")           // Invalid - blank
+                    .equipmentType("")  // Invalid - blank
+                    .build();
+
+            mockMvc.perform(post("/api/equipment")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Should return bad request for duplicate code")
+        @WithMockUser(username = "admin@mes.com")
+        void createEquipment_DuplicateCode_ReturnsBadRequest() throws Exception {
+            EquipmentDTO.CreateEquipmentRequest request = EquipmentDTO.CreateEquipmentRequest.builder()
+                    .equipmentCode("EQ-001")
+                    .name("Duplicate")
+                    .equipmentType("FURNACE")
+                    .build();
+
+            when(equipmentService.createEquipment(any(EquipmentDTO.CreateEquipmentRequest.class)))
+                    .thenThrow(new RuntimeException("Equipment code already exists"));
+
+            mockMvc.perform(post("/api/equipment")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("Update Equipment Tests")
+    class UpdateEquipmentTests {
+
+        @Test
+        @DisplayName("Should update equipment successfully")
+        @WithMockUser(username = "admin@mes.com")
+        void updateEquipment_ValidData_ReturnsOk() throws Exception {
+            EquipmentDTO.UpdateEquipmentRequest request = EquipmentDTO.UpdateEquipmentRequest.builder()
+                    .equipmentCode("EQ-001")
+                    .name("Furnace 1 Updated")
+                    .equipmentType("FURNACE")
+                    .build();
+
+            EquipmentDTO updatedEquipment = EquipmentDTO.builder()
+                    .equipmentId(1L)
+                    .equipmentCode("EQ-001")
+                    .name("Furnace 1 Updated")
+                    .equipmentType("FURNACE")
+                    .status("AVAILABLE")
+                    .build();
+
+            when(equipmentService.updateEquipment(eq(1L), any(EquipmentDTO.UpdateEquipmentRequest.class)))
+                    .thenReturn(updatedEquipment);
+
+            mockMvc.perform(put("/api/equipment/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("Furnace 1 Updated"));
+
+            verify(equipmentService).updateEquipment(eq(1L), any(EquipmentDTO.UpdateEquipmentRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return bad request for non-existent equipment")
+        @WithMockUser(username = "admin@mes.com")
+        void updateEquipment_NotFound_ReturnsBadRequest() throws Exception {
+            EquipmentDTO.UpdateEquipmentRequest request = EquipmentDTO.UpdateEquipmentRequest.builder()
+                    .equipmentCode("EQ-999")
+                    .name("Not Found")
+                    .equipmentType("FURNACE")
+                    .build();
+
+            when(equipmentService.updateEquipment(eq(999L), any(EquipmentDTO.UpdateEquipmentRequest.class)))
+                    .thenThrow(new RuntimeException("Equipment not found"));
+
+            mockMvc.perform(put("/api/equipment/999")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("Delete Equipment Tests")
+    class DeleteEquipmentTests {
+
+        @Test
+        @DisplayName("Should delete equipment successfully")
+        @WithMockUser(username = "admin@mes.com")
+        void deleteEquipment_ValidId_ReturnsOk() throws Exception {
+            doNothing().when(equipmentService).deleteEquipment(1L);
+
+            mockMvc.perform(delete("/api/equipment/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Equipment deleted successfully"));
+
+            verify(equipmentService).deleteEquipment(1L);
+        }
+
+        @Test
+        @DisplayName("Should return bad request for equipment in use")
+        @WithMockUser(username = "admin@mes.com")
+        void deleteEquipment_InUse_ReturnsBadRequest() throws Exception {
+            doThrow(new RuntimeException("Cannot delete equipment that is currently in use"))
+                    .when(equipmentService).deleteEquipment(1L);
+
+            mockMvc.perform(delete("/api/equipment/1"))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }

@@ -4,12 +4,15 @@ import com.mes.production.dto.EquipmentDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.service.EquipmentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/equipment")
@@ -97,6 +100,39 @@ public class EquipmentController {
         log.info("GET /api/equipment/on-hold");
         List<EquipmentDTO> equipment = equipmentService.getOnHoldEquipment();
         return ResponseEntity.ok(equipment);
+    }
+
+    /**
+     * Create new equipment
+     */
+    @PostMapping
+    public ResponseEntity<EquipmentDTO> createEquipment(
+            @Valid @RequestBody EquipmentDTO.CreateEquipmentRequest request) {
+        log.info("POST /api/equipment - creating equipment: {}", request.getEquipmentCode());
+        EquipmentDTO created = equipmentService.createEquipment(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    /**
+     * Update existing equipment
+     */
+    @PutMapping("/{id:\\d+}")
+    public ResponseEntity<EquipmentDTO> updateEquipment(
+            @PathVariable Long id,
+            @Valid @RequestBody EquipmentDTO.UpdateEquipmentRequest request) {
+        log.info("PUT /api/equipment/{} - updating equipment", id);
+        EquipmentDTO updated = equipmentService.updateEquipment(id, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Delete equipment (soft delete)
+     */
+    @DeleteMapping("/{id:\\d+}")
+    public ResponseEntity<Map<String, String>> deleteEquipment(@PathVariable Long id) {
+        log.info("DELETE /api/equipment/{}", id);
+        equipmentService.deleteEquipment(id);
+        return ResponseEntity.ok(Map.of("message", "Equipment deleted successfully"));
     }
 
     /**

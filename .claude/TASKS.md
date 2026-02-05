@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-05
-**Session Status:** Active - Phase 1 CRUD Complete (All Tests Pass)
+**Session Status:** Active - Phase 2 Backend Tests Complete (667 tests, 0 failures)
 
 ---
 
@@ -274,20 +274,22 @@
 
 **Goal:** Test Equipment, Operator, BOM, and Routing CRUD
 
-### Phase 2 Backend Tests
+### Phase 2 Backend Tests - COMPLETE (667 tests, 0 failures)
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 54 | EquipmentService CRUD tests | PENDING | Create, update, delete operations |
-| 55 | EquipmentController tests | PENDING | All REST endpoints |
-| 56 | OperatorService CRUD tests | PENDING | Create, update, delete operations |
-| 57 | OperatorController tests | PENDING | All REST endpoints |
-| 58 | BomService CRUD tests | PENDING | Including hierarchy operations |
-| 59 | BomController tests | PENDING | All REST endpoints |
-| 60 | BOM hierarchy tests | PENDING | Multi-level BOM operations |
-| 61 | RoutingService CRUD tests | PENDING | Including routing steps |
-| 62 | RoutingController tests | PENDING | All REST endpoints |
-| 63 | Routing step CRUD tests | PENDING | Test step operations |
+| 54 | EquipmentService CRUD tests | ✅ DONE | Already comprehensive (pre-existing) |
+| 55 | EquipmentController tests | ✅ DONE | Already comprehensive (pre-existing) |
+| 56 | OperatorService CRUD tests | N/A | Operators are read-only master data, no service |
+| 57 | OperatorController tests | ✅ DONE | +5 tests in MasterDataControllerTest |
+| 58 | BomService CRUD tests | ✅ DONE | NEW BomServiceTest.java - 29 tests |
+| 59 | BomController tests | ✅ DONE | +18 CRUD tests in BomControllerTest (23 total) |
+| 60 | BOM hierarchy tests | ✅ DONE | Covered in BomServiceTest (tree, cascade, move) |
+| 61 | RoutingService CRUD tests | ✅ DONE | Already comprehensive - 18 tests |
+| 62 | RoutingController tests | ✅ DONE | Already comprehensive - 12 tests |
+| 63 | Routing step CRUD tests | ✅ DONE | Covered in RoutingServiceTest |
+
+**Also fixed:** 6 pre-existing test failures in CustomerControllerTest, MaterialControllerTest, ProductControllerTest, OrderControllerTest
 
 ### Phase 2 Frontend Tests
 

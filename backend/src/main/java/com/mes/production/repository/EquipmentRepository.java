@@ -16,6 +16,8 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
 
     Optional<Equipment> findByEquipmentCode(String equipmentCode);
 
+    boolean existsByEquipmentCode(String equipmentCode);
+
     List<Equipment> findByStatus(String status);
 
     List<Equipment> findByEquipmentType(String equipmentType);

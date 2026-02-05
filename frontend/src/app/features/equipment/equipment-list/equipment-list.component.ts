@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Equipment } from '../../../shared/models';
 import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
@@ -34,7 +35,7 @@ export class EquipmentListComponent implements OnInit {
   actionLoading = false;
   actionError = '';
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadEquipment();
@@ -233,5 +234,31 @@ export class EquipmentListComponent implements OnInit {
 
   canReleaseFromHold(item: Equipment): boolean {
     return item.status === 'ON_HOLD';
+  }
+
+  // CRUD actions
+  createEquipment(): void {
+    this.router.navigate(['/manage/equipment/new']);
+  }
+
+  editEquipment(item: Equipment): void {
+    this.router.navigate(['/manage/equipment', item.equipmentId, 'edit']);
+  }
+
+  deleteEquipment(item: Equipment): void {
+    if (!confirm(`Delete equipment "${item.name}" (${item.equipmentCode})?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.apiService.deleteEquipment(item.equipmentId).subscribe({
+      next: () => {
+        this.loadEquipment();
+      },
+      error: (err) => {
+        this.loading = false;
+        alert(err.error?.message || 'Failed to delete equipment.');
+      }
+    });
   }
 }

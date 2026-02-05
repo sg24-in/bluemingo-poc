@@ -78,6 +78,10 @@ const routes: Routes = [
       {
         path: 'bom',
         loadChildren: () => import('./features/bom/bom.module').then(m => m.BomModule)
+      },
+      {
+        path: 'equipment',
+        loadChildren: () => import('./features/equipment/equipment.module').then(m => m.EquipmentModule)
       }
     ]
   },

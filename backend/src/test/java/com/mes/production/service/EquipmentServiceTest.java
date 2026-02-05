@@ -2,6 +2,7 @@ package com.mes.production.service;
 
 import com.mes.production.dto.EquipmentDTO;
 import com.mes.production.entity.Equipment;
+import com.mes.production.repository.AuditTrailRepository;
 import com.mes.production.repository.EquipmentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +33,9 @@ class EquipmentServiceTest {
 
     @Mock
     private AuditService auditService;
+
+    @Mock
+    private AuditTrailRepository auditTrailRepository;
 
     @InjectMocks
     private EquipmentService equipmentService;
@@ -279,6 +283,162 @@ class EquipmentServiceTest {
 
             assertEquals(1, result.size());
             assertEquals("ON_HOLD", result.get(0).getStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("Create Equipment Tests")
+    class CreateEquipmentTests {
+
+        @Test
+        @DisplayName("Should create equipment successfully")
+        void createEquipment_ValidData_CreatesSuccessfully() {
+            setupSecurityContext();
+            EquipmentDTO.CreateEquipmentRequest request = EquipmentDTO.CreateEquipmentRequest.builder()
+                    .equipmentCode("EQ-002")
+                    .name("Caster 1")
+                    .equipmentType("CASTER")
+                    .capacity(new BigDecimal("50.00"))
+                    .capacityUnit("T")
+                    .location("Plant B")
+                    .build();
+
+            when(equipmentRepository.existsByEquipmentCode("EQ-002")).thenReturn(false);
+            when(equipmentRepository.save(any(Equipment.class))).thenAnswer(i -> {
+                Equipment saved = i.getArgument(0);
+                saved.setEquipmentId(2L);
+                return saved;
+            });
+
+            EquipmentDTO result = equipmentService.createEquipment(request);
+
+            assertNotNull(result);
+            assertEquals("EQ-002", result.getEquipmentCode());
+            assertEquals("Caster 1", result.getName());
+            assertEquals("CASTER", result.getEquipmentType());
+            verify(equipmentRepository).save(any(Equipment.class));
+            verify(auditTrailRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw exception for duplicate equipment code")
+        void createEquipment_DuplicateCode_ThrowsException() {
+            EquipmentDTO.CreateEquipmentRequest request = EquipmentDTO.CreateEquipmentRequest.builder()
+                    .equipmentCode("EQ-001")
+                    .name("Duplicate")
+                    .equipmentType("FURNACE")
+                    .build();
+
+            when(equipmentRepository.existsByEquipmentCode("EQ-001")).thenReturn(true);
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> equipmentService.createEquipment(request));
+
+            assertTrue(exception.getMessage().contains("already exists"));
+            verify(equipmentRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Update Equipment Tests")
+    class UpdateEquipmentTests {
+
+        @Test
+        @DisplayName("Should update equipment successfully")
+        void updateEquipment_ValidData_UpdatesSuccessfully() {
+            setupSecurityContext();
+            EquipmentDTO.UpdateEquipmentRequest request = EquipmentDTO.UpdateEquipmentRequest.builder()
+                    .equipmentCode("EQ-001")
+                    .name("Furnace 1 Updated")
+                    .equipmentType("FURNACE")
+                    .capacity(new BigDecimal("150.00"))
+                    .capacityUnit("T")
+                    .location("Plant A - Section 2")
+                    .build();
+
+            when(equipmentRepository.findById(1L)).thenReturn(Optional.of(testEquipment));
+            when(equipmentRepository.save(any(Equipment.class))).thenAnswer(i -> i.getArgument(0));
+
+            EquipmentDTO result = equipmentService.updateEquipment(1L, request);
+
+            assertNotNull(result);
+            assertEquals("Furnace 1 Updated", result.getName());
+            assertEquals(new BigDecimal("150.00"), result.getCapacity());
+            verify(equipmentRepository).save(any(Equipment.class));
+            verify(auditTrailRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw exception for non-existent equipment")
+        void updateEquipment_NotFound_ThrowsException() {
+            EquipmentDTO.UpdateEquipmentRequest request = EquipmentDTO.UpdateEquipmentRequest.builder()
+                    .equipmentCode("EQ-999")
+                    .name("Not Found")
+                    .equipmentType("FURNACE")
+                    .build();
+
+            when(equipmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(RuntimeException.class,
+                    () -> equipmentService.updateEquipment(999L, request));
+        }
+
+        @Test
+        @DisplayName("Should throw exception for duplicate code on update")
+        void updateEquipment_DuplicateCode_ThrowsException() {
+            EquipmentDTO.UpdateEquipmentRequest request = EquipmentDTO.UpdateEquipmentRequest.builder()
+                    .equipmentCode("EQ-002")
+                    .name("Changed Code")
+                    .equipmentType("FURNACE")
+                    .build();
+
+            when(equipmentRepository.findById(1L)).thenReturn(Optional.of(testEquipment));
+            when(equipmentRepository.existsByEquipmentCode("EQ-002")).thenReturn(true);
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> equipmentService.updateEquipment(1L, request));
+
+            assertTrue(exception.getMessage().contains("already exists"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Delete Equipment Tests")
+    class DeleteEquipmentTests {
+
+        @Test
+        @DisplayName("Should delete equipment successfully (soft delete)")
+        void deleteEquipment_AvailableEquipment_SoftDeletes() {
+            setupSecurityContext();
+            when(equipmentRepository.findById(1L)).thenReturn(Optional.of(testEquipment));
+            when(equipmentRepository.save(any(Equipment.class))).thenAnswer(i -> i.getArgument(0));
+
+            equipmentService.deleteEquipment(1L);
+
+            assertEquals(Equipment.STATUS_UNAVAILABLE, testEquipment.getStatus());
+            verify(equipmentRepository).save(any(Equipment.class));
+            verify(auditTrailRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when deleting equipment in use")
+        void deleteEquipment_InUse_ThrowsException() {
+            testEquipment.setStatus(Equipment.STATUS_IN_USE);
+            when(equipmentRepository.findById(1L)).thenReturn(Optional.of(testEquipment));
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> equipmentService.deleteEquipment(1L));
+
+            assertTrue(exception.getMessage().contains("in use"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when equipment not found for delete")
+        void deleteEquipment_NotFound_ThrowsException() {
+            when(equipmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(RuntimeException.class,
+                    () -> equipmentService.deleteEquipment(999L));
         }
     }
 }

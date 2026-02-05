@@ -3,7 +3,9 @@ package com.mes.production.service;
 import com.mes.production.dto.EquipmentDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.entity.AuditTrail;
 import com.mes.production.entity.Equipment;
+import com.mes.production.repository.AuditTrailRepository;
 import com.mes.production.repository.EquipmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ public class EquipmentService {
 
     private final EquipmentRepository equipmentRepository;
     private final AuditService auditService;
+    private final AuditTrailRepository auditTrailRepository;
 
     /**
      * Get all equipment
@@ -257,6 +260,110 @@ public class EquipmentService {
                 .updatedBy(currentUser)
                 .updatedOn(equipment.getUpdatedOn())
                 .build();
+    }
+
+    /**
+     * Create new equipment
+     */
+    @Transactional
+    public EquipmentDTO createEquipment(EquipmentDTO.CreateEquipmentRequest request) {
+        log.info("Creating equipment: {}", request.getEquipmentCode());
+
+        if (equipmentRepository.existsByEquipmentCode(request.getEquipmentCode())) {
+            throw new RuntimeException("Equipment code already exists: " + request.getEquipmentCode());
+        }
+
+        String currentUser = getCurrentUser();
+
+        Equipment equipment = Equipment.builder()
+                .equipmentCode(request.getEquipmentCode())
+                .name(request.getName())
+                .equipmentType(request.getEquipmentType())
+                .capacity(request.getCapacity())
+                .capacityUnit(request.getCapacityUnit())
+                .location(request.getLocation())
+                .status(Equipment.STATUS_AVAILABLE)
+                .createdBy(currentUser)
+                .build();
+
+        Equipment saved = equipmentRepository.save(equipment);
+
+        auditEquipmentAction(saved.getEquipmentId(), AuditTrail.ACTION_CREATE, null, saved.getEquipmentCode(), currentUser);
+
+        log.info("Created equipment: {} by {}", saved.getEquipmentCode(), currentUser);
+        return convertToDTO(saved);
+    }
+
+    /**
+     * Update existing equipment
+     */
+    @Transactional
+    public EquipmentDTO updateEquipment(Long equipmentId, EquipmentDTO.UpdateEquipmentRequest request) {
+        log.info("Updating equipment: {}", equipmentId);
+
+        Equipment existing = getEquipmentEntity(equipmentId);
+        String currentUser = getCurrentUser();
+
+        // Check for duplicate code if changed
+        if (!existing.getEquipmentCode().equals(request.getEquipmentCode()) &&
+                equipmentRepository.existsByEquipmentCode(request.getEquipmentCode())) {
+            throw new RuntimeException("Equipment code already exists: " + request.getEquipmentCode());
+        }
+
+        String oldValues = String.format("code=%s, name=%s, type=%s", existing.getEquipmentCode(), existing.getName(), existing.getEquipmentType());
+
+        existing.setEquipmentCode(request.getEquipmentCode());
+        existing.setName(request.getName());
+        existing.setEquipmentType(request.getEquipmentType());
+        existing.setCapacity(request.getCapacity());
+        existing.setCapacityUnit(request.getCapacityUnit());
+        existing.setLocation(request.getLocation());
+        if (request.getStatus() != null) {
+            existing.setStatus(request.getStatus());
+        }
+        existing.setUpdatedBy(currentUser);
+
+        Equipment saved = equipmentRepository.save(existing);
+
+        String newValues = String.format("code=%s, name=%s, type=%s", saved.getEquipmentCode(), saved.getName(), saved.getEquipmentType());
+        auditEquipmentAction(saved.getEquipmentId(), AuditTrail.ACTION_UPDATE, oldValues, newValues, currentUser);
+
+        log.info("Updated equipment: {} by {}", saved.getEquipmentCode(), currentUser);
+        return convertToDTO(saved);
+    }
+
+    /**
+     * Delete equipment (soft delete - set status to UNAVAILABLE)
+     */
+    @Transactional
+    public void deleteEquipment(Long equipmentId) {
+        Equipment equipment = getEquipmentEntity(equipmentId);
+        String currentUser = getCurrentUser();
+
+        if (Equipment.STATUS_IN_USE.equals(equipment.getStatus())) {
+            throw new RuntimeException("Cannot delete equipment that is currently in use");
+        }
+
+        equipment.setStatus(Equipment.STATUS_UNAVAILABLE);
+        equipment.setUpdatedBy(currentUser);
+        equipmentRepository.save(equipment);
+
+        auditEquipmentAction(equipment.getEquipmentId(), AuditTrail.ACTION_DELETE, Equipment.STATUS_AVAILABLE, Equipment.STATUS_UNAVAILABLE, currentUser);
+
+        log.info("Deleted (deactivated) equipment: {} by {}", equipment.getEquipmentCode(), currentUser);
+    }
+
+    private void auditEquipmentAction(Long equipmentId, String action, String oldValue, String newValue, String user) {
+        AuditTrail audit = AuditTrail.builder()
+                .entityType("EQUIPMENT")
+                .entityId(equipmentId)
+                .action(action)
+                .oldValue(oldValue)
+                .newValue(newValue)
+                .changedBy(user)
+                .timestamp(LocalDateTime.now())
+                .build();
+        auditTrailRepository.save(audit);
     }
 
     private Equipment getEquipmentEntity(Long equipmentId) {

@@ -23,4 +23,5 @@ export * from './batch-allocation.model';
 export * from './customer.model';
 export * from './material.model';
 export * from './product.model';
+export * from './operator.model';
 export * from './unit-of-measure.model';

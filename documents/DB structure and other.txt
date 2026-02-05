@@ -1,0 +1,548 @@
+MES – Consolidated 
+1. Terminology & Core Concepts
+1.	Stage = Process
+
+2.	Each Process:
+
+○	Produces an Intermediate Material (IM) or Finished Goods (FG)
+
+3.	Each Process contains multiple Operations
+
+4.	Production confirmation happens at Operation level only
+
+5.	Process completion is derived from operation completion
+
+________________________________________
+2. Order Management Specifications
+2.1 Order Structure
+●	Order is the starting point
+
+●	Order contains multiple line items
+
+2.2 Order Line Item
+Each line item contains:
+●	Product (SKU)
+
+●	Quantity
+
+●	Delivery Date
+
+○	Used only for reporting
+
+○	Not used for scheduling or prioritization
+
+2.3 Order Execution & Allocation 
+●	Each order line item:
+
+○	Progresses independently
+
+●	An order can be processed with multiple input materials
+
+●	Order allocation is partial:
+
+○	One batch can be allocated to multiple orders
+
+○	One order can consume multiple batches
+
+●	Allocation is recorded explicitly for traceability
+
+________________________________________
+3. Process Sequencing Specifications
+1.	Process sequence is derived from BOM
+
+2.	BOM can be multi-level
+
+3.	Users cannot override process sequence
+
+4.	Next process becomes available only after previous process usage decision = ACCEPT
+
+________________________________________
+4. Operation Sequencing Specifications
+1.	Operation sequence is derived from Routing
+
+2.	Routing defines:
+
+○	Operation order
+
+○	Parallelism (if any)
+
+3.	Users cannot skip operations
+
+4.	System automatically sets next operation
+
+5.	Only one operation is READY at a time unless routing allows parallelism
+
+________________________________________
+5. Equipment Specifications 
+5.1 Equipment Assignment
+●	Each Operation can have multiple Equipments
+
+●	Equipment selection happens:
+
+○	At operation execution
+
+●	Equipment types:
+
+○	Batch
+
+○	Continuous
+
+5.2 Equipment Usage
+●	One or more equipments may be:
+
+○	Assigned
+
+○	Used
+
+○	Logged per operation confirmation
+
+●	Equipment usage is recorded for:
+
+○	Traceability
+
+○	Reporting
+
+○	Future capacity planning
+
+________________________________________
+6. Production Confirmation Specifications
+6.1 Level
+●	Production confirmation happens at each operation
+
+6.2 Data Captured at Operation
+●	Produced quantity
+
+●	Scrap / yield loss quantity
+
+●	Start time
+
+●	End time
+
+●	Equipment(s) used
+
+●	Operator(s)
+
+●	Delay and delay reason
+
+●	Process parameters
+
+●	Consumed RM / IM quantities (batch-wise)
+
+________________________________________
+7. Production Status Management
+7.1 Operation Status
+●	NOT_STARTED
+
+●	READY
+
+●	IN_PROGRESS
+
+●	PARTIALLY_CONFIRMED
+
+●	CONFIRMED
+
+●	BLOCKED
+
+●	ON_HOLD
+
+7.2 Process Status
+
+●	READY
+
+●	IN_PROGRESS
+
+●	QUALITY_PENDING
+
+●	COMPLETED
+
+●	REJECTED
+
+●	ON_HOLD
+
+7.3 Order Line Status
+●	CREATED
+
+●	IN_PROGRESS
+
+●	COMPLETED
+
+●	BLOCKED
+
+●	ON_HOLD
+
+________________________________________
+7.4 Hold & Hold Reason
+●	Hold can be applied at:
+
+○	Operation
+
+○	Process
+
+○	Order line
+
+●	Hold requires:
+
+○	Mandatory Hold Reason
+
+●	Examples:
+
+○	Equipment breakdown
+
+○	Quality investigation
+
+○	Material shortage
+
+○	Operator unavailability
+
+●	Held entities:
+
+○	Cannot progress
+
+○	Cannot consume or produce inventory
+
+●	Hold release is a controlled action with audit trail
+
+________________________________________
+8. Inventory Management Specifications
+8.1 Inventory Types
+●	Raw Material (RM)
+
+●	Intermediate Material (IM)
+
+●	Finished Goods (FG)
+
+●	WIP (Operation-level)
+
+8.2 Inventory States
+●	AVAILABLE
+
+●	RESERVED
+
+●	CONSUMED
+
+●	PRODUCED
+
+●	BLOCKED
+
+●	SCRAPPED
+
+●	ON_HOLD
+
+8.3 Inventory Movement Rules
+●	Inventory movement happens at operation boundaries
+
+●	Consume inventory from previous operation
+
+●	Produce inventory at current operation
+
+●	Inventory for next process is blocked until usage decision
+
+●	Inventory can be placed ON_HOLD with reason
+
+________________________________________
+9. Multilevel BOM Inventory Requirement Module
+1.	Inventory requirement calculated:
+
+○	During production confirmation
+
+○	During RM / IM selection
+
+2.	Uses:
+
+○	Multilevel BOM
+
+○	Yield loss (Ratio)
+
+○	Already consumed quantities
+
+3.	Supports:
+
+○	Multiple input materials per order
+
+○	Partial allocations across orders
+
+4.	Displays:
+
+○	Required quantity
+
+○	Available quantity
+
+○	Shortage indicator
+
+________________________________________
+10. Production Confirmation UI – Availability Rules
+10.1 Available Orders List
+Orders shown only if:
+●	Process = READY
+
+●	Previous process usage decision = ACCEPT
+
+●	Order line not completed
+
+●	Not ON_HOLD
+
+10.2 Available RM / IM List
+Materials shown only if:
+●	Inventory state = AVAILABLE
+
+●	Batch not blocked or on hold
+
+●	Quantity sufficient (as per BOM calculation)
+
+________________________________________
+11. Quantity Type Configuration
+1.	Quantity type configurable as:
+
+○	INTEGER (pieces)
+
+○	DECIMAL (continuous)
+
+2.	Configuration can exist at:
+
+○	Material level
+
+○	Operation level
+
+○	Equipment level
+
+3.	System enforces:
+
+○	Precision
+
+○	Rounding rules
+
+________________________________________
+12. Batch / Lot Management Specifications
+12.1 Batch Generation
+●	Batch / lot / material number generated:
+
+○	At operation completion
+
+●	Generation based on:
+
+○	Operation-level configuration
+
+○	Quantity or piece-based logic
+
+12.2 Batch Generation Configuration
+●	Prefix
+
+●	Date format
+
+●	Sequence
+
+●	Batch size logic
+
+●	Per-piece or per-quantity generation
+
+________________________________________
+13. Batch Relationship Management
+13.1 Supported Relationships
+●	One batch → One batch
+
+●	One batch → Many batches (split)
+
+●	Many batches → One batch (merge)
+
+●	Many batches → Many batches
+
+13.2 Batch-to-Batch Relation Module
+For each relationship:
+●	Parent batch
+
+●	Child batch
+
+●	Quantity consumed
+
+●	Operation
+
+●	Relation type (SPLIT / MERGE)
+
+________________________________________
+14. Batch ↔ Order Allocation (NEW)
+●	One batch can be allocated to multiple orders
+
+●	One order can consume multiple batches
+
+●	Allocation is tracked via:
+
+○	Batch ID
+
+○	Order line ID
+
+○	Allocated quantity
+
+●	Allocation history is immutable (audit trail)
+
+17. Change & Audit Tracking
+Tracked for:
+●	Production status changes
+
+●	Hold / release actions
+
+●	Inventory movements
+
+●	Batch relations
+
+●	Batch–order allocations
+
+●	Usage decisions
+
+Captured fields:
+●	Old value
+
+●	New value
+
+●	User
+
+●	Timestamp
+
+
+
+1. Orders
+●	OrderID (PK)
+●	CustomerID
+●	OrderDate
+●	Status (CREATED / IN_PROGRESS / COMPLETED / BLOCKED / ON_HOLD)
+2. OrderLineItems
+●	OrderLineID (PK)
+●	OrderID (FK → Orders)
+●	ProductSKU
+●	Quantity
+●	DeliveryDate
+●	Status (CREATED / IN_PROGRESS / COMPLETED / BLOCKED / ON_HOLD)
+3. BillOfMaterial (Unified BOM)
+●	BOMID (PK)
+●	ProductSKU
+●	BOMVersion
+●	MaterialID (component or parent material)
+●	QuantityRequired
+●	YieldLossRatio
+●	SequenceLevel (multi-level BOM support)
+●	ParentBOMID (FK → BillOfMaterial, recursive hierarchy)
+●	Status (ACTIVE / OBSOLETE / ON_HOLD)
+●	CreatedOn
+●	CreatedBy
+4. Processes
+●	ProcessID (PK)
+●	OrderLineID (FK → OrderLineItems)
+●	BOMID (FK → BillOfMaterial)
+●	StageName
+●	Status (READY / IN_PROGRESS / QUALITY_PENDING / COMPLETED / REJECTED / ON_HOLD)
+5. Routing
+●	RoutingID (PK)
+●	ProcessID (FK → Processes)
+●	RoutingName
+●	RoutingType (Sequential / Parallel)
+●	Status (ACTIVE / INACTIVE / ON_HOLD)
+●	CreatedBy
+●	CreatedOn
+RoutingSteps
+●	RoutingStepID (PK)
+●	RoutingID (FK → Routing)
+●	OperationID (FK → Operations)
+●	SequenceNumber
+●	IsParallel (Y/N)
+●	MandatoryFlag (Y/N)
+●	Status (READY / IN_PROGRESS / COMPLETED / ON_HOLD)
+6. Operations
+●	OperationID (PK)
+●	ProcessID (FK → Processes)
+●	RoutingStepID (FK → RoutingSteps)
+●	OperationName
+●	OperationType
+●	Status (NOT_STARTED / READY / IN_PROGRESS / PARTIALLY_CONFIRMED / CONFIRMED / BLOCKED / ON_HOLD)
+7. Equipment
+●	EquipmentID (PK)
+●	EquipmentType (Batch / Continuous)
+●	Name
+●	Capacity
+●	Status (AVAILABLE / IN_USE / MAINTENANCE / ON_HOLD)
+OperationEquipmentUsage
+●	UsageID (PK)
+●	OperationID (FK → Operations)
+●	EquipmentID (FK → Equipment)
+●	StartTime
+●	EndTime
+●	OperatorID
+●	Status (LOGGED / CONFIRMED)
+8. ProductionConfirmation
+●	ConfirmationID (PK)
+●	OperationID (FK → Operations)
+●	ProducedQty
+●	ScrapQty
+●	StartTime
+●	EndTime
+●	DelayReason
+●	ProcessParameters
+●	RMConsumed (batch-wise)
+●	Status (CONFIRMED / PARTIALLY_CONFIRMED / REJECTED)
+9. Inventory
+●	InventoryID (PK)
+●	MaterialID
+●	InventoryType (RM / IM / FG / WIP)
+●	State (AVAILABLE / RESERVED / CONSUMED / PRODUCED / BLOCKED / SCRAPPED / ON_HOLD)
+●	Quantity
+●	BatchID (FK → Batches)
+InventoryMovement
+●	MovementID (PK)
+●	OperationID (FK → Operations)
+●	InventoryID (FK → Inventory)
+●	MovementType (Consume / Produce / Hold / Release)
+●	Quantity
+●	Timestamp
+●	Reason
+●	Status (EXECUTED / PENDING / ON_HOLD)
+10. Batches
+●	BatchID (PK)
+●	MaterialID
+●	GeneratedAtOperationID (FK → Operations)
+●	BatchNumber
+●	Quantity
+●	Status (AVAILABLE / CONSUMED / PRODUCED / ON_HOLD)
+BatchRelations
+●	RelationID (PK)
+●	ParentBatchID
+●	ChildBatchID
+●	OperationID
+●	RelationType (SPLIT / MERGE)
+●	QuantityConsumed
+●	Status (ACTIVE / CLOSED)
+BatchOrderAllocation
+●	AllocationID (PK)
+●	BatchID (FK → Batches)
+●	OrderLineID (FK → OrderLineItems)
+●	AllocatedQty
+●	Timestamp
+●	Status (ALLOCATED / RELEASED)
+11. HoldRecords
+●	HoldID (PK)
+●	EntityType (Operation / Process / OrderLine / Inventory / Batch)
+●	EntityID
+●	Reason
+●	AppliedBy
+●	AppliedOn
+●	ReleasedBy
+●	ReleasedOn
+●	Status (ACTIVE / RELEASED)
+12. AuditTrail
+●	AuditID (PK)
+●	EntityType
+●	EntityID
+●	FieldName
+●	OldValue
+●	NewValue
+●	ChangedBy
+●	Timestamp
+
+Relationships Overview
+●	Orders → OrderLineItems → Processes → Operations
+●	Operations ↔ Equipment (many-to-many via OperationEquipmentUsage)
+●	Operations ↔ ProductionConfirmation
+●	Operations ↔ InventoryMovement
+●	Inventory ↔ Batches
+●	Batches ↔ BatchRelations ↔ BatchOrderAllocation
+●	HoldRecords can apply to Operations / Processes / OrderLines
+●	AuditTrail spans all entities
+
+ 

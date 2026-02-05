@@ -382,6 +382,43 @@ export class ApiService {
     return this.http.post<EquipmentStatusUpdateResponse>(`${environment.apiUrl}/equipment/${equipmentId}/release`, {});
   }
 
+  createEquipment(data: any): Observable<Equipment> {
+    return this.http.post<Equipment>(`${environment.apiUrl}/equipment`, data);
+  }
+
+  updateEquipment(equipmentId: number, data: any): Observable<Equipment> {
+    return this.http.put<Equipment>(`${environment.apiUrl}/equipment/${equipmentId}`, data);
+  }
+
+  deleteEquipment(equipmentId: number): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/equipment/${equipmentId}`);
+  }
+
+  // ============================================================
+  // Operators (CRUD endpoints)
+  // ============================================================
+
+  getOperatorsPaged(request: PageRequest = {}): Observable<PagedResponse<any>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<any>>(`${environment.apiUrl}/operators/paged`, { params });
+  }
+
+  getOperatorById(operatorId: number): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/operators/${operatorId}`);
+  }
+
+  createOperator(data: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/operators`, data);
+  }
+
+  updateOperator(operatorId: number, data: any): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/operators/${operatorId}`, data);
+  }
+
+  deleteOperator(operatorId: number): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/operators/${operatorId}`);
+  }
+
   getDelayReasons(): Observable<{ reasonCode: string; description: string }[]> {
     return this.http.get<{ reasonCode: string; description: string }[]>(`${environment.apiUrl}/master/delay-reasons`);
   }
