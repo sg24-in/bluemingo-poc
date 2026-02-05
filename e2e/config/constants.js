@@ -39,6 +39,36 @@ const SELECTORS = {
         errorMessage: '.error-message, .alert-danger'
     },
 
+    // Admin CRUD pages
+    admin: {
+        newButton: 'button:has-text("New"), button:has-text("+ New")',
+        editButton: 'button:has-text("Edit")',
+        deleteButton: 'button.btn-danger:has-text("Delete")',
+        saveButton: 'button[type="submit"]:has-text("Create"), button[type="submit"]:has-text("Update")',
+        cancelButton: 'button:has-text("Cancel")',
+        searchInput: '#search',
+        statusFilter: '#status-filter',
+        // Customer form
+        customerCode: '#customerCode',
+        customerName: '#customerName',
+        contactPerson: '#contactPerson',
+        email: '#email',
+        phone: '#phone',
+        address: '#address',
+        city: '#city',
+        country: '#country',
+        taxId: '#taxId',
+        // Material form
+        materialCode: '#materialCode',
+        materialName: '#materialName',
+        materialType: '#materialType',
+        baseUnit: '#baseUnit',
+        description: '#description',
+        // Product form
+        productSku: '#sku',
+        productName: '#productName'
+    },
+
     // Header/Navigation
     header: {
         logo: '.header-logo, .navbar-brand',
@@ -119,7 +149,38 @@ const TEST_DATA = {
     orderStatuses: ['CREATED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
 
     // Expected equipment statuses
-    equipmentStatuses: ['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'ON_HOLD']
+    equipmentStatuses: ['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'ON_HOLD'],
+
+    // CRUD Test Data
+    crud: {
+        customer: {
+            code: 'E2E-CUST-001',
+            name: 'E2E Test Customer',
+            contact: 'John Doe',
+            email: 'e2e@test.com',
+            phone: '+1-555-0123',
+            address: '123 Test Street',
+            city: 'Test City',
+            country: 'Test Country',
+            taxId: 'TAX-12345',
+            updatedName: 'E2E Test Customer Updated'
+        },
+        material: {
+            code: 'E2E-MAT-001',
+            name: 'E2E Test Material',
+            type: 'RAW',
+            unit: 'KG',
+            description: 'Test material for E2E testing',
+            updatedName: 'E2E Test Material Updated'
+        },
+        product: {
+            sku: 'E2E-PROD-001',
+            name: 'E2E Test Product',
+            unit: 'PC',
+            description: 'Test product for E2E testing',
+            updatedName: 'E2E Test Product Updated'
+        }
+    }
 };
 
 // Screenshot naming convention
@@ -133,7 +194,9 @@ const SCREENSHOT_PREFIX = {
     holds: '07-holds',
     equipment: '08-equipment',
     quality: '09-quality',
-    navigation: '10-navigation'
+    pagination: '10-pagination',
+    crud: '11-crud',
+    navigation: '12-navigation'
 };
 
 module.exports = {

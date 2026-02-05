@@ -47,6 +47,16 @@ import {
   BomValidationResult,
   BomRequirement,
   SuggestedConsumptionResponse,
+  BomTreeNode,
+  BomTreeFullResponse,
+  CreateBomNodeRequest,
+  CreateBomTreeRequest,
+  UpdateBomNodeRequest,
+  MoveBomNodeRequest,
+  BomListResponse,
+  BomProductSummary,
+  UpdateBomSettingsRequest,
+  UpdateBomSettingsResponse,
   // Batch Allocation
   AllocationInfo,
   AllocateRequest,
@@ -445,6 +455,108 @@ export class ApiService {
 
   getSuggestedConsumption(operationId: number): Observable<SuggestedConsumptionResponse> {
     return this.http.get<SuggestedConsumptionResponse>(`${environment.apiUrl}/bom/operation/${operationId}/suggested-consumption`);
+  }
+
+  // ============================================================
+  // BOM Tree CRUD
+  // ============================================================
+
+  /**
+   * Get full hierarchical BOM tree for a product
+   */
+  getBomTree(productSku: string): Observable<BomTreeFullResponse> {
+    return this.http.get<BomTreeFullResponse>(`${environment.apiUrl}/bom/${productSku}/tree`);
+  }
+
+  /**
+   * Get BOM tree for a specific version
+   */
+  getBomTreeByVersion(productSku: string, version: string): Observable<BomTreeFullResponse> {
+    return this.http.get<BomTreeFullResponse>(`${environment.apiUrl}/bom/${productSku}/tree/version/${version}`);
+  }
+
+  /**
+   * Get flat list of BOM nodes for table view
+   */
+  getBomList(productSku: string): Observable<BomListResponse[]> {
+    return this.http.get<BomListResponse[]>(`${environment.apiUrl}/bom/${productSku}/list`);
+  }
+
+  /**
+   * Get single BOM node by ID
+   */
+  getBomNode(bomId: number): Observable<BomTreeNode> {
+    return this.http.get<BomTreeNode>(`${environment.apiUrl}/bom/node/${bomId}`);
+  }
+
+  /**
+   * Get all products that have BOMs defined
+   */
+  getBomProducts(): Observable<BomProductSummary[]> {
+    return this.http.get<BomProductSummary[]>(`${environment.apiUrl}/bom/products`);
+  }
+
+  /**
+   * Get available BOM versions for a product
+   */
+  getBomVersions(productSku: string): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/bom/${productSku}/versions`);
+  }
+
+  /**
+   * Create a single BOM node
+   */
+  createBomNode(request: CreateBomNodeRequest): Observable<BomTreeNode> {
+    return this.http.post<BomTreeNode>(`${environment.apiUrl}/bom/node`, request);
+  }
+
+  /**
+   * Create a full BOM tree (multiple nodes at once)
+   */
+  createBomTree(request: CreateBomTreeRequest): Observable<BomTreeFullResponse> {
+    return this.http.post<BomTreeFullResponse>(`${environment.apiUrl}/bom/tree`, request);
+  }
+
+  /**
+   * Update a BOM node
+   */
+  updateBomNode(bomId: number, request: UpdateBomNodeRequest): Observable<BomTreeNode> {
+    return this.http.put<BomTreeNode>(`${environment.apiUrl}/bom/node/${bomId}`, request);
+  }
+
+  /**
+   * Move a BOM node to a new parent
+   */
+  moveBomNode(bomId: number, request: MoveBomNodeRequest): Observable<BomTreeNode> {
+    return this.http.put<BomTreeNode>(`${environment.apiUrl}/bom/node/${bomId}/move`, request);
+  }
+
+  /**
+   * Delete a BOM node (soft delete, no children)
+   */
+  deleteBomNode(bomId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${environment.apiUrl}/bom/node/${bomId}`);
+  }
+
+  /**
+   * Delete a BOM node and all its children (cascade)
+   */
+  deleteBomNodeCascade(bomId: number): Observable<{ message: string; deletedCount: number }> {
+    return this.http.delete<{ message: string; deletedCount: number }>(`${environment.apiUrl}/bom/node/${bomId}/cascade`);
+  }
+
+  /**
+   * Delete entire BOM tree for a product
+   */
+  deleteBomTree(productSku: string): Observable<{ message: string; deletedCount: number }> {
+    return this.http.delete<{ message: string; deletedCount: number }>(`${environment.apiUrl}/bom/${productSku}/tree`);
+  }
+
+  /**
+   * Update top-level BOM settings (version, status) for all nodes
+   */
+  updateBomSettings(productSku: string, request: UpdateBomSettingsRequest): Observable<UpdateBomSettingsResponse> {
+    return this.http.put<UpdateBomSettingsResponse>(`${environment.apiUrl}/bom/${productSku}/settings`, request);
   }
 
   // ============================================================

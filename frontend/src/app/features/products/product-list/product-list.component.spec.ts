@@ -18,24 +18,24 @@ describe('ProductListComponent', () => {
   const mockProducts: Product[] = [
     {
       productId: 1,
-      productSku: 'SKU-001',
+      sku: 'SKU-001',
       productName: 'Steel Rod 10mm',
-      unit: 'MTR',
+      baseUnit: 'MTR',
       description: 'Steel rod 10mm diameter',
       status: 'ACTIVE'
     },
     {
       productId: 2,
-      productSku: 'SKU-002',
+      sku: 'SKU-002',
       productName: 'Steel Plate 5mm',
-      unit: 'KG',
+      baseUnit: 'KG',
       status: 'ACTIVE'
     },
     {
       productId: 3,
-      productSku: 'SKU-003',
+      sku: 'SKU-003',
       productName: 'Old Product',
-      unit: 'PCS',
+      baseUnit: 'PCS',
       status: 'INACTIVE'
     }
   ];

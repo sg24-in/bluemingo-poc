@@ -1,7 +1,7 @@
 # MES Functional Requirements Document (FRD)
 
-**Document Version:** 1.0
-**Last Updated:** 2026-02-04
+**Document Version:** 1.1
+**Last Updated:** 2026-02-05
 **Project:** Bluemingo MES POC
 
 ---
@@ -292,7 +292,88 @@ The requirements cover production confirmation workflows for a steel manufacturi
 
 ---
 
-### 2.7 Hold Management
+### 2.7 Bill of Materials (BOM) Management
+
+#### FR-BOM-001: BOM List View
+**Priority:** HIGH
+**Description:** System shall display list of products with BOMs defined.
+**Acceptance Criteria:**
+- Shows product SKU, BOM version, node count
+- Shows BOM status (ACTIVE/INACTIVE/DRAFT/OBSOLETE)
+- Shows max hierarchy depth
+- Links to view tree or add nodes
+
+#### FR-BOM-002: BOM Tree View
+**Priority:** HIGH
+**Description:** System shall display BOM as hierarchical tree.
+**Acceptance Criteria:**
+- Shows materials in parent-child hierarchy
+- Shows material ID, name, quantity, unit
+- Shows yield loss ratio
+- Shows sequence level badge
+- Shows status badge per node
+- Supports expand/collapse all
+- Node actions: add child, edit, delete
+
+#### FR-BOM-003: Create BOM Node
+**Priority:** HIGH
+**Description:** System shall allow creating BOM nodes.
+**Acceptance Criteria:**
+- Select product (for new BOM)
+- Select material from dropdown
+- Enter quantity required
+- Select unit of measure
+- Enter yield loss ratio (optional, default 1)
+- Select parent node (optional for root)
+- Default status is ACTIVE
+- Auto-assigns sequence level
+
+#### FR-BOM-004: Edit BOM Node
+**Priority:** HIGH
+**Description:** System shall allow editing BOM nodes.
+**Acceptance Criteria:**
+- Edit material selection
+- Edit quantity and unit
+- Edit yield loss ratio
+- Edit sequence level
+- Edit status (ACTIVE/INACTIVE/DRAFT/OBSOLETE)
+- Shows read-only BOM ID and product SKU
+
+#### FR-BOM-005: Delete BOM Node
+**Priority:** HIGH
+**Description:** System shall allow deleting BOM nodes.
+**Acceptance Criteria:**
+- Confirmation required before delete
+- Option to delete node only (if no children)
+- Option to cascade delete with all children
+- Soft delete (sets status to INACTIVE)
+- Audit trail entry created
+
+#### FR-BOM-006: Edit BOM Settings (Top-Level)
+**Priority:** HIGH
+**Description:** System shall allow editing top-level BOM settings.
+**Acceptance Criteria:**
+- Change product SKU (moves all nodes to new product)
+- Change BOM version (e.g., V1 → V2)
+- Change status for all nodes
+- Shows warning when changing product
+- Navigates to new product tree after product change
+- Updates all nodes in single transaction
+
+#### FR-BOM-007: BOM Status Management
+**Priority:** MEDIUM
+**Description:** System shall support BOM status lifecycle.
+**Acceptance Criteria:**
+- Supported statuses: ACTIVE, INACTIVE, DRAFT, OBSOLETE
+- Status displayed with color-coded badges
+- ACTIVE: Green - Currently in use
+- INACTIVE: Gray - Disabled
+- DRAFT: Yellow/Orange - Work in progress
+- OBSOLETE: Red - Deprecated version
+
+---
+
+### 2.8 Hold Management
 
 #### FR-HOLD-001: Hold List View
 **Priority:** HIGH
@@ -323,7 +404,7 @@ The requirements cover production confirmation workflows for a steel manufacturi
 
 ---
 
-### 2.8 Equipment Management
+### 2.9 Equipment Management
 
 #### FR-EQP-001: Equipment List View
 **Priority:** MEDIUM
@@ -350,7 +431,7 @@ The requirements cover production confirmation workflows for a steel manufacturi
 
 ---
 
-### 2.9 Quality Management
+### 2.10 Quality Management
 
 #### FR-QA-001: Quality Queue View
 **Priority:** MEDIUM
@@ -379,7 +460,7 @@ The requirements cover production confirmation workflows for a steel manufacturi
 
 ---
 
-### 2.10 Audit Trail
+### 2.11 Audit Trail
 
 #### FR-AUD-001: Change Logging
 **Priority:** HIGH
@@ -428,3 +509,4 @@ The requirements cover production confirmation workflows for a steel manufacturi
 | Date | Author | Changes |
 |------|--------|---------|
 | 2026-02-04 | Claude Code | Initial document creation |
+| 2026-02-05 | Claude Code | Added BOM Management section (FR-BOM-001 to FR-BOM-007) |

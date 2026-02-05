@@ -30,6 +30,7 @@ const { runHoldsTests } = require('./tests/07-holds.test');
 const { runEquipmentTests } = require('./tests/08-equipment.test');
 const { runQualityTests } = require('./tests/09-quality.test');
 const { runPaginationTests } = require('./tests/10-pagination.test');
+const { runCrudTests } = require('./tests/11-crud.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -124,6 +125,7 @@ async function runAllTests() {
         await runEquipmentTests(page, screenshots, results, runTest, submitActions);
         await runQualityTests(page, screenshots, results, runTest, submitActions);
         await runPaginationTests(page, screenshots, results, runTest);
+        await runCrudTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
@@ -132,14 +134,18 @@ async function runAllTests() {
 
         await runTest('Navigation - Complete Flow', async () => {
             const routes = [
-                { path: '/dashboard', name: 'dashboard' },
-                { path: '/orders', name: 'orders' },
-                { path: '/inventory', name: 'inventory' },
-                { path: '/batches', name: 'batches' },
-                { path: '/production/confirm', name: 'production' },
-                { path: '/holds', name: 'holds' },
-                { path: '/equipment', name: 'equipment' },
-                { path: '/quality', name: 'quality' }
+                { path: '/#/dashboard', name: 'dashboard' },
+                { path: '/#/orders', name: 'orders' },
+                { path: '/#/inventory', name: 'inventory' },
+                { path: '/#/batches', name: 'batches' },
+                { path: '/#/production/confirm', name: 'production' },
+                { path: '/#/holds', name: 'holds' },
+                { path: '/#/equipment', name: 'equipment' },
+                { path: '/#/quality', name: 'quality' },
+                { path: '/#/manage/customers', name: 'admin-customers' },
+                { path: '/#/manage/materials', name: 'admin-materials' },
+                { path: '/#/manage/products', name: 'admin-products' },
+                { path: '/#/manage/bom', name: 'admin-bom' }
             ];
 
             for (const route of routes) {

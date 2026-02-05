@@ -16,9 +16,9 @@ describe('ProductFormComponent', () => {
 
   const mockProduct: Product = {
     productId: 1,
-    productSku: 'SKU-001',
+    sku: 'SKU-001',
     productName: 'Steel Rod 10mm',
-    unit: 'MTR',
+    baseUnit: 'MTR',
     description: 'Steel rod 10mm diameter',
     status: 'ACTIVE'
   };
@@ -76,15 +76,15 @@ describe('ProductFormComponent', () => {
     });
 
     it('should have empty form for create', () => {
-      expect(component.form.get('productSku')?.value).toBe('');
+      expect(component.form.get('sku')?.value).toBe('');
       expect(component.form.get('productName')?.value).toBe('');
     });
 
     it('should validate required fields', () => {
       component.form.patchValue({
-        productSku: '',
+        sku: '',
         productName: '',
-        unit: ''
+        baseUnit: ''
       });
       expect(component.form.invalid).toBeTrue();
     });
@@ -93,9 +93,9 @@ describe('ProductFormComponent', () => {
       apiServiceSpy.createProduct.and.returnValue(of(mockProduct));
 
       component.form.patchValue({
-        productSku: 'SKU-001',
+        sku: 'SKU-001',
         productName: 'Steel Rod 10mm',
-        unit: 'MTR'
+        baseUnit: 'MTR'
       });
 
       component.onSubmit();
@@ -109,9 +109,9 @@ describe('ProductFormComponent', () => {
       );
 
       component.form.patchValue({
-        productSku: 'SKU-001',
+        sku: 'SKU-001',
         productName: 'Test',
-        unit: 'PCS'
+        baseUnit: 'PCS'
       });
 
       component.onSubmit();
@@ -135,11 +135,11 @@ describe('ProductFormComponent', () => {
     it('should load product data', () => {
       expect(apiServiceSpy.getProductById).toHaveBeenCalledWith(1);
       expect(component.form.get('productName')?.value).toBe('Steel Rod 10mm');
-      expect(component.form.get('unit')?.value).toBe('MTR');
+      expect(component.form.get('baseUnit')?.value).toBe('MTR');
     });
 
-    it('should disable productSku in edit mode', () => {
-      expect(component.form.get('productSku')?.disabled).toBeTrue();
+    it('should disable sku in edit mode', () => {
+      expect(component.form.get('sku')?.disabled).toBeTrue();
     });
 
     it('should update product successfully', () => {
@@ -162,8 +162,8 @@ describe('ProductFormComponent', () => {
 
     it('should validate max length for SKU', () => {
       const longString = 'a'.repeat(51);
-      component.form.patchValue({ productSku: longString });
-      expect(component.form.get('productSku')?.valid).toBeFalse();
+      component.form.patchValue({ sku: longString });
+      expect(component.form.get('sku')?.valid).toBeFalse();
     });
 
     it('should validate max length for name', () => {
@@ -173,8 +173,8 @@ describe('ProductFormComponent', () => {
     });
 
     it('should report field errors', () => {
-      component.form.get('productSku')?.markAsTouched();
-      expect(component.hasError('productSku')).toBeTrue();
+      component.form.get('sku')?.markAsTouched();
+      expect(component.hasError('sku')).toBeTrue();
     });
   });
 });

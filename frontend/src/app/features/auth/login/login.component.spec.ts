@@ -103,7 +103,13 @@ describe('LoginComponent', () => {
     });
 
     it('should call login and navigate on success', () => {
-      const mockResponse: LoginResponse = { token: 'test-token', email: 'admin@mes.com', fullName: 'Admin User' };
+      const mockResponse: LoginResponse = {
+        accessToken: 'test-token',
+        refreshToken: 'refresh-token',
+        tokenType: 'Bearer',
+        expiresIn: 3600,
+        user: { userId: 1, email: 'admin@mes.com', name: 'Admin User', employeeId: 'EMP001' }
+      };
       authServiceSpy.login.and.returnValue(of(mockResponse));
 
       component.loginForm.patchValue({
@@ -118,7 +124,13 @@ describe('LoginComponent', () => {
     });
 
     it('should set loading state during submission', () => {
-      const mockResponse: LoginResponse = { token: 'test', email: 'test@test.com', fullName: 'Test' };
+      const mockResponse: LoginResponse = {
+        accessToken: 'test-token',
+        refreshToken: 'refresh-token',
+        tokenType: 'Bearer',
+        expiresIn: 3600,
+        user: { userId: 1, email: 'test@test.com', name: 'Test', employeeId: 'EMP001' }
+      };
       authServiceSpy.login.and.returnValue(of(mockResponse));
 
       component.loginForm.patchValue({

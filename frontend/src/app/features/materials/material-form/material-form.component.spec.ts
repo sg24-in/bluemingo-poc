@@ -19,7 +19,7 @@ describe('MaterialFormComponent', () => {
     materialCode: 'MAT-001',
     materialName: 'Steel Billet',
     materialType: 'RM',
-    unit: 'KG',
+    baseUnit: 'KG',
     description: 'Raw steel billet',
     status: 'ACTIVE'
   };
@@ -84,7 +84,7 @@ describe('MaterialFormComponent', () => {
       component.form.patchValue({
         materialCode: '',
         materialName: '',
-        unit: ''
+        baseUnit: ''
       });
       expect(component.form.invalid).toBeTrue();
     });
@@ -96,7 +96,7 @@ describe('MaterialFormComponent', () => {
         materialCode: 'MAT-001',
         materialName: 'Steel Billet',
         materialType: 'RM',
-        unit: 'KG'
+        baseUnit: 'KG'
       });
 
       component.onSubmit();

@@ -30,9 +30,16 @@ describe('AuthService', () => {
     it('should login and store token', () => {
       const mockCredentials: LoginRequest = { email: 'test@test.com', password: 'password' };
       const mockResponse: LoginResponse = {
-        token: 'test-token-123',
-        email: 'test@test.com',
-        fullName: 'Test User'
+        accessToken: 'test-token-123',
+        refreshToken: 'refresh-token-123',
+        tokenType: 'Bearer',
+        expiresIn: 3600,
+        user: {
+          userId: 1,
+          email: 'test@test.com',
+          name: 'Test User',
+          employeeId: 'EMP001'
+        }
       };
 
       service.login(mockCredentials).subscribe(response => {
@@ -115,9 +122,16 @@ describe('AuthService', () => {
     it('should emit current user', (done) => {
       const mockCredentials: LoginRequest = { email: 'test@test.com', password: 'password' };
       const mockResponse: LoginResponse = {
-        token: 'test-token',
-        email: 'test@test.com',
-        fullName: 'Test User'
+        accessToken: 'test-token',
+        refreshToken: 'refresh-token',
+        tokenType: 'Bearer',
+        expiresIn: 3600,
+        user: {
+          userId: 1,
+          email: 'test@test.com',
+          name: 'Test User',
+          employeeId: 'EMP001'
+        }
       };
 
       service.login(mockCredentials).subscribe();

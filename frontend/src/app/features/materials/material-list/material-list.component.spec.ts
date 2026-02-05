@@ -21,7 +21,7 @@ describe('MaterialListComponent', () => {
       materialCode: 'MAT-001',
       materialName: 'Steel Billet',
       materialType: 'RM',
-      unit: 'KG',
+      baseUnit: 'KG',
       description: 'Raw steel billet',
       status: 'ACTIVE'
     },
@@ -30,7 +30,7 @@ describe('MaterialListComponent', () => {
       materialCode: 'MAT-002',
       materialName: 'Aluminum Sheet',
       materialType: 'IM',
-      unit: 'KG',
+      baseUnit: 'KG',
       status: 'ACTIVE'
     },
     {
@@ -38,7 +38,7 @@ describe('MaterialListComponent', () => {
       materialCode: 'MAT-003',
       materialName: 'Finished Product',
       materialType: 'FG',
-      unit: 'PCS',
+      baseUnit: 'PCS',
       status: 'INACTIVE'
     }
   ];

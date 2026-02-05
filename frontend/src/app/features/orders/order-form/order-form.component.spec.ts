@@ -20,8 +20,8 @@ describe('OrderFormComponent', () => {
   ];
 
   const mockProducts: Product[] = [
-    { productId: 1, productSku: 'SKU-001', productName: 'Steel Rod', unit: 'MTR', status: 'ACTIVE' },
-    { productId: 2, productSku: 'SKU-002', productName: 'Steel Plate', unit: 'KG', status: 'ACTIVE' }
+    { productId: 1, sku: 'SKU-001', productName: 'Steel Rod', baseUnit: 'MTR', status: 'ACTIVE' },
+    { productId: 2, sku: 'SKU-002', productName: 'Steel Plate', baseUnit: 'KG', status: 'ACTIVE' }
   ];
 
   const mockOrder: Order = {

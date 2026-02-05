@@ -1,0 +1,167 @@
+<div class="bom-tree-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        &larr; Back
+      </button>
+      <div class="title-section">
+        <h1>BOM Tree: {{ productSku }}</h1>
+        <div *ngIf="bomTree" class="tree-meta">
+          Version: {{ bomTree.bomVersion }} | Nodes: {{ bomTree.totalNodes }} | Depth: {{ bomTree.maxDepth }}
+          <span *ngIf="bomTree.tree.length > 0" class="tree-status">
+            | Status: <span class="status-badge" [ngClass]="'status-' + (bomTree.tree[0].status || 'active').toLowerCase()">
+              {{ bomTree.tree[0].status || 'ACTIVE' }}
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="openEditSettingsModal()" *ngIf="bomTree && bomTree.tree.length > 0">Edit BOM Settings</button>
+      <button class="btn btn-secondary" (click)="expandAll()">Expand All</button>
+      <button class="btn btn-secondary" (click)="collapseAll()">Collapse All</button>
+      <button class="btn btn-primary" (click)="addRootNode()">+ Add Node</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    Loading BOM tree...
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button class="btn btn-secondary" (click)="loadBomTree()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error && bomTree" class="tree-content">
+    <div *ngIf="bomTree.tree.length === 0" class="empty-state">
+      <p>No BOM nodes defined for this product.</p>
+      <button class="btn btn-primary" (click)="addRootNode()">Add First Node</button>
+    </div>
+
+    <div *ngIf="bomTree.tree.length > 0" class="tree-view">
+      <ng-container *ngFor="let node of bomTree.tree">
+        <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: node, level: 1 }"></ng-container>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div *ngIf="deleteConfirmId !== null" class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Delete BOM Node</h3>
+      <p>Are you sure you want to delete this node?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-danger" (click)="deleteNode(deleteConfirmId, false)">Delete Node Only</button>
+        <button class="btn btn-danger-outline" (click)="deleteNode(deleteConfirmId, true)">Delete with Children</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit BOM Settings Modal -->
+<div *ngIf="showEditSettingsModal" class="modal-overlay" (click)="closeEditSettingsModal()">
+  <div class="modal settings-modal" (click)="$event.stopPropagation()">
+    <h3>Edit BOM Settings</h3>
+    <p class="modal-subtitle">Update top-level settings for all nodes in this BOM</p>
+
+    <div class="form-group">
+      <label for="bomProduct">Product</label>
+      <select
+        id="bomProduct"
+        [(ngModel)]="editProductSku"
+        class="form-control"
+      >
+        <option [value]="productSku">{{ productSku }} (Current)</option>
+        <option *ngFor="let product of products" [value]="product.sku" [hidden]="product.sku === productSku">
+          {{ product.sku }} - {{ product.productName }}
+        </option>
+      </select>
+      <small class="form-hint" *ngIf="editProductSku !== productSku">
+        Warning: Changing product will move all BOM nodes to the new product
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="bomVersion">BOM Version</label>
+      <input
+        type="text"
+        id="bomVersion"
+        [(ngModel)]="editBomVersion"
+        class="form-control"
+        placeholder="e.g., V1, V2"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="bomStatus">Status</label>
+      <select
+        id="bomStatus"
+        [(ngModel)]="editBomStatus"
+        class="form-control"
+      >
+        <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+      </select>
+    </div>
+
+    <div *ngIf="settingsError" class="error-message">{{ settingsError }}</div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeEditSettingsModal()" [disabled]="savingSettings">Cancel</button>
+      <button class="btn btn-primary" (click)="saveSettings()" [disabled]="savingSettings">
+        {{ savingSettings ? 'Saving...' : 'Save Settings' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Recursive Tree Node Template -->
+<ng-template #treeNode let-node let-level="level">
+  <div class="tree-node" [class.selected]="isSelected(node)">
+    <div class="node-content" [style.padding-left]="getIndentLevel(level)">
+      <!-- Expand/Collapse Button -->
+      <button
+        *ngIf="node.children?.length > 0"
+        class="expand-btn"
+        (click)="toggleNode(node.bomId); $event.stopPropagation()">
+        {{ isExpanded(node.bomId) ? '&#9660;' : '&#9654;' }}
+      </button>
+      <span *ngIf="!node.children?.length" class="expand-placeholder"></span>
+
+      <!-- Node Info -->
+      <div class="node-info" (click)="selectNode(node)">
+        <span class="material-id">{{ node.materialId }}</span>
+        <span class="material-name">{{ node.materialName }}</span>
+        <span class="quantity">{{ node.quantityRequired }} {{ node.unit }}</span>
+        <span class="yield" *ngIf="node.yieldLossRatio && node.yieldLossRatio !== 1">
+          (Yield: {{ node.yieldLossRatio }})
+        </span>
+        <span class="level-badge">L{{ node.sequenceLevel }}</span>
+        <span class="status-badge" [ngClass]="'status-' + (node.status || 'active').toLowerCase()">
+          {{ node.status || 'ACTIVE' }}
+        </span>
+      </div>
+
+      <!-- Node Actions -->
+      <div class="node-actions">
+        <button class="btn-icon" title="Add Child" (click)="addChildNode(node.bomId); $event.stopPropagation()">
+          +
+        </button>
+        <button class="btn-icon" title="Edit" (click)="editNode(node.bomId); $event.stopPropagation()">
+          &#9998;
+        </button>
+        <button class="btn-icon btn-delete" title="Delete" (click)="confirmDelete(node.bomId); $event.stopPropagation()">
+          &times;
+        </button>
+      </div>
+    </div>
+
+    <!-- Children -->
+    <div *ngIf="node.children?.length > 0 && isExpanded(node.bomId)" class="children">
+      <ng-container *ngFor="let child of node.children">
+        <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: child, level: level + 1 }"></ng-container>
+      </ng-container>
+    </div>
+  </div>
+</ng-template>

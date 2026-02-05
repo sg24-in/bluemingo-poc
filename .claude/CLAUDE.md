@@ -653,12 +653,25 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 | `POST /api/batches/{id}/split` | Split a batch |
 | `POST /api/batches/merge` | Merge batches |
 
-### BOM (Bill of Materials)
+### BOM (Bill of Materials) - Full CRUD with Tree Structure
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/bom/{productSku}/requirements` | BOM requirements tree |
+| `GET /api/bom/{productSku}/requirements` | BOM requirements (flat list) |
 | `POST /api/bom/validate` | Validate BOM consumption |
 | `GET /api/bom/operation/{id}/suggested-consumption` | Suggested consumption from BOM |
+| `GET /api/bom/{productSku}/tree` | **Full hierarchical BOM tree** |
+| `GET /api/bom/{productSku}/tree/version/{v}` | BOM tree for specific version |
+| `GET /api/bom/{productSku}/list` | Flat list for tables (with child count) |
+| `GET /api/bom/node/{bomId}` | Single node with children |
+| `GET /api/bom/products` | All products with BOMs |
+| `GET /api/bom/{productSku}/versions` | Available versions for product |
+| `POST /api/bom/node` | **Create** single BOM node |
+| `POST /api/bom/tree` | **Create** full BOM tree (batch) |
+| `PUT /api/bom/node/{bomId}` | **Update** BOM node |
+| `PUT /api/bom/node/{bomId}/move` | **Move** node to new parent |
+| `DELETE /api/bom/node/{bomId}` | **Delete** node (soft, no children) |
+| `DELETE /api/bom/node/{bomId}/cascade` | **Delete** node with all children |
+| `DELETE /api/bom/{productSku}/tree` | **Delete** entire product BOM
 
 ### Holds
 | Endpoint | Description |

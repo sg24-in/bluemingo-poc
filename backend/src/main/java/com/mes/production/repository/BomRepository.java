@@ -23,4 +23,67 @@ public interface BomRepository extends JpaRepository<BillOfMaterial, Long> {
 
     @Query("SELECT DISTINCT b.sequenceLevel FROM BillOfMaterial b WHERE b.productSku = :productSku AND b.status = 'ACTIVE' ORDER BY b.sequenceLevel ASC")
     List<Integer> findDistinctLevelsByProductSku(@Param("productSku") String productSku);
+
+    // =====================================================
+    // Tree CRUD Queries
+    // =====================================================
+
+    /**
+     * Find all root nodes (no parent) for a product
+     */
+    @Query("SELECT b FROM BillOfMaterial b WHERE b.productSku = :productSku AND b.parentBomId IS NULL AND b.status = 'ACTIVE' ORDER BY b.sequenceLevel ASC")
+    List<BillOfMaterial> findRootNodesByProductSku(@Param("productSku") String productSku);
+
+    /**
+     * Find all children of a parent node
+     */
+    @Query("SELECT b FROM BillOfMaterial b WHERE b.parentBomId = :parentBomId AND b.status = 'ACTIVE' ORDER BY b.sequenceLevel ASC")
+    List<BillOfMaterial> findByParentBomId(@Param("parentBomId") Long parentBomId);
+
+    /**
+     * Find all children of a parent node (including inactive)
+     */
+    List<BillOfMaterial> findByParentBomIdOrderBySequenceLevelAsc(Long parentBomId);
+
+    /**
+     * Count children of a node
+     */
+    @Query("SELECT COUNT(b) FROM BillOfMaterial b WHERE b.parentBomId = :parentBomId AND b.status = 'ACTIVE'")
+    int countChildrenByParentBomId(@Param("parentBomId") Long parentBomId);
+
+    /**
+     * Find by product and version
+     */
+    @Query("SELECT b FROM BillOfMaterial b WHERE b.productSku = :productSku AND b.bomVersion = :version ORDER BY b.sequenceLevel ASC")
+    List<BillOfMaterial> findByProductSkuAndBomVersion(@Param("productSku") String productSku, @Param("version") String version);
+
+    /**
+     * Find active BOMs by product and version
+     */
+    @Query("SELECT b FROM BillOfMaterial b WHERE b.productSku = :productSku AND b.bomVersion = :version AND b.status = 'ACTIVE' ORDER BY b.sequenceLevel ASC")
+    List<BillOfMaterial> findActiveByProductSkuAndBomVersion(@Param("productSku") String productSku, @Param("version") String version);
+
+    /**
+     * Get distinct products with BOMs
+     */
+    @Query("SELECT DISTINCT b.productSku FROM BillOfMaterial b WHERE b.status = 'ACTIVE' ORDER BY b.productSku")
+    List<String> findDistinctProductSkus();
+
+    /**
+     * Get distinct versions for a product
+     */
+    @Query("SELECT DISTINCT b.bomVersion FROM BillOfMaterial b WHERE b.productSku = :productSku ORDER BY b.bomVersion")
+    List<String> findDistinctVersionsByProductSku(@Param("productSku") String productSku);
+
+    /**
+     * Get max sequence level for a product
+     */
+    @Query("SELECT MAX(b.sequenceLevel) FROM BillOfMaterial b WHERE b.productSku = :productSku AND b.status = 'ACTIVE'")
+    Integer findMaxSequenceLevelByProductSku(@Param("productSku") String productSku);
+
+    /**
+     * Check if material exists in BOM
+     */
+    @Query("SELECT COUNT(b) > 0 FROM BillOfMaterial b WHERE b.productSku = :productSku AND b.materialId = :materialId AND b.status = 'ACTIVE'")
+    boolean existsByProductSkuAndMaterialId(@Param("productSku") String productSku, @Param("materialId") String materialId);
 }

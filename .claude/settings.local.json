@@ -105,7 +105,10 @@
       "Bash(cmd /c \"netstat -ano | findstr :4200 | findstr LISTENING\")",
       "Bash(cmd /c \"netstat -ano | findstr 4200\")",
       "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -aon ^| findstr :4200 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")",
-      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test\")"
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test\")",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\frontend && npm test -- --no-watch --browsers=ChromeHeadless\")",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\frontend && npm test -- --no-watch --browsers=ChromeHeadless --karma-config=karma.conf.js\")",
+      "Bash(npx ng test:*)"
     ]
   }
 }

@@ -105,3 +105,132 @@ export interface AvailableBatch {
   suggestedConsumption: number;
   location?: string;
 }
+
+// =====================================================
+// BOM Tree CRUD Models (NEW)
+// =====================================================
+
+/**
+ * Matches: BomDTO.BomTreeNode
+ * Hierarchical tree node with children
+ */
+export interface BomTreeNode {
+  bomId: number;
+  productSku: string;
+  bomVersion: string;
+  materialId: string;
+  materialName: string;
+  quantityRequired: number;
+  unit: string;
+  yieldLossRatio?: number;
+  sequenceLevel: number;
+  parentBomId?: number;
+  status: string;
+  children: BomTreeNode[];
+}
+
+/**
+ * Matches: BomDTO.BomTreeFullResponse
+ * Full tree response with metadata
+ */
+export interface BomTreeFullResponse {
+  productSku: string;
+  bomVersion: string;
+  tree: BomTreeNode[];
+  totalNodes: number;
+  maxDepth: number;
+}
+
+/**
+ * Matches: BomDTO.CreateBomNodeRequest
+ */
+export interface CreateBomNodeRequest {
+  productSku: string;
+  bomVersion?: string;
+  materialId: string;
+  materialName: string;
+  quantityRequired: number;
+  unit: string;
+  yieldLossRatio?: number;
+  sequenceLevel?: number;
+  parentBomId?: number;
+}
+
+/**
+ * Matches: BomDTO.CreateBomTreeRequest
+ */
+export interface CreateBomTreeRequest {
+  productSku: string;
+  bomVersion?: string;
+  nodes: CreateBomNodeRequest[];
+}
+
+/**
+ * Matches: BomDTO.UpdateBomNodeRequest
+ */
+export interface UpdateBomNodeRequest {
+  materialId?: string;
+  materialName?: string;
+  quantityRequired?: number;
+  unit?: string;
+  yieldLossRatio?: number;
+  sequenceLevel?: number;
+  parentBomId?: number;
+  status?: string;
+}
+
+/**
+ * Matches: BomDTO.MoveBomNodeRequest
+ */
+export interface MoveBomNodeRequest {
+  newParentBomId?: number;
+  newSequenceLevel?: number;
+}
+
+/**
+ * Matches: BomDTO.BomListResponse
+ * Flat list for table view
+ */
+export interface BomListResponse {
+  bomId: number;
+  productSku: string;
+  bomVersion: string;
+  materialId: string;
+  materialName: string;
+  quantityRequired: number;
+  unit: string;
+  sequenceLevel: number;
+  parentBomId?: number;
+  status: string;
+  childCount: number;
+}
+
+/**
+ * Matches: BomDTO.BomProductSummary
+ */
+export interface BomProductSummary {
+  productSku: string;
+  bomVersion: string;
+  totalNodes: number;
+  maxLevel: number;
+  status: string;
+}
+
+/**
+ * Matches: BomDTO.UpdateBomSettingsRequest
+ */
+export interface UpdateBomSettingsRequest {
+  newProductSku?: string;
+  bomVersion?: string;
+  status?: string;
+}
+
+/**
+ * Matches: BomDTO.UpdateBomSettingsResponse
+ */
+export interface UpdateBomSettingsResponse {
+  productSku: string;
+  bomVersion: string;
+  status: string;
+  nodesUpdated: number;
+}

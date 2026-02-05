@@ -122,4 +122,170 @@ public class BomDTO {
         private BigDecimal suggestedConsumption;
         private String location;
     }
+
+    // =====================================================
+    // BOM Tree CRUD DTOs
+    // =====================================================
+
+    /**
+     * BOM Tree Node - represents a single node in the BOM tree hierarchy
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BomTreeNode {
+        private Long bomId;
+        private String productSku;
+        private String bomVersion;
+        private String materialId;
+        private String materialName;
+        private BigDecimal quantityRequired;
+        private String unit;
+        private BigDecimal yieldLossRatio;
+        private Integer sequenceLevel;
+        private Long parentBomId;
+        private String status;
+        private List<BomTreeNode> children;
+    }
+
+    /**
+     * Full BOM Tree Response with root nodes
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BomTreeFullResponse {
+        private String productSku;
+        private String bomVersion;
+        private List<BomTreeNode> tree;
+        private int totalNodes;
+        private int maxDepth;
+    }
+
+    /**
+     * Request to create a new BOM node
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateBomNodeRequest {
+        private String productSku;
+        private String bomVersion;
+        private String materialId;
+        private String materialName;
+        private BigDecimal quantityRequired;
+        private String unit;
+        private BigDecimal yieldLossRatio;
+        private Integer sequenceLevel;
+        private Long parentBomId;
+    }
+
+    /**
+     * Request to create a full BOM tree (multiple nodes at once)
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateBomTreeRequest {
+        private String productSku;
+        private String bomVersion;
+        private List<CreateBomNodeRequest> nodes;
+    }
+
+    /**
+     * Request to update an existing BOM node
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateBomNodeRequest {
+        private String materialId;
+        private String materialName;
+        private BigDecimal quantityRequired;
+        private String unit;
+        private BigDecimal yieldLossRatio;
+        private Integer sequenceLevel;
+        private Long parentBomId;
+        private String status;
+    }
+
+    /**
+     * Request to move a BOM node to a new parent
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MoveBomNodeRequest {
+        private Long newParentBomId;
+        private Integer newSequenceLevel;
+    }
+
+    /**
+     * BOM List Response for paginated listing
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BomListResponse {
+        private Long bomId;
+        private String productSku;
+        private String bomVersion;
+        private String materialId;
+        private String materialName;
+        private BigDecimal quantityRequired;
+        private String unit;
+        private Integer sequenceLevel;
+        private Long parentBomId;
+        private String status;
+        private int childCount;
+    }
+
+    /**
+     * Summary of all BOMs grouped by product
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BomProductSummary {
+        private String productSku;
+        private String bomVersion;
+        private int totalNodes;
+        private int maxLevel;
+        private String status;
+    }
+
+    /**
+     * Request to update top-level BOM settings (product, version, status) for all nodes
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateBomSettingsRequest {
+        private String newProductSku;  // Optional: change the product SKU
+        private String bomVersion;
+        private String status;
+    }
+
+    /**
+     * Response after updating BOM settings
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateBomSettingsResponse {
+        private String productSku;
+        private String bomVersion;
+        private String status;
+        private int nodesUpdated;
+    }
 }
