@@ -269,11 +269,12 @@ class CustomerControllerTest {
         @Test
         @DisplayName("Should delete customer successfully")
         @WithMockUser(username = "admin@mes.com")
-        void deleteCustomer_ValidId_ReturnsNoContent() throws Exception {
+        void deleteCustomer_ValidId_ReturnsOk() throws Exception {
             doNothing().when(customerService).deleteCustomer(1L);
 
             mockMvc.perform(delete("/api/customers/1"))
-                    .andExpect(status().isNoContent());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Customer deleted successfully"));
 
             verify(customerService).deleteCustomer(1L);
         }

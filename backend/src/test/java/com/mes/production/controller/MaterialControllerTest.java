@@ -157,7 +157,7 @@ class MaterialControllerTest {
         void getMaterialsByType_ReturnsFilteredMaterials() throws Exception {
             when(materialService.getActiveMaterialsByType("RM")).thenReturn(List.of(testMaterial));
 
-            mockMvc.perform(get("/api/materials/type/RM"))
+            mockMvc.perform(get("/api/materials/active/type/RM"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].materialType").value("RM"));
 
@@ -303,11 +303,12 @@ class MaterialControllerTest {
         @Test
         @DisplayName("Should delete material successfully")
         @WithMockUser(username = "admin@mes.com")
-        void deleteMaterial_ValidId_ReturnsNoContent() throws Exception {
+        void deleteMaterial_ValidId_ReturnsOk() throws Exception {
             doNothing().when(materialService).deleteMaterial(1L);
 
             mockMvc.perform(delete("/api/materials/1"))
-                    .andExpect(status().isNoContent());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Material deleted successfully"));
 
             verify(materialService).deleteMaterial(1L);
         }

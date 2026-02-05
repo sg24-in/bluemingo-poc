@@ -108,7 +108,8 @@
       "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test\")",
       "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\frontend && npm test -- --no-watch --browsers=ChromeHeadless\")",
       "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\frontend && npm test -- --no-watch --browsers=ChromeHeadless --karma-config=karma.conf.js\")",
-      "Bash(npx ng test:*)"
+      "Bash(npx ng test:*)",
+      "Bash(D:repositoriesbluemingo-pocbackendgradlew.bat -p D:repositoriesbluemingo-pocbackend test --tests \"com.mes.production.service.BomServiceTest\")"
     ]
   }
 }

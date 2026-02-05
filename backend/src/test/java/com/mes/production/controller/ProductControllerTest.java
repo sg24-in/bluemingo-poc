@@ -159,7 +159,7 @@ class ProductControllerTest {
         void getProductsByCategory_ReturnsFilteredProducts() throws Exception {
             when(productService.getActiveProductsByCategory("STEEL")).thenReturn(List.of(testProduct));
 
-            mockMvc.perform(get("/api/products/category/STEEL"))
+            mockMvc.perform(get("/api/products/active/category/STEEL"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].productCategory").value("STEEL"));
 
@@ -301,11 +301,12 @@ class ProductControllerTest {
         @Test
         @DisplayName("Should delete product successfully")
         @WithMockUser(username = "admin@mes.com")
-        void deleteProduct_ValidId_ReturnsNoContent() throws Exception {
+        void deleteProduct_ValidId_ReturnsOk() throws Exception {
             doNothing().when(productService).deleteProduct(1L);
 
             mockMvc.perform(delete("/api/products/1"))
-                    .andExpect(status().isNoContent());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Product deleted successfully"));
 
             verify(productService).deleteProduct(1L);
         }

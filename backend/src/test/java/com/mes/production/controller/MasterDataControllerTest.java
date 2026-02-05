@@ -223,4 +223,64 @@ class MasterDataControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$").isEmpty());
     }
+
+    @Test
+    @DisplayName("Should return empty list when no operators")
+    @WithMockUser(username = "admin@mes.com")
+    void getAllOperators_NoOperators_ReturnsEmptyList() throws Exception {
+        when(operatorRepository.findAll()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/master/operators"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should return 401 for operators when not authenticated")
+    void getAllOperators_NotAuthenticated_Returns401() throws Exception {
+        mockMvc.perform(get("/api/master/operators"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should return 401 for active operators when not authenticated")
+    void getActiveOperators_NotAuthenticated_Returns401() throws Exception {
+        mockMvc.perform(get("/api/master/operators/active"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should return multiple operators")
+    @WithMockUser(username = "admin@mes.com")
+    void getAllOperators_MultipleOperators_ReturnsAll() throws Exception {
+        Operator operator2 = Operator.builder()
+                .operatorId(2L)
+                .operatorCode("OP-002")
+                .name("Jane Smith")
+                .shift("NIGHT")
+                .status("ACTIVE")
+                .build();
+
+        when(operatorRepository.findAll()).thenReturn(List.of(testOperator, operator2));
+
+        mockMvc.perform(get("/api/master/operators"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].name").value("John Doe"))
+                .andExpect(jsonPath("$[1].name").value("Jane Smith"))
+                .andExpect(jsonPath("$[1].shift").value("NIGHT"));
+    }
+
+    @Test
+    @DisplayName("Should return empty when no active operators")
+    @WithMockUser(username = "admin@mes.com")
+    void getActiveOperators_NoneActive_ReturnsEmpty() throws Exception {
+        when(operatorRepository.findByStatus("ACTIVE")).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/master/operators/active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
 }

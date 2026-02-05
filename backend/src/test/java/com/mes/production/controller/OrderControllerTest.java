@@ -314,7 +314,7 @@ class OrderControllerTest {
             mockMvc.perform(post("/api/orders/1/line-items")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
+                    .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.orderId").value(1));
 
             verify(orderService).addLineItem(eq(1L), any(LineItemRequest.class));
