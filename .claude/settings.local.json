@@ -104,7 +104,8 @@
       "Bash(cmd /c \"netstat -ano | findstr :4200\")",
       "Bash(cmd /c \"netstat -ano | findstr :4200 | findstr LISTENING\")",
       "Bash(cmd /c \"netstat -ano | findstr 4200\")",
-      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -aon ^| findstr :4200 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")"
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -aon ^| findstr :4200 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")",
+      "Bash(cmd /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test\")"
     ]
   }
 }

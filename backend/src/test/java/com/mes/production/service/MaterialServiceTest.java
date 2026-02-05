@@ -14,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +33,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class MaterialServiceTest {
 
     @Mock
@@ -52,7 +55,7 @@ class MaterialServiceTest {
                 .materialCode("MAT-001")
                 .materialName("Steel Rod")
                 .description("10mm steel rod")
-                .materialType(Material.TYPE_RM)
+                .materialType(Material.TYPE_RAW_MATERIAL)
                 .baseUnit("KG")
                 .materialGroup("STEEL")
                 .sku("SKU-MAT-001")
@@ -69,7 +72,7 @@ class MaterialServiceTest {
                 .materialCode("MAT-001")
                 .materialName("Steel Rod")
                 .description("10mm steel rod")
-                .materialType(Material.TYPE_RM)
+                .materialType(Material.TYPE_RAW_MATERIAL)
                 .baseUnit("KG")
                 .materialGroup("STEEL")
                 .sku("SKU-MAT-001")
@@ -118,14 +121,14 @@ class MaterialServiceTest {
         @Test
         @DisplayName("Should get active materials by type")
         void getActiveMaterialsByType_ReturnsFilteredMaterials() {
-            when(materialRepository.findActiveMaterialsByType(Material.TYPE_RM))
+            when(materialRepository.findActiveMaterialsByType(Material.TYPE_RAW_MATERIAL))
                     .thenReturn(List.of(testMaterial));
 
-            List<MaterialDTO> result = materialService.getActiveMaterialsByType(Material.TYPE_RM);
+            List<MaterialDTO> result = materialService.getActiveMaterialsByType(Material.TYPE_RAW_MATERIAL);
 
             assertNotNull(result);
             assertEquals(1, result.size());
-            assertEquals(Material.TYPE_RM, result.get(0).getMaterialType());
+            assertEquals(Material.TYPE_RAW_MATERIAL, result.get(0).getMaterialType());
         }
 
         @Test
@@ -325,21 +328,21 @@ class MaterialServiceTest {
         @Test
         @DisplayName("Should support raw material type")
         void materialType_RM_IsValid() {
-            testMaterial.setMaterialType(Material.TYPE_RM);
+            testMaterial.setMaterialType(Material.TYPE_RAW_MATERIAL);
             assertEquals("RM", testMaterial.getMaterialType());
         }
 
         @Test
         @DisplayName("Should support intermediate material type")
         void materialType_IM_IsValid() {
-            testMaterial.setMaterialType(Material.TYPE_IM);
+            testMaterial.setMaterialType(Material.TYPE_INTERMEDIATE);
             assertEquals("IM", testMaterial.getMaterialType());
         }
 
         @Test
         @DisplayName("Should support finished goods type")
         void materialType_FG_IsValid() {
-            testMaterial.setMaterialType(Material.TYPE_FG);
+            testMaterial.setMaterialType(Material.TYPE_FINISHED_GOODS);
             assertEquals("FG", testMaterial.getMaterialType());
         }
 

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 @Order(1) // Run first before other runners
 @Slf4j
 @RequiredArgsConstructor
+@org.springframework.context.annotation.Profile("!test")
 public class PatchRunner implements ApplicationRunner {
 
     private final PatchService patchService;
