@@ -262,6 +262,8 @@ class ProductionServiceTest {
         when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("OPERATION", 1L, "ACTIVE")).thenReturn(false);
         when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE")).thenReturn(false);
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+        doThrow(new IllegalStateException("Inventory is not available for consumption"))
+                .when(inventoryStateValidator).validateConsumption(any(Inventory.class), any());
 
         ProductionConfirmationDTO.Request request = ProductionConfirmationDTO.Request.builder()
                 .operationId(1L)
