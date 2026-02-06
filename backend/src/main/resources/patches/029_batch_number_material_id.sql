@@ -1,4 +1,4 @@
--- Patch 026: Add material_id to batch_number_config
+-- Patch 029: Add material_id to batch_number_config
 -- Purpose: Per MES Batch Number Specification Section 6, support material-level configuration
 -- Configuration precedence: operation_type > material_id > product_sku > default
 

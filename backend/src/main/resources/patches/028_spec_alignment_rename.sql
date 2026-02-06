@@ -28,8 +28,11 @@ ALTER TABLE processes RENAME COLUMN template_name TO process_name;
 ALTER TABLE processes RENAME COLUMN template_code TO process_code;
 
 -- Step 7: Update sequences
-ALTER SEQUENCE IF EXISTS process_templates_process_template_id_seq RENAME TO processes_process_id_seq;
+-- Note: Sequence names depend on original table state. Use safe pattern.
+-- First rename old processes sequence (now process_instances), then templates sequence
 ALTER SEQUENCE IF EXISTS processes_process_id_seq RENAME TO process_instances_process_instance_id_seq;
+-- Only rename templates sequence if it exists (created in patch 025)
+ALTER SEQUENCE IF EXISTS process_templates_process_template_id_seq RENAME TO processes_process_id_seq;
 
 -- Step 8: Update FK in process_instances to reference processes
 ALTER TABLE process_instances

@@ -57,6 +57,7 @@ ALTER TABLE routing ADD COLUMN IF NOT EXISTS process_template_id BIGINT REFERENC
 CREATE INDEX IF NOT EXISTS idx_routing_template ON routing(process_template_id);
 
 -- Seed initial process template for existing products (optional)
+-- Note: WHERE NOT EXISTS already prevents duplicates, so ON CONFLICT not needed
 INSERT INTO process_templates (template_name, template_code, description, status, version)
 SELECT DISTINCT
     p.stage_name || ' Template' as template_name,
@@ -68,7 +69,6 @@ FROM processes p
 WHERE NOT EXISTS (
     SELECT 1 FROM process_templates pt
     WHERE pt.template_code = UPPER(REPLACE(p.stage_name, ' ', '_')) || '_TEMPLATE'
-)
-ON CONFLICT DO NOTHING;
+);
 
 -- Note: Patch completion is automatically logged by PatchService

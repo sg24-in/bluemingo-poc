@@ -12,19 +12,8 @@ CREATE INDEX IF NOT EXISTS idx_batches_supplier_batch ON batches(supplier_batch_
 CREATE INDEX IF NOT EXISTS idx_batches_supplier_id ON batches(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_batches_received_date ON batches(received_date);
 
--- Add RECEIVE movement type to inventory_movements if not exists
--- (Check constraint may need updating)
-DO $$
-BEGIN
-    -- Update the movement_type check constraint to include RECEIVE
-    ALTER TABLE inventory_movements DROP CONSTRAINT IF EXISTS chk_movement_type;
-    ALTER TABLE inventory_movements ADD CONSTRAINT chk_movement_type
-        CHECK (movement_type IN ('CONSUME', 'PRODUCE', 'HOLD', 'RELEASE', 'TRANSFER', 'RECEIVE', 'ADJUST', 'SCRAP'));
-EXCEPTION
-    WHEN others THEN
-        -- Constraint may not exist or may have different name
-        NULL;
-END $$;
+-- Note: inventory_movements table constraint update removed
+-- The RECEIVE movement type will be added when InventoryMovement entity is used
 
 COMMENT ON COLUMN batches.supplier_batch_number IS 'External batch number from supplier (for traceability)';
 COMMENT ON COLUMN batches.supplier_id IS 'Supplier identifier (FK to suppliers if exists)';

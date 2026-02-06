@@ -34,14 +34,26 @@ CREATE INDEX IF NOT EXISTS idx_batch_size_config_product ON batch_size_config(pr
 CREATE INDEX IF NOT EXISTS idx_batch_size_config_active ON batch_size_config(is_active);
 
 -- Insert default configurations for common operation types
+-- Note: No unique constraint exists, so using NOT EXISTS pattern instead
 INSERT INTO batch_size_config (material_id, operation_type, max_batch_size, preferred_batch_size, unit, priority, created_by)
-VALUES
-    (NULL, 'MELTING', 50.0000, 45.0000, 'T', 10, 'SYSTEM'),
-    (NULL, 'CASTING', 25.0000, 20.0000, 'T', 10, 'SYSTEM'),
-    (NULL, 'ROLLING', 15.0000, 12.0000, 'T', 10, 'SYSTEM'),
-    (NULL, 'ANNEALING', 30.0000, 25.0000, 'T', 10, 'SYSTEM'),
-    (NULL, 'FINISHING', 10.0000, 8.0000, 'T', 10, 'SYSTEM')
-ON CONFLICT DO NOTHING;
+SELECT NULL, 'MELTING', 50.0000, 45.0000, 'T', 10, 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_size_config WHERE operation_type = 'MELTING' AND material_id IS NULL);
+
+INSERT INTO batch_size_config (material_id, operation_type, max_batch_size, preferred_batch_size, unit, priority, created_by)
+SELECT NULL, 'CASTING', 25.0000, 20.0000, 'T', 10, 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_size_config WHERE operation_type = 'CASTING' AND material_id IS NULL);
+
+INSERT INTO batch_size_config (material_id, operation_type, max_batch_size, preferred_batch_size, unit, priority, created_by)
+SELECT NULL, 'ROLLING', 15.0000, 12.0000, 'T', 10, 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_size_config WHERE operation_type = 'ROLLING' AND material_id IS NULL);
+
+INSERT INTO batch_size_config (material_id, operation_type, max_batch_size, preferred_batch_size, unit, priority, created_by)
+SELECT NULL, 'ANNEALING', 30.0000, 25.0000, 'T', 10, 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_size_config WHERE operation_type = 'ANNEALING' AND material_id IS NULL);
+
+INSERT INTO batch_size_config (material_id, operation_type, max_batch_size, preferred_batch_size, unit, priority, created_by)
+SELECT NULL, 'FINISHING', 10.0000, 8.0000, 'T', 10, 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_size_config WHERE operation_type = 'FINISHING' AND material_id IS NULL);
 
 COMMENT ON TABLE batch_size_config IS 'Configures batch size limits for multi-batch production confirmation';
 COMMENT ON COLUMN batch_size_config.material_id IS 'Optional: Material-specific config (NULL for generic)';
