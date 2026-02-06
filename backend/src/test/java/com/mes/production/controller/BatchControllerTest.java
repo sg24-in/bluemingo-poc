@@ -3,6 +3,7 @@ package com.mes.production.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.production.dto.BatchDTO;
 import com.mes.production.security.JwtService;
+import com.mes.production.service.BatchNumberService;
 import com.mes.production.service.BatchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -44,6 +46,9 @@ class BatchControllerTest {
 
     @MockBean
     private BatchService batchService;
+
+    @MockBean
+    private BatchNumberService batchNumberService;
 
     @MockBean
     private JwtService jwtService;
@@ -204,59 +209,50 @@ class BatchControllerTest {
     // CRUD Tests
     // ========================================
 
+    // ========================================
+    // B05: Batch Immutability Integration Tests
+    // Per MES Batch Management Specification:
+    // - Batches MUST be created via production confirmation or material receipt
+    // - Manual batch creation is BLOCKED
+    // - Batch quantity can ONLY be changed via adjustQuantity() with mandatory reason
+    // ========================================
+
     @Test
     @WithMockUser(username = "admin@mes.com")
-    @DisplayName("Should create batch and return 201")
-    void createBatch_Returns201() throws Exception {
+    @DisplayName("B05-1: Manual batch creation should be BLOCKED with clear error message")
+    void createBatch_ManualCreationBlocked_ReturnsError() throws Exception {
+        // Per MES Batch Management Specification: Batches MUST be created
+        // via production confirmation or material receipt, NOT manual API calls
         BatchDTO.CreateBatchRequest request = BatchDTO.CreateBatchRequest.builder()
-                .batchNumber("NEW-BATCH-001")
+                .batchNumber("MANUAL-BATCH-001")
                 .materialId("RM-001")
                 .materialName("Iron Ore")
                 .quantity(new BigDecimal("1000.00"))
                 .unit("KG")
                 .build();
 
-        when(batchService.createBatch(any(BatchDTO.CreateBatchRequest.class)))
-                .thenReturn(testBatch);
-
+        // The controller now throws RuntimeException for manual creation
+        // This test verifies the endpoint is properly blocked
         mockMvc.perform(post("/api/batches")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.batchId").value(1))
-                .andExpect(jsonPath("$.batchNumber").value("BATCH-001"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("Manual batch creation is not allowed")));
 
-        verify(batchService).createBatch(any(BatchDTO.CreateBatchRequest.class));
+        // Verify service was never called (endpoint throws before reaching service)
+        verify(batchService, never()).createBatch(any(BatchDTO.CreateBatchRequest.class));
     }
 
     @Test
     @WithMockUser(username = "admin@mes.com")
-    @DisplayName("Should return error when creating batch with duplicate number")
-    void createBatch_DuplicateReturnsError() throws Exception {
-        BatchDTO.CreateBatchRequest request = BatchDTO.CreateBatchRequest.builder()
-                .batchNumber("BATCH-001")
-                .materialId("RM-001")
-                .quantity(new BigDecimal("100.00"))
-                .build();
-
-        when(batchService.createBatch(any(BatchDTO.CreateBatchRequest.class)))
-                .thenThrow(new RuntimeException("Batch number already exists: BATCH-001"));
-
-        mockMvc.perform(post("/api/batches")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @WithMockUser(username = "admin@mes.com")
-    @DisplayName("Should update batch and return 200")
-    void updateBatch_Returns200() throws Exception {
-        // Note: quantity field removed per MES Batch Management Specification
-        // Use adjustQuantity() endpoint for quantity changes
+    @DisplayName("B05-2: Update batch should NOT allow quantity changes")
+    void updateBatch_QuantityNotInRequest_OnlyMetadataUpdated() throws Exception {
+        // Per MES Batch Management Specification: quantity field is NOT in UpdateBatchRequest
+        // Quantity can ONLY be changed via adjustQuantity() endpoint
         BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
                 .materialName("Updated Steel Billet")
                 .unit("LBS")
+                // Note: NO quantity field - it's not part of UpdateBatchRequest
                 .build();
 
         when(batchService.updateBatch(eq(1L), any(BatchDTO.UpdateBatchRequest.class)))
@@ -269,6 +265,134 @@ class BatchControllerTest {
                 .andExpect(jsonPath("$.batchId").value(1));
 
         verify(batchService).updateBatch(eq(1L), any(BatchDTO.UpdateBatchRequest.class));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("B05-3: Quantity changes MUST use adjustQuantity endpoint with reason")
+    void adjustQuantity_RequiresMandatoryReason() throws Exception {
+        // Per MES Batch Management Specification: All quantity changes require mandatory reason
+        BatchDTO.AdjustQuantityRequest requestWithReason = BatchDTO.AdjustQuantityRequest.builder()
+                .newQuantity(new BigDecimal("480.00"))
+                .adjustmentType("CORRECTION")
+                .reason("Physical inventory count revealed 20kg discrepancy - valid 10+ char reason")
+                .build();
+
+        BatchDTO.AdjustQuantityResponse response = BatchDTO.AdjustQuantityResponse.builder()
+                .batchId(1L)
+                .batchNumber("BATCH-001")
+                .previousQuantity(new BigDecimal("500.00"))
+                .newQuantity(new BigDecimal("480.00"))
+                .quantityDifference(new BigDecimal("-20.00"))
+                .adjustmentType("CORRECTION")
+                .reason("Physical inventory count revealed 20kg discrepancy - valid 10+ char reason")
+                .adjustedBy("admin@mes.com")
+                .adjustedOn(LocalDateTime.now())
+                .message("Quantity adjusted successfully")
+                .build();
+
+        when(batchService.adjustQuantity(eq(1L), any(BatchDTO.AdjustQuantityRequest.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/api/batches/1/adjust-quantity")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestWithReason)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.previousQuantity").value(500.00))
+                .andExpect(jsonPath("$.newQuantity").value(480.00));
+
+        verify(batchService).adjustQuantity(eq(1L), any(BatchDTO.AdjustQuantityRequest.class));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("B05-4: Quantity adjustment without reason should fail validation")
+    void adjustQuantity_NoReason_ReturnsValidationError() throws Exception {
+        // Per MES Batch Management Specification: reason is mandatory (10-500 chars)
+        BatchDTO.AdjustQuantityRequest requestNoReason = BatchDTO.AdjustQuantityRequest.builder()
+                .newQuantity(new BigDecimal("480.00"))
+                .adjustmentType("CORRECTION")
+                .reason("") // Empty reason - should fail validation
+                .build();
+
+        when(batchService.adjustQuantity(eq(1L), any(BatchDTO.AdjustQuantityRequest.class)))
+                .thenThrow(new RuntimeException("Reason is required for quantity adjustment"));
+
+        mockMvc.perform(post("/api/batches/1/adjust-quantity")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestNoReason)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("B05-5: Quantity adjustment with short reason should fail")
+    void adjustQuantity_ShortReason_ReturnsValidationError() throws Exception {
+        // Per MES Batch Management Specification: reason must be 10-500 characters
+        BatchDTO.AdjustQuantityRequest requestShortReason = BatchDTO.AdjustQuantityRequest.builder()
+                .newQuantity(new BigDecimal("480.00"))
+                .adjustmentType("CORRECTION")
+                .reason("Too short") // Less than 10 chars
+                .build();
+
+        when(batchService.adjustQuantity(eq(1L), any(BatchDTO.AdjustQuantityRequest.class)))
+                .thenThrow(new RuntimeException("Reason must be between 10 and 500 characters"));
+
+        mockMvc.perform(post("/api/batches/1/adjust-quantity")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestShortReason)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("B05-6: Adjustment history provides full audit trail")
+    void getAdjustmentHistory_ProvideAuditTrail() throws Exception {
+        // Per MES Batch Management Specification: All quantity changes are audited
+        List<BatchDTO.QuantityAdjustmentHistory> history = List.of(
+                BatchDTO.QuantityAdjustmentHistory.builder()
+                        .adjustmentId(1L)
+                        .oldQuantity(new BigDecimal("500.00"))
+                        .newQuantity(new BigDecimal("480.00"))
+                        .difference(new BigDecimal("-20.00"))
+                        .adjustmentType("CORRECTION")
+                        .reason("Physical inventory count revealed 20kg discrepancy")
+                        .adjustedBy("admin@mes.com")
+                        .adjustedOn(LocalDateTime.now())
+                        .build()
+        );
+
+        when(batchService.getAdjustmentHistory(1L)).thenReturn(history);
+
+        mockMvc.perform(get("/api/batches/1/adjustments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].oldQuantity").value(500.00))
+                .andExpect(jsonPath("$[0].newQuantity").value(480.00))
+                .andExpect(jsonPath("$[0].adjustmentType").value("CORRECTION"))
+                .andExpect(jsonPath("$[0].reason").value("Physical inventory count revealed 20kg discrepancy"))
+                .andExpect(jsonPath("$[0].adjustedBy").value("admin@mes.com"));
+
+        verify(batchService).getAdjustmentHistory(1L);
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("B05-7: Terminal status batches cannot be adjusted")
+    void adjustQuantity_TerminalStatus_ReturnsError() throws Exception {
+        // Per MES Batch Management Specification: CONSUMED/SCRAPPED batches are immutable
+        BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                .newQuantity(new BigDecimal("400.00"))
+                .adjustmentType("CORRECTION")
+                .reason("Attempting to adjust consumed batch - should fail")
+                .build();
+
+        when(batchService.adjustQuantity(eq(1L), any(BatchDTO.AdjustQuantityRequest.class)))
+                .thenThrow(new RuntimeException("Cannot adjust quantity: batch has terminal status CONSUMED"));
+
+        mockMvc.perform(post("/api/batches/1/adjust-quantity")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

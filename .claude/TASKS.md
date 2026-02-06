@@ -1,11 +1,42 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Routing Module Implementation COMPLETE
+**Session Status:** Active - Phase 8A Batch Immutability COMPLETE
 
 ---
 
 ## Latest Session Changes (2026-02-07 - Continued)
+
+### Phase 8A: Batch Immutability - COMPLETE ✅
+
+**Per MES Batch Management Specification:**
+- B01-B04: Manual batch creation blocked, quantity field removed, adjustQuantity endpoint enforces mandatory reason
+- B05: 7 new integration tests verifying immutability rules
+
+**Tests Added (BatchControllerTest.java):**
+- B05-1: Manual batch creation should be BLOCKED with clear error message
+- B05-2: Update batch should NOT allow quantity changes
+- B05-3: Quantity changes MUST use adjustQuantity endpoint with reason
+- B05-4: Quantity adjustment without reason should fail validation
+- B05-5: Quantity adjustment with short reason should fail
+- B05-6: Adjustment history provides full audit trail
+- B05-7: Terminal status batches cannot be adjusted
+
+**Additional Changes:**
+- Added `logDelete()` method to AuditService for soft delete auditing
+
+**Backend Tests:** All pass (BUILD SUCCESSFUL)
+
+---
+
+### Phase 9E Analysis: ProcessTemplate UI REDUNDANT ❌
+
+- R20-R21 (ProcessTemplate list/form) marked as N/A
+- ProcessTemplate is an **internal** entity (not exposed in API)
+- Routing frontend module handles all design-time configuration
+- API uses `processId` in RoutingDTO per MES Consolidated Spec
+
+---
 
 ### Routing Configuration Module - COMPLETE ✅
 
@@ -1175,7 +1206,7 @@ Per MES Consolidated Spec, the data model was refactored:
 - Genealogy permanent and immutable
 - Every batch change auditable
 
-### Phase 8A: Critical Fixes (Block Manual Editing) - ✅ COMPLETE
+### Phase 8A: Critical Fixes (Block Manual Editing) - ✅ COMPLETE (ALL 5 TASKS DONE)
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
@@ -1183,7 +1214,7 @@ Per MES Consolidated Spec, the data model was refactored:
 | B02 | Remove quantity from `UpdateBatchRequest` | ✅ DONE | CRITICAL | Already removed - quantity field not in DTO |
 | B03 | Add `adjustQuantity()` with mandatory reason | ✅ DONE | CRITICAL | Exists: requires reason (10-500 chars) + adjustmentType |
 | B04 | Update frontend - remove manual batch creation | ✅ DONE | CRITICAL | "New Batch" button removed from list, form disabled |
-| B05 | Add integration tests for batch immutability | ⏳ PENDING | CRITICAL | Need to add tests for restrictions |
+| B05 | Add integration tests for batch immutability | ✅ DONE | CRITICAL | 7 new B05-* tests in BatchControllerTest |
 
 **Implementation Details (2026-02-07):**
 - `BatchController.createBatch()` now throws RuntimeException with clear guidance
@@ -1192,6 +1223,7 @@ Per MES Consolidated Spec, the data model was refactored:
 - `BatchQuantityAdjustment` table tracks all quantity changes with audit trail
 - Frontend batch-list "New Batch" button removed
 - Batch form quantity field disabled in edit mode with help text
+- **B05 Tests:** 7 integration tests verifying immutability rules (all pass)
 
 ### Phase 8B: Default Status & Workflow
 

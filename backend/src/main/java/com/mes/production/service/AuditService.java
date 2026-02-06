@@ -80,6 +80,14 @@ public class AuditService {
     }
 
     /**
+     * Log a delete action (soft delete)
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logDelete(String entityType, Long entityId, String entityName) {
+        createAuditEntry(entityType, entityId, "status", "ACTIVE", "DELETED", AuditTrail.ACTION_DELETE);
+    }
+
+    /**
      * Log batch number generation per MES Batch Number Specification.
      * Records: batchNumber, operationId, configName, generationMethod
      *
