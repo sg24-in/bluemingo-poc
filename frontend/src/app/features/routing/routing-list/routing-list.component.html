@@ -1,0 +1,115 @@
+<div class="routing-list-page">
+  <div class="page-header">
+    <h1>Routing Management</h1>
+    <button class="btn btn-primary" (click)="createRouting()">
+      <i class="fa fa-plus"></i> New Routing
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-value">{{ summary.total }}</div>
+      <div class="card-label">Total</div>
+    </div>
+    <div class="summary-card draft">
+      <div class="card-value">{{ summary.draft }}</div>
+      <div class="card-label">Draft</div>
+    </div>
+    <div class="summary-card active">
+      <div class="card-value">{{ summary.active }}</div>
+      <div class="card-label">Active</div>
+    </div>
+    <div class="summary-card inactive">
+      <div class="card-value">{{ summary.inactive }}</div>
+      <div class="card-label">Inactive</div>
+    </div>
+    <div class="summary-card on-hold">
+      <div class="card-value">{{ summary.onHold }}</div>
+      <div class="card-label">On Hold</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <label for="status">Status:</label>
+      <select id="status" [(ngModel)]="statusFilter" (change)="onStatusChange()">
+        <option value="">All Statuses</option>
+        <option *ngFor="let status of statuses.slice(1)" [value]="status">{{ status }}</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="search">Search:</label>
+      <input type="text" id="search" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search routing name...">
+    </div>
+    <button class="btn btn-secondary" (click)="clearFilters()">Clear</button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">Loading routings...</div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="error-message">{{ error }}</div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && !error" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Routing Name</th>
+          <th>Process</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Steps</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let routing of filteredRoutings">
+          <td>{{ routing.routingId }}</td>
+          <td>{{ routing.routingName }}</td>
+          <td>{{ routing.processName || 'N/A' }}</td>
+          <td>{{ getTypeLabel(routing.routingType) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(routing.status)">
+              {{ routing.status }}
+            </span>
+          </td>
+          <td>{{ routing.steps?.length || 0 }}</td>
+          <td>{{ routing.createdOn | date:'short' }}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-secondary" (click)="viewRouting(routing)" title="View/Edit">
+              <i class="fa fa-edit"></i>
+            </button>
+            <button *ngIf="routing.status === 'DRAFT' || routing.status === 'INACTIVE'"
+                    class="btn btn-sm btn-success" (click)="activateRouting(routing)" title="Activate">
+              <i class="fa fa-check"></i>
+            </button>
+            <button *ngIf="routing.status === 'ACTIVE'"
+                    class="btn btn-sm btn-warning" (click)="deactivateRouting(routing)" title="Deactivate">
+              <i class="fa fa-pause"></i>
+            </button>
+            <button *ngIf="routing.status !== 'ON_HOLD'"
+                    class="btn btn-sm btn-warning" (click)="putOnHold(routing)" title="Put On Hold">
+              <i class="fa fa-hand"></i>
+            </button>
+            <button *ngIf="routing.status === 'ON_HOLD'"
+                    class="btn btn-sm btn-info" (click)="releaseFromHold(routing)" title="Release">
+              <i class="fa fa-play"></i>
+            </button>
+            <button *ngIf="routing.status === 'DRAFT' || routing.status === 'INACTIVE'"
+                    class="btn btn-sm btn-danger" (click)="deleteRouting(routing)" title="Delete">
+              <i class="fa fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredRoutings.length === 0">
+          <td colspan="8" class="no-data">No routings found</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -104,4 +104,59 @@ public class RoutingDTO {
     public static class HoldRoutingRequest {
         private String reason;
     }
+
+    /**
+     * Request to create a routing step
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateRoutingStepRequest {
+        private String operationName;
+        private String operationType;
+        private String operationCode;
+        private Integer sequenceNumber;
+        private Boolean isParallel;
+        private Boolean mandatoryFlag;
+        private java.math.BigDecimal targetQty;
+        private String description;
+        private Integer estimatedDurationMinutes;
+        private Boolean producesOutputBatch;
+        private Boolean allowsSplit;
+        private Boolean allowsMerge;
+    }
+
+    /**
+     * Request to update a routing step
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateRoutingStepRequest {
+        private String operationName;
+        private String operationType;
+        private String operationCode;
+        private Integer sequenceNumber;
+        private Boolean isParallel;
+        private Boolean mandatoryFlag;
+        private java.math.BigDecimal targetQty;
+        private String description;
+        private Integer estimatedDurationMinutes;
+        private Boolean producesOutputBatch;
+        private Boolean allowsSplit;
+        private Boolean allowsMerge;
+    }
+
+    /**
+     * Request to reorder routing steps
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReorderStepsRequest {
+        private List<Long> stepIds;  // Ordered list of step IDs
+    }
 }

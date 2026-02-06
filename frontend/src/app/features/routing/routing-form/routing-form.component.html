@@ -1,0 +1,205 @@
+<div class="routing-form-page">
+  <div class="page-header">
+    <h1>{{ title }}</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading...</div>
+  <div *ngIf="error" class="error-message">{{ error }}</div>
+
+  <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <!-- Routing Details -->
+    <div class="form-section">
+      <h2>Routing Details</h2>
+
+      <div class="form-group">
+        <label for="routingName">Routing Name *</label>
+        <input type="text" id="routingName" formControlName="routingName" placeholder="Enter routing name">
+        <div *ngIf="hasError('routingName')" class="field-error">Routing name is required</div>
+      </div>
+
+      <div class="form-group">
+        <label for="processId">Process *</label>
+        <select id="processId" formControlName="processId">
+          <option value="">Select a process</option>
+          <option *ngFor="let process of processes" [value]="process.processId">
+            {{ process.processName }} ({{ process.status }})
+          </option>
+        </select>
+        <div *ngIf="hasError('processId')" class="field-error">Process is required</div>
+      </div>
+
+      <div class="form-group">
+        <label for="routingType">Routing Type *</label>
+        <select id="routingType" formControlName="routingType">
+          <option *ngFor="let type of routingTypes" [value]="type.value">{{ type.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Routing Steps -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2>Routing Steps</h2>
+        <button type="button" class="btn btn-primary" (click)="openAddStep()">
+          <i class="fa fa-plus"></i> Add Step
+        </button>
+      </div>
+
+      <table *ngIf="steps.length > 0" class="steps-table">
+        <thead>
+          <tr>
+            <th>Seq</th>
+            <th>Operation Name</th>
+            <th>Type</th>
+            <th>Parallel</th>
+            <th>Mandatory</th>
+            <th>Batch Flags</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let step of steps; let i = index">
+            <td>{{ step.sequenceNumber }}</td>
+            <td>{{ step.operationName }}</td>
+            <td>{{ step.operationType }}</td>
+            <td>
+              <span [class.yes]="step.isParallel" [class.no]="!step.isParallel">
+                {{ step.isParallel ? 'Yes' : 'No' }}
+              </span>
+            </td>
+            <td>
+              <span [class.yes]="step.mandatoryFlag" [class.no]="!step.mandatoryFlag">
+                {{ step.mandatoryFlag ? 'Yes' : 'No' }}
+              </span>
+            </td>
+            <td class="batch-flags">
+              <span *ngIf="step.producesOutputBatch" class="flag" title="Produces Output Batch">OUT</span>
+              <span *ngIf="step.allowsSplit" class="flag" title="Allows Split">SPLIT</span>
+              <span *ngIf="step.allowsMerge" class="flag" title="Allows Merge">MERGE</span>
+              <span *ngIf="!step.producesOutputBatch && !step.allowsSplit && !step.allowsMerge">-</span>
+            </td>
+            <td class="actions">
+              <button type="button" class="btn btn-sm" (click)="moveStepUp(i)" [disabled]="i === 0" title="Move Up">
+                <i class="fa fa-arrow-up"></i>
+              </button>
+              <button type="button" class="btn btn-sm" (click)="moveStepDown(i)" [disabled]="i === steps.length - 1" title="Move Down">
+                <i class="fa fa-arrow-down"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" (click)="openEditStep(step, i)" title="Edit">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-danger" (click)="deleteStep(i)" [disabled]="step.mandatoryFlag" title="Delete">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="steps.length === 0" class="no-steps">
+        No steps defined. Add steps to define the operation sequence.
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving">
+        {{ saving ? 'Saving...' : (isEditMode ? 'Update Routing' : 'Create Routing') }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Step Modal -->
+<div *ngIf="showStepModal" class="modal-overlay" (click)="closeStepModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingStep ? 'Edit Step' : 'Add Step' }}</h3>
+      <button type="button" class="close-btn" (click)="closeStepModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form [formGroup]="stepForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="operationName">Operation Name *</label>
+            <input type="text" id="operationName" formControlName="operationName" placeholder="e.g., Melting">
+            <div *ngIf="hasStepError('operationName')" class="field-error">Required</div>
+          </div>
+
+          <div class="form-group">
+            <label for="operationType">Operation Type *</label>
+            <select id="operationType" formControlName="operationType">
+              <option value="">Select type</option>
+              <option *ngFor="let type of operationTypes" [value]="type">{{ type }}</option>
+            </select>
+            <div *ngIf="hasStepError('operationType')" class="field-error">Required</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="operationCode">Operation Code</label>
+            <input type="text" id="operationCode" formControlName="operationCode" placeholder="e.g., OP-001">
+          </div>
+
+          <div class="form-group">
+            <label for="sequenceNumber">Sequence Number *</label>
+            <input type="number" id="sequenceNumber" formControlName="sequenceNumber" min="1">
+            <div *ngIf="hasStepError('sequenceNumber')" class="field-error">Must be positive</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="estimatedDurationMinutes">Estimated Duration (min)</label>
+            <input type="number" id="estimatedDurationMinutes" formControlName="estimatedDurationMinutes" min="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" formControlName="description" rows="2"></textarea>
+        </div>
+
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="isParallel">
+            <span>Can run in parallel with other steps at same sequence</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="mandatoryFlag">
+            <span>Mandatory step (cannot be skipped)</span>
+          </label>
+        </div>
+
+        <div class="checkbox-group">
+          <h4>Batch Behavior</h4>
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="producesOutputBatch">
+            <span>Produces output batch</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="allowsSplit">
+            <span>Allows batch split</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="allowsMerge">
+            <span>Allows batch merge</span>
+          </label>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeStepModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="saveStep()">
+        {{ editingStep ? 'Update Step' : 'Add Step' }}
+      </button>
+    </div>
+  </div>
+</div>

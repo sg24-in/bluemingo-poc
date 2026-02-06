@@ -412,4 +412,167 @@ public class RoutingService {
             }
         }
     }
+
+    // ============ Routing Step CRUD Methods ============
+
+    /**
+     * Create a routing step.
+     */
+    @Transactional
+    public RoutingStep createRoutingStep(Long routingId, RoutingDTO.CreateRoutingStepRequest request, String createdBy) {
+        Routing routing = routingRepository.findById(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        // Check if routing is locked
+        if (isRoutingLocked(routingId)) {
+            throw new IllegalStateException("Cannot add steps to a routing that has started execution");
+        }
+
+        // Validate sequence number
+        if (request.getSequenceNumber() == null || request.getSequenceNumber() <= 0) {
+            throw new IllegalArgumentException("Sequence number must be a positive integer");
+        }
+
+        RoutingStep step = RoutingStep.builder()
+                .routing(routing)
+                .operationName(request.getOperationName())
+                .operationType(request.getOperationType())
+                .operationCode(request.getOperationCode())
+                .sequenceNumber(request.getSequenceNumber())
+                .isParallel(request.getIsParallel() != null ? request.getIsParallel() : false)
+                .mandatoryFlag(request.getMandatoryFlag() != null ? request.getMandatoryFlag() : true)
+                .targetQty(request.getTargetQty())
+                .description(request.getDescription())
+                .estimatedDurationMinutes(request.getEstimatedDurationMinutes())
+                .producesOutputBatch(request.getProducesOutputBatch() != null ? request.getProducesOutputBatch() : false)
+                .allowsSplit(request.getAllowsSplit() != null ? request.getAllowsSplit() : false)
+                .allowsMerge(request.getAllowsMerge() != null ? request.getAllowsMerge() : false)
+                .status(RoutingStep.STATUS_READY)
+                .createdBy(createdBy)
+                .build();
+
+        step = routingStepRepository.save(step);
+        log.info("Created routing step {} for routing {}", step.getRoutingStepId(), routingId);
+        return step;
+    }
+
+    /**
+     * Update a routing step.
+     */
+    @Transactional
+    public RoutingStep updateRoutingStep(Long stepId, RoutingDTO.UpdateRoutingStepRequest request, String updatedBy) {
+        RoutingStep step = routingStepRepository.findById(stepId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing step not found: " + stepId));
+
+        // Check if routing is locked
+        if (isRoutingLocked(step.getRouting().getRoutingId())) {
+            throw new IllegalStateException("Cannot update steps of a routing that has started execution");
+        }
+
+        // Update fields
+        if (request.getOperationName() != null) {
+            step.setOperationName(request.getOperationName());
+        }
+        if (request.getOperationType() != null) {
+            step.setOperationType(request.getOperationType());
+        }
+        if (request.getOperationCode() != null) {
+            step.setOperationCode(request.getOperationCode());
+        }
+        if (request.getSequenceNumber() != null) {
+            if (request.getSequenceNumber() <= 0) {
+                throw new IllegalArgumentException("Sequence number must be a positive integer");
+            }
+            step.setSequenceNumber(request.getSequenceNumber());
+        }
+        if (request.getIsParallel() != null) {
+            step.setIsParallel(request.getIsParallel());
+        }
+        if (request.getMandatoryFlag() != null) {
+            step.setMandatoryFlag(request.getMandatoryFlag());
+        }
+        if (request.getTargetQty() != null) {
+            step.setTargetQty(request.getTargetQty());
+        }
+        if (request.getDescription() != null) {
+            step.setDescription(request.getDescription());
+        }
+        if (request.getEstimatedDurationMinutes() != null) {
+            step.setEstimatedDurationMinutes(request.getEstimatedDurationMinutes());
+        }
+        if (request.getProducesOutputBatch() != null) {
+            step.setProducesOutputBatch(request.getProducesOutputBatch());
+        }
+        if (request.getAllowsSplit() != null) {
+            step.setAllowsSplit(request.getAllowsSplit());
+        }
+        if (request.getAllowsMerge() != null) {
+            step.setAllowsMerge(request.getAllowsMerge());
+        }
+
+        step.setUpdatedBy(updatedBy);
+        step = routingStepRepository.save(step);
+        log.info("Updated routing step {}", stepId);
+        return step;
+    }
+
+    /**
+     * Delete a routing step.
+     */
+    @Transactional
+    public void deleteRoutingStep(Long stepId) {
+        RoutingStep step = routingStepRepository.findById(stepId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing step not found: " + stepId));
+
+        // Check if routing is locked
+        if (isRoutingLocked(step.getRouting().getRoutingId())) {
+            throw new IllegalStateException("Cannot delete steps from a routing that has started execution");
+        }
+
+        // Check if step is mandatory
+        if (Boolean.TRUE.equals(step.getMandatoryFlag())) {
+            throw new IllegalStateException("Cannot delete mandatory routing step: " + stepId);
+        }
+
+        routingStepRepository.delete(step);
+        log.info("Deleted routing step {}", stepId);
+    }
+
+    /**
+     * Reorder routing steps.
+     */
+    @Transactional
+    public List<RoutingStep> reorderSteps(Long routingId, List<Long> stepIds, String updatedBy) {
+        Routing routing = routingRepository.findByIdWithSteps(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        // Check if routing is locked
+        if (isRoutingLocked(routingId)) {
+            throw new IllegalStateException("Cannot reorder steps of a routing that has started execution");
+        }
+
+        // Validate all step IDs belong to this routing
+        List<Long> existingStepIds = routing.getRoutingSteps().stream()
+                .map(RoutingStep::getRoutingStepId)
+                .collect(Collectors.toList());
+
+        for (Long stepId : stepIds) {
+            if (!existingStepIds.contains(stepId)) {
+                throw new IllegalArgumentException("Step " + stepId + " does not belong to routing " + routingId);
+            }
+        }
+
+        // Update sequence numbers based on position in list
+        int sequence = 1;
+        for (Long stepId : stepIds) {
+            RoutingStep step = routingStepRepository.findById(stepId)
+                    .orElseThrow(() -> new IllegalArgumentException("Step not found: " + stepId));
+            step.setSequenceNumber(sequence++);
+            step.setUpdatedBy(updatedBy);
+            routingStepRepository.save(step);
+        }
+
+        log.info("Reordered {} steps for routing {}", stepIds.size(), routingId);
+        return getRoutingStepsInOrder(routingId);
+    }
 }

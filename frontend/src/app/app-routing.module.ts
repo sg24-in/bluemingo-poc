@@ -115,6 +115,10 @@ const routes: Routes = [
       {
         path: 'processes',
         loadChildren: () => import('./features/processes/processes.module').then(m => m.ProcessesModule)
+      },
+      {
+        path: 'routing',
+        loadChildren: () => import('./features/routing/routing.module').then(m => m.RoutingModule)
       }
     ]
   },

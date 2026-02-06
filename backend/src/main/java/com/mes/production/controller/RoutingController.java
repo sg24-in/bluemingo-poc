@@ -243,6 +243,69 @@ public class RoutingController {
         return ResponseEntity.ok(convertToRoutingInfo(routing));
     }
 
+    // ============ Routing Step CRUD Endpoints ============
+
+    /**
+     * Create a routing step.
+     */
+    @PostMapping("/{routingId}/steps")
+    public ResponseEntity<RoutingDTO.RoutingStepInfo> createRoutingStep(
+            @PathVariable Long routingId,
+            @RequestBody RoutingDTO.CreateRoutingStepRequest request,
+            Authentication auth) {
+
+        log.info("POST /api/routing/{}/steps - Creating step: {}", routingId, request.getOperationName());
+        String username = auth != null ? auth.getName() : "system";
+
+        RoutingStep step = routingService.createRoutingStep(routingId, request, username);
+        return ResponseEntity.status(HttpStatus.CREATED).body(convertToStepInfo(step));
+    }
+
+    /**
+     * Update a routing step.
+     */
+    @PutMapping("/steps/{stepId}")
+    public ResponseEntity<RoutingDTO.RoutingStepInfo> updateRoutingStep(
+            @PathVariable Long stepId,
+            @RequestBody RoutingDTO.UpdateRoutingStepRequest request,
+            Authentication auth) {
+
+        log.info("PUT /api/routing/steps/{}", stepId);
+        String username = auth != null ? auth.getName() : "system";
+
+        RoutingStep step = routingService.updateRoutingStep(stepId, request, username);
+        return ResponseEntity.ok(convertToStepInfo(step));
+    }
+
+    /**
+     * Delete a routing step.
+     */
+    @DeleteMapping("/steps/{stepId}")
+    public ResponseEntity<Void> deleteRoutingStep(@PathVariable Long stepId) {
+        log.info("DELETE /api/routing/steps/{}", stepId);
+        routingService.deleteRoutingStep(stepId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Reorder routing steps.
+     */
+    @PostMapping("/{routingId}/reorder")
+    public ResponseEntity<List<RoutingDTO.RoutingStepInfo>> reorderSteps(
+            @PathVariable Long routingId,
+            @RequestBody RoutingDTO.ReorderStepsRequest request,
+            Authentication auth) {
+
+        log.info("POST /api/routing/{}/reorder", routingId);
+        String username = auth != null ? auth.getName() : "system";
+
+        List<RoutingStep> steps = routingService.reorderSteps(routingId, request.getStepIds(), username);
+        List<RoutingDTO.RoutingStepInfo> stepInfos = steps.stream()
+                .map(this::convertToStepInfo)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(stepInfos);
+    }
+
     private RoutingDTO.RoutingInfo convertToRoutingInfo(Routing routing) {
         List<RoutingDTO.RoutingStepInfo> stepInfos = routing.getRoutingSteps().stream()
                 .map(this::convertToStepInfo)

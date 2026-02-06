@@ -731,12 +731,28 @@ export class ApiService {
   // Per MES Spec: Process is design-time entity. Runtime tracking via Operations.
   // ============================================================
 
+  getAllProcesses(): Observable<Process[]> {
+    return this.http.get<Process[]>(`${environment.apiUrl}/processes`);
+  }
+
   getProcessById(processId: number): Observable<Process> {
     return this.http.get<Process>(`${environment.apiUrl}/processes/${processId}`);
   }
 
   getProcessesByStatus(status: string): Observable<Process[]> {
     return this.http.get<Process[]>(`${environment.apiUrl}/processes/status/${status}`);
+  }
+
+  createProcess(request: { processName: string; status?: string }): Observable<Process> {
+    return this.http.post<Process>(`${environment.apiUrl}/processes`, request);
+  }
+
+  updateProcess(processId: number, request: { processName?: string; status?: string }): Observable<Process> {
+    return this.http.put<Process>(`${environment.apiUrl}/processes/${processId}`, request);
+  }
+
+  deleteProcess(processId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/processes/${processId}`);
   }
 
   getQualityPendingProcesses(): Observable<Process[]> {
@@ -1150,14 +1166,6 @@ export class ApiService {
     return this.http.post<any>(`${environment.apiUrl}/processes/${processId}/steps`, step);
   }
 
-  updateRoutingStep(stepId: number, step: any): Observable<any> {
-    return this.http.put<any>(`${environment.apiUrl}/processes/steps/${stepId}`, step);
-  }
-
-  deleteRoutingStep(stepId: number): Observable<void> {
-    return this.http.delete<void>(`${environment.apiUrl}/processes/steps/${stepId}`);
-  }
-
 
   // ============================================================
   // Routing
@@ -1225,6 +1233,23 @@ export class ApiService {
 
   releaseRoutingFromHold(routingId: number): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/routing/${routingId}/release`, {});
+  }
+
+  // Routing Step CRUD
+  createRoutingStep(routingId: number, step: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/routing/${routingId}/steps`, step);
+  }
+
+  updateRoutingStep(stepId: number, step: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/routing/steps/${stepId}`, step);
+  }
+
+  deleteRoutingStep(stepId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/routing/steps/${stepId}`);
+  }
+
+  reorderRoutingSteps(routingId: number, stepIds: number[]): Observable<any[]> {
+    return this.http.post<any[]>(`${environment.apiUrl}/routing/${routingId}/reorder`, { stepIds });
   }
 
   // ============================================================
