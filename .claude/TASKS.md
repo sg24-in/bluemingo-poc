@@ -1347,8 +1347,8 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| R20 | ProcessTemplate list page | PENDING | MEDIUM | /manage/process-templates |
-| R21 | ProcessTemplate form | PENDING | MEDIUM | Create/edit |
+| R20 | ProcessTemplate list page | ❌ N/A | - | **REDUNDANT**: ProcessTemplate is internal; Routing UI handles design-time config |
+| R21 | ProcessTemplate form | ❌ N/A | - | **REDUNDANT**: ProcessTemplate is internal; Routing UI handles design-time config |
 | R22 | Routing designer page | ✅ DONE | LOW | routing-list.component + routing-form.component |
 | R23 | Routing step editor | ✅ DONE | MEDIUM | Step modal with batch flags, reordering |
 
