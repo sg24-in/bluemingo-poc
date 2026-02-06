@@ -69,6 +69,10 @@ export class ProductionConfirmComponent implements OnInit {
   loadingSuggestions = false;
   showSuggestions = false;
 
+  // P07-P08: Batch number preview
+  previewBatchNumber: string = '';
+  loadingBatchPreview = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -230,6 +234,31 @@ export class ProductionConfirmComponent implements OnInit {
 
     // Load suggested consumption from BOM
     this.loadSuggestedConsumption();
+
+    // P07: Load batch number preview
+    this.loadBatchNumberPreview();
+  }
+
+  /**
+   * P07: Load the preview of the next batch number that would be generated.
+   * Does NOT increment the sequence - just shows what it would be.
+   */
+  loadBatchNumberPreview(): void {
+    this.loadingBatchPreview = true;
+    const operationType = this.operation?.operationType || '';
+    const productSku = this.operation?.order?.productSku || '';
+
+    this.apiService.previewBatchNumber(operationType, productSku).subscribe({
+      next: (result) => {
+        this.previewBatchNumber = result.previewBatchNumber;
+        this.loadingBatchPreview = false;
+      },
+      error: (err) => {
+        console.error('Error loading batch number preview:', err);
+        this.previewBatchNumber = '';
+        this.loadingBatchPreview = false;
+      }
+    });
   }
 
   loadSuggestedConsumption(): void {

@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
@@ -63,8 +61,13 @@ public class ReceiveMaterialService {
         String unit = validateAndNormalizeUnit(request.getUnit());
         log.info("Using unit: {}", unit);
 
-        // 1. Generate RM batch number
-        String batchNumber = generateRMBatchNumber(request.getMaterialId(), receivedDate);
+        // 1. Generate RM batch number using BatchNumberService
+        // Per MES Batch Number Specification: Use configurable generation with optional supplier lot
+        String batchNumber = batchNumberService.generateRmBatchNumber(
+                request.getMaterialId(),
+                receivedDate,
+                request.getSupplierBatchNumber()
+        );
         log.info("Generated batch number: {}", batchNumber);
 
         // 2. Create Batch (QUALITY_PENDING per MES spec)
@@ -123,6 +126,18 @@ public class ReceiveMaterialService {
                         batchNumber, request.getMaterialId(), request.getQuantity(),
                         request.getUnit(), request.getSupplierId()));
 
+        // Audit: Log batch number generation per MES Batch Number Specification
+        String configContext = request.getSupplierBatchNumber() != null
+                ? "RM with supplier lot: " + request.getSupplierBatchNumber()
+                : "RM internal";
+        auditService.logBatchNumberGenerated(
+                batch.getBatchId(),
+                batchNumber,
+                null, // RM receipt has no source operation
+                configContext,
+                Batch.CREATED_VIA_RECEIPT
+        );
+
         auditService.logCreate("INVENTORY", inventory.getInventoryId(),
                 String.format("RM Inventory created for batch %s", batchNumber));
 
@@ -136,20 +151,6 @@ public class ReceiveMaterialService {
                 .unit(batch.getUnit())
                 .message("Raw material received successfully. Batch pending quality approval.")
                 .build();
-    }
-
-    /**
-     * Generate RM batch number in format: RM-{MATERIALCODE}-{YYYYMMDD}-{SEQ}
-     */
-    private String generateRMBatchNumber(String materialId, LocalDate receivedDate) {
-        String dateStr = receivedDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String prefix = "RM-" + materialId.toUpperCase() + "-" + dateStr + "-";
-
-        // Find max sequence for this prefix
-        var maxSeq = batchRepository.findMaxSequenceByPrefix(prefix);
-        int nextSeq = maxSeq.orElse(0) + 1;
-
-        return prefix + String.format("%03d", nextSeq);
     }
 
     /**

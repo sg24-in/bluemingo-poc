@@ -26,6 +26,7 @@ import {
   AdjustQuantityRequest,
   AdjustQuantityResponse,
   QuantityAdjustmentHistory,
+  BatchNumberPreview,
   // Inventory
   Inventory,
   InventoryStateUpdateResponse,
@@ -331,6 +332,21 @@ export class ApiService {
 
   getBatchAdjustmentHistory(batchId: number): Observable<QuantityAdjustmentHistory[]> {
     return this.http.get<QuantityAdjustmentHistory[]>(`${environment.apiUrl}/batches/${batchId}/adjustments`);
+  }
+
+  /**
+   * P07: Preview the next batch number without incrementing sequence.
+   * Shows users what the next batch number will be before confirmation.
+   */
+  previewBatchNumber(operationType?: string, productSku?: string): Observable<BatchNumberPreview> {
+    let params = new HttpParams();
+    if (operationType) {
+      params = params.set('operationType', operationType);
+    }
+    if (productSku) {
+      params = params.set('productSku', productSku);
+    }
+    return this.http.get<BatchNumberPreview>(`${environment.apiUrl}/batches/preview-number`, { params });
   }
 
   // ============================================================

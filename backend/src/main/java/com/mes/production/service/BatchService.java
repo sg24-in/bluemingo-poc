@@ -173,6 +173,12 @@ public class BatchService {
                 .unit(batch.getUnit())
                 .status(batch.getStatus())
                 .createdOn(batch.getCreatedOn())
+                // Per MES Batch Number Specification
+                .generatedAtOperationId(batch.getGeneratedAtOperationId())
+                .createdVia(batch.getCreatedVia())
+                .supplierBatchNumber(batch.getSupplierBatchNumber())
+                .supplierId(batch.getSupplierId())
+                // Approval info
                 .approvedBy(batch.getApprovedBy())
                 .approvedOn(batch.getApprovedOn())
                 .rejectionReason(batch.getRejectionReason())
@@ -220,7 +226,7 @@ public class BatchService {
                 newBatchNumber = batchNumberService.generateSplitBatchNumber(sourceBatch.getBatchNumber(), splitIndex);
             }
 
-            // Create new batch
+            // Create new batch (inherit generatedAtOperationId from parent per MES Batch Number Spec)
             Batch newBatch = Batch.builder()
                     .batchNumber(newBatchNumber)
                     .materialId(sourceBatch.getMaterialId())
@@ -228,11 +234,21 @@ public class BatchService {
                     .quantity(portion.getQuantity())
                     .unit(sourceBatch.getUnit())
                     .status("AVAILABLE")
+                    .generatedAtOperationId(sourceBatch.getGeneratedAtOperationId())
                     .createdVia(Batch.CREATED_VIA_SPLIT)
                     .createdBy(userId)
                     .build();
 
             newBatch = batchRepository.save(newBatch);
+
+            // Audit: Log batch number generation per MES Batch Number Specification
+            auditService.logBatchNumberGenerated(
+                    newBatch.getBatchId(),
+                    newBatch.getBatchNumber(),
+                    sourceBatch.getGeneratedAtOperationId(), // Inherit from parent
+                    "SPLIT from " + sourceBatch.getBatchNumber(),
+                    Batch.CREATED_VIA_SPLIT
+            );
 
             // Create relation from source to new batch
             BatchRelation relation = BatchRelation.builder()
@@ -330,6 +346,15 @@ public class BatchService {
                 .build();
 
         mergedBatch = batchRepository.save(mergedBatch);
+
+        // Audit: Log batch number generation per MES Batch Number Specification
+        auditService.logBatchNumberGenerated(
+                mergedBatch.getBatchId(),
+                mergedBatch.getBatchNumber(),
+                null, // Merged batches have no single source operation
+                "MERGE of " + sourceBatches.size() + " batches",
+                Batch.CREATED_VIA_MERGE
+        );
 
         // Create relations and update source batches
         java.util.List<BatchDTO> sourceDTOs = new java.util.ArrayList<>();
@@ -533,6 +558,15 @@ public class BatchService {
         log.info("Batch created with ID: {} (via MANUAL creation)", batch.getBatchId());
         auditService.logCreate("BATCH", batch.getBatchId(),
                 "Batch created MANUALLY (not via production): " + request.getBatchNumber());
+
+        // Audit: Log batch number generation per MES Batch Number Specification
+        auditService.logBatchNumberGenerated(
+                batch.getBatchId(),
+                request.getBatchNumber(),
+                null, // Manual creation has no source operation
+                "MANUAL entry",
+                Batch.CREATED_VIA_MANUAL
+        );
 
         return convertToDTO(batch);
     }

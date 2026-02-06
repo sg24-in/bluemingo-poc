@@ -61,6 +61,7 @@ public class AuditTrail {
     public static final String ACTION_PRODUCE = "PRODUCE";
     public static final String ACTION_HOLD = "HOLD";
     public static final String ACTION_RELEASE = "RELEASE";
+    public static final String ACTION_BATCH_NUMBER_GENERATED = "BATCH_NUMBER_GENERATED";
 
     // Entity type constants
     public static final String ENTITY_PRODUCTION_CONFIRMATION = "PRODUCTION_CONFIRMATION";

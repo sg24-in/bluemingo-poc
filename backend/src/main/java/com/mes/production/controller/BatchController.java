@@ -3,6 +3,7 @@ package com.mes.production.controller;
 import com.mes.production.dto.BatchDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.service.BatchNumberService;
 import com.mes.production.service.BatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.List;
 public class BatchController {
 
     private final BatchService batchService;
+    private final BatchNumberService batchNumberService;
 
     /**
      * Get all batches (legacy - non-paginated)
@@ -30,6 +32,30 @@ public class BatchController {
         log.info("GET /api/batches");
         List<BatchDTO> batches = batchService.getAllBatches();
         return ResponseEntity.ok(batches);
+    }
+
+    /**
+     * P07: Preview the next batch number WITHOUT incrementing the sequence.
+     * Used to show users what the next batch number will be before confirmation.
+     *
+     * @param operationType The operation type (e.g., FURNACE, ROLLING)
+     * @param productSku    The product SKU (optional)
+     * @return Preview of the next batch number that would be generated
+     */
+    @GetMapping("/preview-number")
+    public ResponseEntity<BatchDTO.BatchNumberPreview> previewBatchNumber(
+            @RequestParam(required = false) String operationType,
+            @RequestParam(required = false) String productSku) {
+        log.info("GET /api/batches/preview-number - operationType={}, productSku={}", operationType, productSku);
+
+        String previewNumber = batchNumberService.previewBatchNumber(operationType, productSku);
+
+        BatchDTO.BatchNumberPreview response = new BatchDTO.BatchNumberPreview();
+        response.setPreviewBatchNumber(previewNumber);
+        response.setOperationType(operationType);
+        response.setProductSku(productSku);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

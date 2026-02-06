@@ -78,6 +78,19 @@
           <span class="info-value">{{ operation.process?.processName }}</span>
         </div>
       </div>
+      <!-- P07-P08: Batch Number Preview -->
+      <div class="batch-preview" *ngIf="previewBatchNumber || loadingBatchPreview">
+        <div class="info-item">
+          <span class="info-label">Output Batch Number (Preview)</span>
+          <span class="info-value batch-number-preview" *ngIf="!loadingBatchPreview">
+            {{ previewBatchNumber }}
+          </span>
+          <span class="info-value loading-text" *ngIf="loadingBatchPreview">
+            Loading...
+          </span>
+        </div>
+        <p class="preview-note">This batch number will be assigned upon confirmation</p>
+      </div>
     </div>
 
     <form [formGroup]="confirmForm" (ngSubmit)="onSubmit()">

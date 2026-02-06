@@ -80,6 +80,28 @@ public class AuditService {
     }
 
     /**
+     * Log batch number generation per MES Batch Number Specification.
+     * Records: batchNumber, operationId, configName, generationMethod
+     *
+     * @param batchId The generated batch ID
+     * @param batchNumber The generated batch number
+     * @param operationId The source operation ID (null for split/merge/manual)
+     * @param configName The config rule used (operation/material/default)
+     * @param generationMethod How the batch was created (PRODUCTION/SPLIT/MERGE/RECEIPT/MANUAL)
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logBatchNumberGenerated(Long batchId, String batchNumber, Long operationId,
+                                        String configName, String generationMethod) {
+        String details = String.format("batchNumber=%s, operationId=%s, config=%s, method=%s",
+                batchNumber,
+                operationId != null ? operationId.toString() : "N/A",
+                configName != null ? configName : "fallback",
+                generationMethod);
+        createAuditEntry(AuditTrail.ENTITY_BATCH, batchId, "batchNumber", null, details,
+                AuditTrail.ACTION_BATCH_NUMBER_GENERATED);
+    }
+
+    /**
      * Generic audit entry creation
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)

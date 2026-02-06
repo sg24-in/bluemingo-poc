@@ -349,6 +349,15 @@ public class ProductionService {
         auditService.logProduce("BATCH", batch.getBatchId(),
                 String.format("Batch: %s, Material: %s, Qty: %s", batchNumber, materialId, quantity));
 
+        // Audit: Log batch number generation per MES Batch Number Specification
+        auditService.logBatchNumberGenerated(
+                batch.getBatchId(),
+                batchNumber,
+                operation.getOperationId(),
+                operation.getOperationType(), // config context
+                Batch.CREATED_VIA_PRODUCTION
+        );
+
         return batch;
     }
 

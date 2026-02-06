@@ -27,6 +27,14 @@ public class BatchDTO {
     private String status;
     private LocalDateTime createdOn;
 
+    // Per MES Batch Number Specification: Track source operation
+    private Long generatedAtOperationId;
+    private String createdVia; // PRODUCTION, SPLIT, MERGE, MANUAL, SYSTEM, RECEIPT
+
+    // Supplier/Receipt info for RM batches
+    private String supplierBatchNumber;
+    private String supplierId;
+
     // Approval info
     private String approvedBy;
     private LocalDateTime approvedOn;
@@ -269,5 +277,18 @@ public class BatchDTO {
         private String reason;
         private String adjustedBy;
         private LocalDateTime adjustedOn;
+    }
+
+    /**
+     * P07: Batch number preview response.
+     * Shows what the next batch number will be without consuming the sequence.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BatchNumberPreview {
+        private String previewBatchNumber;
+        private String operationType;
+        private String productSku;
     }
 }

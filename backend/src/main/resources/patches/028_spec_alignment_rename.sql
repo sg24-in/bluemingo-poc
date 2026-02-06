@@ -68,8 +68,4 @@ CREATE INDEX IF NOT EXISTS idx_operations_process_instance ON operations(process
 
 -- Step 12: Update views if any exist (none currently)
 
--- Log patch completion
-INSERT INTO database_patches (patch_name, applied_on, description)
-VALUES ('028_spec_alignment_rename', CURRENT_TIMESTAMP,
-        'Aligned with MES Consolidated Spec: process_templates→processes (design-time), processes→process_instances (runtime)')
-ON CONFLICT (patch_name) DO NOTHING;
+-- Note: Patch completion is automatically logged by PatchService

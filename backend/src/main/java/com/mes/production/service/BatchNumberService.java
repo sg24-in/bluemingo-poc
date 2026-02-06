@@ -135,25 +135,151 @@ public class BatchNumberService {
     }
 
     /**
+     * Generate a batch number for Raw Material receipt.
+     * Per MES Batch Number Specification:
+     * - Format: RM-{MATERIALCODE}-{YYYYMMDD}-{SEQ} (default)
+     * - If supplier lot is provided and config allows, can include supplier lot prefix
+     *
+     * @param materialId The material code (e.g., RM-IRON-001)
+     * @param receivedDate The date material was received
+     * @param supplierBatchNumber Optional supplier lot number for traceability
+     * @return Generated batch number for the RM batch
+     */
+    @Transactional
+    public String generateRmBatchNumber(String materialId, LocalDate receivedDate, String supplierBatchNumber) {
+        log.info("Generating RM batch number for materialId={}, supplierBatch={}", materialId, supplierBatchNumber);
+
+        // Check for RM-specific configuration with material-level matching
+        // Per MES spec Section 6: precedence is operation > material > default
+        BatchNumberConfig config = findMatchingConfig("RM_RECEIPT", materialId, null);
+        if (config != null) {
+            return generateRmFromConfig(config, materialId, receivedDate, supplierBatchNumber);
+        }
+
+        // Fallback: standard RM format RM-{MATERIALCODE}-{YYYYMMDD}-{SEQ}
+        return generateFallbackRmBatchNumber(materialId, receivedDate);
+    }
+
+    /**
+     * Generate RM batch number from configuration.
+     */
+    private String generateRmFromConfig(BatchNumberConfig config, String materialId,
+                                         LocalDate receivedDate, String supplierBatchNumber) {
+        StringBuilder batchNumber = new StringBuilder();
+        String separator = config.getSeparator();
+
+        // 1. Add prefix (typically "RM")
+        batchNumber.append(config.getPrefix());
+
+        // 2. Add material code if configured
+        if (config.isIncludeOperationCode() && materialId != null) {
+            batchNumber.append(separator);
+            String matCode = materialId.toUpperCase();
+            // Use full material code or truncate based on config
+            if (config.getOperationCodeLength() > 0 && matCode.length() > config.getOperationCodeLength()) {
+                matCode = matCode.substring(0, config.getOperationCodeLength());
+            }
+            batchNumber.append(matCode);
+        }
+
+        // 3. Add supplier batch number if provided (for traceability)
+        if (supplierBatchNumber != null && !supplierBatchNumber.trim().isEmpty()) {
+            batchNumber.append(separator);
+            // Sanitize supplier batch number (remove special characters)
+            String sanitized = supplierBatchNumber.replaceAll("[^A-Za-z0-9-]", "").toUpperCase();
+            // Limit length to prevent overly long batch numbers
+            if (sanitized.length() > 15) {
+                sanitized = sanitized.substring(0, 15);
+            }
+            batchNumber.append(sanitized);
+        }
+
+        // 4. Add date if configured
+        String dateStr = "";
+        if (config.isIncludeDate()) {
+            dateStr = receivedDate.format(DateTimeFormatter.ofPattern(config.getDateFormat()));
+            batchNumber.append(separator);
+            batchNumber.append(dateStr);
+        }
+
+        // 5. Add sequence number
+        batchNumber.append(separator);
+        int nextSeq = getNextSequence(config, dateStr);
+        String seqFormat = "%0" + config.getSequenceLength() + "d";
+        batchNumber.append(String.format(seqFormat, nextSeq));
+
+        String result = batchNumber.toString();
+        log.info("Generated RM batch number: {} using config: {}", result, config.getConfigName());
+        return result;
+    }
+
+    /**
+     * Fallback RM batch number generation when no configuration found.
+     * Format: RM-{MATERIALCODE}-{YYYYMMDD}-{SEQ}
+     */
+    private String generateFallbackRmBatchNumber(String materialId, LocalDate receivedDate) {
+        String dateStr = receivedDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String matCode = materialId != null ? materialId.toUpperCase() : "UNKNOWN";
+        String prefix = "RM-" + matCode + "-" + dateStr + "-";
+
+        // Get next sequence by querying existing batch numbers with this prefix
+        String sql = """
+            SELECT MAX(CAST(SUBSTRING(batch_number FROM LENGTH(?) + 1) AS INTEGER))
+            FROM batches
+            WHERE batch_number LIKE ?
+            """;
+
+        try {
+            Integer maxSeq = jdbcTemplate.queryForObject(sql, Integer.class, prefix, prefix + "%");
+            int nextSeq = (maxSeq != null ? maxSeq : 0) + 1;
+            return prefix + String.format("%03d", nextSeq);
+        } catch (Exception e) {
+            // If query fails, use timestamp fallback
+            log.warn("Failed to get RM sequence, using timestamp fallback: {}", e.getMessage());
+            return prefix + String.format("%03d", 1);
+        }
+    }
+
+    /**
      * Find the matching batch number configuration based on operation type and product SKU.
-     * Configurations are matched in priority order:
+     * Per MES Batch Number Specification Section 6, precedence order (highest to lowest):
      * 1. Exact match on operation_type AND product_sku
      * 2. Match on operation_type only (product_sku is NULL)
      * 3. Default configuration (operation_type is NULL)
      */
     private BatchNumberConfig findMatchingConfig(String operationType, String productSku) {
+        return findMatchingConfig(operationType, null, productSku);
+    }
+
+    /**
+     * Find the matching batch number configuration with material_id support.
+     * Per MES Batch Number Specification Section 6, precedence order (highest to lowest):
+     * 1. Exact match on operation_type AND material_id AND product_sku
+     * 2. Match on operation_type AND material_id only
+     * 3. Match on operation_type AND product_sku only
+     * 4. Match on operation_type only
+     * 5. Default configuration (operation_type is NULL)
+     *
+     * @param operationType The operation type (FURNACE, ROLLING, RM_RECEIPT, SPLIT, MERGE, etc.)
+     * @param materialId    The material ID for material-level configuration (used for RM)
+     * @param productSku    The product SKU for product-level configuration
+     * @return Matching configuration or null if none found
+     */
+    private BatchNumberConfig findMatchingConfig(String operationType, String materialId, String productSku) {
+        // SQL includes material_id for material-level configuration per MES spec
         String sql = """
             SELECT config_id, config_name, prefix, include_operation_code, operation_code_length,
                    separator, date_format, include_date, sequence_length, sequence_reset
             FROM batch_number_config
             WHERE status = 'ACTIVE'
               AND (operation_type = ? OR operation_type IS NULL)
+              AND (material_id = ? OR material_id IS NULL)
               AND (product_sku = ? OR product_sku IS NULL)
             ORDER BY priority ASC
             LIMIT 1
             """;
 
-        List<Map<String, Object>> results = jdbcTemplate.queryForList(sql, operationType, productSku);
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(sql, operationType, materialId, productSku);
         if (results.isEmpty()) {
             return null;
         }
@@ -291,5 +417,100 @@ public class BatchNumberService {
             ORDER BY priority
             """;
         return jdbcTemplate.queryForList(sql);
+    }
+
+    /**
+     * Preview the next batch number WITHOUT incrementing the sequence.
+     * Used for P07: Batch Number Preview API.
+     *
+     * @param operationType The operation type (e.g., FURNACE, ROLLING)
+     * @param productSku    The product SKU (optional)
+     * @return Preview of the next batch number that would be generated
+     */
+    @Transactional(readOnly = true)
+    public String previewBatchNumber(String operationType, String productSku) {
+        log.info("Previewing batch number for operationType={}, productSku={}", operationType, productSku);
+
+        // Find matching configuration
+        BatchNumberConfig config = findMatchingConfig(operationType, productSku);
+        if (config == null) {
+            log.warn("No batch number configuration found, using fallback pattern for preview");
+            return previewFallbackBatchNumber(operationType);
+        }
+
+        return previewFromConfig(config, operationType);
+    }
+
+    /**
+     * Preview batch number from configuration (without incrementing sequence).
+     */
+    private String previewFromConfig(BatchNumberConfig config, String operationType) {
+        StringBuilder batchNumber = new StringBuilder();
+        String separator = config.getSeparator();
+
+        // 1. Add prefix
+        batchNumber.append(config.getPrefix());
+
+        // 2. Add operation code if configured
+        if (config.isIncludeOperationCode() && operationType != null) {
+            batchNumber.append(separator);
+            int codeLength = Math.min(config.getOperationCodeLength(), operationType.length());
+            batchNumber.append(operationType.substring(0, codeLength).toUpperCase());
+        }
+
+        // 3. Add date if configured
+        String dateStr = "";
+        if (config.isIncludeDate()) {
+            dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern(config.getDateFormat()));
+            batchNumber.append(separator);
+            batchNumber.append(dateStr);
+        }
+
+        // 4. Add preview sequence number (peek without increment)
+        batchNumber.append(separator);
+        int nextSeq = peekNextSequence(config, dateStr);
+        String seqFormat = "%0" + config.getSequenceLength() + "d";
+        batchNumber.append(String.format(seqFormat, nextSeq));
+
+        String result = batchNumber.toString();
+        log.debug("Preview batch number: {} using config: {}", result, config.getConfigName());
+        return result;
+    }
+
+    /**
+     * Peek at the next sequence number WITHOUT incrementing.
+     */
+    private int peekNextSequence(BatchNumberConfig config, String dateStr) {
+        String sequenceKey = buildSequenceKey(config, dateStr);
+
+        String selectSql = """
+            SELECT current_value
+            FROM batch_number_sequence
+            WHERE config_id = ? AND sequence_key = ?
+            """;
+
+        List<Map<String, Object>> existing = jdbcTemplate.queryForList(selectSql, config.getConfigId(), sequenceKey);
+
+        if (existing.isEmpty()) {
+            // No sequence yet, next would be 1
+            return 1;
+        } else {
+            // Next would be current + 1
+            int currentValue = ((Number) existing.get(0).get("current_value")).intValue();
+            return currentValue + 1;
+        }
+    }
+
+    /**
+     * Fallback batch number preview when no configuration found.
+     */
+    private String previewFallbackBatchNumber(String operationType) {
+        String prefix = "BATCH";
+        if (operationType != null && operationType.length() >= 2) {
+            prefix = "BATCH-" + operationType.substring(0, 2).toUpperCase();
+        }
+        String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // Use a placeholder for the timestamp portion since it would vary
+        return prefix + "-" + dateStr + "-XXXX";
     }
 }

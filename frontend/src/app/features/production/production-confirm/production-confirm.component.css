@@ -491,6 +491,37 @@ input[type="datetime-local"] {
   background: #f44336;
 }
 
+/* P07-P08: Batch Number Preview */
+.batch-preview {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.batch-number-preview {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1976d2;
+  background: #e3f2fd;
+  padding: 4px 12px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.preview-note {
+  font-size: 12px;
+  color: #888;
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-style: italic;
+}
+
+.loading-text {
+  color: #888;
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
   .operation-info-grid {
     grid-template-columns: repeat(2, 1fr);

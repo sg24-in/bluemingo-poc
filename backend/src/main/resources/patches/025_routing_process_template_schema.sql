@@ -71,8 +71,4 @@ WHERE NOT EXISTS (
 )
 ON CONFLICT DO NOTHING;
 
--- Log patch completion
-INSERT INTO database_patches (patch_name, applied_on, description)
-VALUES ('025_routing_process_template_schema', CURRENT_TIMESTAMP,
-        'Added process_templates table, batch behavior columns to routing_steps, operation template fields, and DRAFT status for routing')
-ON CONFLICT (patch_name) DO NOTHING;
+-- Note: Patch completion is automatically logged by PatchService

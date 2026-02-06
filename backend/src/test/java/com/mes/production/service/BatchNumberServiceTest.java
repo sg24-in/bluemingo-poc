@@ -314,4 +314,141 @@ class BatchNumberServiceTest {
         // Assert
         assertNotNull(result);
     }
+
+    // ==================== RM Batch Number Tests ====================
+
+    @Test
+    @DisplayName("Should generate RM batch number with fallback format")
+    void generateRmBatchNumber_NoConfig_ReturnsFallbackFormat() {
+        // Arrange - default stub returns empty list (no config)
+        doReturn(null).when(jdbcTemplate).queryForObject(anyString(), eq(Integer.class), anyString(), anyString());
+
+        // Act
+        String result = batchNumberService.generateRmBatchNumber("RM-IRON-001", LocalDate.now(), null);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.startsWith("RM-RM-IRON-001-"));
+        assertTrue(result.contains(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))));
+    }
+
+    @Test
+    @DisplayName("Should generate RM batch number without supplier lot")
+    void generateRmBatchNumber_WithoutSupplierLot_ExcludesSupplierPart() {
+        // Arrange - no config, no supplier lot
+        doReturn(null).when(jdbcTemplate).queryForObject(anyString(), eq(Integer.class), anyString(), anyString());
+
+        // Act
+        String result = batchNumberService.generateRmBatchNumber("IRON", LocalDate.of(2026, 2, 6), null);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.startsWith("RM-IRON-20260206-"));
+        assertFalse(result.contains("SUP")); // No supplier part
+    }
+
+    @Test
+    @DisplayName("Should generate RM batch number with sequence")
+    void generateRmBatchNumber_ExistingBatches_IncrementsSequence() {
+        // Arrange - simulate existing batches
+        doReturn(5).when(jdbcTemplate).queryForObject(anyString(), eq(Integer.class), anyString(), anyString());
+
+        // Act
+        String result = batchNumberService.generateRmBatchNumber("STEEL", LocalDate.of(2026, 2, 6), null);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.endsWith("006")); // 5 + 1 = 6
+    }
+
+    @Test
+    @DisplayName("Should generate RM batch number with config and supplier lot")
+    void generateRmBatchNumber_WithConfigAndSupplierLot_IncludesSupplierPart() {
+        // Arrange - RM-specific config
+        Map<String, Object> rmConfig = new HashMap<>();
+        rmConfig.put("config_id", 2L);
+        rmConfig.put("config_name", "RM Receipt Numbering");
+        rmConfig.put("prefix", "RM");
+        rmConfig.put("include_operation_code", true);
+        rmConfig.put("operation_code_length", 20); // Allow full material code
+        rmConfig.put("separator", "-");
+        rmConfig.put("date_format", "yyyyMMdd");
+        rmConfig.put("include_date", true);
+        rmConfig.put("sequence_length", 3);
+        rmConfig.put("sequence_reset", "DAILY");
+        List<Map<String, Object>> rmConfigList = List.of(rmConfig);
+
+        doReturn(rmConfigList).when(jdbcTemplate).queryForList(anyString(), eq("RM_RECEIPT"), isNull());
+        doReturn(List.of()).when(jdbcTemplate).queryForList(anyString(), eq(2L), anyString());
+        when(jdbcTemplate.update(anyString(), any(), any())).thenReturn(1);
+
+        // Act
+        String result = batchNumberService.generateRmBatchNumber("IRON-001", LocalDate.of(2026, 2, 6), "SUP-LOT-123");
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.startsWith("RM-IRON-001-"));
+        assertTrue(result.contains("SUPLOT123")); // Sanitized supplier lot
+        assertTrue(result.contains("20260206"));
+    }
+
+    @Test
+    @DisplayName("Should sanitize supplier lot number - remove special characters")
+    void generateRmBatchNumber_WithConfigAndSpecialCharsInSupplierLot_SanitizesSupplierLot() {
+        // Arrange - RM-specific config
+        Map<String, Object> rmConfig = new HashMap<>();
+        rmConfig.put("config_id", 2L);
+        rmConfig.put("config_name", "RM Receipt Numbering");
+        rmConfig.put("prefix", "RM");
+        rmConfig.put("include_operation_code", true);
+        rmConfig.put("operation_code_length", 20);
+        rmConfig.put("separator", "-");
+        rmConfig.put("date_format", "yyyyMMdd");
+        rmConfig.put("include_date", true);
+        rmConfig.put("sequence_length", 3);
+        rmConfig.put("sequence_reset", "DAILY");
+        List<Map<String, Object>> rmConfigList = List.of(rmConfig);
+
+        doReturn(rmConfigList).when(jdbcTemplate).queryForList(anyString(), eq("RM_RECEIPT"), isNull());
+        doReturn(List.of()).when(jdbcTemplate).queryForList(anyString(), eq(2L), anyString());
+        when(jdbcTemplate.update(anyString(), any(), any())).thenReturn(1);
+
+        // Act - supplier lot with special chars
+        String result = batchNumberService.generateRmBatchNumber("IRON", LocalDate.now(), "SUP/LOT#2024@001");
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.contains("SUPLOT2024001")); // Special chars removed
+    }
+
+    @Test
+    @DisplayName("Should truncate long supplier lot number")
+    void generateRmBatchNumber_WithConfigAndLongSupplierLot_TruncatesTo15Chars() {
+        // Arrange - RM-specific config
+        Map<String, Object> rmConfig = new HashMap<>();
+        rmConfig.put("config_id", 2L);
+        rmConfig.put("config_name", "RM Receipt Numbering");
+        rmConfig.put("prefix", "RM");
+        rmConfig.put("include_operation_code", true);
+        rmConfig.put("operation_code_length", 20);
+        rmConfig.put("separator", "-");
+        rmConfig.put("date_format", "yyyyMMdd");
+        rmConfig.put("include_date", true);
+        rmConfig.put("sequence_length", 3);
+        rmConfig.put("sequence_reset", "DAILY");
+        List<Map<String, Object>> rmConfigList = List.of(rmConfig);
+
+        doReturn(rmConfigList).when(jdbcTemplate).queryForList(anyString(), eq("RM_RECEIPT"), isNull());
+        doReturn(List.of()).when(jdbcTemplate).queryForList(anyString(), eq(2L), anyString());
+        when(jdbcTemplate.update(anyString(), any(), any())).thenReturn(1);
+
+        // Act - very long supplier lot
+        String result = batchNumberService.generateRmBatchNumber("IRON", LocalDate.now(), "VERYLONGSUPPLIERLOTNUM12345678");
+
+        // Assert
+        assertNotNull(result);
+        // Supplier lot truncated to 15 chars
+        assertTrue(result.contains("VERYLONGSUPPLIE")); // First 15 chars only
+        assertFalse(result.contains("RLOTNUM")); // Rest truncated
+    }
 }

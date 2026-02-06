@@ -216,3 +216,13 @@ export interface QuantityAdjustmentHistory {
   adjustedBy: string;
   adjustedOn: string;
 }
+
+/**
+ * P07: Batch number preview response.
+ * Matches: BatchDTO.BatchNumberPreview
+ */
+export interface BatchNumberPreview {
+  previewBatchNumber: string;
+  operationType?: string;
+  productSku?: string;
+}

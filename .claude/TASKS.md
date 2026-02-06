@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-06
-**Session Status:** Active - Dashboard chart race condition fixed
+**Session Status:** Active - Batch Number Specification Sprint 2 (Phase 11C complete, 11D deferred)
 
 ---
 
@@ -10,6 +10,7 @@
 | Document | Purpose |
 |----------|---------|
 | `.claude/TASKS.md` | Active tasks and session log (this file) |
+| `documents/MES-Batch-Number-Creation-Specification.md` | **Batch number generation rules (NEW)** |
 | `documents/MES-Consolidated-Requirements-Implementation-Plan.md` | **Master plan: 72 tasks across 4 phases (~159h)** |
 | `documents/MES-Data-Model-Gap-Analysis-Feb2026.md` | Data model alignment (~95-98%) |
 | `documents/MES-Batch-Management-Gap-Analysis.md` | Batch lifecycle rules (~75% aligned) |
@@ -1256,14 +1257,14 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 | P03 | Add API: GET /api/orders/available | ✅ DONE | HIGH | Endpoint + api.service.ts |
 | P04 | Show order context (customer, product, due date) | ✅ DONE | HIGH | orderContext getter + HTML |
 
-### Phase 10B: Display Enhancements - PARTIAL
+### Phase 10B: Display Enhancements - COMPLETE
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
 | P05 | Add yield calculation display | ✅ DONE | MEDIUM | yieldPercentage getter + visual bar |
 | P06 | Add color indicator for yield | ✅ DONE | MEDIUM | Green(≥95%)/Yellow(80-95%)/Red(<80%) |
-| P07 | Add batch number preview API | PENDING | MEDIUM | GET /api/batches/preview-number |
-| P08 | Display previewed batch number | PENDING | MEDIUM | In output section |
+| P07 | Add batch number preview API | ✅ DONE | MEDIUM | GET /api/batches/preview-number |
+| P08 | Display previewed batch number | ✅ DONE | MEDIUM | In operation details card |
 | P09 | Add duration calculation display | ✅ DONE | MEDIUM | durationMinutes + durationFormatted |
 
 ### Phase 10C: Workflow Enhancements
@@ -1291,6 +1292,186 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 | P18 | E2E tests for order selection flow | PENDING | HIGH | New workflow |
 | P19 | E2E tests for yield/duration | PENDING | MEDIUM | Display tests |
 | P20 | E2E tests for partial confirmation | PENDING | MEDIUM | Partial flow |
+
+---
+
+## Phase 11: Batch Number Creation Specification Compliance (IN PROGRESS - 2026-02-06)
+
+**Reference Documents:**
+- `documents/MES-Batch-Number-Creation-Specification.md` - The specification
+- `documents/MES-Batch-Number-Implementation-Gap-Analysis.md` - Detailed gap analysis
+
+**Goal:** Ensure batch number generation fully complies with specification
+**Current Compliance:** ~85% | **Target:** 100%
+**Estimated Effort:** 22.75h (3-4 days)
+
+### Sprint 1 Status: COMPLETE ✅
+
+### Current Compliance Status
+
+| Category | Requirements | Implemented | Compliance |
+|----------|-------------|-------------|------------|
+| Core Principles | 5 | 5 | 100% |
+| Number Structure | 4 | 4 | 100% |
+| Configuration Scope | 3 | 2 | 67% |
+| Generation Scenarios | 4 | 3 | 75% |
+| Sequence Management | 4 | 4 | 100% |
+| Error Handling | 3 | 2 | 67% |
+| Audit Requirements | 6 | 2 | 33% |
+
+### Phase 11A: Schema & Entity Updates (Priority: HIGH) - 2.25h ✅ COMPLETE
+
+| Task ID | Task | Status | Files | Effort |
+|---------|------|--------|-------|--------|
+| BN-A01 | Add generated_at_operation_id column | ✅ DONE | Already existed in schema | 0h |
+| BN-A02 | Update Batch entity | ✅ DONE | `Batch.java` - field already existed | 0h |
+| BN-A03 | Update BatchDTO | ✅ DONE | `BatchDTO.java` - added generatedAtOperationId, createdVia, supplierBatchNumber, supplierId | 0.25h |
+| BN-A04 | Update ProductionService | ✅ DONE | Sets generatedAtOperationId on batch creation + audit call | 0.5h |
+| BN-A05 | Update BatchService | ✅ DONE | Inherits generatedAtOperationId for split/merge + audit calls | 0.5h |
+
+### Phase 11B: Audit Trail Integration (Priority: HIGH) - 2.75h ✅ COMPLETE
+
+| Task ID | Task | Status | Files | Effort |
+|---------|------|--------|-------|--------|
+| BN-B01 | Create BatchNumberAuditDTO | N/A | Using inline details in audit log | - |
+| BN-B02 | Add audit method to AuditService | ✅ DONE | `AuditService.java` - logBatchNumberGenerated() method | 0.5h |
+| BN-B03 | Inject AuditService in services | ✅ DONE | ProductionService, BatchService, ReceiveMaterialService all call audit | 0.25h |
+| BN-B04 | Add BATCH_NUMBER_GENERATED action type | ✅ DONE | `AuditTrail.java` - ACTION_BATCH_NUMBER_GENERATED constant | 0.25h |
+| BN-B05 | Log config used | ✅ DONE | Audit logs: batchNumber, operationId, config name, generation method | 0.5h |
+| BN-B06 | Log sequence gaps | DEFERRED | Lower priority - can be added later | - |
+
+### Phase 11C: Raw Material Receipt Enhancement (Priority: MEDIUM) - 3.75h ✅ COMPLETE
+
+| Task ID | Task | Status | Files | Effort |
+|---------|------|--------|-------|--------|
+| BN-C01 | Add supplier_lot_number to ReceiveMaterialRequest | ✅ DONE | Already existed in `InventoryDTO.java` | 0h |
+| BN-C02 | Add supplier_lot_number to Batch entity | ✅ DONE | Already existed in `Batch.java` | 0h |
+| BN-C03 | Add generateRmBatchNumber() method | ✅ DONE | `BatchNumberService.java` - new method with config support | 1h |
+| BN-C04 | Add RM config option | ✅ DONE | Supports RM_RECEIPT operation type in config | 0.5h |
+| BN-C05 | Update ReceiveMaterialService | ✅ DONE | Now calls `batchNumberService.generateRmBatchNumber()` | 0.5h |
+| BN-C06 | Update frontend receive material form | ✅ DONE | Already had supplier fields (supplierBatchNumber, supplierId) | 0h |
+
+**Key Changes:**
+- Added `generateRmBatchNumber(materialId, receivedDate, supplierBatchNumber)` to BatchNumberService
+- Supports configurable RM batch numbers via RM_RECEIPT operation type
+- Includes optional supplier lot in batch number (sanitized, max 15 chars)
+- Falls back to standard format: `RM-{MATERIALCODE}-{YYYYMMDD}-{SEQ}`
+- Added 6 new unit tests for RM batch number generation
+
+### Phase 11D: Multi-Batch Production Verification (Priority: MEDIUM) - 1.5h ⚠️ DEFERRED
+
+| Task ID | Task | Status | Files | Effort |
+|---------|------|--------|-------|--------|
+| BN-D01 | Review batch size config usage | ✅ VERIFIED | `BatchSizeService.java` exists but NOT integrated into ProductionService | 0.5h |
+| BN-D02 | Verify multi-batch creation | DEFERRED | Requires ProductionService integration first | 0.5h |
+| BN-D03 | Sequential batch numbers | DEFERRED | Requires ProductionService integration first | 0.5h |
+
+**Finding:** `BatchSizeService` exists with complete logic for:
+- Calculating batch sizes based on min/max/preferred configuration
+- Finding applicable config by operation/material/product/equipment type
+- Splitting total quantity into multiple batches with partial batch support
+
+**Gap:** Service is not currently used by ProductionService. Requires integration work (Task #98).
+
+### Phase 11E: Configuration Clarification (Priority: LOW) - 2h
+
+| Task ID | Task | Status | Files | Effort |
+|---------|------|--------|-------|--------|
+| BN-E01 | Clarify product_sku vs material_id | PENDING | Document decision | 0.5h |
+| BN-E02 | Add material_id column (if needed) | PENDING | SQL patch + service update | 1h |
+| BN-E03 | Update config precedence logic | PENDING | Adjust findMatchingConfig() | 0.5h |
+
+### Phase 11F: Testing (Priority: HIGH) - 9h ✅ COMPREHENSIVE TESTS COMPLETE
+
+| Task ID | Task | Status | Files | Effort |
+|---------|------|--------|-------|--------|
+| BN-F01 | Unit tests: generation methods | ✅ DONE | `BatchNumberServiceTest.java` - 22 tests | 2h |
+| BN-F02 | Unit tests: config precedence | ✅ DONE | Tests with/without config, fallback patterns | 1h |
+| BN-F03 | Unit tests: sequence reset | ✅ DONE | DAILY/MONTHLY/YEARLY/NEVER all tested | 1h |
+| BN-F04 | Comprehensive BatchNumber tests | ✅ DONE | `BatchNumberServiceComprehensiveTest.java` - 41 tests | 2h |
+| BN-F05 | Comprehensive BatchService tests | ✅ DONE | `BatchServiceComprehensiveTest.java` - 30+ tests | 2h |
+| BN-F06 | Comprehensive Allocation tests | ✅ DONE | `BatchAllocationServiceComprehensiveTest.java` - 30+ tests | 2h |
+
+### Comprehensive Test Files Created (2026-02-06)
+
+**1. BatchNumberServiceComprehensiveTest.java (~41 tests)**
+Per MES Batch Number Creation Specification, covers:
+- Production Batch Numbers (6 tests) - full config, fallback, sequence increment
+- RM Batch Numbers (8 tests) - fallback format, supplier lot, sanitization, truncation
+- Split Batch Numbers (5 tests) - various indices, complex sources
+- Merge Batch Numbers (2 tests) - fallback format, uniqueness
+- Configuration Precedence (3 tests) - operation > material > product > default
+- Sequence Reset Policies (4 tests) - DAILY, MONTHLY, YEARLY, NEVER
+- Edge Cases (6 tests) - null/empty inputs, special chars, precision
+- Error Handling (2 tests) - database failure, null date
+- Preview Functionality (3 tests) - no increment, placeholder format
+- Configuration Retrieval (2 tests) - list active configs
+
+**2. BatchServiceComprehensiveTest.java (~30+ tests)**
+Per MES Batch Management Specification, covers:
+- Split Edge Cases (7 tests) - exact quantity, precision, zero/negative, max portions
+- Merge Edge Cases (5 tests) - different units, large quantities, duplicates
+- Quantity Adjustment (6 tests) - zero, precision, increase, empty reason
+- Status Transitions (3 tests) - splittable vs terminal statuses
+- Genealogy Edge Cases (3 tests) - orphan batch, multiple parents/children
+- Data Integrity (3 tests) - material ID preserved, unit preserved, relations
+
+**3. BatchAllocationServiceComprehensiveTest.java (~30+ tests)**
+Per MES Batch Allocation Specification, covers:
+- Allocation Quantity Edge Cases (6 tests) - exact, precision, zero, negative, large
+- Multiple Allocations (3 tests) - same batch different orders, duplicates
+- Partial Allocations (2 tests) - remaining calculation
+- Release and Re-allocate (3 tests) - restore quantity, prevent double release
+- Update Allocation Quantity (5 tests) - increase, decrease, released status
+- Available Quantity Calculations (5 tests) - full, zero, status checks
+- Error Handling (4 tests) - clear error messages with context
+- Query Operations (5 tests) - empty lists, multiple results, filtering
+
+**Total: ~100+ new tests for batch operations**
+
+### Phase 11G: Documentation (Priority: LOW) - 1.5h
+
+| Task ID | Task | Status | Files | Effort |
+|---------|------|--------|-------|--------|
+| BN-G01 | Update CLAUDE.md | PENDING | Add batch number section | 0.5h |
+| BN-G02 | API documentation | PENDING | Document preview-number endpoint | 0.5h |
+| BN-G03 | Config documentation | PENDING | Document batch_number_config options | 0.5h |
+
+### Sprint Plan
+
+**Sprint 1: Core Compliance (10h) ✅ COMPLETE (2026-02-06)**
+- ✅ Phase 11A: Schema & Entity Updates - Already existed, minimal work
+- ✅ Phase 11B: Audit Trail Integration - logBatchNumberGenerated() method added
+- ✅ Phase 11F: Unit Tests BN-F01 to BN-F03 - 16 comprehensive tests pass
+
+**Sprint 2: Extended Features (10.25h)** ✅ IN PROGRESS
+- ✅ Phase 11C: RM Receipt Enhancement - generateRmBatchNumber() added with 6 tests
+- ⚠️ Phase 11D: Multi-Batch Verification - DEFERRED (BatchSizeService exists but not integrated)
+- 🔄 Phase 11F: Integration + E2E Tests BN-F04 to BN-F07 (5h) - pending
+
+**Sprint 3: Polish (3.5h)**
+- Phase 11E: Configuration Clarification (2h)
+- Phase 11G: Documentation (1.5h)
+
+### Acceptance Criteria
+
+**Sprint 1 (Core): ✅ ALL COMPLETE**
+- [x] All new batches have `generatedAtOperationId` populated (via ProductionService, BatchService)
+- [x] Batch number generation logged to AuditTrail (logBatchNumberGenerated method)
+- [x] Audit record includes: batchNumber, timestamp, operationId, userId, configName (details field)
+- [x] Unit tests pass for all generation scenarios (16 tests in BatchNumberServiceTest)
+
+**Sprint 2 (Extended): ✅ MOSTLY COMPLETE**
+- [x] RM receipt captures supplier lot number (already implemented)
+- [x] Supplier lot included in batch number when configured (sanitized, max 15 chars)
+- [x] `generateRmBatchNumber()` method with RM_RECEIPT config support
+- [x] 6 new unit tests for RM batch number generation (22 total in BatchNumberServiceTest)
+- [ ] Multi-batch creation respects batch size config (DEFERRED - BatchSizeService not integrated)
+- [ ] Concurrent generation produces no duplicates (needs integration test)
+
+**Sprint 3 (Documentation):**
+- [ ] CLAUDE.md updated with batch number section
+- [ ] API and config documentation complete
 
 ---
 
