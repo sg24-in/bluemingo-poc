@@ -37,7 +37,7 @@ public interface ProductionConfirmationRepository extends JpaRepository<Producti
     @Query("SELECT pc FROM ProductionConfirmation pc " +
            "LEFT JOIN FETCH pc.operation op " +
            "LEFT JOIN FETCH op.process p " +
-           "LEFT JOIN FETCH p.orderLineItem oli " +
+           "LEFT JOIN FETCH op.orderLineItem oli " +
            "ORDER BY pc.createdOn DESC")
     List<ProductionConfirmation> findRecentConfirmations(Pageable pageable);
 

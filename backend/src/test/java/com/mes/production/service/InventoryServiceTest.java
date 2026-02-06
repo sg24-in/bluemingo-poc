@@ -37,6 +37,9 @@ class InventoryServiceTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private InventoryStateValidator stateValidator;
+
     @InjectMocks
     private InventoryService inventoryService;
 
@@ -309,6 +312,8 @@ class InventoryServiceTest {
             setupSecurityContext();
             testInventory.setState(Inventory.STATE_BLOCKED);
             when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+            doThrow(new IllegalStateException("Inventory is already blocked"))
+                    .when(stateValidator).validateBlock(any(Inventory.class));
 
             // Act & Assert
             RuntimeException exception = assertThrows(RuntimeException.class,
@@ -324,6 +329,8 @@ class InventoryServiceTest {
             setupSecurityContext();
             testInventory.setState(Inventory.STATE_CONSUMED);
             when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+            doThrow(new IllegalStateException("Cannot block consumed inventory"))
+                    .when(stateValidator).validateBlock(any(Inventory.class));
 
             // Act & Assert
             RuntimeException exception = assertThrows(RuntimeException.class,
@@ -339,6 +346,8 @@ class InventoryServiceTest {
             setupSecurityContext();
             testInventory.setState(Inventory.STATE_SCRAPPED);
             when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+            doThrow(new IllegalStateException("Cannot block scrapped inventory"))
+                    .when(stateValidator).validateBlock(any(Inventory.class));
 
             // Act & Assert
             RuntimeException exception = assertThrows(RuntimeException.class,
@@ -391,6 +400,8 @@ class InventoryServiceTest {
             setupSecurityContext();
             testInventory.setState(Inventory.STATE_AVAILABLE);
             when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+            doThrow(new IllegalStateException("Inventory is not blocked"))
+                    .when(stateValidator).validateUnblock(any(Inventory.class));
 
             // Act & Assert
             RuntimeException exception = assertThrows(RuntimeException.class,
@@ -458,6 +469,8 @@ class InventoryServiceTest {
             setupSecurityContext();
             testInventory.setState(Inventory.STATE_SCRAPPED);
             when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+            doThrow(new IllegalStateException("Inventory is already scrapped"))
+                    .when(stateValidator).validateScrap(any(Inventory.class));
 
             // Act & Assert
             RuntimeException exception = assertThrows(RuntimeException.class,
@@ -473,6 +486,8 @@ class InventoryServiceTest {
             setupSecurityContext();
             testInventory.setState(Inventory.STATE_CONSUMED);
             when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+            doThrow(new IllegalStateException("Cannot scrap consumed inventory"))
+                    .when(stateValidator).validateScrap(any(Inventory.class));
 
             // Act & Assert
             RuntimeException exception = assertThrows(RuntimeException.class,

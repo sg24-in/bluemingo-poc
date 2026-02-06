@@ -43,6 +43,9 @@ class DashboardServiceTest {
     private ProductionConfirmationRepository confirmationRepository;
 
     @Mock
+    private BatchRepository batchRepository;
+
+    @Mock
     private AuditService auditService;
 
     @InjectMocks

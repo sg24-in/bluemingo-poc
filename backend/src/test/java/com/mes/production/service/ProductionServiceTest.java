@@ -72,6 +72,9 @@ class ProductionServiceTest {
     @Mock
     private BatchNumberService batchNumberService;
 
+    @Mock
+    private InventoryStateValidator inventoryStateValidator;
+
     @InjectMocks
     private ProductionService productionService;
 

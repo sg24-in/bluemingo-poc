@@ -141,7 +141,9 @@
       "Bash(cmd.exe /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat compileTestJava > build_output.txt 2>&1 && type build_output.txt\")",
       "Bash(gradlew compileJava:*)",
       "Bash(./gradlew bootRun:*)",
-      "Bash(del \"D:\\\\repositories\\\\bluemingo-poc\\\\backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\entity\\\\ProcessTemplate.java\")"
+      "Bash(del \"D:\\\\repositories\\\\bluemingo-poc\\\\backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\entity\\\\ProcessTemplate.java\")",
+      "Bash(./gradlew clean:*)",
+      "Bash(./gradlew compileTestJava:*)"
     ]
   }
 }
