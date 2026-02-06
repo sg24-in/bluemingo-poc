@@ -191,6 +191,11 @@ public class BatchService {
                 .build();
     }
 
+    // Statuses that allow split operations
+    private static final java.util.Set<String> SPLITTABLE_STATUSES = java.util.Set.of(
+            "AVAILABLE", "RESERVED", "BLOCKED", "PRODUCED", "QUALITY_PENDING"
+    );
+
     /**
      * Split a batch into multiple smaller batches
      */
@@ -201,9 +206,23 @@ public class BatchService {
         Batch sourceBatch = batchRepository.findById(request.getSourceBatchId())
                 .orElseThrow(() -> new RuntimeException("Batch not found: " + request.getSourceBatchId()));
 
-        // Validate batch is available
-        if (!"AVAILABLE".equals(sourceBatch.getStatus())) {
-            throw new RuntimeException("Only AVAILABLE batches can be split");
+        // Validate batch status allows split
+        if (!SPLITTABLE_STATUSES.contains(sourceBatch.getStatus())) {
+            throw new RuntimeException("Batch with status " + sourceBatch.getStatus() + " cannot be split. " +
+                    "Only batches with status AVAILABLE, RESERVED, BLOCKED, PRODUCED, or QUALITY_PENDING can be split.");
+        }
+
+        // Validate portions list is not empty
+        if (request.getPortions() == null || request.getPortions().isEmpty()) {
+            throw new RuntimeException("At least one portion is required for splitting");
+        }
+
+        // Validate each portion has positive quantity
+        for (BatchDTO.SplitPortion portion : request.getPortions()) {
+            if (portion.getQuantity() == null ||
+                    portion.getQuantity().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("All split portions must have a positive quantity");
+            }
         }
 
         // Calculate total split quantity
@@ -302,6 +321,12 @@ public class BatchService {
             throw new RuntimeException("At least 2 batches are required for merging");
         }
 
+        // Validate no duplicate batch IDs
+        java.util.Set<Long> uniqueIds = new java.util.HashSet<>(request.getSourceBatchIds());
+        if (uniqueIds.size() != request.getSourceBatchIds().size()) {
+            throw new RuntimeException("Duplicate batch IDs are not allowed in merge request");
+        }
+
         // Load source batches
         java.util.List<Batch> sourceBatches = new java.util.ArrayList<>();
         for (Long batchId : request.getSourceBatchIds()) {
@@ -323,6 +348,10 @@ public class BatchService {
         for (Batch batch : sourceBatches) {
             if (!materialId.equals(batch.getMaterialId())) {
                 throw new RuntimeException("All batches must have the same material ID for merging");
+            }
+            if (!unit.equals(batch.getUnit())) {
+                throw new RuntimeException("All batches must have the same unit for merging. " +
+                        "Expected: " + unit + ", found: " + batch.getUnit());
             }
         }
 
@@ -642,6 +671,11 @@ public class BatchService {
         String currentUser = getCurrentUser();
         Batch batch = batchRepository.findById(batchId)
                 .orElseThrow(() -> new RuntimeException("Batch not found: " + batchId));
+
+        // Validate reason is provided (mandatory per MES spec)
+        if (request.getReason() == null || request.getReason().trim().isEmpty()) {
+            throw new RuntimeException("A reason is required for quantity adjustments");
+        }
 
         // Validate batch state
         if (Batch.STATUS_CONSUMED.equals(batch.getStatus())) {

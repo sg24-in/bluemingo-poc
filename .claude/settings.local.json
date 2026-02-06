@@ -143,7 +143,9 @@
       "Bash(./gradlew bootRun:*)",
       "Bash(del \"D:\\\\repositories\\\\bluemingo-poc\\\\backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\entity\\\\ProcessTemplate.java\")",
       "Bash(./gradlew clean:*)",
-      "Bash(./gradlew compileTestJava:*)"
+      "Bash(./gradlew compileTestJava:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(./gradlew.bat:*)"
     ]
   }
 }

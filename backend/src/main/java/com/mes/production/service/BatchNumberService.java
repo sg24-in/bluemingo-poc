@@ -130,8 +130,8 @@ public class BatchNumberService {
             return generateFromConfig(config, "MERGE");
         }
 
-        // Fallback
-        return "MRG-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        // Fallback - use milliseconds for uniqueness
+        return "MRG-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
     }
 
     /**
