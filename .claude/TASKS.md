@@ -1,13 +1,44 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - E2E Tests & Routing Fixes
+**Session Status:** Active - Routing Module Implementation COMPLETE
 
 ---
 
 ## Latest Session Changes (2026-02-07 - Continued)
 
-### Route Fix & E2E Tests - IN PROGRESS ✅
+### Routing Configuration Module - COMPLETE ✅
+
+**Backend Step CRUD Endpoints (Already existed):**
+- `POST /api/routing/{id}/steps` - Create routing step
+- `PUT /api/routing/steps/{stepId}` - Update routing step
+- `DELETE /api/routing/steps/{stepId}` - Delete routing step
+- `POST /api/routing/{id}/reorder` - Reorder steps
+
+**Frontend Routing Module Created:**
+- `routing-list.component.ts/html/css` - List with summary cards, status filters, activation actions
+- `routing-form.component.ts/html/css` - Create/edit form with inline step management
+- Step modal for add/edit with batch behavior flags (producesOutputBatch, allowsSplit, allowsMerge)
+- Move up/down buttons for step reordering
+- Mandatory step delete protection
+
+**API Service Methods Added:**
+- `createRoutingStep()`, `updateRoutingStep()`, `deleteRoutingStep()`, `reorderRoutingSteps()`
+
+**Admin Sidebar Updated:**
+- Added "Routing" link under Production group at `/manage/routing`
+
+**Documentation Updated:**
+- `CLAUDE.md` - Added Routing endpoints section, updated Frontend Route Structure
+- `MES-Routing-Configuration-Tasks.md` - Marked all implementation tasks as complete
+
+**Pending:**
+- Frontend spec tests for routing components
+- E2E tests for routing CRUD flow
+
+---
+
+### Route Fix & E2E Tests - COMPLETE ✅
 
 **Fixed `/manage/processes` Route:**
 - Added missing route in `app-routing.module.ts` for `/manage/processes`
@@ -1310,8 +1341,8 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 |---|------|--------|----------|-------|
 | R20 | ProcessTemplate list page | PENDING | MEDIUM | /manage/process-templates |
 | R21 | ProcessTemplate form | PENDING | MEDIUM | Create/edit |
-| R22 | Routing designer page | PENDING | LOW | Visual step editor |
-| R23 | Routing step editor | PENDING | MEDIUM | Batch flag configuration |
+| R22 | Routing designer page | ✅ DONE | LOW | routing-list.component + routing-form.component |
+| R23 | Routing step editor | ✅ DONE | MEDIUM | Step modal with batch flags, reordering |
 
 ### Phase 9F: Testing
 
@@ -1321,6 +1352,7 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 | R25 | Integration tests for instantiation | PENDING | HIGH | Operation creation |
 | R26 | E2E tests for routing workflow | PENDING | MEDIUM | Full flow |
 | R27 | Batch behavior validation tests | PENDING | HIGH | Flag enforcement |
+| R28 | Routing frontend spec tests | PENDING | MEDIUM | routing-list.spec.ts, routing-form.spec.ts |
 
 ---
 

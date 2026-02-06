@@ -51,7 +51,12 @@
 MainLayoutComponent (with header):
   /dashboard, /orders, /production, /inventory, /batches, /holds, /equipment
 AdminLayoutComponent (with header + sidebar):
-  /manage/customers, /manage/products, /manage/materials
+  Master Data:
+    /manage/customers, /manage/products, /manage/materials
+  Production:
+    /manage/processes, /manage/routing, /manage/equipment, /manage/operators, /manage/bom
+  System:
+    /manage/users, /manage/config, /manage/audit
 ```
 
 ### Testing
@@ -717,6 +722,26 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 | `POST /api/equipment/{id}/maintenance/end` | End maintenance |
 | `POST /api/equipment/{id}/hold` | Put on hold |
 | `POST /api/equipment/{id}/release` | Release from hold |
+
+### Routing (NEW - Design-Time Configuration)
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/routing` | List all routings (optional: ?status=ACTIVE) |
+| `GET /api/routing/{id}` | Get routing by ID with steps |
+| `GET /api/routing/process/{processId}` | Get routing for a process |
+| `POST /api/routing` | Create new routing |
+| `PUT /api/routing/{id}` | Update routing (name, type) |
+| `DELETE /api/routing/{id}` | Delete routing (soft delete) |
+| `POST /api/routing/{id}/activate` | Activate routing (deactivates others) |
+| `POST /api/routing/{id}/deactivate` | Deactivate routing |
+| `POST /api/routing/{id}/hold` | Put routing on hold |
+| `POST /api/routing/{id}/release` | Release routing from hold |
+| `GET /api/routing/{id}/status` | Get routing status summary |
+| `GET /api/routing/{id}/locked` | Check if routing is locked |
+| `POST /api/routing/{id}/steps` | **Create** routing step |
+| `PUT /api/routing/steps/{stepId}` | **Update** routing step |
+| `DELETE /api/routing/steps/{stepId}` | **Delete** routing step |
+| `POST /api/routing/{id}/reorder` | Reorder routing steps |
 
 ### Master Data
 | Endpoint | Description |
