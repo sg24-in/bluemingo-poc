@@ -29,7 +29,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Processes - Table or Cards View', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         const table = page.locator('table');
@@ -52,7 +52,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Processes - Status Summary', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         // Check for status summary cards or badges
@@ -65,7 +65,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Processes - Status Filter', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         const statusFilter = page.locator('select#status, select[name="status"], select#statusFilter');
@@ -87,7 +87,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Processes - Search', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         const searchInput = page.locator('input[type="search"], input[placeholder*="search"], input#search');
@@ -106,7 +106,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     // ============================================
 
     await runTest('Processes - Detail View', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         // Try clicking on a process to view details
@@ -139,7 +139,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
 
     await runTest('Quality Pending - Page Load', async () => {
         // Try quality pending route
-        await page.goto(`${config.baseUrl}/#/quality`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         await screenshots.capture(page, 'quality-pending-list');
@@ -152,7 +152,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Quality Pending - Table View', async () => {
-        await page.goto(`${config.baseUrl}/#/quality`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         const table = page.locator('table');
@@ -175,7 +175,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Quality Pending - Decision Modal', async () => {
-        await page.goto(`${config.baseUrl}/#/quality`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         // Try to open decision modal
@@ -205,7 +205,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     // ============================================
 
     await runTest('Processes - Filter QUALITY_PENDING', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         const statusFilter = page.locator('select#status, select[name="status"]');
@@ -222,7 +222,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Processes - Filter COMPLETED', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
         const statusFilter = page.locator('select#status, select[name="status"]');
@@ -244,7 +244,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
 
     if (submitActions) {
         await runTest('Quality - Approve Process (Submit)', async () => {
-            await page.goto(`${config.baseUrl}/#/quality`, { waitUntil: 'networkidle' });
+            await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
             await page.waitForTimeout(1000);
 
             const approveButton = page.locator('button:has-text("Approve")').first();
@@ -278,7 +278,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
         }, page, results, screenshots);
 
         await runTest('Quality - Reject Process (Submit)', async () => {
-            await page.goto(`${config.baseUrl}/#/quality`, { waitUntil: 'networkidle' });
+            await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
             await page.waitForTimeout(1000);
 
             const rejectButton = page.locator('button:has-text("Reject")').first();

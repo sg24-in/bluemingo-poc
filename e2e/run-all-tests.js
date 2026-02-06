@@ -35,6 +35,11 @@ const { runEntityCrudTests } = require('./tests/12-entity-crud.test');
 const { runBomCrudTests } = require('./tests/13-bom-crud.test');
 const { runConfigCrudTests } = require('./tests/14-config-crud.test');
 const { runAuditHistoryTests } = require('./tests/15-audit-history.test');
+const { runOperatorsTests } = require('./tests/16-operators.test');
+const { runOperationsTests } = require('./tests/17-operations.test');
+const { runProcessesTests } = require('./tests/18-processes.test');
+const { runUserProfileTests } = require('./tests/19-user-profile.test');
+const { runUsersTests } = require('./tests/20-users.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -134,6 +139,11 @@ async function runAllTests() {
         await runBomCrudTests(page, screenshots, results, runTest, submitActions);
         await runConfigCrudTests(page, screenshots, results, runTest, submitActions);
         await runAuditHistoryTests(page, screenshots, results, runTest, submitActions);
+        await runOperatorsTests(page, screenshots, results, runTest, submitActions);
+        await runOperationsTests(page, screenshots, results, runTest, submitActions);
+        await runProcessesTests(page, screenshots, results, runTest, submitActions);
+        await runUserProfileTests(page, screenshots, results, runTest, submitActions);
+        await runUsersTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
@@ -149,11 +159,17 @@ async function runAllTests() {
                 { path: '/#/production/confirm', name: 'production' },
                 { path: '/#/holds', name: 'holds' },
                 { path: '/#/equipment', name: 'equipment' },
-                { path: '/#/quality', name: 'quality' },
+                { path: '/#/processes/list', name: 'processes' },
+                { path: '/#/processes/quality-pending', name: 'quality-pending' },
+                { path: '/#/operations', name: 'operations' },
+                { path: '/#/profile', name: 'profile' },
+                { path: '/#/change-password', name: 'change-password' },
                 { path: '/#/manage/customers', name: 'admin-customers' },
                 { path: '/#/manage/materials', name: 'admin-materials' },
                 { path: '/#/manage/products', name: 'admin-products' },
                 { path: '/#/manage/bom', name: 'admin-bom' },
+                { path: '/#/manage/operators', name: 'admin-operators' },
+                { path: '/#/manage/users', name: 'admin-users' },
                 { path: '/#/manage/config/hold-reasons', name: 'config-hold-reasons' },
                 { path: '/#/manage/config/delay-reasons', name: 'config-delay-reasons' },
                 { path: '/#/manage/config/process-params', name: 'config-process-params' },
