@@ -50,7 +50,8 @@ describe('DashboardComponent', () => {
       'getAllBatches',
       'getAllInventory',
       'getOrders',
-      'getQualityPendingProcesses'
+      'getQualityPendingProcesses',
+      'getAllOperations'
     ]);
 
     const chartSpy = jasmine.createSpyObj('ChartService', [
@@ -83,6 +84,10 @@ describe('DashboardComponent', () => {
     apiServiceSpy.getAllInventory.and.returnValue(of(mockInventory as any));
     apiServiceSpy.getQualityPendingProcesses.and.returnValue(of([]));
     apiServiceSpy.getOrders.and.returnValue(of(mockOrders as any));
+    apiServiceSpy.getAllOperations.and.returnValue(of([
+      { operationId: 1, operationName: 'Melting', status: 'CONFIRMED' },
+      { operationId: 2, operationName: 'Casting', status: 'IN_PROGRESS' }
+    ] as any));
 
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;

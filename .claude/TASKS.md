@@ -1,7 +1,46 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Architecture Refactoring Complete (MES Consolidated Spec aligned)
+**Session Status:** Active - Demo Schema & Frontend Tests Fixed
+
+---
+
+## Latest Session Changes (2026-02-07)
+
+### Demo Schema Alignment - COMPLETE ✅
+
+Updated `demo/data.sql` to match MES Consolidated Specification:
+- Processes now use `(process_id, process_name, status, created_by)` - NO `order_line_id` FK
+- Operations now include `order_line_id` column for runtime order linking
+- Added comments explaining design-time (Process) vs runtime (Operation→OrderLineItem) model
+
+### Documentation Updates - COMPLETE ✅
+
+**`docs/DEV-GUIDE.md`:**
+- Added "Demo Mode Schema Alignment" section explaining how to keep demo/schema.sql in sync with patches
+- Added "Alternative: Using Patches in Demo Mode" section recommending PostgreSQL for demo
+- Documented entity model per MES Consolidated Spec
+
+**`.claude/CLAUDE.md`:**
+- Added "Demo Mode Schema Alignment (IMPORTANT)" to Database Setup section
+- Documented which files must stay aligned and when to update them
+
+### Frontend Tests - ALL PASSING ✅
+
+Fixed 19 failing frontend tests:
+1. **MaterialDetailComponent** - Fixed expected labels ('Finished Goods', 'Work In Progress')
+2. **AuditListComponent** - Fixed expected icon ('circle-plus' instead of 'plus-circle')
+3. **DashboardComponent** - Added missing `getAllOperations` mock
+4. **BatchFormComponent** - Added missing `getBatchAdjustmentHistory` mock
+
+**Final Result:** 909/909 tests passing (0 failures)
+
+### Test Status Summary
+
+| Test Suite | Tests | Status |
+|------------|-------|--------|
+| Backend | 1073 | ✅ PASSING |
+| Frontend | 909 | ✅ PASSING |
 
 ---
 

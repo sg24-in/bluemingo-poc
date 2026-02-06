@@ -151,7 +151,7 @@ describe('AuditListComponent', () => {
   });
 
   it('should return correct action icon', () => {
-    expect(component.getActionIcon('CREATE')).toBe('plus-circle');
+    expect(component.getActionIcon('CREATE')).toBe('circle-plus');
     expect(component.getActionIcon('DELETE')).toBe('trash');
   });
 

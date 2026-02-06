@@ -133,7 +133,7 @@ describe('MaterialDetailComponent', () => {
   });
 
   it('should return correct material type label for FG', () => {
-    expect(component.getMaterialTypeLabel('FG')).toBe('Finished Good');
+    expect(component.getMaterialTypeLabel('FG')).toBe('Finished Goods');
   });
 
   it('should return correct material type label for IM', () => {
@@ -141,7 +141,7 @@ describe('MaterialDetailComponent', () => {
   });
 
   it('should return correct material type label for WIP', () => {
-    expect(component.getMaterialTypeLabel('WIP')).toBe('Work in Progress');
+    expect(component.getMaterialTypeLabel('WIP')).toBe('Work In Progress');
   });
 
   it('should deactivate active material', () => {
