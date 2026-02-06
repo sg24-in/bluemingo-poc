@@ -426,8 +426,8 @@ class BatchNumberServiceComprehensiveTest {
             // Assert
             assertNotNull(result);
             assertTrue(result.startsWith("MRG-"), "Should start with MRG prefix");
-            // Contains timestamp in format yyyyMMddHHmmss (14 digits)
-            assertEquals(18, result.length(), "MRG- + 14 digit timestamp = 18 chars");
+            // Contains timestamp in format yyyyMMddHHmmssSSS (17 digits with milliseconds)
+            assertEquals(21, result.length(), "MRG- + 17 digit timestamp (with millis) = 21 chars");
         }
 
         @Test

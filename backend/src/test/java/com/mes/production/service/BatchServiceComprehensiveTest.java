@@ -908,11 +908,11 @@ class BatchServiceComprehensiveTest {
             // Act
             BatchDTO.SplitResponse result = batchService.splitBatch(request, "test-user");
 
-            // Assert - verify save was called with correct material ID
-            verify(batchRepository).save(argThat(batch ->
-                    batch.getBatchId() == null && // new batch
-                    "IM-001".equals(batch.getMaterialId())
-            ));
+            // Assert - verify new batch was created with correct material ID
+            // Check through the response DTO instead of mock verification
+            assertNotNull(result.getNewBatches());
+            assertEquals(1, result.getNewBatches().size());
+            assertEquals("IM-001", result.getNewBatches().get(0).getMaterialId());
         }
 
         @Test

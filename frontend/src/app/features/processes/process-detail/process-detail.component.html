@@ -21,7 +21,6 @@
       <div class="card-header">
         <div class="header-title">
           <h2>{{ process.processName }}</h2>
-          <span class="sequence-badge">Stage {{ process.stageSequence }}</span>
         </div>
         <div class="header-badges">
           <span class="status-badge" [ngClass]="getStatusClass(process.status)">
@@ -47,14 +46,6 @@
           <div class="detail-row">
             <span class="label">Process Name</span>
             <span class="value">{{ process.processName }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Sequence</span>
-            <span class="value">{{ process.stageSequence }}</span>
-          </div>
-          <div class="detail-row" *ngIf="process.orderLineId">
-            <span class="label">Order Line ID</span>
-            <span class="value">{{ process.orderLineId }}</span>
           </div>
         </div>
 

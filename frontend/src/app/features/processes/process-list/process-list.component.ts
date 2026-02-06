@@ -86,6 +86,10 @@ export class ProcessListComponent implements OnInit {
     return status?.toLowerCase().replace(/_/g, '-') || '';
   }
 
+  getDecisionClass(decision: string | undefined): string {
+    return decision?.toLowerCase() || '';
+  }
+
   getOperationCount(process: Process): number {
     return process.operations?.length || 0;
   }

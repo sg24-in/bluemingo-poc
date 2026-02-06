@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
-**Last Updated:** 2026-02-06
-**Session Status:** Active - Batch Number Specification Sprint 2 (Phase 11C complete, 11D deferred)
+**Last Updated:** 2026-02-07
+**Session Status:** Active - Architecture Refactoring Complete (MES Consolidated Spec aligned)
 
 ---
 
@@ -987,6 +987,32 @@ GAP-001 and GAP-006 also completed.
 ---
 
 ## Next Steps
+
+### Architecture Refactoring Complete (2026-02-07)
+
+**MES Consolidated Specification Alignment:**
+
+Per MES Consolidated Spec, the data model was refactored:
+- **Process** = Design-time entity only (ProcessID, ProcessName, Status)
+- **Operation** = Links to Process (design-time) AND OrderLineItem (runtime)
+- Removed all `process_instances` references
+- Removed `ProcessTemplate` service and files
+
+**Fixes Applied:**
+1. Created SQL patch `031_process_usage_decision.sql` - Adds missing `usage_decision` column
+2. Fixed `BatchService` validations:
+   - Split now allows AVAILABLE, RESERVED, BLOCKED, PRODUCED, QUALITY_PENDING statuses
+   - Split validates non-empty portions with positive quantities
+   - Merge validates no duplicate batch IDs and matching units
+   - AdjustQuantity requires non-empty reason
+3. Fixed `BatchNumberService` merge fallback format - uses milliseconds for uniqueness
+4. Updated comprehensive tests to match new behaviors
+
+**Test Results:** ✅ 1073/1073 tests passing
+
+**Application Status:** ✅ Starts successfully in demo mode, authentication working
+
+---
 
 **Phase 6 Complete:** All backend CRUD (6A/6B) and frontend config pages (6C) are done.
 - 6A: HoldReasons, DelayReasons, ProcessParametersConfig, BatchNumberConfig — DONE
