@@ -148,12 +148,12 @@ class RoutingServiceTest {
 
     @Test
     @DisplayName("Should get active routing for process")
-    void getActiveRoutingForTemplate_ValidId_ReturnsRouting() {
+    void getActiveRoutingForProcess_ValidId_ReturnsRouting() {
         // Arrange
-        when(routingRepository.findActiveRoutingByTemplateWithSteps(1L)).thenReturn(Optional.of(testRouting));
+        when(routingRepository.findActiveRoutingByProcessWithSteps(1L)).thenReturn(Optional.of(testRouting));
 
         // Act
-        Optional<Routing> result = routingService.getActiveRoutingForTemplate(1L);
+        Optional<Routing> result = routingService.getActiveRoutingForProcess(1L);
 
         // Assert
         assertTrue(result.isPresent());

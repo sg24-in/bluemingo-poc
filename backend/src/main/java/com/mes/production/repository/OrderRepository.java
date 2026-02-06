@@ -19,17 +19,16 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     // Paginated versions
     Page<Order> findByStatus(String status, Pageable pageable);
 
+    // Per MES Spec: Operations are directly on OrderLineItem (not via Process)
     @Query("SELECT DISTINCT o FROM Order o " +
            "JOIN o.lineItems li " +
-           "JOIN li.processes p " +
-           "JOIN p.operations op " +
+           "JOIN li.operations op " +
            "WHERE op.status = 'READY'")
     List<Order> findOrdersWithReadyOperations();
 
     @Query("SELECT DISTINCT o FROM Order o " +
            "JOIN o.lineItems li " +
-           "JOIN li.processes p " +
-           "JOIN p.operations op " +
+           "JOIN li.operations op " +
            "WHERE op.status = 'READY'")
     Page<Order> findOrdersWithReadyOperations(Pageable pageable);
 

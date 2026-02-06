@@ -51,10 +51,11 @@ public class RoutingService {
 
     /**
      * Get active routing for a process template (design-time)
+     * Note: Uses ProcessId since Routing links to Process via ProcessID FK
      */
     @Transactional(readOnly = true)
-    public Optional<Routing> getActiveRoutingForTemplate(Long templateId) {
-        return routingRepository.findActiveRoutingByTemplateWithSteps(templateId);
+    public Optional<Routing> getActiveRoutingForTemplate(Long processId) {
+        return routingRepository.findActiveRoutingByProcessWithSteps(processId);
     }
 
     /**

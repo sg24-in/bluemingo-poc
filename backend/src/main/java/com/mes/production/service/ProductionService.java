@@ -73,9 +73,9 @@ public class ProductionService {
         // 2. Validate process parameters against configured min/max values
         if (request.getProcessParameters() != null && !request.getProcessParameters().isEmpty()) {
             String operationType = operation.getOperationType();
-            String productSku = process != null &&
-                    process.getOrderLineItem() != null ?
-                    process.getOrderLineItem().getProductSku() : null;
+            // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
+            String productSku = operation.getOrderLineItem() != null ?
+                    operation.getOrderLineItem().getProductSku() : null;
 
             ProcessParameterService.ValidationResult paramValidation =
                     processParameterService.validateParameters(operationType, productSku, request.getProcessParameters());
@@ -103,8 +103,9 @@ public class ProductionService {
 
             // Use centralized state validator to check consumption is allowed
             // This validates: state is AVAILABLE or RESERVED (for this order), no active holds on inventory/batch
-            Long orderId = process != null && process.getOrderLineItem() != null
-                    ? process.getOrderLineItem().getOrder().getOrderId()
+            // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
+            Long orderId = operation.getOrderLineItem() != null && operation.getOrderLineItem().getOrder() != null
+                    ? operation.getOrderLineItem().getOrder().getOrderId()
                     : null;
             inventoryStateValidator.validateConsumption(inventory, orderId);
 
@@ -315,10 +316,10 @@ public class ProductionService {
 
     private Batch generateOutputBatch(Operation operation, BigDecimal quantity, String currentUser) {
         // Get product SKU for configuration lookup
+        // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
         String productSku = null;
-        com.mes.production.entity.Process process = operation.getProcess();
-        if (process != null && process.getOrderLineItem() != null) {
-            productSku = process.getOrderLineItem().getProductSku();
+        if (operation.getOrderLineItem() != null) {
+            productSku = operation.getOrderLineItem().getProductSku();
         }
 
         // Generate batch number using configurable service (GAP-005)

@@ -124,11 +124,12 @@ class ProductionControllerTest {
                 .quantity(new BigDecimal("1000"))
                 .order(order)
                 .build();
+        // Process is design-time only (no OrderLineItem reference)
         com.mes.production.entity.Process process = com.mes.production.entity.Process.builder()
                 .processId(1L)
                 .processName("Melting")
-                .orderLineItem(lineItem)
                 .build();
+        // Operation links to both Process (design-time) and OrderLineItem (runtime)
         Operation operation = Operation.builder()
                 .operationId(1L)
                 .operationName("Melt Iron")
@@ -136,6 +137,7 @@ class ProductionControllerTest {
                 .operationType("TRANSFORM")
                 .status("READY")
                 .process(process)
+                .orderLineItem(lineItem)
                 .build();
 
         when(productionService.getOperationDetails(1L)).thenReturn(operation);
