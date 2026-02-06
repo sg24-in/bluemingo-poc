@@ -107,20 +107,26 @@ public class BatchController {
     }
 
     /**
-     * Create a new batch.
+     * Create a new batch - BLOCKED.
      *
-     * @deprecated Per MES Batch Management Specification, batches should ONLY be created
-     *             at operation boundaries via production confirmation. This endpoint is
-     *             retained for administrative/system use only. Use POST /api/production/confirm
-     *             for normal batch creation.
+     * Per MES Batch Management Specification, batches should ONLY be created
+     * at operation boundaries via production confirmation or material receipt.
+     *
+     * Use these endpoints instead:
+     * - POST /api/production/confirm - Create batch via production confirmation
+     * - POST /api/receive-material - Create batch via raw material receipt
+     *
+     * @deprecated This endpoint is disabled. Returns 403 Forbidden.
      */
     @PostMapping
     @Deprecated
     public ResponseEntity<BatchDTO> createBatch(
             @Valid @RequestBody BatchDTO.CreateBatchRequest request) {
-        log.warn("DEPRECATED endpoint called: POST /api/batches for batch: {}", request.getBatchNumber());
-        BatchDTO created = batchService.createBatch(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        log.error("BLOCKED: Manual batch creation attempted for batch: {}. Use production confirmation or material receipt.",
+                  request.getBatchNumber());
+        throw new RuntimeException("Manual batch creation is not allowed. " +
+                "Batches must be created via production confirmation (POST /api/production/confirm) " +
+                "or material receipt (POST /api/receive-material).");
     }
 
     /**

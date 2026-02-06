@@ -1175,15 +1175,23 @@ Per MES Consolidated Spec, the data model was refactored:
 - Genealogy permanent and immutable
 - Every batch change auditable
 
-### Phase 8A: Critical Fixes (Block Manual Editing)
+### Phase 8A: Critical Fixes (Block Manual Editing) - ✅ COMPLETE
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| B01 | Remove/restrict `createBatch()` endpoint | PENDING | CRITICAL | Only allow via ProductionService |
-| B02 | Remove quantity from `UpdateBatchRequest` | PENDING | CRITICAL | Prevent direct edits |
-| B03 | Add `adjustQuantity()` with mandatory reason | PENDING | CRITICAL | For corrections only |
-| B04 | Update frontend - remove manual batch creation | PENDING | CRITICAL | Remove batch form create mode |
-| B05 | Add integration tests for batch immutability | PENDING | CRITICAL | Test restrictions |
+| B01 | Remove/restrict `createBatch()` endpoint | ✅ DONE | CRITICAL | Now throws error with guidance to use production/receive |
+| B02 | Remove quantity from `UpdateBatchRequest` | ✅ DONE | CRITICAL | Already removed - quantity field not in DTO |
+| B03 | Add `adjustQuantity()` with mandatory reason | ✅ DONE | CRITICAL | Exists: requires reason (10-500 chars) + adjustmentType |
+| B04 | Update frontend - remove manual batch creation | ✅ DONE | CRITICAL | "New Batch" button removed from list, form disabled |
+| B05 | Add integration tests for batch immutability | ⏳ PENDING | CRITICAL | Need to add tests for restrictions |
+
+**Implementation Details (2026-02-07):**
+- `BatchController.createBatch()` now throws RuntimeException with clear guidance
+- `UpdateBatchRequest` has no quantity field - use `adjustQuantity()` endpoint
+- `adjustQuantity()` requires: newQuantity, reason (10-500 chars), adjustmentType
+- `BatchQuantityAdjustment` table tracks all quantity changes with audit trail
+- Frontend batch-list "New Batch" button removed
+- Batch form quantity field disabled in edit mode with help text
 
 ### Phase 8B: Default Status & Workflow
 
