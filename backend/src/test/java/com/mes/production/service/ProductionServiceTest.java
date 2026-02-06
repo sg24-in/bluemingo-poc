@@ -108,7 +108,7 @@ class ProductionServiceTest {
         testProcess = Process.builder()
                 .processId(1L)
                 .orderLineItem(testOrderLine)
-                .stageName("Test Stage")
+                .processName("Test Stage")
                 .status("IN_PROGRESS")
                 .build();
 

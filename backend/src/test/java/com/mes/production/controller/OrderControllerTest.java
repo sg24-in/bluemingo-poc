@@ -58,7 +58,7 @@ class OrderControllerTest {
     void setUp() {
         OrderDTO.ProcessDTO processDTO = OrderDTO.ProcessDTO.builder()
                 .processId(1L)
-                .stageName("Melting")
+                .processName("Melting")
                 .stageSequence(1)
                 .status("IN_PROGRESS")
                 .operations(List.of(

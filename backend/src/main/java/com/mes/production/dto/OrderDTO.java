@@ -46,7 +46,7 @@ public class OrderDTO {
     @AllArgsConstructor
     public static class ProcessDTO {
         private Long processId;
-        private String stageName;
+        private String processName;
         private Integer stageSequence;
         private String status;
         private List<OperationDTO> operations;

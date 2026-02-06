@@ -27,7 +27,7 @@ describe('OrderDetailComponent', () => {
       quantity: 100,
       processes: [{
         processId: 1,
-        stageName: 'Melting',
+        processName: 'Melting',
         status: 'IN_PROGRESS',
         operations: [{
           operationId: 1,

@@ -157,7 +157,7 @@ export class HoldListComponent implements OnInit {
               if (process.status !== 'ON_HOLD' && process.status !== 'COMPLETED') {
                 this.processes.push({
                   id: process.processId,
-                  name: `${process.stageName} (Order: ${order.orderId})`
+                  name: `${process.processName} (Order: ${order.orderId})`
                 });
               }
             });

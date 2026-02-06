@@ -100,7 +100,7 @@ export class QualityPendingComponent implements OnInit {
     if (this.decisionType === 'accept') {
       this.apiService.acceptProcess(this.selectedProcess.processId, this.notes).subscribe({
         next: (response) => {
-          this.success = `Process ${this.selectedProcess?.stageName} accepted and marked as completed`;
+          this.success = `Process ${this.selectedProcess?.processName} accepted and marked as completed`;
           this.closeDecisionModal();
           this.loadProcesses();
           this.processing = false;
@@ -114,7 +114,7 @@ export class QualityPendingComponent implements OnInit {
     } else {
       this.apiService.rejectProcess(this.selectedProcess.processId, this.rejectReason, this.notes).subscribe({
         next: (response) => {
-          this.success = `Process ${this.selectedProcess?.stageName} rejected`;
+          this.success = `Process ${this.selectedProcess?.processName} rejected`;
           this.closeDecisionModal();
           this.loadProcesses();
           this.processing = false;
@@ -135,7 +135,7 @@ export class QualityPendingComponent implements OnInit {
     // Move rejected process back to quality pending for re-inspection
     this.apiService.updateProcessStatus({ processId: process.processId, newStatus: 'QUALITY_PENDING' }).subscribe({
       next: (response) => {
-        this.success = `Process ${process.stageName} moved back to quality pending for re-inspection`;
+        this.success = `Process ${process.processName} moved back to quality pending for re-inspection`;
         this.loadProcesses();
         this.processing = false;
       },

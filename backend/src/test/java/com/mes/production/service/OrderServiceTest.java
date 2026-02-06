@@ -81,7 +81,7 @@ class OrderServiceTest {
 
         testProcess = Process.builder()
                 .processId(1L)
-                .stageName("Melting Stage")
+                .processName("Melting Stage")
                 .stageSequence(1)
                 .status("IN_PROGRESS")
                 .operations(new ArrayList<>(List.of(testOperation)))

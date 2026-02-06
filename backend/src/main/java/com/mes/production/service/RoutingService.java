@@ -1,8 +1,11 @@
 package com.mes.production.service;
 
+import com.mes.production.dto.RoutingDTO;
 import com.mes.production.entity.Operation;
+import com.mes.production.entity.Process;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
+import com.mes.production.repository.ProcessRepository;
 import com.mes.production.repository.RoutingRepository;
 import com.mes.production.repository.RoutingStepRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+/**
+ * Service for managing Routing entities.
+ *
+ * Per MES Consolidated Specification:
+ * - Routing has ProcessID (FK → Processes)
+ * - Operation sequence is derived from Routing
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,6 +31,7 @@ public class RoutingService {
 
     private final RoutingRepository routingRepository;
     private final RoutingStepRepository routingStepRepository;
+    private final ProcessRepository processRepository;
 
     /**
      * Get routing by ID with steps
@@ -30,11 +42,19 @@ public class RoutingService {
     }
 
     /**
-     * Get active routing for a process
+     * Get active routing for a process (runtime)
      */
     @Transactional(readOnly = true)
     public Optional<Routing> getActiveRoutingForProcess(Long processId) {
         return routingRepository.findActiveRoutingByProcessWithSteps(processId);
+    }
+
+    /**
+     * Get active routing for a process template (design-time)
+     */
+    @Transactional(readOnly = true)
+    public Optional<Routing> getActiveRoutingForTemplate(Long templateId) {
+        return routingRepository.findActiveRoutingByTemplateWithSteps(templateId);
     }
 
     /**
@@ -138,5 +158,257 @@ public class RoutingService {
             }
         }
         return true;
+    }
+
+    // ============ CRUD Operations ============
+
+    /**
+     * Get all routings.
+     */
+    @Transactional(readOnly = true)
+    public List<Routing> getAllRoutings() {
+        return routingRepository.findAll();
+    }
+
+    /**
+     * Get routings by status.
+     */
+    @Transactional(readOnly = true)
+    public List<Routing> getRoutingsByStatus(String status) {
+        return routingRepository.findAll().stream()
+                .filter(r -> status.equals(r.getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Create a new routing for a process.
+     * Per MES Spec: Routing.ProcessID (FK → Processes)
+     */
+    @Transactional
+    public Routing createRouting(RoutingDTO.CreateRoutingRequest request, String createdBy) {
+        log.info("Creating routing: {} for process: {}", request.getRoutingName(), request.getProcessId());
+
+        // Get the process
+        Process process = processRepository.findById(request.getProcessId())
+                .orElseThrow(() -> new IllegalArgumentException("Process not found: " + request.getProcessId()));
+
+        // Enforce single active routing per process
+        if (request.getActivateImmediately() != null && request.getActivateImmediately()) {
+            deactivateOtherRoutingsForProcess(request.getProcessId(), null, createdBy);
+        }
+
+        Routing routing = Routing.builder()
+                .process(process)
+                .routingName(request.getRoutingName())
+                .routingType(request.getRoutingType() != null ? request.getRoutingType() : Routing.TYPE_SEQUENTIAL)
+                .status(Boolean.TRUE.equals(request.getActivateImmediately()) ? Routing.STATUS_ACTIVE : Routing.STATUS_DRAFT)
+                .createdBy(createdBy)
+                .build();
+
+        routing = routingRepository.save(routing);
+        log.info("Created routing with ID: {}", routing.getRoutingId());
+        return routing;
+    }
+
+    /**
+     * Update an existing routing.
+     */
+    @Transactional
+    public Routing updateRouting(Long routingId, RoutingDTO.UpdateRoutingRequest request, String updatedBy) {
+        log.info("Updating routing: {}", routingId);
+
+        Routing routing = routingRepository.findById(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        // Check if routing is locked (has executed steps)
+        if (isRoutingLocked(routingId)) {
+            throw new IllegalStateException("Cannot update routing after execution has started: " + routingId);
+        }
+
+        if (request.getRoutingName() != null) {
+            routing.setRoutingName(request.getRoutingName());
+        }
+        if (request.getRoutingType() != null) {
+            routing.setRoutingType(request.getRoutingType());
+        }
+
+        routing.setUpdatedBy(updatedBy);
+        return routingRepository.save(routing);
+    }
+
+    /**
+     * Activate a routing (and optionally deactivate others for same process).
+     */
+    @Transactional
+    public Routing activateRouting(Long routingId, boolean deactivateOthers, String activatedBy) {
+        log.info("Activating routing: {}", routingId);
+
+        Routing routing = routingRepository.findById(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        if (Routing.STATUS_ACTIVE.equals(routing.getStatus())) {
+            log.warn("Routing is already active: {}", routingId);
+            return routing;
+        }
+
+        // Deactivate other routings for the same process
+        if (deactivateOthers && routing.getProcess() != null) {
+            deactivateOtherRoutingsForProcess(routing.getProcess().getProcessId(), routingId, activatedBy);
+        }
+
+        routing.setStatus(Routing.STATUS_ACTIVE);
+        routing.setUpdatedBy(activatedBy);
+        routing = routingRepository.save(routing);
+
+        log.info("Activated routing: {}", routingId);
+        return routing;
+    }
+
+    /**
+     * Deactivate a routing.
+     */
+    @Transactional
+    public Routing deactivateRouting(Long routingId, String deactivatedBy) {
+        log.info("Deactivating routing: {}", routingId);
+
+        Routing routing = routingRepository.findById(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        if (!Routing.STATUS_ACTIVE.equals(routing.getStatus())) {
+            throw new IllegalStateException("Only active routings can be deactivated: " + routingId);
+        }
+
+        routing.setStatus(Routing.STATUS_INACTIVE);
+        routing.setUpdatedBy(deactivatedBy);
+        routing = routingRepository.save(routing);
+
+        log.info("Deactivated routing: {}", routingId);
+        return routing;
+    }
+
+    /**
+     * Delete a routing (only DRAFT or INACTIVE routings).
+     */
+    @Transactional
+    public void deleteRouting(Long routingId) {
+        log.info("Deleting routing: {}", routingId);
+
+        Routing routing = routingRepository.findById(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        if (Routing.STATUS_ACTIVE.equals(routing.getStatus())) {
+            throw new IllegalStateException("Cannot delete active routing: " + routingId);
+        }
+
+        // Check if routing has been executed
+        if (isRoutingLocked(routingId)) {
+            throw new IllegalStateException("Cannot delete routing after execution has started: " + routingId);
+        }
+
+        // Delete all steps first
+        List<RoutingStep> steps = routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(routingId);
+        routingStepRepository.deleteAll(steps);
+
+        // Delete the routing
+        routingRepository.delete(routing);
+        log.info("Deleted routing: {}", routingId);
+    }
+
+    /**
+     * Put routing on hold.
+     */
+    @Transactional
+    public Routing putRoutingOnHold(Long routingId, String reason, String heldBy) {
+        log.info("Putting routing {} on hold: {}", routingId, reason);
+
+        Routing routing = routingRepository.findById(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        routing.setStatus(Routing.STATUS_ON_HOLD);
+        routing.setUpdatedBy(heldBy);
+        routing = routingRepository.save(routing);
+
+        log.info("Routing {} placed on hold", routingId);
+        return routing;
+    }
+
+    /**
+     * Release routing from hold.
+     */
+    @Transactional
+    public Routing releaseRoutingFromHold(Long routingId, String releasedBy) {
+        log.info("Releasing routing {} from hold", routingId);
+
+        Routing routing = routingRepository.findById(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        if (!Routing.STATUS_ON_HOLD.equals(routing.getStatus())) {
+            throw new IllegalStateException("Routing is not on hold: " + routingId);
+        }
+
+        routing.setStatus(Routing.STATUS_ACTIVE);
+        routing.setUpdatedBy(releasedBy);
+        routing = routingRepository.save(routing);
+
+        log.info("Routing {} released from hold", routingId);
+        return routing;
+    }
+
+    /**
+     * Check if routing is locked (has started execution).
+     */
+    @Transactional(readOnly = true)
+    public boolean isRoutingLocked(Long routingId) {
+        List<RoutingStep> steps = routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(routingId);
+        for (RoutingStep step : steps) {
+            if (RoutingStep.STATUS_IN_PROGRESS.equals(step.getStatus()) ||
+                RoutingStep.STATUS_COMPLETED.equals(step.getStatus())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get routing status summary.
+     */
+    @Transactional(readOnly = true)
+    public RoutingDTO.RoutingStatus getRoutingStatus(Long routingId) {
+        Routing routing = routingRepository.findByIdWithSteps(routingId)
+                .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
+
+        List<RoutingStep> steps = routing.getRoutingSteps();
+
+        int totalSteps = steps.size();
+        int completedSteps = (int) steps.stream()
+                .filter(s -> RoutingStep.STATUS_COMPLETED.equals(s.getStatus()))
+                .count();
+        int inProgressSteps = (int) steps.stream()
+                .filter(s -> RoutingStep.STATUS_IN_PROGRESS.equals(s.getStatus()))
+                .count();
+
+        return RoutingDTO.RoutingStatus.builder()
+                .routingId(routingId)
+                .status(routing.getStatus())
+                .totalSteps(totalSteps)
+                .completedSteps(completedSteps)
+                .inProgressSteps(inProgressSteps)
+                .isComplete(completedSteps == totalSteps && totalSteps > 0)
+                .isLocked(isRoutingLocked(routingId))
+                .build();
+    }
+
+    // ============ Helper Methods ============
+
+    private void deactivateOtherRoutingsForProcess(Long processId, Long excludeRoutingId, String updatedBy) {
+        List<Routing> activeRoutings = routingRepository.findByProcess_ProcessIdAndStatus(processId, Routing.STATUS_ACTIVE);
+        for (Routing r : activeRoutings) {
+            if (!r.getRoutingId().equals(excludeRoutingId)) {
+                r.setStatus(Routing.STATUS_INACTIVE);
+                r.setUpdatedBy(updatedBy);
+                routingRepository.save(r);
+                log.info("Deactivated routing {} for process {}", r.getRoutingId(), processId);
+            }
+        }
     }
 }

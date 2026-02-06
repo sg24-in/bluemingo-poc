@@ -64,7 +64,7 @@ export class ProcessListComponent implements OnInit {
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(p =>
-        p.stageName?.toLowerCase().includes(term) ||
+        p.processName?.toLowerCase().includes(term) ||
         String(p.processId).includes(term)
       );
     }

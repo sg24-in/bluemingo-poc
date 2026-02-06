@@ -106,7 +106,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
         // Process header node
         nodes.push({
           id: processNodeId,
-          name: process.stageName,
+          name: process.processName,
           x: processX,
           y: processY,
           symbolSize: [120, 36],

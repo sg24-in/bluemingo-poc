@@ -78,7 +78,7 @@ export class ProductionLandingComponent implements OnInit {
           if (op.status === 'READY') {
             operations.push({
               operationId: op.operationId,
-              operationName: `${process.stageName} - ${op.operationName}`,
+              operationName: `${process.processName} - ${op.operationName}`,
               operationCode: op.operationCode,
               operationType: op.operationType,
               sequenceNumber: op.sequenceNumber,

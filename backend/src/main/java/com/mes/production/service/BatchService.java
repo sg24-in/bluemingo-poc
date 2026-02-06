@@ -137,7 +137,7 @@ public class BatchService {
                 productionInfo = BatchDTO.ProductionInfo.builder()
                         .operationId(op.getOperationId())
                         .operationName(op.getOperationName())
-                        .processName(op.getProcess().getStageName())
+                        .processName(op.getProcess().getProcessName())
                         .orderId(op.getProcess().getOrderLineItem().getOrder().getOrderId().toString())
                         .productionDate(batch.getCreatedOn())
                         .build();

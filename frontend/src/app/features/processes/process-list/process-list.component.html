@@ -20,7 +20,7 @@
           id="search"
           [(ngModel)]="searchTerm"
           (input)="onSearchChange(searchTerm)"
-          placeholder="Search by stage name or ID..."
+          placeholder="Search by process name or ID..."
         />
       </div>
     </div>
@@ -54,7 +54,7 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>Stage Name</th>
+          <th>Process Name</th>
           <th>Sequence</th>
           <th>Status</th>
           <th>Decision</th>
@@ -65,7 +65,7 @@
       <tbody>
         <tr *ngFor="let process of processes">
           <td>{{ process.processId }}</td>
-          <td>{{ process.stageName }}</td>
+          <td>{{ process.processName }}</td>
           <td>{{ process.stageSequence }}</td>
           <td>
             <span class="status-badge" [ngClass]="getStatusClass(process.status)">

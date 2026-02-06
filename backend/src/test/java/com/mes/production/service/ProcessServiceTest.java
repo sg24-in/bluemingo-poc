@@ -72,7 +72,7 @@ class ProcessServiceTest {
         testProcess = Process.builder()
                 .processId(1L)
                 .orderLineItem(testOrderLineItem)
-                .stageName("Melting")
+                .processName("Melting")
                 .stageSequence(1)
                 .status(Process.STATUS_IN_PROGRESS)
                 .createdOn(LocalDateTime.now())
@@ -96,7 +96,7 @@ class ProcessServiceTest {
 
         assertNotNull(result);
         assertEquals(1L, result.getProcessId());
-        assertEquals("Melting", result.getStageName());
+        assertEquals("Melting", result.getProcessName());
         assertEquals(Process.STATUS_IN_PROGRESS, result.getStatus());
         assertNotNull(result.getOperations());
         assertEquals(1, result.getOperations().size());

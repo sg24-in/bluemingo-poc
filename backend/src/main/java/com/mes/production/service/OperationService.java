@@ -168,7 +168,7 @@ public class OperationService {
     private OperationDTO convertToDTOWithDetails(Operation operation) {
         OperationDTO dto = convertToDTO(operation);
         if (operation.getProcess() != null) {
-            dto.setProcessName(operation.getProcess().getStageName());
+            dto.setProcessName(operation.getProcess().getProcessName());
             if (operation.getProcess().getOrderLineItem() != null) {
                 dto.setProductSku(operation.getProcess().getOrderLineItem().getProductSku());
                 if (operation.getProcess().getOrderLineItem().getOrder() != null) {

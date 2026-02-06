@@ -45,7 +45,7 @@
       <!-- Processes -->
       <div *ngFor="let process of lineItem.processes" class="process-section">
         <div class="process-header">
-          <h4>{{ process.stageName }}</h4>
+          <h4>{{ process.processName }}</h4>
           <app-status-badge [status]="process.status"></app-status-badge>
         </div>
 

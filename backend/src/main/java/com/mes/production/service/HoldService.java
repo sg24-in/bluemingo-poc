@@ -167,7 +167,7 @@ public class HoldService {
                     .map(Operation::getOperationName)
                     .orElse("Unknown Operation");
             case "PROCESS" -> processRepository.findById(entityId)
-                    .map(com.mes.production.entity.Process::getStageName)
+                    .map(p -> p.getProcessName())
                     .orElse("Unknown Process");
             case "ORDER_LINE" -> orderLineItemRepository.findById(entityId)
                     .map(oli -> oli.getProductSku() + " - " + oli.getProductName())
@@ -188,7 +188,7 @@ public class HoldService {
                     .map(Operation::getStatus)
                     .orElseThrow(() -> new RuntimeException("Operation not found"));
             case "PROCESS" -> processRepository.findById(entityId)
-                    .map(com.mes.production.entity.Process::getStatus)
+                    .map(p -> p.getStatus())
                     .orElseThrow(() -> new RuntimeException("Process not found"));
             case "ORDER_LINE" -> orderLineItemRepository.findById(entityId)
                     .map(OrderLineItem::getStatus)

@@ -11,6 +11,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST controller for runtime Process operations.
+ *
+ * Per MES Consolidated Specification:
+ * - Process is the runtime entity (at /api/processes)
+ * - ProcessTemplate is for design-time (at /api/process-templates)
+ */
 @RestController
 @RequestMapping("/api/processes")
 @RequiredArgsConstructor
@@ -24,7 +31,7 @@ public class ProcessController {
      */
     @GetMapping("/{processId}")
     public ResponseEntity<ProcessDTO.Response> getProcessById(@PathVariable Long processId) {
-        log.info("Getting process by ID: {}", processId);
+        log.info("GET /api/processes/{}", processId);
         return ResponseEntity.ok(processService.getProcessById(processId));
     }
 
@@ -33,7 +40,7 @@ public class ProcessController {
      */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<ProcessDTO.Response>> getProcessesByStatus(@PathVariable String status) {
-        log.info("Getting processes by status: {}", status);
+        log.info("GET /api/processes/status/{}", status);
         return ResponseEntity.ok(processService.getProcessesByStatus(status.toUpperCase()));
     }
 
@@ -42,8 +49,8 @@ public class ProcessController {
      */
     @GetMapping("/quality-pending")
     public ResponseEntity<List<ProcessDTO.Response>> getQualityPendingProcesses() {
-        log.info("Getting quality pending processes");
-        return ResponseEntity.ok(processService.getProcessesByStatus("QUALITY_PENDING"));
+        log.info("GET /api/processes/quality-pending");
+        return ResponseEntity.ok(processService.getQualityPendingProcesses());
     }
 
     /**
@@ -53,7 +60,7 @@ public class ProcessController {
     public ResponseEntity<ProcessDTO.StatusUpdateResponse> transitionToQualityPending(
             @PathVariable Long processId,
             @RequestBody(required = false) Map<String, String> body) {
-        log.info("Transitioning process {} to quality pending", processId);
+        log.info("POST /api/processes/{}/quality-pending", processId);
         String notes = body != null ? body.get("notes") : null;
         return ResponseEntity.ok(processService.transitionToQualityPending(processId, notes));
     }
@@ -64,7 +71,8 @@ public class ProcessController {
     @PostMapping("/quality-decision")
     public ResponseEntity<ProcessDTO.StatusUpdateResponse> makeQualityDecision(
             @Valid @RequestBody ProcessDTO.QualityDecisionRequest request) {
-        log.info("Making quality decision for process {}: {}", request.getProcessId(), request.getDecision());
+        log.info("POST /api/processes/quality-decision - processId={}, decision={}",
+                request.getProcessId(), request.getDecision());
         return ResponseEntity.ok(processService.makeQualityDecision(request));
     }
 
@@ -75,7 +83,7 @@ public class ProcessController {
     public ResponseEntity<ProcessDTO.StatusUpdateResponse> acceptProcess(
             @PathVariable Long processId,
             @RequestBody(required = false) Map<String, String> body) {
-        log.info("Accepting process {}", processId);
+        log.info("POST /api/processes/{}/accept", processId);
         ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
                 .processId(processId)
                 .decision("ACCEPT")
@@ -91,7 +99,7 @@ public class ProcessController {
     public ResponseEntity<ProcessDTO.StatusUpdateResponse> rejectProcess(
             @PathVariable Long processId,
             @RequestBody Map<String, String> body) {
-        log.info("Rejecting process {}", processId);
+        log.info("POST /api/processes/{}/reject", processId);
         ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
                 .processId(processId)
                 .decision("REJECT")
@@ -107,7 +115,8 @@ public class ProcessController {
     @PutMapping("/status")
     public ResponseEntity<ProcessDTO.StatusUpdateResponse> updateStatus(
             @Valid @RequestBody ProcessDTO.StatusUpdateRequest request) {
-        log.info("Updating process {} status to {}", request.getProcessId(), request.getNewStatus());
+        log.info("PUT /api/processes/status - processId={}, newStatus={}",
+                request.getProcessId(), request.getNewStatus());
         return ResponseEntity.ok(processService.updateStatus(request));
     }
 
@@ -116,11 +125,29 @@ public class ProcessController {
      */
     @GetMapping("/{processId}/all-confirmed")
     public ResponseEntity<Map<String, Object>> checkAllOperationsConfirmed(@PathVariable Long processId) {
-        log.info("Checking if all operations confirmed for process {}", processId);
+        log.info("GET /api/processes/{}/all-confirmed", processId);
         boolean allConfirmed = processService.areAllOperationsConfirmed(processId);
         return ResponseEntity.ok(Map.of(
                 "processId", processId,
                 "allOperationsConfirmed", allConfirmed
         ));
+    }
+
+    /**
+     * Get processes by order ID
+     */
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<List<ProcessDTO.Response>> getProcessesByOrderId(@PathVariable Long orderId) {
+        log.info("GET /api/processes/order/{}", orderId);
+        return ResponseEntity.ok(processService.getProcessesByOrderId(orderId));
+    }
+
+    /**
+     * Get processes by order line ID
+     */
+    @GetMapping("/order-line/{orderLineId}")
+    public ResponseEntity<List<ProcessDTO.Response>> getProcessesByOrderLineId(@PathVariable Long orderLineId) {
+        log.info("GET /api/processes/order-line/{}", orderLineId);
+        return ResponseEntity.ok(processService.getProcessesByOrderLineId(orderLineId));
     }
 }

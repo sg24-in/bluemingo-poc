@@ -59,7 +59,7 @@ class RoutingControllerTest {
     void setUp() {
         testProcess = new Process();
         testProcess.setProcessId(1L);
-        testProcess.setStageName("Melting Stage");
+        testProcess.setProcessName("Melting Stage");
 
         testOperation1 = new Operation();
         testOperation1.setOperationId(1L);
@@ -131,7 +131,7 @@ class RoutingControllerTest {
     }
 
     @Test
-    @DisplayName("Should get routing for process")
+    @DisplayName("Should get routing for process (per MES spec)")
     @WithMockUser(username = "admin@mes.com")
     void getRoutingForProcess_ValidId_ReturnsRouting() throws Exception {
         when(routingService.getActiveRoutingForProcess(1L)).thenReturn(Optional.of(testRouting));
@@ -155,6 +155,33 @@ class RoutingControllerTest {
                 .andExpect(status().isNotFound());
 
         verify(routingService, times(1)).getActiveRoutingForProcess(999L);
+    }
+
+    @Test
+    @DisplayName("Should get routing for template (design-time)")
+    @WithMockUser(username = "admin@mes.com")
+    void getRoutingForTemplate_ValidId_ReturnsRouting() throws Exception {
+        when(routingService.getActiveRoutingForTemplate(1L)).thenReturn(Optional.of(testRouting));
+
+        mockMvc.perform(get("/api/routing/template/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.routingId").value(1))
+                .andExpect(jsonPath("$.processId").value(1))
+                .andExpect(jsonPath("$.routingName").value("Standard Melting Route"));
+
+        verify(routingService, times(1)).getActiveRoutingForTemplate(1L);
+    }
+
+    @Test
+    @DisplayName("Should return 404 when no routing for template")
+    @WithMockUser(username = "admin@mes.com")
+    void getRoutingForTemplate_NotFound_Returns404() throws Exception {
+        when(routingService.getActiveRoutingForTemplate(999L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/routing/template/999"))
+                .andExpect(status().isNotFound());
+
+        verify(routingService, times(1)).getActiveRoutingForTemplate(999L);
     }
 
     @Test

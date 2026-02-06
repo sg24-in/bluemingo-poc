@@ -16,7 +16,7 @@ public class RoutingDTO {
     @AllArgsConstructor
     public static class RoutingInfo {
         private Long routingId;
-        private Long processId;
+        private Long processId;  // Per MES Spec: Routing links to Process
         private String routingName;
         private String routingType;
         private String status;
@@ -37,5 +37,71 @@ public class RoutingDTO {
         private Boolean isParallel;
         private Boolean mandatoryFlag;
         private String status;
+    }
+
+    /**
+     * Request to create a new routing for a Process
+     * Per MES Spec: Routing.ProcessID (FK → Processes)
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateRoutingRequest {
+        private Long processId;  // Process ID per spec
+        private String routingName;
+        private String routingType;
+        private Boolean activateImmediately;
+    }
+
+    /**
+     * Request to update a routing
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateRoutingRequest {
+        private String routingName;
+        private String routingType;
+    }
+
+    /**
+     * Routing status summary
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RoutingStatus {
+        private Long routingId;
+        private String status;
+        private int totalSteps;
+        private int completedSteps;
+        private int inProgressSteps;
+        private Boolean isComplete;
+        private Boolean isLocked;
+    }
+
+    /**
+     * Request to activate a routing
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ActivateRoutingRequest {
+        private Boolean deactivateOthers;
+    }
+
+    /**
+     * Request to put routing on hold
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class HoldRoutingRequest {
+        private String reason;
     }
 }

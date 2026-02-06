@@ -55,7 +55,7 @@ class ProcessControllerTest {
         testProcessResponse = ProcessDTO.Response.builder()
                 .processId(1L)
                 .orderLineId(1L)
-                .stageName("Melting")
+                .processName("Melting")
                 .stageSequence(1)
                 .status(Process.STATUS_IN_PROGRESS)
                 .createdOn(LocalDateTime.now())
@@ -72,7 +72,7 @@ class ProcessControllerTest {
 
         statusUpdateResponse = ProcessDTO.StatusUpdateResponse.builder()
                 .processId(1L)
-                .stageName("Melting")
+                .processName("Melting")
                 .previousStatus(Process.STATUS_IN_PROGRESS)
                 .newStatus(Process.STATUS_QUALITY_PENDING)
                 .usageDecision(Process.DECISION_PENDING)
@@ -91,7 +91,7 @@ class ProcessControllerTest {
         mockMvc.perform(get("/api/processes/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.processId").value(1))
-                .andExpect(jsonPath("$.stageName").value("Melting"))
+                .andExpect(jsonPath("$.processName").value("Melting"))
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
 
         verify(processService, times(1)).getProcessById(1L);
@@ -117,18 +117,18 @@ class ProcessControllerTest {
     void getQualityPendingProcesses_ReturnsProcesses() throws Exception {
         ProcessDTO.Response qualityPendingProcess = ProcessDTO.Response.builder()
                 .processId(1L)
-                .stageName("Melting")
+                .processName("Melting")
                 .status(Process.STATUS_QUALITY_PENDING)
                 .build();
 
-        when(processService.getProcessesByStatus("QUALITY_PENDING"))
+        when(processService.getQualityPendingProcesses())
                 .thenReturn(List.of(qualityPendingProcess));
 
         mockMvc.perform(get("/api/processes/quality-pending"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("QUALITY_PENDING"));
 
-        verify(processService, times(1)).getProcessesByStatus("QUALITY_PENDING");
+        verify(processService, times(1)).getQualityPendingProcesses();
     }
 
     @Test
@@ -156,7 +156,7 @@ class ProcessControllerTest {
     void makeQualityDecision_Accept_ReturnsSuccess() throws Exception {
         ProcessDTO.StatusUpdateResponse acceptResponse = ProcessDTO.StatusUpdateResponse.builder()
                 .processId(1L)
-                .stageName("Melting")
+                .processName("Melting")
                 .previousStatus(Process.STATUS_QUALITY_PENDING)
                 .newStatus(Process.STATUS_COMPLETED)
                 .usageDecision(Process.DECISION_ACCEPT)
@@ -190,7 +190,7 @@ class ProcessControllerTest {
     void makeQualityDecision_Reject_ReturnsSuccess() throws Exception {
         ProcessDTO.StatusUpdateResponse rejectResponse = ProcessDTO.StatusUpdateResponse.builder()
                 .processId(1L)
-                .stageName("Melting")
+                .processName("Melting")
                 .previousStatus(Process.STATUS_QUALITY_PENDING)
                 .newStatus(Process.STATUS_REJECTED)
                 .usageDecision(Process.DECISION_REJECT)

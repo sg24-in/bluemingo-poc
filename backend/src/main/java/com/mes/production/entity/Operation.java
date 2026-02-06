@@ -7,6 +7,18 @@ import lombok.EqualsAndHashCode.Exclude;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Operation - Runtime operation entity per MES Consolidated Specification.
+ *
+ * Fields per spec:
+ * - OperationID (PK)
+ * - ProcessID (FK) - Links to the parent Process
+ * - OperationName
+ * - OperationType
+ * - Status
+ *
+ * Relationship: Processes → Operations
+ */
 @Entity
 @Table(name = "operations")
 @Data
@@ -89,7 +101,7 @@ public class Operation {
     @PrePersist
     protected void onCreate() {
         createdOn = LocalDateTime.now();
-        if (status == null) status = "NOT_STARTED";
+        if (status == null) status = STATUS_NOT_STARTED;
         if (sequenceNumber == null) sequenceNumber = 1;
     }
 

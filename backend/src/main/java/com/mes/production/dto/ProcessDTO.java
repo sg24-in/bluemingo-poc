@@ -10,6 +10,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * DTOs for runtime Process operations.
+ *
+ * Per MES Consolidated Specification:
+ * - Process is the runtime entity (not ProcessInstance)
+ * - ProcessTemplate is for design-time definitions
+ */
 public class ProcessDTO {
 
     @Data
@@ -19,7 +26,7 @@ public class ProcessDTO {
     public static class Response {
         private Long processId;
         private Long orderLineId;
-        private String stageName;
+        private String processName;
         private Integer stageSequence;
         private String status;
         private String usageDecision;
@@ -78,7 +85,7 @@ public class ProcessDTO {
     @AllArgsConstructor
     public static class StatusUpdateResponse {
         private Long processId;
-        private String stageName;
+        private String processName;
         private String previousStatus;
         private String newStatus;
         private String usageDecision;

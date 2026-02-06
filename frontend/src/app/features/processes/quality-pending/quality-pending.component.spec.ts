@@ -17,7 +17,7 @@ describe('QualityPendingComponent', () => {
     {
       processId: 1,
       orderLineId: 1,
-      stageName: 'Melting',
+      processName: 'Melting',
       stageSequence: 1,
       status: 'QUALITY_PENDING',
       usageDecision: 'PENDING',
@@ -33,7 +33,7 @@ describe('QualityPendingComponent', () => {
     {
       processId: 2,
       orderLineId: 1,
-      stageName: 'Casting',
+      processName: 'Casting',
       stageSequence: 2,
       status: 'REJECTED',
       usageDecision: 'REJECT',

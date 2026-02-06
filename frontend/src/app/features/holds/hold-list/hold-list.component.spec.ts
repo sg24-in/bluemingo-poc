@@ -52,7 +52,7 @@ describe('HoldListComponent', () => {
       processes: [
         {
           processId: 1,
-          stageName: 'Stage 1',
+          processName: 'Stage 1',
           status: 'IN_PROGRESS',
           operations: [
             { operationId: 1, operationName: 'Op 1', status: 'READY' }

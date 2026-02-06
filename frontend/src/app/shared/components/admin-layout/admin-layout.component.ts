@@ -29,6 +29,7 @@ export class AdminLayoutComponent {
     {
       title: 'Production',
       items: [
+        { path: '/manage/processes', label: 'Processes', icon: 'diagram-project' },
         { path: '/manage/equipment', label: 'Equipment', icon: 'gear' },
         { path: '/manage/operators', label: 'Operators', icon: 'id-badge' },
         { path: '/manage/bom', label: 'Bill of Materials', icon: 'sitemap' }

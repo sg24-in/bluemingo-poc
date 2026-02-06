@@ -173,7 +173,7 @@ public class OrderService {
 
                 OrderDTO.ProcessDTO processDTO = OrderDTO.ProcessDTO.builder()
                         .processId(process.getProcessId())
-                        .stageName(process.getStageName())
+                        .processName(process.getProcessName())
                         .stageSequence(process.getStageSequence())
                         .status(process.getStatus())
                         .operations(operationDTOs)

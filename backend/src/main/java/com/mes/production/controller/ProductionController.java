@@ -45,7 +45,7 @@ public class ProductionController {
                 "status", operation.getStatus(),
                 "process", Map.of(
                         "processId", operation.getProcess().getProcessId(),
-                        "stageName", operation.getProcess().getStageName()
+                        "processName", operation.getProcess().getProcessName()
                 ),
                 "order", Map.of(
                         "orderId", operation.getProcess().getOrderLineItem().getOrder().getOrderId(),

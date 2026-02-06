@@ -12,6 +12,7 @@ export * from './inventory.model';
 export * from './equipment.model';
 export * from './operation.model';
 export * from './process.model';
+export * from './process-template.model';
 export * from './order.model';
 export * from './hold.model';
 export * from './production.model';

@@ -126,7 +126,7 @@ class ProductionControllerTest {
                 .build();
         com.mes.production.entity.Process process = com.mes.production.entity.Process.builder()
                 .processId(1L)
-                .stageName("Melting")
+                .processName("Melting")
                 .orderLineItem(lineItem)
                 .build();
         Operation operation = Operation.builder()

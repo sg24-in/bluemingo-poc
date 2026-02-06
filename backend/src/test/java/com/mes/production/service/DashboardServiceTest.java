@@ -70,7 +70,7 @@ class DashboardServiceTest {
 
         Process testProcess = Process.builder()
                 .processId(1L)
-                .stageName("Test Stage")
+                .processName("Test Stage")
                 .orderLineItem(testOrderLine)
                 .build();
 

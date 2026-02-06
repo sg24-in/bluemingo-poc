@@ -711,43 +711,69 @@ export class ApiService {
   }
 
   // ============================================================
-  // Processes
+  // Process Instances (Runtime - formerly "Processes" at runtime)
   // ============================================================
 
-  getProcessById(processId: number): Observable<Process> {
-    return this.http.get<Process>(`${environment.apiUrl}/processes/${processId}`);
+  getProcessInstanceById(processInstanceId: number): Observable<Process> {
+    return this.http.get<Process>(`${environment.apiUrl}/process-instances/${processInstanceId}`);
   }
 
-  getProcessesByStatus(status: string): Observable<Process[]> {
-    return this.http.get<Process[]>(`${environment.apiUrl}/processes/status/${status}`);
+  getProcessInstancesByStatus(status: string): Observable<Process[]> {
+    return this.http.get<Process[]>(`${environment.apiUrl}/process-instances/status/${status}`);
   }
 
-  getQualityPendingProcesses(): Observable<Process[]> {
-    return this.http.get<Process[]>(`${environment.apiUrl}/processes/quality-pending`);
+  getQualityPendingProcessInstances(): Observable<Process[]> {
+    return this.http.get<Process[]>(`${environment.apiUrl}/process-instances/quality-pending`);
   }
 
-  transitionToQualityPending(processId: number, notes?: string): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/${processId}/quality-pending`, { notes });
+  transitionToQualityPending(processInstanceId: number, notes?: string): Observable<ProcessStatusUpdateResponse> {
+    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/process-instances/${processInstanceId}/quality-pending`, { notes });
   }
 
   makeQualityDecision(request: ProcessQualityDecisionRequest): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/quality-decision`, request);
+    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/process-instances/quality-decision`, request);
   }
 
+  acceptProcessInstance(processInstanceId: number, notes?: string): Observable<ProcessStatusUpdateResponse> {
+    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/process-instances/${processInstanceId}/accept`, { notes });
+  }
+
+  rejectProcessInstance(processInstanceId: number, reason: string, notes?: string): Observable<ProcessStatusUpdateResponse> {
+    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/process-instances/${processInstanceId}/reject`, { reason, notes });
+  }
+
+  updateProcessInstanceStatus(request: { processInstanceId: number; newStatus: string; reason?: string }): Observable<ProcessStatusUpdateResponse> {
+    return this.http.put<ProcessStatusUpdateResponse>(`${environment.apiUrl}/process-instances/status`, request);
+  }
+
+  checkAllOperationsConfirmed(processInstanceId: number): Observable<{ allConfirmed: boolean; confirmedCount: number; totalCount: number }> {
+    return this.http.get<{ allConfirmed: boolean; confirmedCount: number; totalCount: number }>(`${environment.apiUrl}/process-instances/${processInstanceId}/all-confirmed`);
+  }
+
+  // Backward compatibility aliases (deprecated - use new method names)
+  /** @deprecated Use getProcessInstanceById instead */
+  getProcessById(processId: number): Observable<Process> {
+    return this.getProcessInstanceById(processId);
+  }
+  /** @deprecated Use getProcessInstancesByStatus instead */
+  getProcessesByStatus(status: string): Observable<Process[]> {
+    return this.getProcessInstancesByStatus(status);
+  }
+  /** @deprecated Use getQualityPendingProcessInstances instead */
+  getQualityPendingProcesses(): Observable<Process[]> {
+    return this.getQualityPendingProcessInstances();
+  }
+  /** @deprecated Use acceptProcessInstance instead */
   acceptProcess(processId: number, notes?: string): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/${processId}/accept`, { notes });
+    return this.acceptProcessInstance(processId, notes);
   }
-
+  /** @deprecated Use rejectProcessInstance instead */
   rejectProcess(processId: number, reason: string, notes?: string): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/${processId}/reject`, { reason, notes });
+    return this.rejectProcessInstance(processId, reason, notes);
   }
-
+  /** @deprecated Use updateProcessInstanceStatus instead */
   updateProcessStatus(request: { processId: number; newStatus: string; reason?: string }): Observable<ProcessStatusUpdateResponse> {
-    return this.http.put<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/status`, request);
-  }
-
-  checkAllOperationsConfirmed(processId: number): Observable<{ allConfirmed: boolean; confirmedCount: number; totalCount: number }> {
-    return this.http.get<{ allConfirmed: boolean; confirmedCount: number; totalCount: number }>(`${environment.apiUrl}/processes/${processId}/all-confirmed`);
+    return this.updateProcessInstanceStatus({ processInstanceId: request.processId, newStatus: request.newStatus, reason: request.reason });
   }
 
   // ============================================================
@@ -1078,6 +1104,190 @@ export class ApiService {
 
   getAuditActionTypes(): Observable<string[]> {
     return this.http.get<string[]>(`${environment.apiUrl}/audit/action-types`);
+  }
+
+  // ============================================================
+  // Processes (Design-time definitions - formerly ProcessTemplates)
+  // ============================================================
+
+  getProcessesPaged(request: PageRequest = {}): Observable<PagedResponse<any>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<any>>(`${environment.apiUrl}/processes/paged`, { params });
+  }
+
+  getProcessDefinitionById(processId: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/processes/${processId}`);
+  }
+
+  getProcessByCode(processCode: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/processes/code/${processCode}`);
+  }
+
+  getProcessesForProduct(productSku: string): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/processes/product/${productSku}`);
+  }
+
+  getEffectiveProcess(productSku: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/processes/product/${productSku}/effective`);
+  }
+
+  createProcessDefinition(request: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/processes`, request);
+  }
+
+  updateProcessDefinition(processId: number, request: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/processes/${processId}`, request);
+  }
+
+  deleteProcessDefinition(processId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/processes/${processId}`);
+  }
+
+  activateProcess(processId: number, request?: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/processes/${processId}/activate`, request || {});
+  }
+
+  deactivateProcess(processId: number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/processes/${processId}/deactivate`, {});
+  }
+
+  createProcessVersion(processId: number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/processes/${processId}/new-version`, {});
+  }
+
+  addRoutingStepToProcess(processId: number, step: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/processes/${processId}/steps`, step);
+  }
+
+  updateRoutingStep(stepId: number, step: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/processes/steps/${stepId}`, step);
+  }
+
+  deleteRoutingStep(stepId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/processes/steps/${stepId}`);
+  }
+
+  // Backward compatibility aliases (deprecated - use new method names)
+  /** @deprecated Use getProcessesPaged instead */
+  getProcessTemplatesPaged(request: PageRequest = {}): Observable<PagedResponse<any>> {
+    return this.getProcessesPaged(request);
+  }
+  /** @deprecated Use getProcessDefinitionById instead */
+  getProcessTemplateById(templateId: number): Observable<any> {
+    return this.getProcessDefinitionById(templateId);
+  }
+  /** @deprecated Use getProcessByCode instead */
+  getProcessTemplateByCode(templateCode: string): Observable<any> {
+    return this.getProcessByCode(templateCode);
+  }
+  /** @deprecated Use getProcessesForProduct instead */
+  getProcessTemplatesForProduct(productSku: string): Observable<any[]> {
+    return this.getProcessesForProduct(productSku);
+  }
+  /** @deprecated Use getEffectiveProcess instead */
+  getEffectiveProcessTemplate(productSku: string): Observable<any> {
+    return this.getEffectiveProcess(productSku);
+  }
+  /** @deprecated Use createProcessDefinition instead */
+  createProcessTemplate(request: any): Observable<any> {
+    return this.createProcessDefinition(request);
+  }
+  /** @deprecated Use updateProcessDefinition instead */
+  updateProcessTemplate(templateId: number, request: any): Observable<any> {
+    return this.updateProcessDefinition(templateId, request);
+  }
+  /** @deprecated Use deleteProcessDefinition instead */
+  deleteProcessTemplate(templateId: number): Observable<void> {
+    return this.deleteProcessDefinition(templateId);
+  }
+  /** @deprecated Use activateProcess instead */
+  activateProcessTemplate(templateId: number, request?: any): Observable<any> {
+    return this.activateProcess(templateId, request);
+  }
+  /** @deprecated Use deactivateProcess instead */
+  deactivateProcessTemplate(templateId: number): Observable<any> {
+    return this.deactivateProcess(templateId);
+  }
+  /** @deprecated Use createProcessVersion instead */
+  createProcessTemplateVersion(templateId: number): Observable<any> {
+    return this.createProcessVersion(templateId);
+  }
+  /** @deprecated Use addRoutingStepToProcess instead */
+  addRoutingStepToTemplate(templateId: number, step: any): Observable<any> {
+    return this.addRoutingStepToProcess(templateId, step);
+  }
+
+  // ============================================================
+  // Routing
+  // ============================================================
+
+  getAllRoutings(status?: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    return this.http.get<any[]>(`${environment.apiUrl}/routing`, { params });
+  }
+
+  getRoutingById(routingId: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/routing/${routingId}`);
+  }
+
+  getRoutingForProcessInstance(processInstanceId: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/routing/process-instance/${processInstanceId}`);
+  }
+
+  /** @deprecated Use getRoutingForProcessInstance instead */
+  getRoutingForProcess(processId: number): Observable<any> {
+    return this.getRoutingForProcessInstance(processId);
+  }
+
+  getRoutingSteps(routingId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/routing/${routingId}/steps`);
+  }
+
+  getRoutingStatus(routingId: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/routing/${routingId}/status`);
+  }
+
+  isRoutingLocked(routingId: number): Observable<boolean> {
+    return this.http.get<boolean>(`${environment.apiUrl}/routing/${routingId}/locked`);
+  }
+
+  isRoutingComplete(routingId: number): Observable<boolean> {
+    return this.http.get<boolean>(`${environment.apiUrl}/routing/${routingId}/complete`);
+  }
+
+  canOperationProceed(operationId: number): Observable<boolean> {
+    return this.http.get<boolean>(`${environment.apiUrl}/routing/operation/${operationId}/can-proceed`);
+  }
+
+  createRouting(request: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/routing`, request);
+  }
+
+  updateRouting(routingId: number, request: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/routing/${routingId}`, request);
+  }
+
+  deleteRouting(routingId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/routing/${routingId}`);
+  }
+
+  activateRouting(routingId: number, deactivateOthers?: boolean): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/routing/${routingId}/activate`, { deactivateOthers });
+  }
+
+  deactivateRouting(routingId: number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/routing/${routingId}/deactivate`, {});
+  }
+
+  putRoutingOnHold(routingId: number, reason?: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/routing/${routingId}/hold`, { reason });
+  }
+
+  releaseRoutingFromHold(routingId: number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/routing/${routingId}/release`, {});
   }
 
   // ============================================================

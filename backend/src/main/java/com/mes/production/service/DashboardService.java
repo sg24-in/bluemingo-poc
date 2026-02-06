@@ -102,7 +102,7 @@ public class DashboardService {
             case "CREATE":
                 return String.format("Created %s #%d", formatEntityType(entityType), audit.getEntityId());
             case "STATUS_CHANGE":
-                return String.format("%s #%d status: %s → %s",
+                return String.format("%s #%d status: %s -> %s",
                         formatEntityType(entityType), audit.getEntityId(),
                         audit.getOldValue(), audit.getNewValue());
             case "CONSUME":

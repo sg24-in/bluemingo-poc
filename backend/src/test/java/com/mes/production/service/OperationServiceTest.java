@@ -43,7 +43,7 @@ class OperationServiceTest {
     void setUp() {
         testProcess = Process.builder()
                 .processId(1L)
-                .stageName("Melting Process")
+                .processName("Melting Process")
                 .build();
 
         testOperation = Operation.builder()

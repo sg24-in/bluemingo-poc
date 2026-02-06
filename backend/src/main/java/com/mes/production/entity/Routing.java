@@ -10,6 +10,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Routing - Per MES Consolidated Specification.
+ *
+ * Routings define the sequence of operations (routing steps) for a Process.
+ * Per spec: Routing has ProcessID FK linking to Process entity.
+ *
+ * Additionally supports optional ProcessTemplate reference for design-time management.
+ */
 @Entity
 @Table(name = "routing")
 @Data
@@ -23,9 +31,15 @@ public class Routing {
     @Column(name = "routing_id")
     private Long routingId;
 
+    // Per spec: ProcessID (FK → Processes) - runtime reference
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "process_id", nullable = false)
+    @JoinColumn(name = "process_id")
     private Process process;
+
+    // Design-time template reference (optional, for template management)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "process_template_id")
+    private ProcessTemplate processTemplate;
 
     @Column(name = "routing_name", nullable = false, length = 100)
     private String routingName;
@@ -51,14 +65,6 @@ public class Routing {
     @OneToMany(mappedBy = "routing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<RoutingStep> routingSteps = new ArrayList<>();
-
-    // Link to design-time process template
-    @Column(name = "process_template_id")
-    private Long processTemplateId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "process_template_id", insertable = false, updatable = false)
-    private ProcessTemplate processTemplate;
 
     // Routing type constants
     public static final String TYPE_SEQUENTIAL = "SEQUENTIAL";

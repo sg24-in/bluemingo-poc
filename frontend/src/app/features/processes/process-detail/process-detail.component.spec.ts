@@ -16,7 +16,7 @@ describe('ProcessDetailComponent', () => {
 
   const mockProcess = {
     processId: 1,
-    stageName: 'Melting Process',
+    processName: 'Melting Process',
     stageSequence: 1,
     orderLineId: 100,
     status: 'IN_PROGRESS' as const,

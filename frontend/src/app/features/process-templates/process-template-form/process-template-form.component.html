@@ -1,0 +1,243 @@
+<div class="process-form-container">
+  <div class="page-header">
+    <h1 *ngIf="!processId">Create Process</h1>
+    <h1 *ngIf="processId && isViewMode">Process Details</h1>
+    <h1 *ngIf="processId && isEditMode">Edit Process</h1>
+
+    <div class="header-actions" *ngIf="process">
+      <span class="status-badge" [ngClass]="getStatusClass(process.status)">
+        {{ process.status }}
+      </span>
+      <span class="version-badge">v{{ process.version }}</span>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <span class="spinner"></span> Loading process...
+  </div>
+
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <div class="success-message" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <form [formGroup]="processForm" (ngSubmit)="onSubmit()" *ngIf="!loading">
+    <div class="form-section">
+      <h3>Basic Information</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="processName">Process Name *</label>
+          <input type="text"
+                 id="processName"
+                 formControlName="processName"
+                 placeholder="e.g., Steel Rod Production v1">
+          <div class="error" *ngIf="processForm.get('processName')?.touched && processForm.get('processName')?.errors?.['required']">
+            Process name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="processCode">Process Code</label>
+          <input type="text"
+                 id="processCode"
+                 formControlName="processCode"
+                 placeholder="e.g., STEEL-ROD-001">
+          <span class="hint">Auto-generated if not provided</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="productSku">Product SKU</label>
+          <input type="text"
+                 id="productSku"
+                 formControlName="productSku"
+                 placeholder="Link to specific product">
+        </div>
+
+        <div class="form-group">
+          <label for="version">Version *</label>
+          <input type="text"
+                 id="version"
+                 formControlName="version"
+                 placeholder="e.g., 1.0">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="effectiveFrom">Effective From</label>
+          <input type="date"
+                 id="effectiveFrom"
+                 formControlName="effectiveFrom">
+        </div>
+
+        <div class="form-group">
+          <label for="effectiveTo">Effective To</label>
+          <input type="date"
+                 id="effectiveTo"
+                 formControlName="effectiveTo">
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="description">Description</label>
+        <textarea id="description"
+                  formControlName="description"
+                  rows="3"
+                  placeholder="Describe this process..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-header">
+        <h3>Routing Steps</h3>
+        <button type="button"
+                class="btn btn-secondary"
+                (click)="addStep()"
+                *ngIf="!isViewMode && (!process || process.status === 'DRAFT')">
+          + Add Step
+        </button>
+      </div>
+
+      <div class="steps-list" formArrayName="routingSteps">
+        <div class="step-card" *ngFor="let step of routingSteps.controls; let i = index" [formGroupName]="i">
+          <div class="step-header">
+            <span class="step-number">Step {{ step.get('sequenceNumber')?.value }}</span>
+            <div class="step-actions" *ngIf="!isViewMode && (!process || process.status === 'DRAFT')">
+              <button type="button" class="btn-icon" (click)="moveStepUp(i)" [disabled]="i === 0" title="Move Up">
+                ↑
+              </button>
+              <button type="button" class="btn-icon" (click)="moveStepDown(i)" [disabled]="i === routingSteps.length - 1" title="Move Down">
+                ↓
+              </button>
+              <button type="button" class="btn-icon btn-danger-icon" (click)="removeStep(i)" title="Remove">
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div class="step-content">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Operation Name *</label>
+                <input type="text"
+                       formControlName="operationName"
+                       placeholder="e.g., Melting">
+              </div>
+
+              <div class="form-group">
+                <label>Operation Type</label>
+                <select formControlName="operationType">
+                  <option *ngFor="let type of operationTypes" [value]="type">{{ type }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Operation Code</label>
+                <input type="text"
+                       formControlName="operationCode"
+                       placeholder="e.g., MELT-001">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Target Quantity</label>
+                <input type="number"
+                       formControlName="targetQty"
+                       placeholder="0">
+              </div>
+
+              <div class="form-group">
+                <label>Est. Duration (minutes)</label>
+                <input type="number"
+                       formControlName="estimatedDurationMinutes"
+                       placeholder="0">
+              </div>
+
+              <div class="form-group">
+                <label>Description</label>
+                <input type="text"
+                       formControlName="description"
+                       placeholder="Step description">
+              </div>
+            </div>
+
+            <div class="form-row checkboxes">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="mandatoryFlag">
+                Mandatory
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="isParallel">
+                Allow Parallel
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="producesOutputBatch">
+                Produces Output
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="allowsSplit">
+                Allow Split
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="allowsMerge">
+                Allow Merge
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-steps" *ngIf="routingSteps.length === 0">
+          <p>No routing steps defined yet.</p>
+          <button type="button"
+                  class="btn btn-secondary"
+                  (click)="addStep()"
+                  *ngIf="!isViewMode && (!process || process.status === 'DRAFT')">
+            + Add First Step
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="cancel()">
+        {{ isViewMode ? 'Back' : 'Cancel' }}
+      </button>
+
+      <ng-container *ngIf="process && isViewMode">
+        <button type="button"
+                class="btn btn-primary"
+                (click)="enableEdit()"
+                *ngIf="process.status === 'DRAFT'">
+          Edit Process
+        </button>
+        <button type="button"
+                class="btn btn-success"
+                (click)="activateProcess()"
+                *ngIf="process.status === 'DRAFT'">
+          Activate
+        </button>
+        <button type="button"
+                class="btn btn-secondary"
+                (click)="createNewVersion()"
+                *ngIf="process.status === 'ACTIVE' || process.status === 'INACTIVE'">
+          Create New Version
+        </button>
+      </ng-container>
+
+      <button type="submit"
+              class="btn btn-primary"
+              [disabled]="saving || processForm.invalid"
+              *ngIf="!isViewMode && (!process || process.status === 'DRAFT')">
+        <span *ngIf="saving">Saving...</span>
+        <span *ngIf="!saving">{{ processId ? 'Update Process' : 'Create Process' }}</span>
+      </button>
+    </div>
+  </form>
+</div>

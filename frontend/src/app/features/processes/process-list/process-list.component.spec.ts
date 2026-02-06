@@ -17,7 +17,7 @@ describe('ProcessListComponent', () => {
     {
       processId: 1,
       orderLineId: 1,
-      stageName: 'Melting',
+      processName: 'Melting',
       stageSequence: 1,
       status: 'READY',
       usageDecision: null,
@@ -28,7 +28,7 @@ describe('ProcessListComponent', () => {
     {
       processId: 2,
       orderLineId: 1,
-      stageName: 'Casting',
+      processName: 'Casting',
       stageSequence: 2,
       status: 'IN_PROGRESS',
       usageDecision: null,
@@ -40,7 +40,7 @@ describe('ProcessListComponent', () => {
     {
       processId: 3,
       orderLineId: 2,
-      stageName: 'Rolling',
+      processName: 'Rolling',
       stageSequence: 3,
       status: 'COMPLETED',
       usageDecision: 'ACCEPT',
@@ -105,13 +105,13 @@ describe('ProcessListComponent', () => {
   it('should apply status filter', () => {
     component.onFilterStatusChange('READY');
     expect(component.processes.length).toBe(1);
-    expect(component.processes[0].stageName).toBe('Melting');
+    expect(component.processes[0].processName).toBe('Melting');
   });
 
   it('should apply search filter', () => {
     component.onSearchChange('Casting');
     expect(component.processes.length).toBe(1);
-    expect(component.processes[0].stageName).toBe('Casting');
+    expect(component.processes[0].processName).toBe('Casting');
   });
 
   it('should search by process ID', () => {
@@ -125,7 +125,7 @@ describe('ProcessListComponent', () => {
     component.searchTerm = 'Cast';
     component.applyFilters();
     expect(component.processes.length).toBe(1);
-    expect(component.processes[0].stageName).toBe('Casting');
+    expect(component.processes[0].processName).toBe('Casting');
   });
 
   it('should show all when filter is all', () => {

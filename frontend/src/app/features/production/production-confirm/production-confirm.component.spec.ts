@@ -29,7 +29,7 @@ describe('ProductionConfirmComponent', () => {
     },
     process: {
       processId: 1,
-      stageName: 'Melting'
+      processName: 'Melting'
     }
   };
 

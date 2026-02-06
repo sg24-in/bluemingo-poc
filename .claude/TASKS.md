@@ -1145,15 +1145,57 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 | R09 | Create ProcessTemplateRepository | PENDING | HIGH | Spring Data repo |
 | R10 | Add batch behavior constants | PENDING | HIGH | RoutingStep constants |
 
-### Phase 9C: Service Logic
+### Phase 9C: Service Logic - COMPLETE
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| R11 | Create ProcessTemplateService | PENDING | HIGH | CRUD + activation |
-| R12 | Create OperationInstantiationService | PENDING | HIGH | Create ops from routing |
-| R13 | Add single-active-routing enforcement | PENDING | MEDIUM | Only one ACTIVE per process |
-| R14 | Add routing-lock-after-execution | PENDING | MEDIUM | Block modify if ops exist |
+| R11 | Create ProcessTemplateService | ✅ DONE | HIGH | Full CRUD + activation + versioning |
+| R12 | Create OperationInstantiationService | ✅ DONE | HIGH | Create ops from routing at runtime |
+| R13 | Add single-active-routing enforcement | ✅ DONE | MEDIUM | deactivateOtherTemplates() |
+| R14 | Add routing-lock-after-execution | ✅ DONE | MEDIUM | isRoutingLocked() checks step status |
 | R15 | Add batch behavior validation | PENDING | HIGH | Check flags before split/merge |
+
+**Files Created:**
+- `ProcessTemplateDTO.java` - Request/response DTOs for templates
+- `ProcessTemplateService.java` - Full CRUD with activation workflow
+- `ProcessTemplateController.java` - REST endpoints for template management
+- `OperationInstantiationService.java` - Creates operations from routing at runtime
+
+**Files Modified:**
+- `RoutingDTO.java` - Added CRUD DTOs (Create, Update, Status, Hold)
+- `RoutingService.java` - Added CRUD methods + lock/hold/status
+- `RoutingController.java` - Added CRUD endpoints
+
+**API Endpoints Added:**
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/process-templates` | POST | Create template |
+| `/api/process-templates/{id}` | GET | Get template |
+| `/api/process-templates/{id}` | PUT | Update template |
+| `/api/process-templates/{id}` | DELETE | Delete template |
+| `/api/process-templates/{id}/activate` | POST | Activate template |
+| `/api/process-templates/{id}/deactivate` | POST | Deactivate template |
+| `/api/process-templates/{id}/new-version` | POST | Create new version |
+| `/api/process-templates/paged` | GET | Paginated list |
+| `/api/process-templates/product/{sku}` | GET | Templates for product |
+| `/api/process-templates/product/{sku}/effective` | GET | Effective template |
+| `/api/process-templates/{id}/steps` | POST | Add routing step |
+| `/api/process-templates/steps/{id}` | PUT | Update routing step |
+| `/api/process-templates/steps/{id}` | DELETE | Delete routing step |
+| `/api/routing` | GET | List routings |
+| `/api/routing` | POST | Create routing |
+| `/api/routing/{id}` | PUT | Update routing |
+| `/api/routing/{id}` | DELETE | Delete routing |
+| `/api/routing/{id}/activate` | POST | Activate routing |
+| `/api/routing/{id}/deactivate` | POST | Deactivate routing |
+| `/api/routing/{id}/hold` | POST | Put on hold |
+| `/api/routing/{id}/release` | POST | Release from hold |
+| `/api/routing/{id}/status` | GET | Get status summary |
+| `/api/routing/{id}/locked` | GET | Check if locked |
+
+**Tests:**
+- `ProcessTemplateServiceTest.java` - 16 tests covering CRUD, activation, versioning
+- `RoutingServiceTest.java` - Updated with 33+ tests including new CRUD methods
 
 ### Phase 9D: Controllers & APIs
 

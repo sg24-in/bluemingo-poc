@@ -168,7 +168,7 @@ class BatchServiceTest {
         // Create operation with full hierarchy
         Order order = Order.builder().orderId(1L).customerId("CUST-001").status("IN_PROGRESS").build();
         OrderLineItem lineItem = OrderLineItem.builder().orderLineId(1L).order(order).productSku("STEEL-001").build();
-        com.mes.production.entity.Process process = com.mes.production.entity.Process.builder().processId(1L).stageName("Melting").orderLineItem(lineItem).build();
+        com.mes.production.entity.Process process = com.mes.production.entity.Process.builder().processId(1L).processName("Melting").orderLineItem(lineItem).build();
         Operation operation = Operation.builder()
                 .operationId(1L)
                 .operationName("Melt Iron")

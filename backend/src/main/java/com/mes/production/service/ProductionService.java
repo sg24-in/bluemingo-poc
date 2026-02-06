@@ -2,7 +2,6 @@ package com.mes.production.service;
 
 import com.mes.production.dto.ProductionConfirmationDTO;
 import com.mes.production.entity.*;
-import com.mes.production.entity.Process;
 import com.mes.production.repository.*;
 import com.mes.production.repository.HoldRecordRepository;
 import lombok.RequiredArgsConstructor;
@@ -66,16 +65,17 @@ public class ProductionService {
         }
 
         // Check if process is on hold
-        if (holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", operation.getProcess().getProcessId(), "ACTIVE")) {
+        com.mes.production.entity.Process process = operation.getProcess();
+        if (holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", process.getProcessId(), "ACTIVE")) {
             throw new RuntimeException("Process is on hold and cannot be confirmed");
         }
 
         // 2. Validate process parameters against configured min/max values
         if (request.getProcessParameters() != null && !request.getProcessParameters().isEmpty()) {
             String operationType = operation.getOperationType();
-            String productSku = operation.getProcess() != null &&
-                    operation.getProcess().getOrderLineItem() != null ?
-                    operation.getProcess().getOrderLineItem().getProductSku() : null;
+            String productSku = process != null &&
+                    process.getOrderLineItem() != null ?
+                    process.getOrderLineItem().getProductSku() : null;
 
             ProcessParameterService.ValidationResult paramValidation =
                     processParameterService.validateParameters(operationType, productSku, request.getProcessParameters());
@@ -103,8 +103,8 @@ public class ProductionService {
 
             // Use centralized state validator to check consumption is allowed
             // This validates: state is AVAILABLE or RESERVED (for this order), no active holds on inventory/batch
-            Long orderId = operation.getProcess() != null && operation.getProcess().getOrderLineItem() != null
-                    ? operation.getProcess().getOrderLineItem().getOrder().getOrderId()
+            Long orderId = process != null && process.getOrderLineItem() != null
+                    ? process.getOrderLineItem().getOrder().getOrderId()
                     : null;
             inventoryStateValidator.validateConsumption(inventory, orderId);
 
@@ -316,8 +316,9 @@ public class ProductionService {
     private Batch generateOutputBatch(Operation operation, BigDecimal quantity, String currentUser) {
         // Get product SKU for configuration lookup
         String productSku = null;
-        if (operation.getProcess() != null && operation.getProcess().getOrderLineItem() != null) {
-            productSku = operation.getProcess().getOrderLineItem().getProductSku();
+        com.mes.production.entity.Process process = operation.getProcess();
+        if (process != null && process.getOrderLineItem() != null) {
+            productSku = process.getOrderLineItem().getProductSku();
         }
 
         // Generate batch number using configurable service (GAP-005)
@@ -401,7 +402,7 @@ public class ProductionService {
     }
 
     private ProductionConfirmationDTO.NextOperationInfo setNextOperationReady(Operation currentOp, String currentUser) {
-        Process process = currentOp.getProcess();
+        com.mes.production.entity.Process process = currentOp.getProcess();
 
         // Find next operation in current process
         Optional<Operation> nextOp = operationRepository.findNextOperation(
@@ -423,7 +424,7 @@ public class ProductionService {
                     .operationId(next.getOperationId())
                     .operationName(next.getOperationName())
                     .status("READY")
-                    .processName(process.getStageName())
+                    .processName(process.getProcessName())
                     .build();
         } else {
             // All operations in this process are complete
@@ -431,7 +432,7 @@ public class ProductionService {
             process.setStatus("COMPLETED");
             process.setUpdatedBy(currentUser);
             processRepository.save(process);
-            log.info("Process completed: {}", process.getStageName());
+            log.info("Process completed: {}", process.getProcessName());
 
             // Audit: Log process completion
             auditService.logStatusChange("PROCESS", process.getProcessId(), oldProcessStatus, "COMPLETED");

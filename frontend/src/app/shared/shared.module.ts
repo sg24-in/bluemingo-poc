@@ -9,6 +9,7 @@ import { PaginationComponent } from './components/pagination/pagination.componen
 import { MainLayoutComponent } from './components/main-layout/main-layout.component';
 import { AdminLayoutComponent } from './components/admin-layout/admin-layout.component';
 import { ManageLandingComponent } from './components/manage-landing/manage-landing.component';
+import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { ManageLandingComponent } from './components/manage-landing/manage-landi
     PaginationComponent,
     MainLayoutComponent,
     AdminLayoutComponent,
-    ManageLandingComponent
+    ManageLandingComponent,
+    BreadcrumbComponent
   ],
   imports: [
     CommonModule,
@@ -37,7 +39,8 @@ import { ManageLandingComponent } from './components/manage-landing/manage-landi
     PaginationComponent,
     MainLayoutComponent,
     AdminLayoutComponent,
-    ManageLandingComponent
+    ManageLandingComponent,
+    BreadcrumbComponent
   ]
 })
 export class SharedModule { }

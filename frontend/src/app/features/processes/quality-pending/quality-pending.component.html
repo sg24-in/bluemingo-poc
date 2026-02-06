@@ -51,7 +51,7 @@
             <thead>
               <tr>
                 <th>Process ID</th>
-                <th>Stage Name</th>
+                <th>Process Name</th>
                 <th>Operations</th>
                 <th>Status</th>
                 <th>Updated</th>
@@ -61,7 +61,7 @@
             <tbody>
               <tr *ngFor="let process of qualityPendingProcesses">
                 <td>{{ process.processId }}</td>
-                <td>{{ process.stageName }}</td>
+                <td>{{ process.processName }}</td>
                 <td>{{ getOperationsSummary(process) }}</td>
                 <td><app-status-badge [status]="process.status"></app-status-badge></td>
                 <td>{{ process.updatedOn | date:'short' }}</td>
@@ -100,7 +100,7 @@
             <thead>
               <tr>
                 <th>Process ID</th>
-                <th>Stage Name</th>
+                <th>Process Name</th>
                 <th>Operations</th>
                 <th>Status</th>
                 <th>Updated</th>
@@ -110,7 +110,7 @@
             <tbody>
               <tr *ngFor="let process of rejectedProcesses">
                 <td>{{ process.processId }}</td>
-                <td>{{ process.stageName }}</td>
+                <td>{{ process.processName }}</td>
                 <td>{{ getOperationsSummary(process) }}</td>
                 <td><app-status-badge [status]="process.status"></app-status-badge></td>
                 <td>{{ process.updatedOn | date:'short' }}</td>
@@ -144,7 +144,7 @@
     <div class="modal-body">
       <div class="process-details" *ngIf="selectedProcess">
         <p><strong>Process ID:</strong> {{ selectedProcess.processId }}</p>
-        <p><strong>Stage Name:</strong> {{ selectedProcess.stageName }}</p>
+        <p><strong>Process Name:</strong> {{ selectedProcess.processName }}</p>
         <p><strong>Operations:</strong> {{ getOperationsSummary(selectedProcess) }}</p>
       </div>
 

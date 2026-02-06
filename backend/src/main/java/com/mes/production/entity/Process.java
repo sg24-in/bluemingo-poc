@@ -7,6 +7,19 @@ import lombok.EqualsAndHashCode.Exclude;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Process - Runtime process entity per MES Consolidated Specification.
+ *
+ * This entity represents a process being executed for a specific OrderLineItem.
+ * Design-time templates are handled by Routing/RoutingSteps.
+ *
+ * Fields per spec:
+ * - ProcessID (PK)
+ * - ProcessName
+ * - Status (READY / IN_PROGRESS / QUALITY_PENDING / COMPLETED / REJECTED / ON_HOLD)
+ *
+ * Relationship: Orders → OrderLineItems → Processes → Operations
+ */
 @Entity
 @Table(name = "processes")
 @Data
@@ -15,7 +28,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Process {
 
-    // Status constants
+    // Status constants (runtime statuses per spec)
     public static final String STATUS_READY = "READY";
     public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
     public static final String STATUS_QUALITY_PENDING = "QUALITY_PENDING";
@@ -42,8 +55,8 @@ public class Process {
     @Column(name = "bom_id")
     private Long bomId;
 
-    @Column(name = "stage_name", nullable = false)
-    private String stageName;
+    @Column(name = "process_name", nullable = false, length = 100)
+    private String processName;
 
     @Column(name = "stage_sequence", nullable = false)
     private Integer stageSequence;
@@ -75,8 +88,9 @@ public class Process {
     @PrePersist
     protected void onCreate() {
         createdOn = LocalDateTime.now();
-        if (status == null) status = "READY";
+        if (status == null) status = STATUS_READY;
         if (stageSequence == null) stageSequence = 1;
+        if (usageDecision == null) usageDecision = DECISION_PENDING;
     }
 
     @PreUpdate

@@ -1,30 +1,41 @@
 /**
- * Process Models - Must match backend ProcessDTO exactly.
- * See CONVENTIONS.md for contract rules.
+ * Process Models - Runtime process per MES Consolidated Specification
+ *
+ * Process entity (per spec):
+ * - ProcessID (PK)
+ * - ProcessName
+ * - Status (READY / IN_PROGRESS / QUALITY_PENDING / COMPLETED / REJECTED / ON_HOLD)
+ *
+ * Relationship: Orders → OrderLineItems → Processes → Operations
  */
 
-import { ProcessStatusType, ProcessDecisionType } from '../constants/status.constants';
 import { OperationBrief } from './operation.model';
 
+// Process status types
+export type ProcessStatusType = 'READY' | 'IN_PROGRESS' | 'QUALITY_PENDING' | 'COMPLETED' | 'REJECTED' | 'ON_HOLD';
+export type ProcessDecisionType = 'PENDING' | 'ACCEPT' | 'REJECT';
+
 /**
- * Matches: ProcessDTO.Response
+ * Process - Runtime process entity
+ * Matches backend Process entity
  */
 export interface Process {
   processId: number;
   orderLineId?: number;
-  stageName: string;
+  processName: string;
   stageSequence: number;
   status: ProcessStatusType;
   usageDecision?: ProcessDecisionType;
-  createdOn?: string; // LocalDateTime
+  bomId?: number;
+  createdOn?: string;
   createdBy?: string;
-  updatedOn?: string; // LocalDateTime
+  updatedOn?: string;
   updatedBy?: string;
   operations?: OperationBrief[];
 }
 
 /**
- * Matches: ProcessDTO.StatusUpdateRequest
+ * Process status update request
  */
 export interface ProcessStatusUpdateRequest {
   processId: number;
@@ -34,7 +45,7 @@ export interface ProcessStatusUpdateRequest {
 }
 
 /**
- * Matches: ProcessDTO.QualityDecisionRequest
+ * Process quality decision request
  */
 export interface ProcessQualityDecisionRequest {
   processId: number;
@@ -44,27 +55,38 @@ export interface ProcessQualityDecisionRequest {
 }
 
 /**
- * Matches: ProcessDTO.StatusUpdateResponse
+ * Process status update response
  */
 export interface ProcessStatusUpdateResponse {
   processId: number;
-  stageName: string;
+  processName: string;
   previousStatus: string;
   newStatus: string;
   usageDecision?: string;
   updatedBy: string;
-  updatedOn: string; // LocalDateTime
+  updatedOn: string;
   message: string;
 }
 
 /**
- * Nested process for order context
- * Matches: OrderDTO.ProcessDTO
+ * Process summary for nested display
  */
 export interface ProcessSummary {
   processId: number;
-  stageName: string;
+  processName: string;
   stageSequence: number;
   status: ProcessStatusType;
   operations?: OperationBrief[];
 }
+
+// Backward compatibility aliases (deprecated - use Process instead)
+/** @deprecated Use Process instead */
+export type ProcessInstance = Process;
+/** @deprecated Use ProcessStatusUpdateRequest instead */
+export type ProcessInstanceStatusUpdateRequest = ProcessStatusUpdateRequest;
+/** @deprecated Use ProcessQualityDecisionRequest instead */
+export type ProcessInstanceQualityDecisionRequest = ProcessQualityDecisionRequest;
+/** @deprecated Use ProcessStatusUpdateResponse instead */
+export type ProcessInstanceStatusUpdateResponse = ProcessStatusUpdateResponse;
+/** @deprecated Use ProcessSummary instead */
+export type ProcessInstanceSummary = ProcessSummary;

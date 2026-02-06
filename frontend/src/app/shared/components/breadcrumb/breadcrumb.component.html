@@ -1,0 +1,20 @@
+<nav class="breadcrumb-nav" *ngIf="breadcrumbs.length > 0">
+  <ol class="breadcrumb-list">
+    <li class="breadcrumb-item home">
+      <a routerLink="/dashboard">
+        <i class="fas fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item" *ngFor="let breadcrumb of breadcrumbs; let last = last">
+      <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+      <a *ngIf="!last" [routerLink]="breadcrumb.url">
+        <i *ngIf="breadcrumb.icon" class="fas" [ngClass]="breadcrumb.icon"></i>
+        {{ breadcrumb.label }}
+      </a>
+      <span *ngIf="last" class="breadcrumb-current">
+        <i *ngIf="breadcrumb.icon" class="fas" [ngClass]="breadcrumb.icon"></i>
+        {{ breadcrumb.label }}
+      </span>
+    </li>
+  </ol>
+</nav>

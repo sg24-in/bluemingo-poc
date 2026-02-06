@@ -19,6 +19,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Service for managing runtime Process entities.
+ *
+ * Per MES Consolidated Specification:
+ * - Process is the runtime entity tracking execution for OrderLineItems
+ * - ProcessTemplate handles design-time definitions
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -92,7 +99,7 @@ public class ProcessService {
 
         return ProcessDTO.StatusUpdateResponse.builder()
                 .processId(processId)
-                .stageName(process.getStageName())
+                .processName(process.getProcessName())
                 .previousStatus(oldStatus)
                 .newStatus(Process.STATUS_QUALITY_PENDING)
                 .usageDecision(Process.DECISION_PENDING)
@@ -153,7 +160,7 @@ public class ProcessService {
 
         return ProcessDTO.StatusUpdateResponse.builder()
                 .processId(request.getProcessId())
-                .stageName(process.getStageName())
+                .processName(process.getProcessName())
                 .previousStatus(oldStatus)
                 .newStatus(newStatus)
                 .usageDecision(decision)
@@ -228,7 +235,7 @@ public class ProcessService {
 
         return ProcessDTO.StatusUpdateResponse.builder()
                 .processId(request.getProcessId())
-                .stageName(process.getStageName())
+                .processName(process.getProcessName())
                 .previousStatus(oldStatus)
                 .newStatus(newStatus)
                 .usageDecision(process.getUsageDecision())
@@ -252,6 +259,36 @@ public class ProcessService {
 
         return process.getOperations().stream()
                 .allMatch(op -> "CONFIRMED".equals(op.getStatus()));
+    }
+
+    /**
+     * Get processes for an order
+     */
+    @Transactional(readOnly = true)
+    public List<ProcessDTO.Response> getProcessesByOrderId(Long orderId) {
+        return processRepository.findByOrderId(orderId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get quality pending processes
+     */
+    @Transactional(readOnly = true)
+    public List<ProcessDTO.Response> getQualityPendingProcesses() {
+        return processRepository.findQualityPending().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get processes for an order line
+     */
+    @Transactional(readOnly = true)
+    public List<ProcessDTO.Response> getProcessesByOrderLineId(Long orderLineId) {
+        return processRepository.findByOrderLineIdOrderBySequence(orderLineId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     private Process getProcessEntity(Long processId) {
@@ -299,7 +336,7 @@ public class ProcessService {
         return ProcessDTO.Response.builder()
                 .processId(process.getProcessId())
                 .orderLineId(process.getOrderLineItem() != null ? process.getOrderLineItem().getOrderLineId() : null)
-                .stageName(process.getStageName())
+                .processName(process.getProcessName())
                 .stageSequence(process.getStageSequence())
                 .status(process.getStatus())
                 .usageDecision(process.getUsageDecision())
