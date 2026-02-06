@@ -1,0 +1,94 @@
+.config-form-page { padding: 20px; }
+.form-container { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 24px; max-width: 800px; }
+.hint { display: block; margin-top: 4px; font-size: 12px; color: #666; }
+.loading { text-align: center; padding: 60px 20px; color: #666; }
+
+.applicable-to-group {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.applicable-to-group > label {
+  font-weight: 500;
+  color: #555;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.entity-type-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: #0d47a1;
+}
+
+.entity-type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.entity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  background: #fafafa;
+  color: #555;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.entity-chip:hover {
+  border-color: #1976d2;
+  background: #f0f7ff;
+  color: #1976d2;
+}
+
+.entity-chip.selected {
+  border-color: #1976d2;
+  background: #1976d2;
+  color: white;
+}
+
+.entity-chip.selected:hover {
+  background: #1565c0;
+  border-color: #1565c0;
+}
+
+.entity-chip i {
+  font-size: 14px;
+}
+
+.selected-summary {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}

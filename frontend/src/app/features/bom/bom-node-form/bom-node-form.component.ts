@@ -22,7 +22,6 @@ export class BomNodeFormComponent implements OnInit {
   error: string | null = null;
   materials: Material[] = [];
   products: Product[] = [];
-  selectedProductSku: string = '';
 
   units = ['KG', 'T', 'PCS', 'M', 'L', 'MT'];
 
@@ -33,11 +32,12 @@ export class BomNodeFormComponent implements OnInit {
     private apiService: ApiService
   ) {
     this.form = this.fb.group({
+      productSku: [''],
       materialId: ['', [Validators.required]],
       materialName: ['', [Validators.required]],
       quantityRequired: [1, [Validators.required, Validators.min(0.0001)]],
       unit: ['KG', [Validators.required]],
-      yieldLossRatio: [1],
+      yieldLossRatio: [1, [Validators.min(0.01)]],
       sequenceLevel: [1, [Validators.required, Validators.min(1)]],
       bomVersion: ['V1'],
       status: ['ACTIVE']
@@ -46,10 +46,10 @@ export class BomNodeFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.productSku = params['productSku'];
+      this.productSku = params['productSku'] || '';
       this.bomId = params['bomId'] ? +params['bomId'] : null;
       this.isEditMode = !!this.bomId;
-      this.isNewBom = this.productSku === 'new';
+      this.isNewBom = !this.productSku;
     });
 
     this.route.queryParams.subscribe(queryParams => {
@@ -64,6 +64,8 @@ export class BomNodeFormComponent implements OnInit {
 
     // Load products for new BOM creation
     if (this.isNewBom) {
+      this.form.get('productSku')?.setValidators([Validators.required]);
+      this.form.get('productSku')?.updateValueAndValidity();
       this.loadProducts();
     }
 
@@ -92,11 +94,6 @@ export class BomNodeFormComponent implements OnInit {
         console.error('Error loading products:', err);
       }
     });
-  }
-
-  onProductSelect(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.selectedProductSku = select.value;
   }
 
   loadParentInfo(): void {
@@ -176,12 +173,13 @@ export class BomNodeFormComponent implements OnInit {
     // Determine product SKU
     let productSku = this.productSku;
     if (this.isNewBom) {
-      if (!this.selectedProductSku) {
+      const formProductSku = this.form.value.productSku;
+      if (!formProductSku) {
         this.error = 'Please select a product for the BOM';
         this.saving = false;
         return;
       }
-      productSku = this.selectedProductSku;
+      productSku = formProductSku;
     }
 
     const request: CreateBomNodeRequest = {
@@ -236,7 +234,7 @@ export class BomNodeFormComponent implements OnInit {
   }
 
   cancel(): void {
-    if (this.productSku && this.productSku !== 'new') {
+    if (this.productSku && !this.isNewBom) {
       this.router.navigate(['/manage/bom', this.productSku, 'tree']);
     } else {
       this.router.navigate(['/manage/bom']);

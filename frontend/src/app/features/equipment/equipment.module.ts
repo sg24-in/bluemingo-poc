@@ -4,12 +4,14 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { EquipmentRoutingModule } from './equipment-routing.module';
 import { EquipmentListComponent } from './equipment-list/equipment-list.component';
 import { EquipmentFormComponent } from './equipment-form/equipment-form.component';
+import { EquipmentDetailComponent } from './equipment-detail/equipment-detail.component';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
     EquipmentListComponent,
-    EquipmentFormComponent
+    EquipmentFormComponent,
+    EquipmentDetailComponent
   ],
   imports: [
     CommonModule,

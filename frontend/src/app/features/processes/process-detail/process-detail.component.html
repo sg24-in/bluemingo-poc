@@ -1,0 +1,127 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>Process Details</h1>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading process..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && process" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <div class="header-title">
+          <h2>{{ process.stageName }}</h2>
+          <span class="sequence-badge">Stage {{ process.stageSequence }}</span>
+        </div>
+        <div class="header-badges">
+          <span class="status-badge" [ngClass]="getStatusClass(process.status)">
+            {{ process.status }}
+          </span>
+          <span
+            *ngIf="process.usageDecision"
+            class="decision-badge"
+            [ngClass]="getDecisionClass(process.usageDecision)"
+          >
+            {{ process.usageDecision }}
+          </span>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Process Information</h3>
+          <div class="detail-row">
+            <span class="label">Process ID</span>
+            <span class="value">{{ process.processId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Stage Name</span>
+            <span class="value">{{ process.stageName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Sequence</span>
+            <span class="value">{{ process.stageSequence }}</span>
+          </div>
+          <div class="detail-row" *ngIf="process.orderLineId">
+            <span class="label">Order Line ID</span>
+            <span class="value">{{ process.orderLineId }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Status</h3>
+          <div class="status-display">
+            <span class="status-badge large" [ngClass]="getStatusClass(process.status)">
+              {{ process.status }}
+            </span>
+          </div>
+          <div class="decision-display" *ngIf="process.usageDecision">
+            <span class="decision-label">Quality Decision:</span>
+            <span class="decision-badge" [ngClass]="getDecisionClass(process.usageDecision)">
+              {{ process.usageDecision }}
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Timestamps</h3>
+          <div class="detail-row">
+            <span class="label">Created On</span>
+            <span class="value">{{ process.createdOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Created By</span>
+            <span class="value">{{ process.createdBy || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated On</span>
+            <span class="value">{{ process.updatedOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated By</span>
+            <span class="value">{{ process.updatedBy || '-' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operations Section -->
+    <div class="detail-card" *ngIf="process.operations && process.operations.length > 0">
+      <div class="card-header">
+        <h2>Operations ({{ process.operations.length }})</h2>
+      </div>
+      <div class="operations-list">
+        <div
+          class="operation-item"
+          *ngFor="let op of process.operations"
+          (click)="viewOperation(op.operationId)"
+        >
+          <div class="op-sequence">{{ op.sequenceNumber }}</div>
+          <div class="op-details">
+            <div class="op-name">{{ op.operationName }}</div>
+            <div class="op-code">{{ op.operationCode }}</div>
+          </div>
+          <div class="op-type" *ngIf="op.operationType">{{ op.operationType }}</div>
+          <span class="op-status" [ngClass]="getOperationStatusClass(op.status)">
+            {{ op.status }}
+          </span>
+          <i class="fas fa-chevron-right op-arrow"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-operations" *ngIf="!process.operations || process.operations.length === 0">
+      <p>No operations defined for this process.</p>
+    </div>
+  </div>
+</div>

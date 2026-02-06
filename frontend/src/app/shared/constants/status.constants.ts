@@ -9,6 +9,7 @@ export const OperationStatus = {
   NOT_STARTED: 'NOT_STARTED',
   READY: 'READY',
   IN_PROGRESS: 'IN_PROGRESS',
+  PARTIALLY_CONFIRMED: 'PARTIALLY_CONFIRMED',
   CONFIRMED: 'CONFIRMED',
   ON_HOLD: 'ON_HOLD',
   BLOCKED: 'BLOCKED'
@@ -87,6 +88,17 @@ export const OrderStatus = {
 } as const;
 export type OrderStatusType = typeof OrderStatus[keyof typeof OrderStatus];
 
+// Order Line Item Status
+export const OrderLineStatus = {
+  CREATED: 'CREATED',
+  READY: 'READY',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  BLOCKED: 'BLOCKED',
+  ON_HOLD: 'ON_HOLD'
+} as const;
+export type OrderLineStatusType = typeof OrderLineStatus[keyof typeof OrderLineStatus];
+
 // Hold Status
 export const HoldStatus = {
   ACTIVE: 'ACTIVE',
@@ -126,7 +138,8 @@ export const EntityType = {
   INVENTORY: 'INVENTORY',
   BATCH: 'BATCH',
   BATCH_RELATION: 'BATCH_RELATION',
-  PRODUCTION_CONFIRMATION: 'PRODUCTION_CONFIRMATION'
+  PRODUCTION_CONFIRMATION: 'PRODUCTION_CONFIRMATION',
+  EQUIPMENT: 'EQUIPMENT'
 } as const;
 export type EntityTypeValue = typeof EntityType[keyof typeof EntityType];
 

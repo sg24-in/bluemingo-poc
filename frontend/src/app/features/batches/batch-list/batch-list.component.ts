@@ -90,4 +90,39 @@ export class BatchListComponent implements OnInit {
   viewBatch(batchId: number): void {
     this.router.navigate(['/batches', batchId]);
   }
+
+  createBatch(): void {
+    this.router.navigate(['/batches/new']);
+  }
+
+  editBatch(batch: Batch): void {
+    this.router.navigate(['/batches', batch.batchId, 'edit']);
+  }
+
+  deleteBatch(batch: Batch): void {
+    if (!confirm(`Are you sure you want to delete batch ${batch.batchNumber}?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.apiService.deleteBatch(batch.batchId).subscribe({
+      next: () => {
+        this.loadBatches();
+      },
+      error: (err) => {
+        this.loading = false;
+        alert(err.error?.message || 'Failed to delete batch.');
+      }
+    });
+  }
+
+  canEdit(batch: Batch): boolean {
+    const status = batch.status || batch.state;
+    return status !== 'CONSUMED' && status !== 'SCRAPPED';
+  }
+
+  canDelete(batch: Batch): boolean {
+    const status = batch.status || batch.state;
+    return status !== 'CONSUMED' && status !== 'SCRAPPED';
+  }
 }

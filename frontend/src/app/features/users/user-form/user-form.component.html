@@ -1,0 +1,143 @@
+<div class="user-form-container">
+  <div class="page-header">
+    <h1>{{ title }}</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading user..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card">
+    <div class="form-section">
+      <h3>Account Information</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            class="form-control"
+            [readonly]="isEditMode"
+            placeholder="user@example.com"
+          />
+          <div class="error" *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['required']">
+            Email is required
+          </div>
+          <div class="error" *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['email']">
+            Please enter a valid email
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="!isEditMode">
+          <label for="password">Password *</label>
+          <input
+            type="password"
+            id="password"
+            formControlName="password"
+            class="form-control"
+            placeholder="Minimum 6 characters"
+          />
+          <div class="error" *ngIf="form.get('password')?.touched && form.get('password')?.errors?.['required']">
+            Password is required
+          </div>
+          <div class="error" *ngIf="form.get('password')?.touched && form.get('password')?.errors?.['minlength']">
+            Password must be at least 6 characters
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Profile Information</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Name *</label>
+          <input
+            type="text"
+            id="name"
+            formControlName="name"
+            class="form-control"
+            placeholder="Full name"
+          />
+          <div class="error" *ngIf="form.get('name')?.touched && form.get('name')?.errors?.['required']">
+            Name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="employeeId">Employee ID</label>
+          <input
+            type="text"
+            id="employeeId"
+            formControlName="employeeId"
+            class="form-control"
+            placeholder="e.g., EMP001"
+          />
+        </div>
+      </div>
+
+      <div class="form-row" *ngIf="isEditMode">
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" formControlName="status" class="form-control">
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <button type="button" class="btn btn-secondary" (click)="openResetPasswordModal()">
+            <i class="fas fa-key"></i> Reset Password
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving || form.invalid">
+        {{ saving ? 'Saving...' : (isEditMode ? 'Update User' : 'Create User') }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Reset Password Modal -->
+<div *ngIf="showResetPasswordModal" class="modal-overlay" (click)="closeResetPasswordModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Reset Password</h3>
+    <p>Enter a new password for this user.</p>
+
+    <div class="form-group">
+      <label for="newPassword">New Password</label>
+      <input
+        type="password"
+        id="newPassword"
+        [(ngModel)]="newPassword"
+        class="form-control"
+        placeholder="Minimum 6 characters"
+      />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeResetPasswordModal()" [disabled]="resettingPassword">
+        Cancel
+      </button>
+      <button
+        class="btn btn-primary"
+        (click)="resetPassword()"
+        [disabled]="resettingPassword || newPassword.length < 6"
+      >
+        {{ resettingPassword ? 'Resetting...' : 'Reset Password' }}
+      </button>
+    </div>
+  </div>
+</div>

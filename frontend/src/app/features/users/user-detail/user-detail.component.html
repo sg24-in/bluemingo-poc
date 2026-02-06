@@ -1,0 +1,76 @@
+<div class="user-detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>User Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="user">
+      <button class="btn btn-secondary" (click)="editUser()">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button
+        class="btn"
+        [ngClass]="user.status === 'ACTIVE' ? 'btn-danger' : 'btn-success'"
+        (click)="toggleStatus()"
+      >
+        <i class="fas" [ngClass]="user.status === 'ACTIVE' ? 'fa-user-slash' : 'fa-user-check'"></i>
+        {{ user.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading user..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && user" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <h2>{{ user.name }}</h2>
+        <span class="status-badge" [ngClass]="getStatusClass(user.status)">
+          {{ user.status }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Account Information</h3>
+          <div class="detail-row">
+            <span class="label">User ID</span>
+            <span class="value">{{ user.userId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Email</span>
+            <span class="value">{{ user.email }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Employee ID</span>
+            <span class="value">{{ user.employeeId || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Timestamps</h3>
+          <div class="detail-row">
+            <span class="label">Created On</span>
+            <span class="value">{{ user.createdOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated On</span>
+            <span class="value">{{ user.updatedOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Last Login</span>
+            <span class="value">{{ user.lastLogin ? (user.lastLogin | date:'medium') : 'Never' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

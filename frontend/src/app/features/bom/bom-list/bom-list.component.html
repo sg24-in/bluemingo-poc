@@ -17,7 +17,7 @@
 
   <div *ngIf="!loading && !error && products.length === 0" class="empty-state">
     <p>No BOMs defined yet.</p>
-    <button class="btn btn-primary" (click)="createNewBom()">Create First BOM</button>
+    <button class="btn btn-primary" (click)="createNewBom()">+ Create First BOM</button>
   </div>
 
   <div *ngIf="!loading && !error && products.length > 0" class="products-grid">
@@ -49,7 +49,7 @@
           View Tree
         </button>
         <button class="btn btn-primary" (click)="addNode(product.productSku)">
-          Add Node
+          + Add Node
         </button>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 
 import { OrderDetailComponent } from './order-detail.component';
 import { ApiService } from '../../../core/services/api.service';
+import { ChartService } from '../../../core/services/chart.service';
 import { SharedModule } from '../../../shared/shared.module';
 
 describe('OrderDetailComponent', () => {
@@ -39,6 +40,7 @@ describe('OrderDetailComponent', () => {
 
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', ['getOrderById']);
+    const chartSpy = jasmine.createSpyObj('ChartService', ['initChart', 'setOption', 'disposeChart', 'disposeAll']);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -49,6 +51,7 @@ describe('OrderDetailComponent', () => {
       declarations: [OrderDetailComponent],
       providers: [
         { provide: ApiService, useValue: spy },
+        { provide: ChartService, useValue: chartSpy },
         {
           provide: ActivatedRoute,
           useValue: {

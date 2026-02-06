@@ -124,14 +124,14 @@ describe('ProductListComponent', () => {
 
     it('should change page', () => {
       component.onPageChange(1);
-      expect(component.page).toBe(1);
       expect(apiServiceSpy.getProductsPaged).toHaveBeenCalledTimes(1);
+      expect(apiServiceSpy.getProductsPaged).toHaveBeenCalledWith(jasmine.objectContaining({ page: 1 }));
     });
 
     it('should change page size', () => {
       component.onSizeChange(50);
-      expect(component.size).toBe(50);
-      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getProductsPaged).toHaveBeenCalledTimes(1);
+      expect(apiServiceSpy.getProductsPaged).toHaveBeenCalledWith(jasmine.objectContaining({ size: 50, page: 0 }));
     });
   });
 

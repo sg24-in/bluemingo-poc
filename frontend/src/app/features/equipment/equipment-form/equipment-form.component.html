@@ -51,7 +51,7 @@
               [class.error]="hasError('equipmentType')"
             >
               <option value="">Select type...</option>
-              <option *ngFor="let type of equipmentTypes" [value]="type">{{ type }}</option>
+              <option *ngFor="let type of equipmentTypes" [value]="type.equipment_type">{{ type.display_name }}</option>
             </select>
             <span class="error-text" *ngIf="hasError('equipmentType')">
               {{ getError('equipmentType') }}
@@ -94,6 +94,18 @@
               placeholder="e.g., KG, MT, PCS"
             />
           </div>
+        </div>
+      </div>
+
+      <div class="config-hints" *ngIf="selectedTypeConfig">
+        <h3>Type Configuration</h3>
+        <div class="hints-grid">
+          <span *ngIf="selectedTypeConfig.min_capacity">Min Capacity: {{ selectedTypeConfig.min_capacity }} {{ selectedTypeConfig.capacity_unit }}</span>
+          <span *ngIf="selectedTypeConfig.max_capacity">Max Capacity: {{ selectedTypeConfig.max_capacity }} {{ selectedTypeConfig.capacity_unit }}</span>
+          <span *ngIf="selectedTypeConfig.min_temperature">Temp Range: {{ selectedTypeConfig.min_temperature }}&deg;C - {{ selectedTypeConfig.max_temperature }}&deg;C</span>
+          <span *ngIf="selectedTypeConfig.requires_operator">Requires Operator: Yes</span>
+          <span *ngIf="selectedTypeConfig.requires_calibration">Requires Calibration: Yes</span>
+          <span *ngIf="selectedTypeConfig.maintenance_interval_hours">Maintenance Interval: {{ selectedTypeConfig.maintenance_interval_hours }}h</span>
         </div>
       </div>
 

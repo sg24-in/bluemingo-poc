@@ -72,3 +72,30 @@ export interface InventoryReserveRequest {
   operationId: number;
   quantity?: number;
 }
+
+/**
+ * Matches: InventoryDTO.CreateInventoryRequest
+ */
+export interface CreateInventoryRequest {
+  materialId: string;
+  materialName?: string;
+  inventoryType: string; // RM, IM, FG, WIP
+  quantity: number;
+  unit?: string;
+  location?: string;
+  batchId?: number;
+}
+
+/**
+ * Matches: InventoryDTO.UpdateInventoryRequest
+ */
+export interface UpdateInventoryRequest {
+  materialId?: string;
+  materialName?: string;
+  inventoryType?: string;
+  quantity?: number;
+  unit?: string;
+  location?: string;
+  state?: string;
+  batchId?: number;
+}

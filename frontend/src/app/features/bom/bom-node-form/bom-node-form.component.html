@@ -25,16 +25,19 @@
           <label for="productSelect">Product *</label>
           <select
             id="productSelect"
-            (change)="onProductSelect($event)"
+            formControlName="productSku"
             class="form-control"
-            [class.error]="!selectedProductSku && products.length > 0"
+            [class.error]="form.get('productSku')?.touched && form.get('productSku')?.errors?.['required']"
           >
             <option value="">-- Select a Product --</option>
             <option *ngFor="let product of products" [value]="product.sku">
               {{ product.sku }} - {{ product.productName }}
             </option>
           </select>
-          <div class="error" *ngIf="!selectedProductSku && products.length === 0">
+          <div class="error" *ngIf="form.get('productSku')?.touched && form.get('productSku')?.errors?.['required']">
+            Product selection is required
+          </div>
+          <div class="error" *ngIf="products.length === 0">
             No products available. Please create a product first.
           </div>
         </div>
@@ -117,6 +120,9 @@
           <select id="unit" formControlName="unit" class="form-control">
             <option *ngFor="let u of units" [value]="u">{{ u }}</option>
           </select>
+          <div class="error" *ngIf="form.get('unit')?.touched && form.get('unit')?.errors?.['required']">
+            Unit is required
+          </div>
         </div>
 
         <div class="form-group">
@@ -127,9 +133,12 @@
             formControlName="yieldLossRatio"
             class="form-control"
             step="0.01"
-            min="0"
+            min="0.01"
           />
           <small class="hint">1.0 = no loss, 1.05 = 5% extra needed</small>
+          <div class="error" *ngIf="form.get('yieldLossRatio')?.touched && form.get('yieldLossRatio')?.errors?.['min']">
+            Yield loss ratio must be at least 0.01
+          </div>
         </div>
       </div>
     </div>

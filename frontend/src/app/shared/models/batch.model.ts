@@ -47,6 +47,7 @@ export interface ParentBatchInfo {
   batchNumber: string;
   materialName: string;
   quantityConsumed: number;
+  unit: string;
   relationType: string;
 }
 
@@ -58,6 +59,7 @@ export interface ChildBatchInfo {
   batchNumber: string;
   materialName: string;
   quantity: number;
+  unit: string;
   relationType: string;
 }
 
@@ -147,4 +149,70 @@ export interface BatchApprovalRequest {
 export interface BatchRejectionRequest {
   batchId: number;
   reason: string;
+}
+
+/**
+ * Matches: BatchDTO.CreateBatchRequest
+ */
+export interface CreateBatchRequest {
+  batchNumber: string;
+  materialId: string;
+  materialName?: string;
+  quantity: number;
+  unit?: string;
+}
+
+/**
+ * Matches: BatchDTO.UpdateBatchRequest
+ * NOTE: quantity field REMOVED per MES Batch Management Specification.
+ * Use adjustBatchQuantity() for quantity changes.
+ */
+export interface UpdateBatchRequest {
+  batchNumber?: string;
+  materialId?: string;
+  materialName?: string;
+  // quantity REMOVED - use AdjustQuantityRequest instead
+  unit?: string;
+  status?: string;
+}
+
+/**
+ * Matches: BatchDTO.AdjustQuantityRequest
+ * Per MES Batch Management Specification: batch quantity is NEVER edited directly.
+ * All quantity changes must use this endpoint with proper justification.
+ */
+export interface AdjustQuantityRequest {
+  newQuantity: number;
+  reason: string;
+  adjustmentType: 'CORRECTION' | 'INVENTORY_COUNT' | 'DAMAGE' | 'SCRAP_RECOVERY';
+}
+
+/**
+ * Matches: BatchDTO.AdjustQuantityResponse
+ */
+export interface AdjustQuantityResponse {
+  batchId: number;
+  batchNumber: string;
+  previousQuantity: number;
+  newQuantity: number;
+  quantityDifference: number;
+  adjustmentType: string;
+  reason: string;
+  adjustedBy: string;
+  adjustedOn: string;
+  message: string;
+}
+
+/**
+ * Matches: BatchDTO.QuantityAdjustmentHistory
+ */
+export interface QuantityAdjustmentHistory {
+  adjustmentId: number;
+  oldQuantity: number;
+  newQuantity: number;
+  difference: number;
+  adjustmentType: string;
+  reason: string;
+  adjustedBy: string;
+  adjustedOn: string;
 }

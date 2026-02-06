@@ -307,4 +307,89 @@ class InventoryControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
+
+    // ========================================
+    // CRUD Tests
+    // ========================================
+
+    @Test
+    @WithMockUser(username = "admin")
+    @DisplayName("Should create inventory and return 201")
+    void createInventory_Returns201() throws Exception {
+        InventoryDTO.CreateInventoryRequest request = InventoryDTO.CreateInventoryRequest.builder()
+                .materialId("RM-002")
+                .materialName("Copper Wire")
+                .inventoryType("RM")
+                .quantity(new BigDecimal("500.00"))
+                .unit("KG")
+                .location("WH-02")
+                .build();
+
+        when(inventoryService.createInventory(any(InventoryDTO.CreateInventoryRequest.class)))
+                .thenReturn(testInventory);
+
+        mockMvc.perform(post("/api/inventory")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.inventoryId").value(1))
+                .andExpect(jsonPath("$.materialId").value("RM-001"));
+
+        verify(inventoryService).createInventory(any(InventoryDTO.CreateInventoryRequest.class));
+    }
+
+    @Test
+    @WithMockUser(username = "admin")
+    @DisplayName("Should update inventory and return 200")
+    void updateInventory_Returns200() throws Exception {
+        InventoryDTO.UpdateInventoryRequest request = InventoryDTO.UpdateInventoryRequest.builder()
+                .materialName("Updated Iron Ore")
+                .quantity(new BigDecimal("200.00"))
+                .build();
+
+        when(inventoryService.updateInventory(eq(1L), any(InventoryDTO.UpdateInventoryRequest.class)))
+                .thenReturn(testInventory);
+
+        mockMvc.perform(put("/api/inventory/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inventoryId").value(1));
+
+        verify(inventoryService).updateInventory(eq(1L), any(InventoryDTO.UpdateInventoryRequest.class));
+    }
+
+    @Test
+    @WithMockUser(username = "admin")
+    @DisplayName("Should delete inventory and return 200")
+    void deleteInventory_Returns200() throws Exception {
+        InventoryDTO.StateUpdateResponse response = InventoryDTO.StateUpdateResponse.builder()
+                .inventoryId(1L)
+                .previousState("AVAILABLE")
+                .newState("SCRAPPED")
+                .message("Inventory deleted (scrapped)")
+                .updatedBy("admin")
+                .updatedOn(LocalDateTime.now())
+                .build();
+
+        when(inventoryService.deleteInventory(1L)).thenReturn(response);
+
+        mockMvc.perform(delete("/api/inventory/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.previousState").value("AVAILABLE"))
+                .andExpect(jsonPath("$.newState").value("SCRAPPED"));
+
+        verify(inventoryService).deleteInventory(1L);
+    }
+
+    @Test
+    @WithMockUser(username = "admin")
+    @DisplayName("Should return error when deleting consumed inventory")
+    void deleteInventory_ConsumedReturnsError() throws Exception {
+        when(inventoryService.deleteInventory(1L))
+                .thenThrow(new RuntimeException("Cannot delete consumed inventory"));
+
+        mockMvc.perform(delete("/api/inventory/1"))
+                .andExpect(status().isBadRequest());
+    }
 }

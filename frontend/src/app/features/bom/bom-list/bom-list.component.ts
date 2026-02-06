@@ -48,8 +48,7 @@ export class BomListComponent implements OnInit {
   }
 
   createNewBom(): void {
-    // Navigate to create a new BOM for a new product
-    this.router.navigate(['/manage/bom', 'new', 'node', 'new']);
+    this.router.navigate(['/manage/bom', 'create']);
   }
 
   getStatusClass(status: string): string {

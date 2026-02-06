@@ -21,13 +21,13 @@ describe('OrderListComponent', () => {
       orderId: 1,
       orderNumber: 'ORD-001',
       status: 'IN_PROGRESS',
-      lineItems: [{ orderLineId: 1, productSku: 'SKU-001', productName: 'Steel Rod', quantity: 100, unit: 'KG', status: 'ACTIVE' }]
+      lineItems: [{ orderLineId: 1, productSku: 'SKU-001', productName: 'Steel Rod', quantity: 100, unit: 'KG', status: 'IN_PROGRESS' }]
     },
     {
       orderId: 2,
       orderNumber: 'ORD-002',
       status: 'COMPLETED',
-      lineItems: [{ orderLineId: 2, productSku: 'SKU-002', productName: 'Steel Plate', quantity: 50, unit: 'KG', status: 'ACTIVE' }]
+      lineItems: [{ orderLineId: 2, productSku: 'SKU-002', productName: 'Steel Plate', quantity: 50, unit: 'KG', status: 'COMPLETED' }]
     }
   ];
 

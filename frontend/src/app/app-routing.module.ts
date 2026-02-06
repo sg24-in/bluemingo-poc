@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { MainLayoutComponent } from './shared/components/main-layout/main-layout.component';
 import { AdminLayoutComponent } from './shared/components/admin-layout/admin-layout.component';
+import { ManageLandingComponent } from './shared/components/manage-landing/manage-landing.component';
 
 const routes: Routes = [
   {
@@ -50,6 +51,10 @@ const routes: Routes = [
       {
         path: 'equipment',
         loadChildren: () => import('./features/equipment/equipment.module').then(m => m.EquipmentModule)
+      },
+      {
+        path: 'operations',
+        loadChildren: () => import('./features/operations/operations.module').then(m => m.OperationsModule)
       }
     ]
   },
@@ -60,7 +65,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'customers',
+        component: ManageLandingComponent,
         pathMatch: 'full'
       },
       {
@@ -82,6 +87,22 @@ const routes: Routes = [
       {
         path: 'equipment',
         loadChildren: () => import('./features/equipment/equipment.module').then(m => m.EquipmentModule)
+      },
+      {
+        path: 'operators',
+        loadChildren: () => import('./features/operators/operators.module').then(m => m.OperatorsModule)
+      },
+      {
+        path: 'config',
+        loadChildren: () => import('./features/config/config.module').then(m => m.ConfigModule)
+      },
+      {
+        path: 'audit',
+        loadChildren: () => import('./features/audit/audit.module').then(m => m.AuditModule)
+      },
+      {
+        path: 'users',
+        loadChildren: () => import('./features/users/users.module').then(m => m.UsersModule)
       }
     ]
   },

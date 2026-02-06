@@ -4,8 +4,10 @@ import com.mes.production.dto.InventoryDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.service.InventoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -104,6 +106,39 @@ public class InventoryController {
         log.info("GET /api/inventory/{}", id);
         InventoryDTO inventory = inventoryService.getInventoryById(id);
         return ResponseEntity.ok(inventory);
+    }
+
+    /**
+     * Create new inventory
+     */
+    @PostMapping
+    public ResponseEntity<InventoryDTO> createInventory(
+            @Valid @RequestBody InventoryDTO.CreateInventoryRequest request) {
+        log.info("POST /api/inventory - Creating inventory for material: {}", request.getMaterialId());
+        InventoryDTO created = inventoryService.createInventory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    /**
+     * Update inventory
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<InventoryDTO> updateInventory(
+            @PathVariable Long id,
+            @Valid @RequestBody InventoryDTO.UpdateInventoryRequest request) {
+        log.info("PUT /api/inventory/{}", id);
+        InventoryDTO updated = inventoryService.updateInventory(id, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Delete inventory (soft delete via scrap)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<InventoryDTO.StateUpdateResponse> deleteInventory(@PathVariable Long id) {
+        log.info("DELETE /api/inventory/{}", id);
+        InventoryDTO.StateUpdateResponse response = inventoryService.deleteInventory(id);
+        return ResponseEntity.ok(response);
     }
 
     /**

@@ -1,0 +1,25 @@
+<div class="manage-landing">
+  <div class="page-header">
+    <h1>Administration</h1>
+    <p class="page-description">Manage master data, production settings, and system configuration</p>
+  </div>
+
+  <div class="tile-section" *ngFor="let group of tileGroups">
+    <h2 class="section-title">{{ group.title }}</h2>
+    <div class="tiles-grid">
+      <a *ngFor="let tile of group.tiles"
+         [routerLink]="tile.path"
+         class="tile"
+         [style.--tile-color]="tile.color">
+        <div class="tile-icon">
+          <i class="fas" [ngClass]="'fa-' + tile.icon"></i>
+        </div>
+        <div class="tile-content">
+          <h3>{{ tile.label }}</h3>
+          <p>{{ tile.description }}</p>
+        </div>
+        <i class="fas fa-chevron-right tile-arrow"></i>
+      </a>
+    </div>
+  </div>
+</div>

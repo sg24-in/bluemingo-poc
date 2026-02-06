@@ -1,0 +1,248 @@
+<div class="batch-form-page">
+  <div class="page-header">
+    <h1>{{ isEditMode ? 'Edit Batch' : 'New Batch' }}</h1>
+  </div>
+
+  <!-- Deprecation warning for new batch creation -->
+  <div class="warning-banner" *ngIf="!isEditMode">
+    <strong>Note:</strong> Manual batch creation is deprecated. Batches should be created via production confirmation for proper traceability.
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading batch...</div>
+
+  <div class="form-container" *ngIf="!loading">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+      <div class="form-section">
+        <h2>Batch Information</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="batchNumber">Batch Number *</label>
+            <input
+              type="text"
+              id="batchNumber"
+              formControlName="batchNumber"
+              [class.error]="hasError('batchNumber')"
+              placeholder="e.g., BATCH-001"
+            />
+            <span class="error-text" *ngIf="hasError('batchNumber')">
+              {{ getError('batchNumber') }}
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="materialId">Material ID *</label>
+            <input
+              type="text"
+              id="materialId"
+              formControlName="materialId"
+              [class.error]="hasError('materialId')"
+              placeholder="e.g., MAT-001"
+            />
+            <span class="error-text" *ngIf="hasError('materialId')">
+              {{ getError('materialId') }}
+            </span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="materialName">Material Name</label>
+            <input
+              type="text"
+              id="materialName"
+              formControlName="materialName"
+              placeholder="Enter material name"
+            />
+          </div>
+
+          <div class="form-group" *ngIf="isEditMode">
+            <label for="status">Status</label>
+            <select id="status" formControlName="status">
+              <option value="AVAILABLE">Available</option>
+              <option value="PRODUCED">Produced</option>
+              <option value="BLOCKED">Blocked</option>
+              <option value="ON_HOLD">On Hold</option>
+              <option value="QUALITY_PENDING">Quality Pending</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>Quantity</h2>
+
+        <!-- In edit mode, quantity is read-only -->
+        <div class="form-row" *ngIf="isEditMode">
+          <div class="form-group">
+            <label for="quantity">Current Quantity</label>
+            <div class="quantity-display">
+              <span class="quantity-value">{{ batch?.quantity | number:'1.2-4' }}</span>
+              <span class="quantity-unit">{{ batch?.unit || 'T' }}</span>
+            </div>
+            <p class="help-text">
+              Quantity cannot be edited directly. Use the "Adjust Quantity" feature below with a documented reason.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="unit">Unit of Measure</label>
+            <input
+              type="text"
+              id="unit"
+              formControlName="unit"
+              placeholder="e.g., T, KG, PCS"
+            />
+          </div>
+        </div>
+
+        <!-- In create mode, quantity is editable -->
+        <div class="form-row" *ngIf="!isEditMode">
+          <div class="form-group">
+            <label for="quantity">Quantity *</label>
+            <input
+              type="number"
+              id="quantity"
+              formControlName="quantity"
+              [class.error]="hasError('quantity')"
+              placeholder="e.g., 500"
+              step="0.01"
+            />
+            <span class="error-text" *ngIf="hasError('quantity')">
+              {{ getError('quantity') }}
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="unit">Unit of Measure</label>
+            <input
+              type="text"
+              id="unit"
+              formControlName="unit"
+              placeholder="e.g., T, KG, PCS"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Quantity Adjustment Section (Edit Mode Only) -->
+      <div class="form-section" *ngIf="isEditMode">
+        <div class="section-header">
+          <h2>Quantity Adjustment</h2>
+          <button type="button" class="btn btn-small" (click)="toggleAdjustmentForm()">
+            {{ showAdjustmentForm ? 'Cancel Adjustment' : 'Adjust Quantity' }}
+          </button>
+        </div>
+
+        <div class="adjustment-form" *ngIf="showAdjustmentForm">
+          <div class="error-banner" *ngIf="adjustmentError">{{ adjustmentError }}</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newQuantity">New Quantity *</label>
+              <input
+                type="number"
+                id="newQuantity"
+                [formControl]="adjustmentForm.controls['newQuantity']"
+                [class.error]="hasAdjustmentError('newQuantity')"
+                step="0.01"
+                min="0"
+              />
+              <span class="error-text" *ngIf="hasAdjustmentError('newQuantity')">
+                {{ getAdjustmentError('newQuantity') }}
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label for="adjustmentType">Adjustment Type *</label>
+              <select
+                id="adjustmentType"
+                [formControl]="adjustmentForm.controls['adjustmentType']"
+              >
+                <option *ngFor="let type of adjustmentTypes" [value]="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row full-width">
+            <div class="form-group">
+              <label for="reason">Reason for Adjustment * (min 10 characters)</label>
+              <textarea
+                id="reason"
+                [formControl]="adjustmentForm.controls['reason']"
+                [class.error]="hasAdjustmentError('reason')"
+                rows="3"
+                placeholder="Explain why this quantity adjustment is needed..."
+              ></textarea>
+              <span class="error-text" *ngIf="hasAdjustmentError('reason')">
+                {{ getAdjustmentError('reason') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="adjustment-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="submitAdjustment()"
+              [disabled]="adjusting || adjustmentForm.invalid"
+            >
+              {{ adjusting ? 'Adjusting...' : 'Submit Adjustment' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Adjustment History -->
+        <div class="adjustment-history" *ngIf="adjustmentHistory.length > 0">
+          <h3>Adjustment History</h3>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Old Qty</th>
+                <th>New Qty</th>
+                <th>Change</th>
+                <th>By</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let adj of adjustmentHistory">
+                <td>{{ adj.adjustedOn | date:'short' }}</td>
+                <td>{{ adj.adjustmentType }}</td>
+                <td>{{ adj.oldQuantity | number:'1.2-4' }}</td>
+                <td>{{ adj.newQuantity | number:'1.2-4' }}</td>
+                <td [class.positive]="adj.difference > 0" [class.negative]="adj.difference < 0">
+                  {{ adj.difference > 0 ? '+' : '' }}{{ adj.difference | number:'1.2-4' }}
+                </td>
+                <td>{{ adj.adjustedBy }}</td>
+                <td class="reason-cell">{{ adj.reason }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="no-history" *ngIf="adjustmentHistory.length === 0 && !loadingHistory">
+          No quantity adjustments recorded for this batch.
+        </div>
+        <div class="loading-history" *ngIf="loadingHistory">
+          Loading adjustment history...
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving || form.invalid">
+          {{ saving ? 'Saving...' : (isEditMode ? 'Update Batch' : 'Create Batch') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

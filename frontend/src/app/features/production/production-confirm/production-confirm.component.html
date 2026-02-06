@@ -1,6 +1,6 @@
 <div class="container">
   <div class="page-header">
-    <button class="btn btn-secondary" (click)="goBack()">← Back to Order</button>
+    <button class="btn btn-secondary" (click)="goBack()"><i class="fas fa-arrow-left"></i> Back to Order</button>
     <h1 class="page-title">Production Confirmation</h1>
   </div>
 
@@ -11,7 +11,7 @@
   <!-- Success State -->
   <div *ngIf="success && confirmationResult" class="success-container">
     <div class="card success-card">
-      <div class="success-icon">✓</div>
+      <div class="success-icon"><i class="fas fa-circle-check"></i></div>
       <h2>Production Confirmed Successfully!</h2>
 
       <div class="result-summary">
@@ -216,7 +216,7 @@
               <tr *ngFor="let inv of availableInventory">
                 <td>{{ inv.batchNumber }}</td>
                 <td>{{ inv.materialId }}</td>
-                <td>{{ inv.quantity }} {{ inv.unitOfMeasure }}</td>
+                <td>{{ inv.quantity }} {{ inv.unit }}</td>
                 <td><app-status-badge [status]="inv.state"></app-status-badge></td>
                 <td>
                   <button type="button" class="btn btn-primary btn-sm" (click)="addMaterial(inv)">

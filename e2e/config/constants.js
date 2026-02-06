@@ -16,6 +16,12 @@ const ROUTES = {
     BATCH_DETAIL: (id) => `/#/batches/${id}`,
     HOLDS: '/#/holds',
     EQUIPMENT: '/#/equipment',
+    EQUIPMENT_NEW: '/#/equipment/new',
+    EQUIPMENT_EDIT: (id) => `/#/equipment/${id}/edit`,
+    INVENTORY_NEW: '/#/inventory/new',
+    INVENTORY_EDIT: (id) => `/#/inventory/${id}/edit`,
+    BATCH_NEW: '/#/batches/new',
+    BATCH_EDIT: (id) => `/#/batches/${id}/edit`,
     QUALITY: '/#/quality',
     MANAGE: '/#/manage',
     CUSTOMERS: '/#/manage/customers',
@@ -26,7 +32,30 @@ const ROUTES = {
     MATERIAL_EDIT: (id) => `/#/manage/materials/${id}/edit`,
     PRODUCTS: '/#/manage/products',
     PRODUCT_NEW: '/#/manage/products/new',
-    PRODUCT_EDIT: (id) => `/#/manage/products/${id}/edit`
+    PRODUCT_EDIT: (id) => `/#/manage/products/${id}/edit`,
+    BOM: '/#/manage/bom',
+    BOM_TREE: (sku) => `/#/manage/bom/${sku}/tree`,
+    BOM_NODE_NEW: (sku) => `/#/manage/bom/${sku}/node/new`,
+    BOM_NODE_EDIT: (sku, bomId) => `/#/manage/bom/${sku}/node/${bomId}/edit`,
+    // Config management
+    CONFIG_HOLD_REASONS: '/#/manage/config/hold-reasons',
+    CONFIG_HOLD_REASONS_NEW: '/#/manage/config/hold-reasons/new',
+    CONFIG_HOLD_REASONS_EDIT: (id) => `/#/manage/config/hold-reasons/${id}/edit`,
+    CONFIG_DELAY_REASONS: '/#/manage/config/delay-reasons',
+    CONFIG_DELAY_REASONS_NEW: '/#/manage/config/delay-reasons/new',
+    CONFIG_DELAY_REASONS_EDIT: (id) => `/#/manage/config/delay-reasons/${id}/edit`,
+    CONFIG_PROCESS_PARAMS: '/#/manage/config/process-params',
+    CONFIG_PROCESS_PARAMS_NEW: '/#/manage/config/process-params/new',
+    CONFIG_PROCESS_PARAMS_EDIT: (id) => `/#/manage/config/process-params/${id}/edit`,
+    CONFIG_BATCH_NUMBER: '/#/manage/config/batch-number',
+    CONFIG_BATCH_NUMBER_NEW: '/#/manage/config/batch-number/new',
+    CONFIG_BATCH_NUMBER_EDIT: (id) => `/#/manage/config/batch-number/${id}/edit`,
+    CONFIG_QUANTITY_TYPE: '/#/manage/config/quantity-type',
+    CONFIG_QUANTITY_TYPE_NEW: '/#/manage/config/quantity-type/new',
+    CONFIG_QUANTITY_TYPE_EDIT: (id) => `/#/manage/config/quantity-type/${id}/edit`,
+    // Audit and Production History
+    AUDIT: '/#/manage/audit',
+    PRODUCTION_HISTORY: '/#/production/history'
 };
 
 // CSS Selectors
@@ -66,7 +95,73 @@ const SELECTORS = {
         description: '#description',
         // Product form
         productSku: '#sku',
-        productName: '#productName'
+        productName: '#productName',
+        // Equipment form
+        equipmentCode: '#equipmentCode',
+        equipmentName: '#name',
+        equipmentType: '#equipmentType',
+        capacity: '#capacity',
+        capacityUnit: '#capacityUnit',
+        // Inventory form
+        inventoryMaterialId: '#materialId',
+        inventoryMaterialName: '#materialName',
+        inventoryType: '#inventoryType',
+        inventoryQuantity: '#quantity',
+        inventoryUnit: '#unit',
+        inventoryLocation: '#location',
+        // Batch form
+        batchNumber: '#batchNumber',
+        batchMaterialId: '#materialId',
+        batchMaterialName: '#materialName',
+        batchQuantity: '#quantity',
+        batchUnit: '#unit',
+        // BOM form
+        bomMaterialId: '#materialId',
+        bomMaterialName: '#materialName',
+        bomQuantityRequired: '#quantityRequired',
+        bomUnit: '#unit',
+        bomYieldLossRatio: '#yieldLossRatio',
+        bomSequenceLevel: '#sequenceLevel',
+        bomVersion: '#bomVersion',
+        bomProductSelect: '#productSelect',
+        bomMaterialSelect: '#materialSelect',
+        // Config forms
+        reasonCode: '#reasonCode',
+        reasonDescription: '#reasonDescription',
+        configStatus: '#status',
+        // Process params form
+        paramOperationType: '#operationType',
+        paramProductSku: '#productSku',
+        parameterName: '#parameterName',
+        parameterType: '#parameterType',
+        paramUnit: '#unit',
+        paramMinValue: '#minValue',
+        paramMaxValue: '#maxValue',
+        paramDefaultValue: '#defaultValue',
+        paramIsRequired: '#isRequired',
+        paramDisplayOrder: '#displayOrder',
+        // Batch number form
+        batchConfigName: '#configName',
+        batchOperationType: '#operationType',
+        batchProductSku: '#productSku',
+        batchPrefix: '#prefix',
+        batchSeparator: '#separator',
+        batchIncludeDate: '#includeDate',
+        batchDateFormat: '#dateFormat',
+        batchSequenceLength: '#sequenceLength',
+        batchSequenceReset: '#sequenceReset',
+        batchPriority: '#priority',
+        // Quantity type form
+        qtConfigName: '#configName',
+        qtMaterialCode: '#materialCode',
+        qtOperationType: '#operationType',
+        qtEquipmentType: '#equipmentType',
+        qtQuantityType: '#quantityType',
+        qtDecimalPrecision: '#decimalPrecision',
+        qtRoundingRule: '#roundingRule',
+        qtMinQuantity: '#minQuantity',
+        qtMaxQuantity: '#maxQuantity',
+        qtUnit: '#unit'
     },
 
     // Header/Navigation
@@ -152,6 +247,18 @@ const TEST_DATA = {
     equipmentStatuses: ['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'ON_HOLD'],
 
     // CRUD Test Data
+    // BOM test data
+    bom: {
+        materialId: 'E2E-RM-TEST',
+        materialName: 'E2E Test Iron Ore',
+        quantity: '1500',
+        unit: 'KG',
+        yieldLossRatio: '1.05',
+        sequenceLevel: '1',
+        bomVersion: 'V1',
+        updatedQuantity: '2000'
+    },
+
     crud: {
         customer: {
             code: 'E2E-CUST-001',
@@ -179,6 +286,66 @@ const TEST_DATA = {
             unit: 'PC',
             description: 'Test product for E2E testing',
             updatedName: 'E2E Test Product Updated'
+        },
+        equipment: {
+            code: 'E2E-EQ-001',
+            name: 'E2E Test Furnace',
+            type: 'BATCH',
+            capacity: '5000',
+            capacityUnit: 'KG',
+            location: 'Building A',
+            updatedName: 'E2E Test Furnace Updated'
+        },
+        inventory: {
+            materialId: 'E2E-RM-001',
+            materialName: 'E2E Iron Ore',
+            type: 'RM',
+            quantity: '1000',
+            unit: 'KG',
+            location: 'Warehouse A',
+            updatedQuantity: '2000'
+        },
+        batch: {
+            batchNumber: 'E2E-BATCH-001',
+            materialId: 'E2E-RM-001',
+            materialName: 'E2E Iron Ore',
+            quantity: '500',
+            unit: 'KG',
+            updatedQuantity: '750'
+        },
+        holdReason: {
+            code: 'E2E-HOLD-001',
+            description: 'E2E Test Hold Reason',
+            updatedDescription: 'E2E Test Hold Updated'
+        },
+        delayReason: {
+            code: 'E2E-DELAY-001',
+            description: 'E2E Test Delay Reason',
+            updatedDescription: 'E2E Test Delay Updated'
+        },
+        processParam: {
+            operationType: 'E2E_FURNACE',
+            parameterName: 'E2E_TEMPERATURE',
+            parameterType: 'DECIMAL',
+            unit: 'C',
+            minValue: '100',
+            maxValue: '1500',
+            defaultValue: '800',
+            updatedMax: '2000'
+        },
+        batchNumber: {
+            configName: 'E2E Batch Config',
+            prefix: 'E2E',
+            separator: '-',
+            sequenceLength: '4',
+            updatedPrefix: 'E2ET'
+        },
+        quantityType: {
+            configName: 'E2E Quantity Config',
+            quantityType: 'DECIMAL',
+            decimalPrecision: '2',
+            roundingRule: 'HALF_UP',
+            updatedPrecision: '3'
         }
     }
 };
@@ -196,7 +363,11 @@ const SCREENSHOT_PREFIX = {
     quality: '09-quality',
     pagination: '10-pagination',
     crud: '11-crud',
-    navigation: '12-navigation'
+    entityCrud: '12-entity-crud',
+    bomCrud: '13-bom-crud',
+    configCrud: '14-config-crud',
+    auditHistory: '15-audit-history',
+    navigation: '16-navigation'
 };
 
 module.exports = {

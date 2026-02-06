@@ -1,4 +1,4 @@
-<div class="container">
+<div class="equipment-list-page">
   <div class="page-header">
     <h1 class="page-title">Equipment Management</h1>
     <button class="btn btn-primary" (click)="createEquipment()">
@@ -30,10 +30,8 @@
           <label>Type:</label>
           <select (change)="onFilterTypeChange($any($event.target).value)" [value]="filterType || 'all'">
             <option value="all">All Types</option>
-            <option value="FURNACE">Furnace</option>
-            <option value="CASTER">Caster</option>
-            <option value="ROLLING_MILL">Rolling Mill</option>
             <option value="BATCH">Batch</option>
+            <option value="CONTINUOUS">Continuous</option>
           </select>
         </div>
 
@@ -80,23 +78,23 @@
               </div>
             </td>
             <td class="actions-cell">
-              <button class="btn btn-small btn-primary" (click)="editEquipment(item)">
+              <button class="btn btn-sm btn-primary" (click)="editEquipment(item)">
                 Edit
               </button>
-              <button *ngIf="canStartMaintenance(item)" class="btn btn-small btn-warning" (click)="openMaintenanceModal(item)">
+              <button *ngIf="canStartMaintenance(item)" class="btn btn-sm btn-warning" (click)="openMaintenanceModal(item)">
                 Maintenance
               </button>
-              <button *ngIf="canEndMaintenance(item)" class="btn btn-small btn-success" (click)="endMaintenance(item)">
+              <button *ngIf="canEndMaintenance(item)" class="btn btn-sm btn-success" (click)="endMaintenance(item)">
                 End Maintenance
               </button>
-              <button *ngIf="canPutOnHold(item)" class="btn btn-small btn-secondary" (click)="openHoldModal(item)">
+              <button *ngIf="canPutOnHold(item)" class="btn btn-sm btn-secondary" (click)="openHoldModal(item)">
                 Hold
               </button>
-              <button *ngIf="canReleaseFromHold(item)" class="btn btn-small btn-info" (click)="releaseFromHold(item)">
+              <button *ngIf="canReleaseFromHold(item)" class="btn btn-sm btn-info" (click)="releaseFromHold(item)">
                 Release
               </button>
               <button
-                class="btn btn-small btn-danger"
+                class="btn btn-sm btn-danger"
                 (click)="deleteEquipment(item)"
                 [disabled]="item.status === 'IN_USE' || item.status === 'UNAVAILABLE'"
               >
@@ -133,7 +131,7 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Start Maintenance</h3>
-      <button class="close-btn" (click)="closeMaintenanceModal()">&times;</button>
+      <button class="close-btn" (click)="closeMaintenanceModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <p>Starting maintenance for:</p>
@@ -175,7 +173,7 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Put Equipment on Hold</h3>
-      <button class="close-btn" (click)="closeHoldModal()">&times;</button>
+      <button class="close-btn" (click)="closeHoldModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <p>Putting equipment on hold:</p>

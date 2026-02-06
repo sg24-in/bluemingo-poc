@@ -5,11 +5,29 @@
     </div>
     <nav class="nav-menu">
       <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+
+      <span class="nav-separator"></span>
+
       <a routerLink="/orders" routerLinkActive="active">Orders</a>
+
+      <span class="nav-separator"></span>
+
+      <a routerLink="/production" routerLinkActive="active">Production</a>
+      <a routerLink="/processes" routerLinkActive="active">Processes</a>
+      <a routerLink="/operations" routerLinkActive="active">Operations</a>
+
+      <span class="nav-separator"></span>
+
       <a routerLink="/inventory" routerLinkActive="active">Inventory</a>
       <a routerLink="/batches" routerLinkActive="active">Batches</a>
+
+      <span class="nav-separator"></span>
+
       <a routerLink="/equipment" routerLinkActive="active">Equipment</a>
       <a routerLink="/holds" routerLinkActive="active">Holds</a>
+
+      <span class="nav-separator"></span>
+
       <a routerLink="/manage" routerLinkActive="active">Manage</a>
     </nav>
     <div class="user-menu" *ngIf="currentUser">

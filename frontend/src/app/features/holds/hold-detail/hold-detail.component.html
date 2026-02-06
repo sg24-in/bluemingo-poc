@@ -1,0 +1,109 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>Hold Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="hold && hold.status === 'ACTIVE'">
+      <button
+        class="btn btn-success"
+        (click)="releaseHold()"
+        [disabled]="releasing"
+      >
+        <i class="fas fa-unlock"></i>
+        {{ releasing ? 'Releasing...' : 'Release Hold' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading hold..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && hold" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <div class="header-title">
+          <h2>Hold #{{ hold.holdId }}</h2>
+          <span class="entity-badge" [ngClass]="getEntityTypeClass(hold.entityType)">
+            {{ getEntityTypeLabel(hold.entityType) }}
+          </span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(hold.status)">
+          {{ hold.status }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Hold Information</h3>
+          <div class="detail-row">
+            <span class="label">Hold ID</span>
+            <span class="value">{{ hold.holdId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Entity Type</span>
+            <span class="value">{{ getEntityTypeLabel(hold.entityType) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Entity ID</span>
+            <span class="value link" (click)="navigateToEntity()">{{ hold.entityId }}</span>
+          </div>
+          <div class="detail-row" *ngIf="hold.entityName">
+            <span class="label">Entity Name</span>
+            <span class="value">{{ hold.entityName }}</span>
+          </div>
+          <div class="detail-row" *ngIf="hold.durationMinutes">
+            <span class="label">Duration</span>
+            <span class="value">{{ formatDuration(hold.durationMinutes) }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Reason</h3>
+          <div class="reason-box">
+            {{ hold.reason }}
+          </div>
+          <div class="comments-box" *ngIf="hold.comments">
+            <span class="comments-label">Comments:</span>
+            {{ hold.comments }}
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Applied By</h3>
+          <div class="detail-row">
+            <span class="label">Applied By</span>
+            <span class="value">{{ hold.appliedBy }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Applied On</span>
+            <span class="value">{{ hold.appliedOn | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="hold.status === 'RELEASED'">
+          <h3>Release Information</h3>
+          <div class="detail-row">
+            <span class="label">Released By</span>
+            <span class="value">{{ hold.releasedBy }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Released On</span>
+            <span class="value">{{ hold.releasedOn | date:'medium' }}</span>
+          </div>
+          <div class="release-comments" *ngIf="hold.releaseComments">
+            <span class="comments-label">Release Comments:</span>
+            {{ hold.releaseComments }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

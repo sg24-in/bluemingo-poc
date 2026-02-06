@@ -1,5 +1,8 @@
 package com.mes.production.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -84,5 +87,58 @@ public class InventoryDTO {
         private Long orderId;
         private Long operationId;
         private BigDecimal quantity;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateInventoryRequest {
+        @NotBlank(message = "Material ID is required")
+        @Size(max = 100, message = "Material ID must not exceed 100 characters")
+        private String materialId;
+
+        @Size(max = 200, message = "Material name must not exceed 200 characters")
+        private String materialName;
+
+        @NotBlank(message = "Inventory type is required")
+        private String inventoryType;
+
+        @NotNull(message = "Quantity is required")
+        private BigDecimal quantity;
+
+        @Size(max = 20, message = "Unit must not exceed 20 characters")
+        private String unit;
+
+        @Size(max = 200, message = "Location must not exceed 200 characters")
+        private String location;
+
+        private Long batchId;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateInventoryRequest {
+        @Size(max = 100, message = "Material ID must not exceed 100 characters")
+        private String materialId;
+
+        @Size(max = 200, message = "Material name must not exceed 200 characters")
+        private String materialName;
+
+        private String inventoryType;
+
+        private BigDecimal quantity;
+
+        @Size(max = 20, message = "Unit must not exceed 20 characters")
+        private String unit;
+
+        @Size(max = 200, message = "Location must not exceed 200 characters")
+        private String location;
+
+        private String state;
+
+        private Long batchId;
     }
 }

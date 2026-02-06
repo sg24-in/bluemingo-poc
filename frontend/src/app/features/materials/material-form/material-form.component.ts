@@ -40,6 +40,7 @@ export class MaterialFormComponent implements OnInit {
     if (id) {
       this.isEditMode = true;
       this.materialId = +id;
+      this.form.get('materialCode')?.disable();
       this.loadMaterial();
     }
   }
@@ -54,10 +55,6 @@ export class MaterialFormComponent implements OnInit {
       status: ['ACTIVE']
     });
 
-    // Material code cannot be changed in edit mode
-    if (this.isEditMode) {
-      this.form.get('materialCode')?.disable();
-    }
   }
 
   loadMaterial(): void {

@@ -1,0 +1,158 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>Inventory Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="inventory">
+      <button class="btn btn-secondary" (click)="editInventory()">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button
+        *ngIf="inventory.state === 'AVAILABLE'"
+        class="btn btn-warning"
+        (click)="blockInventory()"
+      >
+        <i class="fas fa-ban"></i> Block
+      </button>
+      <button
+        *ngIf="inventory.state === 'BLOCKED'"
+        class="btn btn-success"
+        (click)="unblockInventory()"
+      >
+        <i class="fas fa-check"></i> Unblock
+      </button>
+      <button
+        *ngIf="inventory.state === 'AVAILABLE' || inventory.state === 'BLOCKED'"
+        class="btn btn-danger"
+        (click)="scrapInventory()"
+      >
+        <i class="fas fa-trash"></i> Scrap
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading inventory..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && inventory" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <div class="header-title">
+          <h2>{{ inventory.materialName }}</h2>
+          <span class="type-badge" [ngClass]="getTypeClass(inventory.inventoryType)">
+            {{ getTypeLabel(inventory.inventoryType) }}
+          </span>
+        </div>
+        <span class="state-badge" [ngClass]="getStateClass(inventory.state)">
+          {{ inventory.state }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Basic Information</h3>
+          <div class="detail-row">
+            <span class="label">Inventory ID</span>
+            <span class="value">{{ inventory.inventoryId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Material ID</span>
+            <span class="value code">{{ inventory.materialId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Type</span>
+            <span class="value">{{ getTypeLabel(inventory.inventoryType) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Location</span>
+            <span class="value">{{ inventory.location || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Quantity</h3>
+          <div class="quantity-display">
+            <span class="qty-value">{{ inventory.quantity }}</span>
+            <span class="qty-unit">{{ inventory.unit }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="inventory.batchId">
+          <h3>Batch Information</h3>
+          <div class="detail-row">
+            <span class="label">Batch ID</span>
+            <span class="value">{{ inventory.batchId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Batch Number</span>
+            <span class="value link" (click)="viewBatch()">{{ inventory.batchNumber }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="inventory.state === 'BLOCKED'">
+          <h3>Block Information</h3>
+          <div class="detail-row">
+            <span class="label">Reason</span>
+            <span class="value">{{ inventory.blockReason }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Blocked By</span>
+            <span class="value">{{ inventory.blockedBy }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Blocked On</span>
+            <span class="value">{{ inventory.blockedOn | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="inventory.state === 'SCRAPPED'">
+          <h3>Scrap Information</h3>
+          <div class="detail-row">
+            <span class="label">Reason</span>
+            <span class="value">{{ inventory.scrapReason }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Scrapped By</span>
+            <span class="value">{{ inventory.scrappedBy }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Scrapped On</span>
+            <span class="value">{{ inventory.scrappedOn | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="inventory.state === 'RESERVED'">
+          <h3>Reservation Information</h3>
+          <div class="detail-row">
+            <span class="label">Reserved For Order</span>
+            <span class="value">{{ inventory.reservedForOrderId || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Reserved For Operation</span>
+            <span class="value">{{ inventory.reservedForOperationId || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Reserved By</span>
+            <span class="value">{{ inventory.reservedBy }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Reserved On</span>
+            <span class="value">{{ inventory.reservedOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row" *ngIf="inventory.reservedQty">
+            <span class="label">Reserved Quantity</span>
+            <span class="value">{{ inventory.reservedQty }} {{ inventory.unit }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

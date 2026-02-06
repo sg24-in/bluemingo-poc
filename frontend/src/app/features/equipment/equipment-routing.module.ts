@@ -2,10 +2,12 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { EquipmentListComponent } from './equipment-list/equipment-list.component';
 import { EquipmentFormComponent } from './equipment-form/equipment-form.component';
+import { EquipmentDetailComponent } from './equipment-detail/equipment-detail.component';
 
 const routes: Routes = [
   { path: '', component: EquipmentListComponent },
   { path: 'new', component: EquipmentFormComponent },
+  { path: ':id', component: EquipmentDetailComponent },
   { path: ':id/edit', component: EquipmentFormComponent }
 ];
 

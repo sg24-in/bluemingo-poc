@@ -16,6 +16,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class HoldRecord {
 
+    // Entity type constants
+    public static final String ENTITY_TYPE_OPERATION = "OPERATION";
+    public static final String ENTITY_TYPE_PROCESS = "PROCESS";
+    public static final String ENTITY_TYPE_ORDER_LINE = "ORDER_LINE";
+    public static final String ENTITY_TYPE_INVENTORY = "INVENTORY";
+    public static final String ENTITY_TYPE_BATCH = "BATCH";
+    public static final String ENTITY_TYPE_EQUIPMENT = "EQUIPMENT";
+
+    // Status constants
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_RELEASED = "RELEASED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "hold_id")

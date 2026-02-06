@@ -23,23 +23,7 @@ describe('ProductFormComponent', () => {
     status: 'ACTIVE'
   };
 
-  const createComponent = (routeParams: any = {}) => {
-    TestBed.overrideProvider(ActivatedRoute, {
-      useValue: {
-        snapshot: {
-          paramMap: {
-            get: (key: string) => routeParams[key] || null
-          }
-        }
-      }
-    });
-
-    fixture = TestBed.createComponent(ProductFormComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  };
-
-  beforeEach(async () => {
+  const configureTestBed = async (routeParams: any = {}) => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getProductById',
       'createProduct',
@@ -54,15 +38,36 @@ describe('ProductFormComponent', () => {
       ],
       declarations: [ProductFormComponent],
       providers: [
-        { provide: ApiService, useValue: spy }
+        { provide: ApiService, useValue: spy },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: {
+                get: (key: string) => routeParams[key] || null
+              }
+            }
+          }
+        }
       ]
     }).compileComponents();
 
     apiServiceSpy = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+  };
+
+  const createComponent = () => {
+    fixture = TestBed.createComponent(ProductFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  };
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
   });
 
   describe('Create Mode', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      await configureTestBed();
       createComponent();
     });
 
@@ -122,9 +127,10 @@ describe('ProductFormComponent', () => {
   });
 
   describe('Edit Mode', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      await configureTestBed({ id: '1' });
       apiServiceSpy.getProductById.and.returnValue(of(mockProduct));
-      createComponent({ id: '1' });
+      createComponent();
     });
 
     it('should be in edit mode when id param exists', () => {
@@ -156,7 +162,8 @@ describe('ProductFormComponent', () => {
   });
 
   describe('Form Validation', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      await configureTestBed();
       createComponent();
     });
 

@@ -60,6 +60,7 @@ public class SecurityConfig {
                                 "/*.woff",
                                 "/*.woff2",
                                 "/*.ttf",
+                                "/media/**",
                                 "/assets/**",
                                 // H2 Console (demo mode)
                                 "/h2-console/**",

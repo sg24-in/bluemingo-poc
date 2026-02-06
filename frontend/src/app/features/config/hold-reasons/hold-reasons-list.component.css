@@ -1,0 +1,18 @@
+.config-list-page { padding: 20px; }
+.table-container { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+.status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: uppercase; }
+.status-badge.active { background: #d4edda; color: #155724; }
+.status-badge.inactive { background: #f8d7da; color: #721c24; }
+.actions { display: flex; gap: 8px; }
+.pagination-controls { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid #eee; }
+.page-info { color: #666; font-size: 14px; }
+.page-buttons { display: flex; align-items: center; gap: 12px; }
+.page-number { font-size: 14px; color: #333; }
+.page-size { display: flex; align-items: center; gap: 8px; }
+.page-size label { font-size: 14px; color: #666; }
+.page-size select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; }
+.empty-state { text-align: center; padding: 60px 20px; color: #666; }
+.empty-state p { margin-bottom: 20px; }
+.loading { text-align: center; padding: 60px 20px; color: #666; }
+.applicable-to-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+.entity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; background: #e3f2fd; color: #1565c0; white-space: nowrap; }

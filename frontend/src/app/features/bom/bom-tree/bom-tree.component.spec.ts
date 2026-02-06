@@ -7,6 +7,7 @@ import { of, throwError } from 'rxjs';
 
 import { BomTreeComponent } from './bom-tree.component';
 import { ApiService } from '../../../core/services/api.service';
+import { ChartService } from '../../../core/services/chart.service';
 import { BomTreeFullResponse, BomTreeNode, UpdateBomSettingsResponse, Product } from '../../../shared/models';
 
 describe('BomTreeComponent', () => {
@@ -53,19 +54,21 @@ describe('BomTreeComponent', () => {
     maxDepth: 2
   };
 
+  const mockProducts: Product[] = [
+    { productId: 1, sku: 'FG-STEEL-001', productName: 'Steel Plate', baseUnit: 'T', status: 'ACTIVE' },
+    { productId: 2, sku: 'FG-STEEL-002', productName: 'Steel Coil', baseUnit: 'T', status: 'ACTIVE' }
+  ];
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getBomTree',
       'deleteBomNode',
       'deleteBomNodeCascade',
       'updateBomSettings',
-      'getActiveProducts'
+      'getActiveProducts',
+      'moveBomNode'
     ]);
-
-  const mockProducts: Product[] = [
-    { productId: 1, sku: 'FG-STEEL-001', productName: 'Steel Plate', baseUnit: 'T', status: 'ACTIVE' },
-    { productId: 2, sku: 'FG-STEEL-002', productName: 'Steel Coil', baseUnit: 'T', status: 'ACTIVE' }
-  ];
+    const chartSpy = jasmine.createSpyObj('ChartService', ['initChart', 'setOption', 'disposeChart', 'disposeAll']);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -76,6 +79,7 @@ describe('BomTreeComponent', () => {
       declarations: [BomTreeComponent],
       providers: [
         { provide: ApiService, useValue: spy },
+        { provide: ChartService, useValue: chartSpy },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -196,6 +200,11 @@ describe('BomTreeComponent', () => {
       const indent = component.getIndentLevel(3);
       expect(indent).toBe('48px');
     });
+
+    it('should cap indent level at 240px for deeply nested nodes', () => {
+      const indent = component.getIndentLevel(15);
+      expect(indent).toBe('240px');
+    });
   });
 
   describe('Delete Operations', () => {
@@ -230,14 +239,15 @@ describe('BomTreeComponent', () => {
     });
 
     it('should handle delete error', () => {
-      spyOn(window, 'alert');
       apiServiceSpy.deleteBomNode.and.returnValue(
         throwError(() => ({ error: { message: 'Cannot delete' } }))
       );
 
+      component.confirmDelete(1);
       component.deleteNode(1, false);
 
-      expect(window.alert).toHaveBeenCalledWith('Cannot delete');
+      expect(component.deleteConfirmId).toBeNull();
+      expect(component.error).toBe('Cannot delete');
     });
   });
 
@@ -297,6 +307,52 @@ describe('BomTreeComponent', () => {
       component.loadBomTree();
 
       expect(component.bomTree?.tree.length).toBe(0);
+    });
+  });
+
+  describe('Move Node', () => {
+    it('should open move modal', () => {
+      component.openMoveModal(2);
+      expect(component.showMoveModal).toBeTrue();
+      expect(component.moveNodeId).toBe(2);
+    });
+
+    it('should exclude the moved node and its descendants from target list', () => {
+      component.openMoveModal(1); // Node 1 has child node 2
+      // Node 1 and its child node 2 should be excluded
+      expect(component.allFlatNodes.find(n => n.bomId === 1)).toBeUndefined();
+      expect(component.allFlatNodes.find(n => n.bomId === 2)).toBeUndefined();
+    });
+
+    it('should close move modal', () => {
+      component.openMoveModal(2);
+      component.closeMoveModal();
+      expect(component.showMoveModal).toBeFalse();
+      expect(component.moveNodeId).toBeNull();
+    });
+
+    it('should perform move successfully', () => {
+      apiServiceSpy.moveBomNode.and.returnValue(of(mockTreeNode));
+      apiServiceSpy.getBomTree.and.returnValue(of(mockBomTree));
+
+      component.openMoveModal(2);
+      component.moveTargetParentId = null; // Move to root
+      component.performMove();
+
+      expect(apiServiceSpy.moveBomNode).toHaveBeenCalledWith(2, { newParentBomId: undefined });
+      expect(component.showMoveModal).toBeFalse();
+    });
+
+    it('should handle move error', () => {
+      apiServiceSpy.moveBomNode.and.returnValue(
+        throwError(() => ({ error: { message: 'Circular reference' } }))
+      );
+
+      component.openMoveModal(2);
+      component.performMove();
+
+      expect(component.moveError).toBe('Circular reference');
+      expect(component.movingNode).toBeFalse();
     });
   });
 

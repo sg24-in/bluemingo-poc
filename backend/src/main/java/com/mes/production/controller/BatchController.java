@@ -7,6 +7,7 @@ import com.mes.production.service.BatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -77,6 +78,70 @@ public class BatchController {
         log.info("GET /api/batches/{}/genealogy", batchId);
         BatchDTO.Genealogy genealogy = batchService.getBatchGenealogy(batchId);
         return ResponseEntity.ok(genealogy);
+    }
+
+    /**
+     * Create a new batch.
+     *
+     * @deprecated Per MES Batch Management Specification, batches should ONLY be created
+     *             at operation boundaries via production confirmation. This endpoint is
+     *             retained for administrative/system use only. Use POST /api/production/confirm
+     *             for normal batch creation.
+     */
+    @PostMapping
+    @Deprecated
+    public ResponseEntity<BatchDTO> createBatch(
+            @Valid @RequestBody BatchDTO.CreateBatchRequest request) {
+        log.warn("DEPRECATED endpoint called: POST /api/batches for batch: {}", request.getBatchNumber());
+        BatchDTO created = batchService.createBatch(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    /**
+     * Adjust batch quantity with mandatory reason.
+     * Per MES Batch Management Specification: batch quantity is NEVER edited directly.
+     * All quantity changes must use this endpoint with proper justification.
+     */
+    @PostMapping("/{batchId}/adjust-quantity")
+    public ResponseEntity<BatchDTO.AdjustQuantityResponse> adjustQuantity(
+            @PathVariable Long batchId,
+            @Valid @RequestBody BatchDTO.AdjustQuantityRequest request) {
+        log.info("POST /api/batches/{}/adjust-quantity - type: {}", batchId, request.getAdjustmentType());
+        BatchDTO.AdjustQuantityResponse response = batchService.adjustQuantity(batchId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get quantity adjustment history for a batch
+     */
+    @GetMapping("/{batchId}/adjustments")
+    public ResponseEntity<List<BatchDTO.QuantityAdjustmentHistory>> getAdjustmentHistory(
+            @PathVariable Long batchId) {
+        log.info("GET /api/batches/{}/adjustments", batchId);
+        List<BatchDTO.QuantityAdjustmentHistory> history = batchService.getAdjustmentHistory(batchId);
+        return ResponseEntity.ok(history);
+    }
+
+    /**
+     * Update a batch
+     */
+    @PutMapping("/{batchId}")
+    public ResponseEntity<BatchDTO> updateBatch(
+            @PathVariable Long batchId,
+            @Valid @RequestBody BatchDTO.UpdateBatchRequest request) {
+        log.info("PUT /api/batches/{}", batchId);
+        BatchDTO updated = batchService.updateBatch(batchId, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Delete a batch (soft delete via scrap)
+     */
+    @DeleteMapping("/{batchId}")
+    public ResponseEntity<BatchDTO.StatusUpdateResponse> deleteBatch(@PathVariable Long batchId) {
+        log.info("DELETE /api/batches/{}", batchId);
+        BatchDTO.StatusUpdateResponse response = batchService.deleteBatch(batchId);
+        return ResponseEntity.ok(response);
     }
 
     /**

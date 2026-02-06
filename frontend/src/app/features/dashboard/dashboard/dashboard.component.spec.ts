@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { DashboardComponent } from './dashboard.component';
 import { ApiService } from '../../../core/services/api.service';
+import { ChartService } from '../../../core/services/chart.service';
 import { SharedModule } from '../../../shared/shared.module';
 
 describe('DashboardComponent', () => {
@@ -48,7 +49,15 @@ describe('DashboardComponent', () => {
       'getAvailableOrders',
       'getAllBatches',
       'getAllInventory',
+      'getOrders',
       'getQualityPendingProcesses'
+    ]);
+
+    const chartSpy = jasmine.createSpyObj('ChartService', [
+      'initChart',
+      'setOption',
+      'disposeChart',
+      'disposeAll'
     ]);
 
     await TestBed.configureTestingModule({
@@ -59,7 +68,8 @@ describe('DashboardComponent', () => {
       ],
       declarations: [DashboardComponent],
       providers: [
-        { provide: ApiService, useValue: spy }
+        { provide: ApiService, useValue: spy },
+        { provide: ChartService, useValue: chartSpy }
       ]
     }).compileComponents();
 
@@ -72,6 +82,7 @@ describe('DashboardComponent', () => {
     apiServiceSpy.getAllBatches.and.returnValue(of(mockBatches as any));
     apiServiceSpy.getAllInventory.and.returnValue(of(mockInventory as any));
     apiServiceSpy.getQualityPendingProcesses.and.returnValue(of([]));
+    apiServiceSpy.getOrders.and.returnValue(of(mockOrders as any));
 
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
@@ -162,31 +173,31 @@ describe('DashboardComponent', () => {
     });
 
     it('should return correct icon for CREATE action', () => {
-      expect(component.getAuditIcon('CREATE')).toBe('+');
+      expect(component.getAuditIcon('CREATE')).toBe('fa-plus');
     });
 
     it('should return correct icon for STATUS_CHANGE action', () => {
-      expect(component.getAuditIcon('STATUS_CHANGE')).toBe('↔');
+      expect(component.getAuditIcon('STATUS_CHANGE')).toBe('fa-arrows-left-right');
     });
 
     it('should return correct icon for CONSUME action', () => {
-      expect(component.getAuditIcon('CONSUME')).toBe('−');
+      expect(component.getAuditIcon('CONSUME')).toBe('fa-minus');
     });
 
     it('should return correct icon for PRODUCE action', () => {
-      expect(component.getAuditIcon('PRODUCE')).toBe('⚙');
+      expect(component.getAuditIcon('PRODUCE')).toBe('fa-gear');
     });
 
     it('should return correct icon for HOLD action', () => {
-      expect(component.getAuditIcon('HOLD')).toBe('⏸');
+      expect(component.getAuditIcon('HOLD')).toBe('fa-pause');
     });
 
     it('should return correct icon for RELEASE action', () => {
-      expect(component.getAuditIcon('RELEASE')).toBe('▶');
+      expect(component.getAuditIcon('RELEASE')).toBe('fa-play');
     });
 
     it('should return default icon for unknown action', () => {
-      expect(component.getAuditIcon('UNKNOWN')).toBe('•');
+      expect(component.getAuditIcon('UNKNOWN')).toBe('fa-circle-dot');
     });
 
     it('should return correct icon class for CREATE action', () => {

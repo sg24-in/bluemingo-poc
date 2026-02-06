@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { MaterialListComponent } from './material-list/material-list.component';
 import { MaterialFormComponent } from './material-form/material-form.component';
+import { MaterialDetailComponent } from './material-detail/material-detail.component';
 
 const routes: Routes = [
   {
@@ -11,6 +12,10 @@ const routes: Routes = [
   {
     path: 'new',
     component: MaterialFormComponent
+  },
+  {
+    path: ':id',
+    component: MaterialDetailComponent
   },
   {
     path: ':id/edit',

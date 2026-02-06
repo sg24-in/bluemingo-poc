@@ -5,17 +5,20 @@
       <h3>Administration</h3>
     </div>
     <nav class="sidebar-nav">
-      <a *ngFor="let item of menuItems"
-         [routerLink]="item.path"
-         routerLinkActive="active"
-         class="sidebar-link">
-        <i class="bi" [ngClass]="'bi-' + item.icon"></i>
-        <span class="link-text">{{ item.label }}</span>
-      </a>
+      <div class="sidebar-group" *ngFor="let group of menuGroups">
+        <div class="group-title">{{ group.title }}</div>
+        <a *ngFor="let item of group.items"
+           [routerLink]="item.path"
+           routerLinkActive="active"
+           class="sidebar-link">
+          <i class="fas" [ngClass]="'fa-' + item.icon"></i>
+          <span class="link-text">{{ item.label }}</span>
+        </a>
+      </div>
     </nav>
     <div class="sidebar-footer">
       <a routerLink="/dashboard" class="back-link">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
       </a>
     </div>
   </aside>

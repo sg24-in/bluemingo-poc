@@ -8,6 +8,7 @@ import { StatusBadgeComponent } from './components/status-badge/status-badge.com
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { MainLayoutComponent } from './components/main-layout/main-layout.component';
 import { AdminLayoutComponent } from './components/admin-layout/admin-layout.component';
+import { ManageLandingComponent } from './components/manage-landing/manage-landing.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { AdminLayoutComponent } from './components/admin-layout/admin-layout.com
     StatusBadgeComponent,
     PaginationComponent,
     MainLayoutComponent,
-    AdminLayoutComponent
+    AdminLayoutComponent,
+    ManageLandingComponent
   ],
   imports: [
     CommonModule,
@@ -34,7 +36,8 @@ import { AdminLayoutComponent } from './components/admin-layout/admin-layout.com
     StatusBadgeComponent,
     PaginationComponent,
     MainLayoutComponent,
-    AdminLayoutComponent
+    AdminLayoutComponent,
+    ManageLandingComponent
   ]
 })
 export class SharedModule { }

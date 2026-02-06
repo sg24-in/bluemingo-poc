@@ -157,6 +157,10 @@
   cursor: pointer;
   border: none;
   transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .btn-primary {

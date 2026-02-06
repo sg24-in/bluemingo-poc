@@ -1,0 +1,82 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>Product Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="product">
+      <button class="btn btn-secondary" (click)="viewBom()">
+        <i class="fas fa-sitemap"></i> View BOM
+      </button>
+      <button class="btn btn-secondary" (click)="editProduct()">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button
+        class="btn"
+        [ngClass]="product.status === 'ACTIVE' ? 'btn-danger' : 'btn-success'"
+        (click)="toggleStatus()"
+      >
+        <i class="fas" [ngClass]="product.status === 'ACTIVE' ? 'fa-ban' : 'fa-check'"></i>
+        {{ product.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading product..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && product" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <h2>{{ product.productName }}</h2>
+        <span class="status-badge" [ngClass]="getStatusClass(product.status)">
+          {{ product.status }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Basic Information</h3>
+          <div class="detail-row">
+            <span class="label">Product ID</span>
+            <span class="value">{{ product.productId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">SKU</span>
+            <span class="value sku">{{ product.sku }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Base Unit</span>
+            <span class="value">{{ product.baseUnit }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Description</h3>
+          <div class="description-text">
+            {{ product.description || 'No description provided' }}
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Timestamps</h3>
+          <div class="detail-row">
+            <span class="label">Created On</span>
+            <span class="value">{{ product.createdOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated On</span>
+            <span class="value">{{ product.updatedOn | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

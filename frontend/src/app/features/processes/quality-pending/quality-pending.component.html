@@ -6,11 +6,11 @@
 
   <div *ngIf="error" class="alert alert-error" (click)="clearMessages()">
     {{ error }}
-    <button class="alert-close">&times;</button>
+    <button class="alert-close"><i class="fas fa-xmark"></i></button>
   </div>
   <div *ngIf="success" class="alert alert-success" (click)="clearMessages()">
     {{ success }}
-    <button class="alert-close">&times;</button>
+    <button class="alert-close"><i class="fas fa-xmark"></i></button>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -139,7 +139,7 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header" [class.accept-header]="decisionType === 'accept'" [class.reject-header]="decisionType === 'reject'">
       <h3>{{ decisionType === 'accept' ? 'Accept Process' : 'Reject Process' }}</h3>
-      <button class="close-btn" (click)="closeDecisionModal()">&times;</button>
+      <button class="close-btn" (click)="closeDecisionModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="process-details" *ngIf="selectedProcess">

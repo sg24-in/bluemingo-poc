@@ -25,3 +25,6 @@ export * from './material.model';
 export * from './product.model';
 export * from './operator.model';
 export * from './unit-of-measure.model';
+export * from './config.model';
+export * from './audit.model';
+export * from './user.model';

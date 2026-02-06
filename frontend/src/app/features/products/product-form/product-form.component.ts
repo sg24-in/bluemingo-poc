@@ -33,6 +33,7 @@ export class ProductFormComponent implements OnInit {
     if (id) {
       this.isEditMode = true;
       this.productId = +id;
+      this.form.get('sku')?.disable();
       this.loadProduct();
     }
   }
@@ -46,10 +47,6 @@ export class ProductFormComponent implements OnInit {
       status: ['ACTIVE']
     });
 
-    // SKU cannot be changed in edit mode
-    if (this.isEditMode) {
-      this.form.get('sku')?.disable();
-    }
   }
 
   loadProduct(): void {

@@ -3,7 +3,9 @@ package com.mes.production.service;
 import com.mes.production.dto.InventoryDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.entity.Batch;
 import com.mes.production.entity.Inventory;
+import com.mes.production.repository.BatchRepository;
 import com.mes.production.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
+    private final BatchRepository batchRepository;
     private final AuditService auditService;
 
     private static final Set<String> VALID_STATES = Set.of(
@@ -349,6 +352,123 @@ public class InventoryService {
                 .previousState(oldState)
                 .newState(Inventory.STATE_AVAILABLE)
                 .message("Reservation released, inventory available")
+                .updatedBy(currentUser)
+                .updatedOn(inventory.getUpdatedOn())
+                .build();
+    }
+
+    /**
+     * Create new inventory
+     */
+    @Transactional
+    public InventoryDTO createInventory(InventoryDTO.CreateInventoryRequest request) {
+        log.info("Creating inventory for material: {}", request.getMaterialId());
+
+        String currentUser = getCurrentUser();
+
+        Inventory inventory = Inventory.builder()
+                .materialId(request.getMaterialId())
+                .materialName(request.getMaterialName())
+                .inventoryType(request.getInventoryType())
+                .quantity(request.getQuantity())
+                .unit(request.getUnit() != null ? request.getUnit() : "T")
+                .location(request.getLocation())
+                .state(Inventory.STATE_AVAILABLE)
+                .createdBy(currentUser)
+                .build();
+
+        if (request.getBatchId() != null) {
+            Batch batch = batchRepository.findById(request.getBatchId())
+                    .orElseThrow(() -> new RuntimeException("Batch not found: " + request.getBatchId()));
+            inventory.setBatch(batch);
+        }
+
+        inventory = inventoryRepository.save(inventory);
+        log.info("Inventory created with ID: {}", inventory.getInventoryId());
+        auditService.logCreate("INVENTORY", inventory.getInventoryId(),
+                "Inventory created for material: " + request.getMaterialId());
+
+        return convertToDTO(inventory);
+    }
+
+    /**
+     * Update existing inventory
+     */
+    @Transactional
+    public InventoryDTO updateInventory(Long inventoryId, InventoryDTO.UpdateInventoryRequest request) {
+        log.info("Updating inventory: {}", inventoryId);
+
+        String currentUser = getCurrentUser();
+        Inventory inventory = getInventoryEntity(inventoryId);
+
+        // Reject updates to terminal states
+        if (Inventory.STATE_CONSUMED.equals(inventory.getState())) {
+            throw new RuntimeException("Cannot update consumed inventory");
+        }
+        if (Inventory.STATE_SCRAPPED.equals(inventory.getState())) {
+            throw new RuntimeException("Cannot update scrapped inventory");
+        }
+
+        if (request.getMaterialId() != null) inventory.setMaterialId(request.getMaterialId());
+        if (request.getMaterialName() != null) inventory.setMaterialName(request.getMaterialName());
+        if (request.getInventoryType() != null) inventory.setInventoryType(request.getInventoryType());
+        if (request.getQuantity() != null) inventory.setQuantity(request.getQuantity());
+        if (request.getUnit() != null) inventory.setUnit(request.getUnit());
+        if (request.getLocation() != null) inventory.setLocation(request.getLocation());
+        if (request.getState() != null && VALID_STATES.contains(request.getState())) {
+            String oldState = inventory.getState();
+            inventory.setState(request.getState());
+            if (!oldState.equals(request.getState())) {
+                auditService.logStatusChange("INVENTORY", inventoryId, oldState, request.getState());
+            }
+        }
+        if (request.getBatchId() != null) {
+            Batch batch = batchRepository.findById(request.getBatchId())
+                    .orElseThrow(() -> new RuntimeException("Batch not found: " + request.getBatchId()));
+            inventory.setBatch(batch);
+        }
+
+        inventory.setUpdatedBy(currentUser);
+        inventory = inventoryRepository.save(inventory);
+        log.info("Inventory {} updated by {}", inventoryId, currentUser);
+        auditService.logUpdate("INVENTORY", inventoryId, "inventory", null, "Inventory updated");
+
+        return convertToDTO(inventory);
+    }
+
+    /**
+     * Delete inventory (soft delete via state=SCRAPPED)
+     */
+    @Transactional
+    public InventoryDTO.StateUpdateResponse deleteInventory(Long inventoryId) {
+        log.info("Deleting (scrapping) inventory: {}", inventoryId);
+
+        String currentUser = getCurrentUser();
+        Inventory inventory = getInventoryEntity(inventoryId);
+        String oldState = inventory.getState();
+
+        if (Inventory.STATE_CONSUMED.equals(oldState)) {
+            throw new RuntimeException("Cannot delete consumed inventory");
+        }
+        if (Inventory.STATE_SCRAPPED.equals(oldState)) {
+            throw new RuntimeException("Inventory is already scrapped");
+        }
+
+        inventory.setState(Inventory.STATE_SCRAPPED);
+        inventory.setScrapReason("Deleted by user");
+        inventory.setScrappedBy(currentUser);
+        inventory.setScrappedOn(LocalDateTime.now());
+        inventory.setUpdatedBy(currentUser);
+        inventoryRepository.save(inventory);
+
+        log.info("Inventory {} deleted (scrapped) by {}", inventoryId, currentUser);
+        auditService.logStatusChange("INVENTORY", inventoryId, oldState, Inventory.STATE_SCRAPPED);
+
+        return InventoryDTO.StateUpdateResponse.builder()
+                .inventoryId(inventoryId)
+                .previousState(oldState)
+                .newState(Inventory.STATE_SCRAPPED)
+                .message("Inventory deleted (scrapped)")
                 .updatedBy(currentUser)
                 .updatedOn(inventory.getUpdatedOn())
                 .build();

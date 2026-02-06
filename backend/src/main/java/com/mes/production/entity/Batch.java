@@ -23,7 +23,15 @@ public class Batch {
     public static final String STATUS_CONSUMED = "CONSUMED";
     public static final String STATUS_BLOCKED = "BLOCKED";
     public static final String STATUS_SCRAPPED = "SCRAPPED";
+    public static final String STATUS_ON_HOLD = "ON_HOLD";
     public static final String STATUS_QUALITY_PENDING = "QUALITY_PENDING";
+
+    // Creation source constants (how the batch was created)
+    public static final String CREATED_VIA_PRODUCTION = "PRODUCTION";
+    public static final String CREATED_VIA_SPLIT = "SPLIT";
+    public static final String CREATED_VIA_MERGE = "MERGE";
+    public static final String CREATED_VIA_MANUAL = "MANUAL";
+    public static final String CREATED_VIA_SYSTEM = "SYSTEM";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,6 +74,13 @@ public class Batch {
 
     @Column(name = "rejected_on")
     private LocalDateTime rejectedOn;
+
+    /**
+     * Tracks how the batch was created.
+     * Values: PRODUCTION, SPLIT, MERGE, MANUAL, SYSTEM
+     */
+    @Column(name = "created_via", length = 50)
+    private String createdVia;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn;

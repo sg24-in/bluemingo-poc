@@ -82,7 +82,7 @@
             <td>{{ hold.appliedOn | date:'short' }}</td>
             <td>{{ formatDuration(hold.durationMinutes) }}</td>
             <td>
-              <button *ngIf="hold.status === 'ACTIVE'" class="btn btn-small btn-success" (click)="openReleaseHoldModal(hold)">
+              <button *ngIf="hold.status === 'ACTIVE'" class="btn btn-sm btn-success" (click)="openReleaseHoldModal(hold)">
                 Release
               </button>
               <span *ngIf="hold.status !== 'ACTIVE'" class="text-muted">-</span>
@@ -116,7 +116,7 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Apply Hold</h3>
-      <button class="close-btn" (click)="closeApplyHoldModal()">&times;</button>
+      <button class="close-btn" (click)="closeApplyHoldModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <form [formGroup]="applyHoldForm" (ngSubmit)="applyHold()">
       <div class="modal-body">
@@ -170,7 +170,7 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Release Hold</h3>
-      <button class="close-btn" (click)="closeReleaseHoldModal()">&times;</button>
+      <button class="close-btn" (click)="closeReleaseHoldModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="hold-details" *ngIf="selectedHold">

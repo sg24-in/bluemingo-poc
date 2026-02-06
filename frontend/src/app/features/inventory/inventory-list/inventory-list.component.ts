@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Inventory } from '../../../shared/models';
 import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
@@ -33,7 +34,10 @@ export class InventoryListComponent implements OnInit {
   actionLoading = false;
   actionError = '';
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadInventory();
@@ -195,6 +199,32 @@ export class InventoryListComponent implements OnInit {
     });
   }
 
+  // CRUD actions
+  createInventory(): void {
+    this.router.navigate(['/inventory/new']);
+  }
+
+  editInventory(item: Inventory): void {
+    this.router.navigate(['/inventory', item.inventoryId, 'edit']);
+  }
+
+  deleteInventory(item: Inventory): void {
+    if (!confirm(`Are you sure you want to delete inventory for ${item.materialId}?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.apiService.deleteInventory(item.inventoryId).subscribe({
+      next: () => {
+        this.loadInventory();
+      },
+      error: (err) => {
+        this.loading = false;
+        alert(err.error?.message || 'Failed to delete inventory.');
+      }
+    });
+  }
+
   // Helpers
   canBlock(item: Inventory): boolean {
     return item.state !== 'BLOCKED' && item.state !== 'CONSUMED' && item.state !== 'SCRAPPED';
@@ -205,6 +235,14 @@ export class InventoryListComponent implements OnInit {
   }
 
   canScrap(item: Inventory): boolean {
+    return item.state !== 'CONSUMED' && item.state !== 'SCRAPPED';
+  }
+
+  canEdit(item: Inventory): boolean {
+    return item.state !== 'CONSUMED' && item.state !== 'SCRAPPED';
+  }
+
+  canDelete(item: Inventory): boolean {
     return item.state !== 'CONSUMED' && item.state !== 'SCRAPPED';
   }
 }

@@ -17,7 +17,8 @@ export class EquipmentFormComponent implements OnInit {
   saving = false;
   error = '';
 
-  equipmentTypes = ['FURNACE', 'CASTER', 'ROLLING_MILL', 'BATCH', 'CONTINUOUS'];
+  equipmentTypes: any[] = [];
+  selectedTypeConfig: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -28,6 +29,11 @@ export class EquipmentFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    this.loadEquipmentTypes();
+
+    this.form.get('equipmentType')?.valueChanges.subscribe((type: string) => {
+      this.onTypeChange(type);
+    });
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -126,6 +132,36 @@ export class EquipmentFormComponent implements OnInit {
         }
       });
     }
+  }
+
+  loadEquipmentTypes(): void {
+    this.apiService.getEquipmentTypes().subscribe({
+      next: (types: any[]) => {
+        this.equipmentTypes = types;
+      },
+      error: () => {
+        // Fallback to hardcoded types on error
+        this.equipmentTypes = [
+          { equipment_type: 'BATCH', display_name: 'BATCH' },
+          { equipment_type: 'CONTINUOUS', display_name: 'CONTINUOUS' }
+        ];
+      }
+    });
+  }
+
+  onTypeChange(type: string): void {
+    if (!type) {
+      this.selectedTypeConfig = null;
+      return;
+    }
+    this.apiService.getEquipmentTypeConfig(type).subscribe({
+      next: (config: any) => {
+        this.selectedTypeConfig = config;
+      },
+      error: () => {
+        this.selectedTypeConfig = null;
+      }
+    });
   }
 
   cancel(): void {

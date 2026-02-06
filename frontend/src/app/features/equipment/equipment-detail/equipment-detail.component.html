@@ -1,0 +1,135 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>Equipment Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="equipment">
+      <button class="btn btn-secondary" (click)="editEquipment()">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button
+        *ngIf="equipment.status === 'AVAILABLE'"
+        class="btn btn-warning"
+        (click)="startMaintenance()"
+      >
+        <i class="fas fa-wrench"></i> Start Maintenance
+      </button>
+      <button
+        *ngIf="equipment.status === 'MAINTENANCE'"
+        class="btn btn-success"
+        (click)="endMaintenance()"
+      >
+        <i class="fas fa-check"></i> End Maintenance
+      </button>
+      <button
+        *ngIf="equipment.status === 'AVAILABLE'"
+        class="btn btn-danger"
+        (click)="putOnHold()"
+      >
+        <i class="fas fa-ban"></i> Put on Hold
+      </button>
+      <button
+        *ngIf="equipment.status === 'ON_HOLD'"
+        class="btn btn-success"
+        (click)="releaseFromHold()"
+      >
+        <i class="fas fa-check"></i> Release Hold
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading equipment..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && equipment" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <div class="header-title">
+          <h2>{{ equipment.name }}</h2>
+          <span class="type-badge">{{ equipment.equipmentType }}</span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(equipment.status)">
+          {{ equipment.status }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Basic Information</h3>
+          <div class="detail-row">
+            <span class="label">Equipment ID</span>
+            <span class="value">{{ equipment.equipmentId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Equipment Code</span>
+            <span class="value code">{{ equipment.equipmentCode }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Type</span>
+            <span class="value">{{ equipment.equipmentType }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Location</span>
+            <span class="value">{{ equipment.location || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Capacity</h3>
+          <div class="detail-row">
+            <span class="label">Capacity</span>
+            <span class="value">{{ equipment.capacity || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Capacity Unit</span>
+            <span class="value">{{ equipment.capacityUnit || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="equipment.status === 'MAINTENANCE'">
+          <h3>Maintenance Information</h3>
+          <div class="detail-row">
+            <span class="label">Reason</span>
+            <span class="value">{{ equipment.maintenanceReason }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Started</span>
+            <span class="value">{{ equipment.maintenanceStart | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">By</span>
+            <span class="value">{{ equipment.maintenanceBy }}</span>
+          </div>
+          <div class="detail-row" *ngIf="equipment.expectedMaintenanceEnd">
+            <span class="label">Expected End</span>
+            <span class="value">{{ equipment.expectedMaintenanceEnd | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="equipment.status === 'ON_HOLD'">
+          <h3>Hold Information</h3>
+          <div class="detail-row">
+            <span class="label">Reason</span>
+            <span class="value">{{ equipment.holdReason }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Started</span>
+            <span class="value">{{ equipment.holdStart | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">By</span>
+            <span class="value">{{ equipment.heldBy }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

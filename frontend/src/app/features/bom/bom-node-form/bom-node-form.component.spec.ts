@@ -3,7 +3,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, throwError, Subject } from 'rxjs';
+import { of, throwError, BehaviorSubject } from 'rxjs';
 
 import { BomNodeFormComponent } from './bom-node-form.component';
 import { ApiService } from '../../../core/services/api.service';
@@ -14,8 +14,8 @@ describe('BomNodeFormComponent', () => {
   let fixture: ComponentFixture<BomNodeFormComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
   let router: Router;
-  let paramsSubject: Subject<any>;
-  let queryParamsSubject: Subject<any>;
+  let paramsSubject: BehaviorSubject<any>;
+  let queryParamsSubject: BehaviorSubject<any>;
 
   const mockMaterials: Material[] = [
     {
@@ -77,8 +77,8 @@ describe('BomNodeFormComponent', () => {
   };
 
   beforeEach(async () => {
-    paramsSubject = new Subject<any>();
-    queryParamsSubject = new Subject<any>();
+    paramsSubject = new BehaviorSubject<any>({});
+    queryParamsSubject = new BehaviorSubject<any>({});
 
     const spy = jasmine.createSpyObj('ApiService', [
       'getActiveMaterials',
@@ -212,7 +212,8 @@ describe('BomNodeFormComponent', () => {
 
   describe('Create Mode (New BOM - Product Selection)', () => {
     beforeEach(() => {
-      createComponent({ productSku: 'new' });
+      // No productSku param means new BOM (dedicated 'create' route)
+      createComponent({});
     });
 
     it('should be in new BOM mode', () => {
@@ -225,14 +226,13 @@ describe('BomNodeFormComponent', () => {
       expect(component.products.length).toBe(2);
     });
 
-    it('should have empty selectedProductSku', () => {
-      expect(component.selectedProductSku).toBe('');
+    it('should have empty productSku form field', () => {
+      expect(component.form.get('productSku')?.value).toBe('');
     });
 
-    it('should select product', () => {
-      const event = { target: { value: 'FG-STEEL-001' } } as any;
-      component.onProductSelect(event);
-      expect(component.selectedProductSku).toBe('FG-STEEL-001');
+    it('should select product via form control', () => {
+      component.form.patchValue({ productSku: 'FG-STEEL-001' });
+      expect(component.form.get('productSku')?.value).toBe('FG-STEEL-001');
     });
 
     it('should require product selection for new BOM', () => {
@@ -243,10 +243,13 @@ describe('BomNodeFormComponent', () => {
         materialName: 'Iron Ore'
       });
 
-      // Without selecting product
+      // Without selecting product, form should be invalid
+      expect(component.form.invalid).toBeTrue();
+      expect(component.form.get('productSku')?.errors?.['required']).toBeTruthy();
+
       component.onSubmit();
 
-      expect(component.error).toBe('Please select a product for the BOM');
+      // Form validation prevents submission
       expect(apiServiceSpy.createBomNode).not.toHaveBeenCalled();
     });
 
@@ -255,8 +258,8 @@ describe('BomNodeFormComponent', () => {
       apiServiceSpy.createBomNode.and.returnValue(of(createdNode));
       const navigateSpy = spyOn(router, 'navigate');
 
-      component.selectedProductSku = 'FG-STEEL-001';
       component.form.patchValue({
+        productSku: 'FG-STEEL-001',
         materialId: 'RM-IRON-001',
         materialName: 'Iron Ore'
       });
@@ -413,7 +416,7 @@ describe('BomNodeFormComponent', () => {
     });
 
     it('should navigate back to list for new BOM', () => {
-      createComponent({ productSku: 'new' });
+      createComponent({});
       const navigateSpy = spyOn(router, 'navigate');
 
       component.cancel();

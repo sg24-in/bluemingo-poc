@@ -2,13 +2,18 @@ package com.mes.production.service;
 
 import com.mes.production.dto.BatchDTO;
 import com.mes.production.entity.*;
+import com.mes.production.repository.BatchQuantityAdjustmentRepository;
 import com.mes.production.repository.BatchRelationRepository;
 import com.mes.production.repository.BatchRepository;
 import com.mes.production.repository.OperationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,6 +35,9 @@ class BatchServiceTest {
 
     @Mock
     private BatchRelationRepository batchRelationRepository;
+
+    @Mock
+    private BatchQuantityAdjustmentRepository adjustmentRepository;
 
     @Mock
     private OperationRepository operationRepository;
@@ -573,5 +581,532 @@ class BatchServiceTest {
 
         // Assert
         assertEquals("CUSTOM-MERGED-001", result.getMergedBatch().getBatchNumber());
+    }
+
+    @Nested
+    @DisplayName("Create Batch Tests")
+    class CreateBatchTests {
+
+        private void mockSecurityContext() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(authentication.getName()).thenReturn("admin");
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            SecurityContextHolder.setContext(securityContext);
+        }
+
+        @Test
+        @DisplayName("Should create batch successfully")
+        void createBatch_Success() {
+            mockSecurityContext();
+
+            BatchDTO.CreateBatchRequest request = BatchDTO.CreateBatchRequest.builder()
+                    .batchNumber("NEW-BATCH-001")
+                    .materialId("RM-001")
+                    .materialName("Iron Ore")
+                    .quantity(new BigDecimal("1000.00"))
+                    .unit("KG")
+                    .build();
+
+            when(batchRepository.existsByBatchNumber("NEW-BATCH-001")).thenReturn(false);
+            when(batchRepository.save(any(Batch.class))).thenAnswer(invocation -> {
+                Batch saved = invocation.getArgument(0);
+                saved.setBatchId(10L);
+                return saved;
+            });
+
+            BatchDTO result = batchService.createBatch(request);
+
+            assertNotNull(result);
+            assertEquals("NEW-BATCH-001", result.getBatchNumber());
+            assertEquals("RM-001", result.getMaterialId());
+            verify(batchRepository).save(any(Batch.class));
+        }
+
+        @Test
+        @DisplayName("Should reject duplicate batch number")
+        void createBatch_DuplicateNumber() {
+            BatchDTO.CreateBatchRequest request = BatchDTO.CreateBatchRequest.builder()
+                    .batchNumber("BATCH-001")
+                    .materialId("RM-001")
+                    .quantity(new BigDecimal("100.00"))
+                    .build();
+
+            when(batchRepository.existsByBatchNumber("BATCH-001")).thenReturn(true);
+
+            assertThrows(RuntimeException.class, () -> batchService.createBatch(request));
+            verify(batchRepository, never()).save(any(Batch.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Update Batch Tests")
+    class UpdateBatchTests {
+
+        private void mockSecurityContext() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(authentication.getName()).thenReturn("admin");
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            SecurityContextHolder.setContext(securityContext);
+        }
+
+        @Test
+        @DisplayName("Should update batch successfully")
+        void updateBatch_Success() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+            when(batchRepository.save(any(Batch.class))).thenReturn(testBatch);
+
+            BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
+                    .materialName("Updated Steel Billet")
+                    .quantity(new BigDecimal("600.00"))
+                    .build();
+
+            BatchDTO result = batchService.updateBatch(1L, request);
+
+            assertNotNull(result);
+            verify(batchRepository).save(any(Batch.class));
+        }
+
+        @Test
+        @DisplayName("Should reject update for consumed batch")
+        void updateBatch_RejectConsumed() {
+            mockSecurityContext();
+
+            testBatch.setStatus(Batch.STATUS_CONSUMED);
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+
+            BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
+                    .quantity(new BigDecimal("200.00"))
+                    .build();
+
+            assertThrows(RuntimeException.class, () -> batchService.updateBatch(1L, request));
+        }
+
+        @Test
+        @DisplayName("Should reject duplicate batch number on update")
+        void updateBatch_DuplicateNumber() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+            when(batchRepository.existsByBatchNumber("EXISTING-BATCH")).thenReturn(true);
+
+            BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
+                    .batchNumber("EXISTING-BATCH")
+                    .build();
+
+            assertThrows(RuntimeException.class, () -> batchService.updateBatch(1L, request));
+        }
+
+        @Test
+        @DisplayName("Should throw when batch not found")
+        void updateBatch_NotFound() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(99L)).thenReturn(Optional.empty());
+
+            BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
+                    .quantity(new BigDecimal("200.00"))
+                    .build();
+
+            assertThrows(RuntimeException.class, () -> batchService.updateBatch(99L, request));
+        }
+    }
+
+    @Nested
+    @DisplayName("Delete Batch Tests")
+    class DeleteBatchTests {
+
+        private void mockSecurityContext() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(authentication.getName()).thenReturn("admin");
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            SecurityContextHolder.setContext(securityContext);
+        }
+
+        @Test
+        @DisplayName("Should soft delete batch")
+        void deleteBatch_Success() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+            when(batchRepository.save(any(Batch.class))).thenReturn(testBatch);
+
+            BatchDTO.StatusUpdateResponse result = batchService.deleteBatch(1L);
+
+            assertNotNull(result);
+            assertEquals("AVAILABLE", result.getPreviousStatus());
+            assertEquals("SCRAPPED", result.getNewStatus());
+            verify(batchRepository).save(any(Batch.class));
+        }
+
+        @Test
+        @DisplayName("Should reject delete for consumed batch")
+        void deleteBatch_RejectConsumed() {
+            mockSecurityContext();
+
+            testBatch.setStatus(Batch.STATUS_CONSUMED);
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+
+            assertThrows(RuntimeException.class, () -> batchService.deleteBatch(1L));
+        }
+
+        @Test
+        @DisplayName("Should reject delete for already scrapped batch")
+        void deleteBatch_RejectScrapped() {
+            mockSecurityContext();
+
+            testBatch.setStatus(Batch.STATUS_SCRAPPED);
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+
+            assertThrows(RuntimeException.class, () -> batchService.deleteBatch(1L));
+        }
+
+        @Test
+        @DisplayName("Should throw when batch not found")
+        void deleteBatch_NotFound() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThrows(RuntimeException.class, () -> batchService.deleteBatch(99L));
+        }
+    }
+
+    // ========================================
+    // Batch Immutability Tests (B05 - Phase 8A)
+    // Per MES Batch Management Specification:
+    // - Batch quantities cannot be edited directly
+    // - All quantity changes require mandatory reason via adjustQuantity()
+    // ========================================
+
+    @Nested
+    @DisplayName("Batch Quantity Immutability Tests")
+    class BatchQuantityImmutabilityTests {
+
+        private void mockSecurityContext() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(authentication.getName()).thenReturn("admin");
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            SecurityContextHolder.setContext(securityContext);
+        }
+
+        @Test
+        @DisplayName("UpdateBatch should NOT modify quantity even if provided in request")
+        void updateBatch_QuantityIgnored() {
+            mockSecurityContext();
+            BigDecimal originalQuantity = new BigDecimal("500.00");
+            testBatch.setQuantity(originalQuantity);
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+            when(batchRepository.save(any(Batch.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // Even though UpdateBatchRequest no longer has quantity field,
+            // this test verifies that batch quantity remains unchanged after update
+            BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
+                    .materialName("Updated Material Name")
+                    .build();
+
+            BatchDTO result = batchService.updateBatch(1L, request);
+
+            // Verify quantity was NOT changed
+            assertEquals(originalQuantity, result.getQuantity());
+            verify(batchRepository).save(argThat(batch ->
+                    batch.getQuantity().equals(originalQuantity)
+            ));
+        }
+
+        @Test
+        @DisplayName("UpdateBatch should only update allowed metadata fields")
+        void updateBatch_OnlyMetadataUpdated() {
+            mockSecurityContext();
+            BigDecimal originalQuantity = new BigDecimal("500.00");
+            testBatch.setQuantity(originalQuantity);
+            testBatch.setMaterialName("Old Name");
+            testBatch.setUnit("KG");
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+            when(batchRepository.save(any(Batch.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
+                    .materialName("New Name")
+                    .unit("LBS")
+                    .build();
+
+            BatchDTO result = batchService.updateBatch(1L, request);
+
+            // Verify metadata was updated but quantity remained same
+            assertEquals("New Name", result.getMaterialName());
+            assertEquals("LBS", result.getUnit());
+            assertEquals(originalQuantity, result.getQuantity());
+        }
+    }
+
+    @Nested
+    @DisplayName("Adjust Quantity Tests")
+    class AdjustQuantityTests {
+
+        private void mockSecurityContext() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(authentication.getName()).thenReturn("admin");
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            SecurityContextHolder.setContext(securityContext);
+        }
+
+        @Test
+        @DisplayName("Should adjust quantity successfully with valid request")
+        void adjustQuantity_Success() {
+            mockSecurityContext();
+            BigDecimal oldQuantity = new BigDecimal("500.00");
+            BigDecimal newQuantity = new BigDecimal("480.00");
+            testBatch.setQuantity(oldQuantity);
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+            when(batchRepository.save(any(Batch.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(adjustmentRepository.save(any(BatchQuantityAdjustment.class)))
+                    .thenAnswer(inv -> {
+                        BatchQuantityAdjustment adj = inv.getArgument(0);
+                        adj.setAdjustmentId(1L);
+                        return adj;
+                    });
+
+            BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                    .newQuantity(newQuantity)
+                    .adjustmentType("CORRECTION")
+                    .reason("Physical count revealed discrepancy of 20kg")
+                    .build();
+
+            BatchDTO.AdjustQuantityResponse result = batchService.adjustQuantity(1L, request);
+
+            assertNotNull(result);
+            assertEquals(1L, result.getBatchId());
+            assertEquals(oldQuantity, result.getPreviousQuantity());
+            assertEquals(newQuantity, result.getNewQuantity());
+            assertEquals(new BigDecimal("-20.00"), result.getQuantityDifference());
+            assertEquals("CORRECTION", result.getAdjustmentType());
+
+            // Verify adjustment record was saved
+            verify(adjustmentRepository).save(argThat(adj ->
+                    adj.getOldQuantity().equals(oldQuantity) &&
+                    adj.getNewQuantity().equals(newQuantity) &&
+                    "CORRECTION".equals(adj.getAdjustmentType())
+            ));
+
+            // Verify batch quantity was updated
+            verify(batchRepository).save(argThat(batch ->
+                    batch.getQuantity().equals(newQuantity)
+            ));
+
+            // Verify audit trail
+            verify(auditService).logUpdate(eq("BATCH"), eq(1L), eq("quantity"),
+                    eq(oldQuantity.toString()), eq(newQuantity.toString()));
+        }
+
+        @Test
+        @DisplayName("Should reject adjustment for consumed batch")
+        void adjustQuantity_ConsumedBatch_ThrowsException() {
+            mockSecurityContext();
+            testBatch.setStatus(Batch.STATUS_CONSUMED);
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+
+            BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                    .newQuantity(new BigDecimal("400.00"))
+                    .adjustmentType("CORRECTION")
+                    .reason("Testing adjustment")
+                    .build();
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> batchService.adjustQuantity(1L, request));
+
+            assertTrue(exception.getMessage().contains("consumed"));
+            verify(adjustmentRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should reject adjustment for scrapped batch")
+        void adjustQuantity_ScrappedBatch_ThrowsException() {
+            mockSecurityContext();
+            testBatch.setStatus(Batch.STATUS_SCRAPPED);
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+
+            BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                    .newQuantity(new BigDecimal("400.00"))
+                    .adjustmentType("CORRECTION")
+                    .reason("Testing adjustment")
+                    .build();
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> batchService.adjustQuantity(1L, request));
+
+            assertTrue(exception.getMessage().contains("scrapped"));
+            verify(adjustmentRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should reject invalid adjustment type")
+        void adjustQuantity_InvalidType_ThrowsException() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+
+            BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                    .newQuantity(new BigDecimal("400.00"))
+                    .adjustmentType("INVALID_TYPE")
+                    .reason("Testing adjustment")
+                    .build();
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> batchService.adjustQuantity(1L, request));
+
+            assertTrue(exception.getMessage().contains("Invalid adjustment type"));
+            verify(adjustmentRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should reject negative quantity")
+        void adjustQuantity_NegativeQuantity_ThrowsException() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+
+            BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                    .newQuantity(new BigDecimal("-10.00"))
+                    .adjustmentType("CORRECTION")
+                    .reason("Testing negative quantity")
+                    .build();
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> batchService.adjustQuantity(1L, request));
+
+            assertTrue(exception.getMessage().contains("non-negative"));
+            verify(adjustmentRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should accept all valid adjustment types")
+        void adjustQuantity_AllValidTypes_Success() {
+            mockSecurityContext();
+
+            String[] validTypes = {"CORRECTION", "INVENTORY_COUNT", "DAMAGE", "SCRAP_RECOVERY", "SYSTEM"};
+
+            for (String type : validTypes) {
+                // Reset mocks for each iteration
+                testBatch.setQuantity(new BigDecimal("500.00"));
+                testBatch.setStatus("AVAILABLE");
+
+                when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+                when(batchRepository.save(any(Batch.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(adjustmentRepository.save(any(BatchQuantityAdjustment.class)))
+                        .thenAnswer(inv -> {
+                            BatchQuantityAdjustment adj = inv.getArgument(0);
+                            adj.setAdjustmentId(1L);
+                            return adj;
+                        });
+
+                BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                        .newQuantity(new BigDecimal("450.00"))
+                        .adjustmentType(type)
+                        .reason("Testing " + type + " adjustment type")
+                        .build();
+
+                BatchDTO.AdjustQuantityResponse result = batchService.adjustQuantity(1L, request);
+                assertEquals(type, result.getAdjustmentType(),
+                        "Adjustment type " + type + " should be accepted");
+            }
+        }
+
+        @Test
+        @DisplayName("Should throw when batch not found")
+        void adjustQuantity_NotFound_ThrowsException() {
+            mockSecurityContext();
+
+            when(batchRepository.findById(99L)).thenReturn(Optional.empty());
+
+            BatchDTO.AdjustQuantityRequest request = BatchDTO.AdjustQuantityRequest.builder()
+                    .newQuantity(new BigDecimal("100.00"))
+                    .adjustmentType("CORRECTION")
+                    .reason("Testing")
+                    .build();
+
+            assertThrows(RuntimeException.class,
+                    () -> batchService.adjustQuantity(99L, request));
+        }
+    }
+
+    @Nested
+    @DisplayName("Adjustment History Tests")
+    class AdjustmentHistoryTests {
+
+        @Test
+        @DisplayName("Should return adjustment history for batch")
+        void getAdjustmentHistory_ReturnsHistory() {
+            BatchQuantityAdjustment adj1 = BatchQuantityAdjustment.builder()
+                    .adjustmentId(1L)
+                    .batch(testBatch)
+                    .oldQuantity(new BigDecimal("500.00"))
+                    .newQuantity(new BigDecimal("480.00"))
+                    .adjustmentType("CORRECTION")
+                    .adjustmentReason("Physical count discrepancy")
+                    .adjustedBy("admin")
+                    .adjustedOn(LocalDateTime.now())
+                    .build();
+
+            BatchQuantityAdjustment adj2 = BatchQuantityAdjustment.builder()
+                    .adjustmentId(2L)
+                    .batch(testBatch)
+                    .oldQuantity(new BigDecimal("480.00"))
+                    .newQuantity(new BigDecimal("475.00"))
+                    .adjustmentType("DAMAGE")
+                    .adjustmentReason("Material damage during handling")
+                    .adjustedBy("operator1")
+                    .adjustedOn(LocalDateTime.now().minusHours(1))
+                    .build();
+
+            when(batchRepository.existsById(1L)).thenReturn(true);
+            when(adjustmentRepository.findByBatchBatchIdOrderByAdjustedOnDesc(1L))
+                    .thenReturn(List.of(adj1, adj2));
+
+            List<BatchDTO.QuantityAdjustmentHistory> history = batchService.getAdjustmentHistory(1L);
+
+            assertNotNull(history);
+            assertEquals(2, history.size());
+
+            assertEquals(new BigDecimal("500.00"), history.get(0).getOldQuantity());
+            assertEquals(new BigDecimal("480.00"), history.get(0).getNewQuantity());
+            assertEquals("CORRECTION", history.get(0).getAdjustmentType());
+
+            assertEquals(new BigDecimal("480.00"), history.get(1).getOldQuantity());
+            assertEquals(new BigDecimal("475.00"), history.get(1).getNewQuantity());
+            assertEquals("DAMAGE", history.get(1).getAdjustmentType());
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no adjustments")
+        void getAdjustmentHistory_NoHistory_ReturnsEmptyList() {
+            when(batchRepository.existsById(1L)).thenReturn(true);
+            when(adjustmentRepository.findByBatchBatchIdOrderByAdjustedOnDesc(1L))
+                    .thenReturn(List.of());
+
+            List<BatchDTO.QuantityAdjustmentHistory> history = batchService.getAdjustmentHistory(1L);
+
+            assertNotNull(history);
+            assertTrue(history.isEmpty());
+        }
+
+        @Test
+        @DisplayName("Should throw when batch not found")
+        void getAdjustmentHistory_NotFound_ThrowsException() {
+            when(batchRepository.existsById(99L)).thenReturn(false);
+
+            assertThrows(RuntimeException.class,
+                    () -> batchService.getAdjustmentHistory(99L));
+        }
     }
 }

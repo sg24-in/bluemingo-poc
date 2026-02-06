@@ -1,0 +1,159 @@
+<div class="production-history-page">
+  <div class="page-header">
+    <h1>Production History</h1>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div class="filter-group">
+        <label for="status-filter">Status:</label>
+        <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
+          <option value="all">All Statuses</option>
+          <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-group">
+        <label for="search">Search:</label>
+        <input
+          type="text"
+          id="search"
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange(searchTerm)"
+          placeholder="Search by operation, batch, notes..."
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-cards" *ngIf="!loading">
+    <div class="summary-card">
+      <span class="count">{{ allConfirmations.length }}</span>
+      <span class="label">Total</span>
+    </div>
+    <div class="summary-card confirmed">
+      <span class="count">{{ countByStatus('CONFIRMED') }}</span>
+      <span class="label">Confirmed</span>
+    </div>
+    <div class="summary-card pending">
+      <span class="count">{{ countByStatus('PENDING_REVIEW') }}</span>
+      <span class="label">Pending Review</span>
+    </div>
+    <div class="summary-card rejected">
+      <span class="count">{{ countByStatus('REJECTED') }}</span>
+      <span class="label">Rejected</span>
+    </div>
+  </div>
+
+  <div class="table-container" *ngIf="!loading; else loadingTpl">
+    <table class="data-table" *ngIf="confirmations.length > 0; else emptyTpl">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Operation</th>
+          <th>Output Batch</th>
+          <th>Produced Qty</th>
+          <th>Scrap Qty</th>
+          <th>Duration</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of confirmations"
+            (click)="toggleDetail(c)"
+            [class.selected]="selectedConfirmation === c"
+            [class.rejected-row]="c.status === 'REJECTED'"
+            class="clickable-row">
+          <td>{{ c.confirmationId }}</td>
+          <td>{{ c.operationName || '-' }}</td>
+          <td>{{ c.outputBatch?.batchNumber || '-' }}</td>
+          <td>{{ c.producedQty }}</td>
+          <td>{{ c.scrapQty || 0 }}</td>
+          <td>{{ getDuration(c.startTime, c.endTime) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(c.status)">
+              {{ c.status }}
+            </span>
+          </td>
+          <td>{{ formatDateTime(c.createdOn) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyTpl>
+      <div class="empty-state">
+        <p>No production confirmations found.</p>
+      </div>
+    </ng-template>
+
+    <div class="result-count" *ngIf="confirmations.length > 0">
+      Showing {{ confirmations.length }} of {{ allConfirmations.length }} confirmations
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Loading production history...</div>
+  </ng-template>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel card" *ngIf="selectedConfirmation">
+    <div class="detail-header">
+      <h3>Confirmation #{{ selectedConfirmation.confirmationId }}</h3>
+      <button class="btn btn-sm btn-secondary" (click)="selectedConfirmation = null">Close</button>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-section">
+        <h4>Production Details</h4>
+        <div class="detail-row"><span class="detail-label">Operation:</span> {{ selectedConfirmation.operationName }}</div>
+        <div class="detail-row"><span class="detail-label">Produced Qty:</span> {{ selectedConfirmation.producedQty }}</div>
+        <div class="detail-row"><span class="detail-label">Scrap Qty:</span> {{ selectedConfirmation.scrapQty || 0 }}</div>
+        <div class="detail-row"><span class="detail-label">Start:</span> {{ formatDateTime(selectedConfirmation.startTime) }}</div>
+        <div class="detail-row"><span class="detail-label">End:</span> {{ formatDateTime(selectedConfirmation.endTime) }}</div>
+        <div class="detail-row" *ngIf="selectedConfirmation.delayMinutes">
+          <span class="detail-label">Delay:</span> {{ selectedConfirmation.delayMinutes }}min
+          <span *ngIf="selectedConfirmation.delayReason"> - {{ selectedConfirmation.delayReason }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedConfirmation.notes">
+          <span class="detail-label">Notes:</span> {{ selectedConfirmation.notes }}
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedConfirmation.outputBatch">
+        <h4>Output Batch</h4>
+        <div class="detail-row"><span class="detail-label">Batch:</span> {{ selectedConfirmation.outputBatch.batchNumber }}</div>
+        <div class="detail-row"><span class="detail-label">Material:</span> {{ selectedConfirmation.outputBatch.materialName }}</div>
+        <div class="detail-row"><span class="detail-label">Quantity:</span> {{ selectedConfirmation.outputBatch.quantity }} {{ selectedConfirmation.outputBatch.unit }}</div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedConfirmation.equipment?.length">
+        <h4>Equipment</h4>
+        <div class="detail-row" *ngFor="let eq of selectedConfirmation.equipment">
+          {{ eq.name }} ({{ eq.equipmentCode }})
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedConfirmation.operators?.length">
+        <h4>Operators</h4>
+        <div class="detail-row" *ngFor="let op of selectedConfirmation.operators">
+          {{ op.name }} ({{ op.operatorCode }})
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedConfirmation.materialsConsumed?.length">
+        <h4>Materials Consumed</h4>
+        <div class="detail-row" *ngFor="let mat of selectedConfirmation.materialsConsumed">
+          {{ mat.materialId }} - Batch {{ mat.batchNumber }} ({{ mat.quantityConsumed }})
+        </div>
+      </div>
+
+      <div class="detail-section rejection" *ngIf="selectedConfirmation.rejectionReason">
+        <h4>Rejection</h4>
+        <div class="detail-row"><span class="detail-label">Reason:</span> {{ selectedConfirmation.rejectionReason }}</div>
+        <div class="detail-row"><span class="detail-label">Rejected By:</span> {{ selectedConfirmation.rejectedBy }}</div>
+        <div class="detail-row"><span class="detail-label">Rejected On:</span> {{ formatDateTime(selectedConfirmation.rejectedOn!) }}</div>
+      </div>
+    </div>
+  </div>
+</div>

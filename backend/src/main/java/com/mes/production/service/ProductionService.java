@@ -342,6 +342,7 @@ public class ProductionService {
                 .unit("T")
                 .generatedAtOperationId(operation.getOperationId())
                 .status("AVAILABLE")
+                .createdVia(Batch.CREATED_VIA_PRODUCTION)
                 .createdBy(currentUser)
                 .build();
 

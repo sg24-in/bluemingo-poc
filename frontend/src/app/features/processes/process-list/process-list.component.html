@@ -1,0 +1,106 @@
+<div class="process-list-page">
+  <div class="page-header">
+    <h1>Processes</h1>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div class="filter-group">
+        <label for="status-filter">Status:</label>
+        <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
+          <option value="all">All Statuses</option>
+          <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-group">
+        <label for="search">Search:</label>
+        <input
+          type="text"
+          id="search"
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange(searchTerm)"
+          placeholder="Search by stage name or ID..."
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-cards" *ngIf="!loading">
+    <div class="summary-card">
+      <span class="count">{{ allProcesses.length }}</span>
+      <span class="label">Total</span>
+    </div>
+    <div class="summary-card ready">
+      <span class="count">{{ countByStatus('READY') }}</span>
+      <span class="label">Ready</span>
+    </div>
+    <div class="summary-card in-progress">
+      <span class="count">{{ countByStatus('IN_PROGRESS') }}</span>
+      <span class="label">In Progress</span>
+    </div>
+    <div class="summary-card quality-pending">
+      <span class="count">{{ countByStatus('QUALITY_PENDING') }}</span>
+      <span class="label">Quality Pending</span>
+    </div>
+    <div class="summary-card completed">
+      <span class="count">{{ countByStatus('COMPLETED') }}</span>
+      <span class="label">Completed</span>
+    </div>
+  </div>
+
+  <div class="table-container" *ngIf="!loading; else loadingTpl">
+    <table class="data-table" *ngIf="processes.length > 0; else emptyTpl">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Stage Name</th>
+          <th>Sequence</th>
+          <th>Status</th>
+          <th>Decision</th>
+          <th>Operations</th>
+          <th>Progress</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let process of processes">
+          <td>{{ process.processId }}</td>
+          <td>{{ process.stageName }}</td>
+          <td>{{ process.stageSequence }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(process.status)">
+              {{ process.status }}
+            </span>
+          </td>
+          <td>
+            <span class="decision-badge" [ngClass]="process.usageDecision?.toLowerCase()" *ngIf="process.usageDecision">
+              {{ process.usageDecision }}
+            </span>
+            <span *ngIf="!process.usageDecision">-</span>
+          </td>
+          <td>{{ getOperationCount(process) }}</td>
+          <td>
+            <ng-container *ngIf="getOperationCount(process) > 0">
+              <span class="progress-text">{{ getConfirmedCount(process) }}/{{ getOperationCount(process) }} confirmed</span>
+            </ng-container>
+            <span *ngIf="getOperationCount(process) === 0">-</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyTpl>
+      <div class="empty-state">
+        <p>No processes found.</p>
+      </div>
+    </ng-template>
+
+    <div class="result-count" *ngIf="processes.length > 0">
+      Showing {{ processes.length }} of {{ allProcesses.length }} processes
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Loading processes...</div>
+  </ng-template>
+</div>

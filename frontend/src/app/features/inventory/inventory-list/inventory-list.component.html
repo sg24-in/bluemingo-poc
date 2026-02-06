@@ -1,6 +1,7 @@
 <div class="container">
   <div class="page-header">
     <h1 class="page-title">Inventory</h1>
+    <button class="btn btn-primary" (click)="createInventory()">New Inventory</button>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -66,7 +67,7 @@
             <td>{{ item.batchNumber }}</td>
             <td>{{ item.materialId }}</td>
             <td>
-              <span class="type-badge" [class]="'type-' + item.inventoryType?.toLowerCase()">
+              <span class="type-badge" [class]="'type-' + (item.inventoryType || '').toLowerCase()">
                 {{ item.inventoryType }}
               </span>
             </td>
@@ -83,14 +84,17 @@
             </td>
             <td>{{ item.location || '-' }}</td>
             <td class="actions-cell">
-              <button *ngIf="canBlock(item)" class="btn btn-small btn-warning" (click)="openBlockModal(item)">
+              <button *ngIf="canEdit(item)" class="btn btn-sm btn-primary" (click)="editInventory(item)">
+                Edit
+              </button>
+              <button *ngIf="canBlock(item)" class="btn btn-sm btn-warning" (click)="openBlockModal(item)">
                 Block
               </button>
-              <button *ngIf="canUnblock(item)" class="btn btn-small btn-success" (click)="unblockInventory(item)">
+              <button *ngIf="canUnblock(item)" class="btn btn-sm btn-success" (click)="unblockInventory(item)">
                 Unblock
               </button>
-              <button *ngIf="canScrap(item)" class="btn btn-small btn-danger" (click)="openScrapModal(item)">
-                Scrap
+              <button *ngIf="canDelete(item)" class="btn btn-sm btn-danger" (click)="deleteInventory(item)">
+                Delete
               </button>
               <span *ngIf="item.state === 'SCRAPPED' || item.state === 'CONSUMED'" class="no-actions">-</span>
             </td>
@@ -123,7 +127,7 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Block Inventory</h3>
-      <button class="close-btn" (click)="closeBlockModal()">&times;</button>
+      <button class="close-btn" (click)="closeBlockModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <p>You are about to block inventory:</p>
@@ -157,7 +161,7 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Scrap Inventory</h3>
-      <button class="close-btn" (click)="closeScrapModal()">&times;</button>
+      <button class="close-btn" (click)="closeScrapModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <p class="warning-text">Warning: Scrapping inventory is permanent and cannot be undone.</p>

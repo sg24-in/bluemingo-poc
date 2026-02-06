@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { ChartService, CHART_FONT } from '../../../core/services/chart.service';
 import { AllocationInfo, BatchAvailability } from '../../../shared/models';
 
 interface SplitPortion {
@@ -13,7 +14,9 @@ interface SplitPortion {
   templateUrl: './batch-detail.component.html',
   styleUrls: ['./batch-detail.component.css']
 })
-export class BatchDetailComponent implements OnInit {
+export class BatchDetailComponent implements OnInit, OnDestroy {
+  @ViewChild('genealogyChart') genealogyChartRef!: ElementRef<HTMLDivElement>;
+
   batch: any = null;
   genealogy: any = null;
   loading = true;
@@ -45,7 +48,8 @@ export class BatchDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private chartService: ChartService
   ) {}
 
   ngOnInit(): void {
@@ -61,6 +65,7 @@ export class BatchDetailComponent implements OnInit {
       next: (data) => {
         this.batch = data;
         this.loading = false;
+        this.tryBuildGenealogyChart();
       },
       error: (err) => {
         console.error('Error loading batch:', err);
@@ -75,12 +80,19 @@ export class BatchDetailComponent implements OnInit {
       next: (data) => {
         this.genealogy = data;
         this.loadingGenealogy = false;
+        this.tryBuildGenealogyChart();
       },
       error: (err) => {
         console.error('Error loading genealogy:', err);
         this.loadingGenealogy = false;
       }
     });
+  }
+
+  private tryBuildGenealogyChart(): void {
+    if (!this.batch || !this.genealogy) return;
+    // Allow nested *ngIf directives to resolve before accessing ViewChild
+    setTimeout(() => this.buildGenealogyChart(), 50);
   }
 
   goBack(): void {
@@ -350,5 +362,130 @@ export class BatchDetailComponent implements OnInit {
 
   getReleasedAllocations(): AllocationInfo[] {
     return this.allocations.filter(a => a.status === 'RELEASED');
+  }
+
+  ngOnDestroy(): void {
+    this.chartService.disposeAll();
+  }
+
+  private buildGenealogyChart(): void {
+    if (!this.genealogyChartRef || !this.genealogy || !this.batch) return;
+    const parents = this.genealogy.parentBatches || [];
+    const children = this.genealogy.childBatches || [];
+    if (parents.length === 0 && children.length === 0) return;
+
+    const nodes: any[] = [];
+    const edges: any[] = [];
+    const nodeSpacingX = 200;
+    const parentY = 50;
+    const currentY = 200;
+    const childY = 350;
+
+    // Parent batch nodes (top row)
+    const parentStartX = parents.length > 1 ? -(parents.length - 1) * nodeSpacingX / 2 : 0;
+    parents.forEach((p: any, i: number) => {
+      const nodeId = `parent-${p.batchId}`;
+      nodes.push({
+        id: nodeId,
+        name: p.batchNumber,
+        x: parentStartX + i * nodeSpacingX,
+        y: parentY,
+        symbolSize: [140, 50],
+        symbol: 'roundRect',
+        itemStyle: { color: '#fff', borderColor: '#1976d2', borderWidth: 2 },
+        label: {
+          show: true, fontSize: CHART_FONT.label, color: '#333',
+          formatter: `${p.batchNumber}\n${p.materialId || ''}\nConsumed: ${p.quantityConsumed || ''} ${p.unit || ''}`
+        },
+        value: p.batchId
+      });
+      edges.push({
+        source: nodeId,
+        target: 'current',
+        lineStyle: { color: '#1976d2', width: 2 },
+        symbol: ['none', 'arrow'],
+        symbolSize: 10,
+        label: {
+          show: !!(p.relationType),
+          formatter: p.relationType || '',
+          fontSize: CHART_FONT.edgeLabel, color: '#888'
+        }
+      });
+    });
+
+    // Current batch node (center)
+    nodes.push({
+      id: 'current',
+      name: this.batch.batchNumber,
+      x: 0,
+      y: currentY,
+      symbolSize: [160, 56],
+      symbol: 'roundRect',
+      itemStyle: { color: '#1976d2', borderColor: '#0d47a1', borderWidth: 3 },
+      label: {
+        show: true, fontSize: CHART_FONT.labelBold, fontWeight: 'bold', color: '#fff',
+        formatter: `${this.batch.batchNumber}\n${this.batch.materialId || ''}\nQty: ${this.batch.quantity} ${this.batch.unit || ''}`
+      }
+    });
+
+    // Child batch nodes (bottom row)
+    const childStartX = children.length > 1 ? -(children.length - 1) * nodeSpacingX / 2 : 0;
+    children.forEach((c: any, i: number) => {
+      const nodeId = `child-${c.batchId}`;
+      nodes.push({
+        id: nodeId,
+        name: c.batchNumber,
+        x: childStartX + i * nodeSpacingX,
+        y: childY,
+        symbolSize: [140, 50],
+        symbol: 'roundRect',
+        itemStyle: { color: '#fff', borderColor: '#388e3c', borderWidth: 2 },
+        label: {
+          show: true, fontSize: CHART_FONT.label, color: '#333',
+          formatter: `${c.batchNumber}\n${c.materialId || ''}\nQty: ${c.quantity || ''} ${c.unit || ''}`
+        },
+        value: c.batchId
+      });
+      edges.push({
+        source: 'current',
+        target: nodeId,
+        lineStyle: { color: '#388e3c', width: 2 },
+        symbol: ['none', 'arrow'],
+        symbolSize: 10,
+        label: {
+          show: !!(c.relationType),
+          formatter: c.relationType || '',
+          fontSize: CHART_FONT.edgeLabel, color: '#888'
+        }
+      });
+    });
+
+    const chart = this.chartService.initChart(this.genealogyChartRef.nativeElement, 'batch-genealogy');
+    this.chartService.setOption('batch-genealogy', {
+      tooltip: {
+        trigger: 'item',
+        textStyle: { fontSize: CHART_FONT.tooltip },
+        formatter: (params: any) => {
+          if (params.dataType === 'node') return params.name;
+          return '';
+        }
+      },
+      series: [{
+        type: 'graph',
+        layout: 'none',
+        roam: true,
+        data: nodes,
+        links: edges,
+        lineStyle: { curveness: 0.1 },
+        emphasis: { focus: 'adjacency', lineStyle: { width: 4 } }
+      }]
+    });
+
+    // Click to navigate
+    chart.on('click', (params: any) => {
+      if (params.dataType === 'node' && params.data.value && params.data.id !== 'current') {
+        this.router.navigate(['/batches', params.data.value]);
+      }
+    });
   }
 }

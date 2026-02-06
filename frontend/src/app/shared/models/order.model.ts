@@ -3,7 +3,7 @@
  * See CONVENTIONS.md for contract rules.
  */
 
-import { OrderStatusType } from '../constants/status.constants';
+import { OrderStatusType, OrderLineStatusType } from '../constants/status.constants';
 import { ProcessSummary } from './process.model';
 import { OperationBrief } from './operation.model';
 
@@ -30,7 +30,7 @@ export interface OrderLineItem {
   quantity: number;
   unit: string;
   deliveryDate?: string; // LocalDate
-  status: string;
+  status: OrderLineStatusType;
   processes?: ProcessSummary[];
   currentProcess?: ProcessSummary;
   currentOperation?: OperationBrief;

@@ -1,0 +1,143 @@
+<div class="operation-list-page">
+  <div class="page-header">
+    <h1>Operations</h1>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div class="filter-group">
+        <label for="status-filter">Status:</label>
+        <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
+          <option value="all">All Statuses</option>
+          <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-group">
+        <label for="search">Search:</label>
+        <input
+          type="text"
+          id="search"
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange(searchTerm)"
+          placeholder="Search by name, code, order..."
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="actionError">{{ actionError }}</div>
+
+  <div class="summary-cards" *ngIf="!loading">
+    <div class="summary-card">
+      <span class="count">{{ allOperations.length }}</span>
+      <span class="label">Total</span>
+    </div>
+    <div class="summary-card ready">
+      <span class="count">{{ countByStatus('READY') }}</span>
+      <span class="label">Ready</span>
+    </div>
+    <div class="summary-card in-progress">
+      <span class="count">{{ countByStatus('IN_PROGRESS') }}</span>
+      <span class="label">In Progress</span>
+    </div>
+    <div class="summary-card confirmed">
+      <span class="count">{{ countByStatus('CONFIRMED') }}</span>
+      <span class="label">Confirmed</span>
+    </div>
+    <div class="summary-card blocked">
+      <span class="count">{{ countByStatus('BLOCKED') }}</span>
+      <span class="label">Blocked</span>
+    </div>
+  </div>
+
+  <div class="table-container" *ngIf="!loading; else loadingTpl">
+    <table class="data-table" *ngIf="operations.length > 0; else emptyTpl">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Order</th>
+          <th>Process</th>
+          <th>Seq</th>
+          <th>Target Qty</th>
+          <th>Confirmed Qty</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let op of operations" [class.blocked-row]="op.status === 'BLOCKED'">
+          <td>{{ op.operationCode || '-' }}</td>
+          <td>{{ op.operationName }}</td>
+          <td>{{ op.operationType || '-' }}</td>
+          <td>{{ op.orderNumber || '-' }}</td>
+          <td>{{ op.processName || '-' }}</td>
+          <td>{{ op.sequenceNumber }}</td>
+          <td>{{ op.targetQty || '-' }}</td>
+          <td>{{ op.confirmedQty || '-' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(op.status)">
+              {{ op.status }}
+            </span>
+          </td>
+          <td class="actions">
+            <button
+              class="btn btn-sm btn-warning"
+              (click)="openBlockModal(op)"
+              *ngIf="op.status !== 'BLOCKED' && op.status !== 'CONFIRMED'"
+            >
+              Block
+            </button>
+            <button
+              class="btn btn-sm btn-success"
+              (click)="unblockOperation(op)"
+              *ngIf="op.status === 'BLOCKED'"
+            >
+              Unblock
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyTpl>
+      <div class="empty-state">
+        <p>No operations found.</p>
+      </div>
+    </ng-template>
+
+    <div class="result-count" *ngIf="operations.length > 0">
+      Showing {{ operations.length }} of {{ allOperations.length }} operations
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Loading operations...</div>
+  </ng-template>
+
+  <!-- Block Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showBlockModal" (click)="closeBlockModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Block Operation</h2>
+        <button class="close-btn" (click)="closeBlockModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Block operation <strong>{{ operationToBlock?.operationName }}</strong> ({{ operationToBlock?.operationCode }})?</p>
+        <div class="form-group">
+          <label for="blockReason">Reason *</label>
+          <textarea id="blockReason" [(ngModel)]="blockReason" rows="3" placeholder="Enter reason for blocking..."></textarea>
+        </div>
+        <div class="error" *ngIf="actionError">{{ actionError }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeBlockModal()" [disabled]="blockLoading">Cancel</button>
+        <button class="btn btn-warning" (click)="confirmBlock()" [disabled]="blockLoading || !blockReason.trim()">
+          {{ blockLoading ? 'Blocking...' : 'Block' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

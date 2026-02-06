@@ -30,6 +30,13 @@ public class Order {
     @Column(name = "customer_name")
     private String customerName;
 
+    // Proper FK reference to Customer entity
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_ref_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Customer customer;
+
     @Column(name = "order_date", nullable = false)
     private LocalDate orderDate;
 

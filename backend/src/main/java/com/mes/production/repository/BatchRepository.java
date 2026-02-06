@@ -17,6 +17,8 @@ public interface BatchRepository extends JpaRepository<Batch, Long>, JpaSpecific
 
     Optional<Batch> findByBatchNumber(String batchNumber);
 
+    boolean existsByBatchNumber(String batchNumber);
+
     List<Batch> findByStatus(String status);
 
     // Paginated version

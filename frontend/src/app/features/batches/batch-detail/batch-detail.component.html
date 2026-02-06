@@ -1,6 +1,6 @@
 <div class="container">
   <div class="page-header">
-    <button class="btn btn-secondary" (click)="goBack()">← Back to Batches</button>
+    <button class="btn btn-secondary" (click)="goBack()"><i class="fas fa-arrow-left"></i> Back to Batches</button>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -32,7 +32,7 @@
         </div>
         <div class="info-item">
           <span class="info-label">Quantity</span>
-          <span class="info-value">{{ batch.quantity }} {{ batch.unit || batch.unitOfMeasure }}</span>
+          <span class="info-value">{{ batch.quantity }} {{ batch.unit }}</span>
         </div>
         <div class="info-item">
           <span class="info-label">Status</span>
@@ -49,6 +49,44 @@
       </div>
     </div>
 
+    <!-- Quality Approval Status -->
+    <div class="card" *ngIf="batch.approvedBy || batch.rejectedBy || batch.status === 'QUALITY_PENDING'">
+      <div class="card-header">Quality Approval Status</div>
+      <div class="quality-status-content">
+        <div class="quality-status-badge" *ngIf="batch.status === 'QUALITY_PENDING'">
+          <i class="fas fa-hourglass-half"></i> Pending Quality Inspection
+        </div>
+        <div class="quality-status-badge approved" *ngIf="batch.approvedBy">
+          <i class="fas fa-circle-check"></i> Approved
+        </div>
+        <div class="quality-status-badge rejected" *ngIf="batch.rejectedBy">
+          <i class="fas fa-circle-xmark"></i> Rejected
+        </div>
+        <div class="quality-info-grid">
+          <div class="info-item" *ngIf="batch.approvedBy">
+            <span class="info-label">Approved By</span>
+            <span class="info-value">{{ batch.approvedBy }}</span>
+          </div>
+          <div class="info-item" *ngIf="batch.approvedOn">
+            <span class="info-label">Approved On</span>
+            <span class="info-value">{{ batch.approvedOn | date:'medium' }}</span>
+          </div>
+          <div class="info-item" *ngIf="batch.rejectedBy">
+            <span class="info-label">Rejected By</span>
+            <span class="info-value">{{ batch.rejectedBy }}</span>
+          </div>
+          <div class="info-item" *ngIf="batch.rejectedOn">
+            <span class="info-label">Rejected On</span>
+            <span class="info-value">{{ batch.rejectedOn | date:'medium' }}</span>
+          </div>
+          <div class="info-item full-width" *ngIf="batch.rejectionReason">
+            <span class="info-label">Rejection Reason</span>
+            <span class="info-value rejection-reason">{{ batch.rejectionReason }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Genealogy -->
     <div class="card">
       <div class="card-header">Batch Genealogy (Traceability)</div>
@@ -58,6 +96,13 @@
       </div>
 
       <div *ngIf="!loadingGenealogy && genealogy" class="genealogy-container">
+        <!-- Visual Genealogy Chart -->
+        <div class="genealogy-chart-section"
+             *ngIf="genealogy.parentBatches?.length > 0 || genealogy.childBatches?.length > 0">
+          <h4>Visual Genealogy</h4>
+          <div #genealogyChart class="genealogy-chart-container"></div>
+        </div>
+
         <!-- Parent Batches (Source Materials) -->
         <div class="genealogy-section" *ngIf="genealogy.parentBatches?.length > 0">
           <h4>Source Materials (Parent Batches)</h4>
@@ -73,7 +118,7 @@
                 </div>
                 <div class="node-details">
                   <span>Material: {{ parent.materialId }}</span>
-                  <span>Consumed: {{ parent.quantityUsed }} {{ parent.unitOfMeasure }}</span>
+                  <span>Consumed: {{ parent.quantityConsumed }} {{ parent.unit }}</span>
                 </div>
               </div>
             </div>
@@ -90,7 +135,7 @@
               </div>
               <div class="node-details">
                 <span>Material: {{ batch.materialId }}</span>
-                <span>Quantity: {{ batch.quantity }} {{ batch.unitOfMeasure }}</span>
+                <span>Quantity: {{ batch.quantity }} {{ batch.unit }}</span>
               </div>
             </div>
           </div>
@@ -111,7 +156,7 @@
                 </div>
                 <div class="node-details">
                   <span>Material: {{ child.materialId }}</span>
-                  <span>Quantity: {{ child.quantity }} {{ child.unitOfMeasure }}</span>
+                  <span>Quantity: {{ child.quantity }} {{ child.unit }}</span>
                 </div>
               </div>
             </div>
@@ -232,7 +277,7 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Split Batch</h3>
-      <button class="close-btn" (click)="closeSplitModal()">&times;</button>
+      <button class="close-btn" (click)="closeSplitModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="split-info">
@@ -252,7 +297,7 @@
             <input type="text" [(ngModel)]="portion.suffix" maxlength="5">
           </div>
           <button class="btn btn-icon" (click)="removeSplitPortion(i)" *ngIf="splitPortions.length > 1">
-            &times;
+            <i class="fas fa-xmark"></i>
           </button>
         </div>
         <button class="btn btn-secondary btn-sm" (click)="addSplitPortion()">+ Add Portion</button>
@@ -287,7 +332,7 @@
   <div class="modal-content modal-large" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Merge Batches</h3>
-      <button class="close-btn" (click)="closeMergeModal()">&times;</button>
+      <button class="close-btn" (click)="closeMergeModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="merge-info">
@@ -343,7 +388,7 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Allocate Batch to Order</h3>
-      <button class="close-btn" (click)="closeAllocationModal()">&times;</button>
+      <button class="close-btn" (click)="closeAllocationModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="allocation-info">

@@ -17,6 +17,14 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderLineItem {
 
+    // Status constants
+    public static final String STATUS_CREATED = "CREATED";
+    public static final String STATUS_READY = "READY";
+    public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
+    public static final String STATUS_COMPLETED = "COMPLETED";
+    public static final String STATUS_BLOCKED = "BLOCKED";
+    public static final String STATUS_ON_HOLD = "ON_HOLD";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_line_id")

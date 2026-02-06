@@ -6,25 +6,27 @@
     </button>
   </div>
 
-  <div class="filters">
-    <div class="filter-group">
-      <label for="status-filter">Status:</label>
-      <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
-        <option value="all">All</option>
-        <option value="ACTIVE">Active</option>
-        <option value="INACTIVE">Inactive</option>
-      </select>
-    </div>
+  <div class="card">
+    <div class="filters">
+      <div class="filter-group">
+        <label for="status-filter">Status:</label>
+        <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
+          <option value="all">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
+      </div>
 
-    <div class="filter-group">
-      <label for="search">Search:</label>
-      <input
-        type="text"
-        id="search"
-        [(ngModel)]="searchTerm"
-        (input)="onSearchChange(searchTerm)"
-        placeholder="Search by SKU or name..."
-      />
+      <div class="filter-group search-group">
+        <label for="search">Search:</label>
+        <input
+          type="text"
+          id="search"
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange(searchTerm)"
+          placeholder="Search by SKU or name..."
+        />
+      </div>
     </div>
   </div>
 
@@ -108,7 +110,7 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Delete Product</h2>
-        <button class="close-btn" (click)="closeDeleteModal()">&times;</button>
+        <button class="close-btn" (click)="closeDeleteModal()"><i class="fas fa-xmark"></i></button>
       </div>
       <div class="modal-body">
         <p>Are you sure you want to delete product <strong>{{ productToDelete?.productName }}</strong>?</p>

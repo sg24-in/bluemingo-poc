@@ -160,95 +160,6 @@
   gap: 8px;
 }
 
-.btn-sm {
-  padding: 4px 12px;
-  font-size: 13px;
-}
-
-/* Alert Messages */
-.alert {
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-}
-
-.alert-success {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-.alert-error {
-  background: #ffebee;
-  color: #c62828;
-  border: 1px solid #ef9a9a;
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.modal-content.modal-large {
-  max-width: 600px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-}
-
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
 /* Split/Merge Specific Styles */
 .split-info, .merge-info {
   background: #f5f5f5;
@@ -309,29 +220,6 @@
   color: #d32f2f;
 }
 
-.form-group {
-  margin-bottom: 12px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.form-group input, .form-group textarea {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.form-group textarea {
-  resize: vertical;
-}
-
 /* Batch Selection for Merge */
 .batch-selection-list {
   max-height: 200px;
@@ -376,6 +264,25 @@
 
 .batch-item-info .batch-qty {
   color: #666;
+}
+
+/* Visual Genealogy Chart */
+.genealogy-chart-section {
+  margin-bottom: 32px;
+}
+
+.genealogy-chart-section h4 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.genealogy-chart-container {
+  width: 100%;
+  height: 400px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fafafa;
 }
 
 /* Allocation Styles (GAP-001: Multi-Order Batch Confirmation) */
@@ -436,53 +343,6 @@
   margin-top: 8px;
 }
 
-/* Data Table */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table th {
-  font-size: 12px;
-  color: #888;
-  text-transform: uppercase;
-  font-weight: 500;
-}
-
-.data-table td {
-  font-size: 14px;
-}
-
-.data-table tr:hover {
-  background: #fafafa;
-}
-
-/* Badge */
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.badge-info {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.badge-secondary {
-  background: #f5f5f5;
-  color: #666;
-}
-
 /* Allocation Modal Specific */
 .allocation-info {
   background: #f5f5f5;
@@ -495,19 +355,6 @@
   margin: 4px 0;
 }
 
-.form-control {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #1976d2;
-}
-
 .form-text {
   font-size: 12px;
   margin-top: 4px;
@@ -515,4 +362,47 @@
 
 .text-muted {
   color: #888;
+}
+
+/* Quality Approval Status */
+.quality-status-content {
+  padding: 16px;
+}
+
+.quality-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.quality-status-badge.approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.quality-status-badge.rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.quality-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.quality-info-grid .info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.rejection-reason {
+  color: #721c24;
+  font-style: italic;
 }

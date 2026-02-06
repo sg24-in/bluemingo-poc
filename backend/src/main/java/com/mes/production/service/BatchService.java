@@ -4,8 +4,10 @@ import com.mes.production.dto.BatchDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.entity.Batch;
+import com.mes.production.entity.BatchQuantityAdjustment;
 import com.mes.production.entity.BatchRelation;
 import com.mes.production.entity.Operation;
+import com.mes.production.repository.BatchQuantityAdjustmentRepository;
 import com.mes.production.repository.BatchRelationRepository;
 import com.mes.production.repository.BatchRepository;
 import com.mes.production.repository.OperationRepository;
@@ -29,6 +31,7 @@ public class BatchService {
 
     private final BatchRepository batchRepository;
     private final BatchRelationRepository batchRelationRepository;
+    private final BatchQuantityAdjustmentRepository adjustmentRepository;
     private final OperationRepository operationRepository;
     private final AuditService auditService;
     private final BatchNumberService batchNumberService;
@@ -102,6 +105,7 @@ public class BatchService {
                         .batchNumber(rel.getParentBatch().getBatchNumber())
                         .materialName(rel.getParentBatch().getMaterialName())
                         .quantityConsumed(rel.getQuantityConsumed())
+                        .unit(rel.getParentBatch().getUnit())
                         .relationType(rel.getRelationType())
                         .build())
                 .collect(Collectors.toList());
@@ -114,6 +118,7 @@ public class BatchService {
                         .batchNumber(rel.getChildBatch().getBatchNumber())
                         .materialName(rel.getChildBatch().getMaterialName())
                         .quantity(rel.getChildBatch().getQuantity())
+                        .unit(rel.getChildBatch().getUnit())
                         .relationType(rel.getRelationType())
                         .build())
                 .collect(Collectors.toList());
@@ -223,6 +228,7 @@ public class BatchService {
                     .quantity(portion.getQuantity())
                     .unit(sourceBatch.getUnit())
                     .status("AVAILABLE")
+                    .createdVia(Batch.CREATED_VIA_SPLIT)
                     .createdBy(userId)
                     .build();
 
@@ -319,6 +325,7 @@ public class BatchService {
                 .quantity(totalQuantity)
                 .unit(unit)
                 .status("AVAILABLE")
+                .createdVia(Batch.CREATED_VIA_MERGE)
                 .createdBy(userId)
                 .build();
 
@@ -487,6 +494,249 @@ public class BatchService {
         return batchRepository.findByStatus(status).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Create a new batch.
+     *
+     * WARNING: Per MES Batch Management Specification, batches should ONLY be created
+     * at operation boundaries (via ProductionService.confirmProduction()).
+     * This method is retained for system/administrative use only.
+     *
+     * @deprecated Use ProductionService.confirmProduction() for normal batch creation.
+     *             This endpoint may be restricted or removed in future versions.
+     */
+    @Transactional
+    @Deprecated
+    public BatchDTO createBatch(BatchDTO.CreateBatchRequest request) {
+        log.warn("DEPRECATED: Direct batch creation used for batch: {}. " +
+                "Batches should be created via production confirmation.", request.getBatchNumber());
+
+        if (batchRepository.existsByBatchNumber(request.getBatchNumber())) {
+            throw new RuntimeException("Batch number already exists: " + request.getBatchNumber());
+        }
+
+        String currentUser = getCurrentUser();
+
+        Batch batch = Batch.builder()
+                .batchNumber(request.getBatchNumber())
+                .materialId(request.getMaterialId())
+                .materialName(request.getMaterialName())
+                .quantity(request.getQuantity())
+                .unit(request.getUnit() != null ? request.getUnit() : "T")
+                .status(Batch.STATUS_AVAILABLE)
+                .createdVia("MANUAL") // Track that this was manually created
+                .createdBy(currentUser)
+                .build();
+
+        batch = batchRepository.save(batch);
+        log.info("Batch created with ID: {} (via MANUAL creation)", batch.getBatchId());
+        auditService.logCreate("BATCH", batch.getBatchId(),
+                "Batch created MANUALLY (not via production): " + request.getBatchNumber());
+
+        return convertToDTO(batch);
+    }
+
+    /**
+     * Update an existing batch (metadata only - quantity changes require adjustQuantity).
+     *
+     * Per MES Batch Management Specification: batch quantity is NEVER edited directly.
+     * Use adjustQuantity() method for quantity changes with mandatory reason.
+     */
+    @Transactional
+    public BatchDTO updateBatch(Long batchId, BatchDTO.UpdateBatchRequest request) {
+        log.info("Updating batch metadata: {}", batchId);
+
+        String currentUser = getCurrentUser();
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found: " + batchId));
+
+        // Reject updates to terminal states
+        if (Batch.STATUS_CONSUMED.equals(batch.getStatus())) {
+            throw new RuntimeException("Cannot update consumed batch");
+        }
+        if (Batch.STATUS_SCRAPPED.equals(batch.getStatus())) {
+            throw new RuntimeException("Cannot update scrapped batch");
+        }
+
+        // Validate unique batch number if changed
+        if (request.getBatchNumber() != null && !request.getBatchNumber().equals(batch.getBatchNumber())) {
+            if (batchRepository.existsByBatchNumber(request.getBatchNumber())) {
+                throw new RuntimeException("Batch number already exists: " + request.getBatchNumber());
+            }
+            batch.setBatchNumber(request.getBatchNumber());
+        }
+
+        if (request.getMaterialId() != null) batch.setMaterialId(request.getMaterialId());
+        if (request.getMaterialName() != null) batch.setMaterialName(request.getMaterialName());
+        // REMOVED: Direct quantity updates are not allowed per MES spec
+        // Use adjustQuantity() with mandatory reason instead
+        if (request.getUnit() != null) batch.setUnit(request.getUnit());
+        if (request.getStatus() != null) {
+            String oldStatus = batch.getStatus();
+            batch.setStatus(request.getStatus());
+            if (!oldStatus.equals(request.getStatus())) {
+                auditService.logStatusChange("BATCH", batchId, oldStatus, request.getStatus());
+            }
+        }
+
+        batch.setUpdatedBy(currentUser);
+        batch = batchRepository.save(batch);
+        log.info("Batch {} metadata updated by {}", batchId, currentUser);
+        auditService.logUpdate("BATCH", batchId, "batch", null, "Batch metadata updated");
+
+        return convertToDTO(batch);
+    }
+
+    /**
+     * Adjust batch quantity with mandatory reason and full audit trail.
+     * Per MES Batch Management Specification: this is the ONLY way to change batch quantity.
+     *
+     * @param batchId The batch ID to adjust
+     * @param request The adjustment request with new quantity, reason, and type
+     * @return Response with adjustment details
+     */
+    @Transactional
+    public BatchDTO.AdjustQuantityResponse adjustQuantity(Long batchId, BatchDTO.AdjustQuantityRequest request) {
+        log.info("Adjusting quantity for batch {} - type: {}, reason: {}",
+                batchId, request.getAdjustmentType(), request.getReason());
+
+        String currentUser = getCurrentUser();
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found: " + batchId));
+
+        // Validate batch state
+        if (Batch.STATUS_CONSUMED.equals(batch.getStatus())) {
+            throw new RuntimeException("Cannot adjust quantity of consumed batch");
+        }
+        if (Batch.STATUS_SCRAPPED.equals(batch.getStatus())) {
+            throw new RuntimeException("Cannot adjust quantity of scrapped batch");
+        }
+
+        // Validate adjustment type
+        if (!isValidAdjustmentType(request.getAdjustmentType())) {
+            throw new RuntimeException("Invalid adjustment type: " + request.getAdjustmentType() +
+                    ". Valid types: CORRECTION, INVENTORY_COUNT, DAMAGE, SCRAP_RECOVERY, SYSTEM");
+        }
+
+        // Validate new quantity
+        if (request.getNewQuantity() == null || request.getNewQuantity().compareTo(java.math.BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("New quantity must be non-negative");
+        }
+
+        java.math.BigDecimal oldQuantity = batch.getQuantity();
+        java.math.BigDecimal newQuantity = request.getNewQuantity();
+        java.math.BigDecimal difference = newQuantity.subtract(oldQuantity);
+
+        // Create adjustment record
+        BatchQuantityAdjustment adjustment = BatchQuantityAdjustment.builder()
+                .batch(batch)
+                .oldQuantity(oldQuantity)
+                .newQuantity(newQuantity)
+                .adjustmentReason(request.getReason())
+                .adjustmentType(request.getAdjustmentType())
+                .adjustedBy(currentUser)
+                .build();
+        adjustmentRepository.save(adjustment);
+
+        // Update batch quantity
+        batch.setQuantity(newQuantity);
+        batch.setUpdatedBy(currentUser);
+        batchRepository.save(batch);
+
+        // Audit log
+        auditService.logUpdate("BATCH", batchId, "quantity",
+                oldQuantity.toString(), newQuantity.toString());
+        auditService.logCreate("BATCH_ADJUSTMENT", adjustment.getAdjustmentId(),
+                String.format("Batch %s quantity adjusted: %s -> %s (%s). Reason: %s",
+                        batch.getBatchNumber(), oldQuantity, newQuantity,
+                        request.getAdjustmentType(), request.getReason()));
+
+        log.info("Batch {} quantity adjusted from {} to {} by {} - reason: {}",
+                batchId, oldQuantity, newQuantity, currentUser, request.getReason());
+
+        return BatchDTO.AdjustQuantityResponse.builder()
+                .batchId(batchId)
+                .batchNumber(batch.getBatchNumber())
+                .previousQuantity(oldQuantity)
+                .newQuantity(newQuantity)
+                .quantityDifference(difference)
+                .adjustmentType(request.getAdjustmentType())
+                .reason(request.getReason())
+                .adjustedBy(currentUser)
+                .adjustedOn(adjustment.getAdjustedOn())
+                .message("Quantity adjusted successfully")
+                .build();
+    }
+
+    /**
+     * Get quantity adjustment history for a batch
+     */
+    public java.util.List<BatchDTO.QuantityAdjustmentHistory> getAdjustmentHistory(Long batchId) {
+        log.info("Fetching adjustment history for batch: {}", batchId);
+
+        // Verify batch exists
+        if (!batchRepository.existsById(batchId)) {
+            throw new RuntimeException("Batch not found: " + batchId);
+        }
+
+        return adjustmentRepository.findByBatchBatchIdOrderByAdjustedOnDesc(batchId).stream()
+                .map(adj -> BatchDTO.QuantityAdjustmentHistory.builder()
+                        .adjustmentId(adj.getAdjustmentId())
+                        .oldQuantity(adj.getOldQuantity())
+                        .newQuantity(adj.getNewQuantity())
+                        .difference(adj.getQuantityDifference())
+                        .adjustmentType(adj.getAdjustmentType())
+                        .reason(adj.getAdjustmentReason())
+                        .adjustedBy(adj.getAdjustedBy())
+                        .adjustedOn(adj.getAdjustedOn())
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private boolean isValidAdjustmentType(String type) {
+        return BatchQuantityAdjustment.TYPE_CORRECTION.equals(type) ||
+                BatchQuantityAdjustment.TYPE_INVENTORY_COUNT.equals(type) ||
+                BatchQuantityAdjustment.TYPE_DAMAGE.equals(type) ||
+                BatchQuantityAdjustment.TYPE_SCRAP_RECOVERY.equals(type) ||
+                BatchQuantityAdjustment.TYPE_SYSTEM.equals(type);
+    }
+
+    /**
+     * Delete a batch (soft delete via status=SCRAPPED)
+     */
+    @Transactional
+    public BatchDTO.StatusUpdateResponse deleteBatch(Long batchId) {
+        log.info("Deleting (scrapping) batch: {}", batchId);
+
+        String currentUser = getCurrentUser();
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found: " + batchId));
+        String oldStatus = batch.getStatus();
+
+        if (Batch.STATUS_CONSUMED.equals(oldStatus)) {
+            throw new RuntimeException("Cannot delete consumed batch");
+        }
+        if (Batch.STATUS_SCRAPPED.equals(oldStatus)) {
+            throw new RuntimeException("Batch is already scrapped");
+        }
+
+        batch.setStatus(Batch.STATUS_SCRAPPED);
+        batch.setUpdatedBy(currentUser);
+        batchRepository.save(batch);
+
+        log.info("Batch {} deleted (scrapped) by {}", batchId, currentUser);
+        auditService.logStatusChange("BATCH", batchId, oldStatus, Batch.STATUS_SCRAPPED);
+
+        return BatchDTO.StatusUpdateResponse.builder()
+                .batchId(batchId)
+                .batchNumber(batch.getBatchNumber())
+                .previousStatus(oldStatus)
+                .newStatus(Batch.STATUS_SCRAPPED)
+                .message("Batch deleted (scrapped)")
+                .updatedBy(currentUser)
+                .updatedOn(batch.getUpdatedOn())
+                .build();
     }
 
     private String getCurrentUser() {

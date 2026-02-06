@@ -31,6 +31,10 @@ const { runEquipmentTests } = require('./tests/08-equipment.test');
 const { runQualityTests } = require('./tests/09-quality.test');
 const { runPaginationTests } = require('./tests/10-pagination.test');
 const { runCrudTests } = require('./tests/11-crud.test');
+const { runEntityCrudTests } = require('./tests/12-entity-crud.test');
+const { runBomCrudTests } = require('./tests/13-bom-crud.test');
+const { runConfigCrudTests } = require('./tests/14-config-crud.test');
+const { runAuditHistoryTests } = require('./tests/15-audit-history.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -126,6 +130,10 @@ async function runAllTests() {
         await runQualityTests(page, screenshots, results, runTest, submitActions);
         await runPaginationTests(page, screenshots, results, runTest);
         await runCrudTests(page, screenshots, results, runTest, submitActions);
+        await runEntityCrudTests(page, screenshots, results, runTest, submitActions);
+        await runBomCrudTests(page, screenshots, results, runTest, submitActions);
+        await runConfigCrudTests(page, screenshots, results, runTest, submitActions);
+        await runAuditHistoryTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
@@ -145,7 +153,14 @@ async function runAllTests() {
                 { path: '/#/manage/customers', name: 'admin-customers' },
                 { path: '/#/manage/materials', name: 'admin-materials' },
                 { path: '/#/manage/products', name: 'admin-products' },
-                { path: '/#/manage/bom', name: 'admin-bom' }
+                { path: '/#/manage/bom', name: 'admin-bom' },
+                { path: '/#/manage/config/hold-reasons', name: 'config-hold-reasons' },
+                { path: '/#/manage/config/delay-reasons', name: 'config-delay-reasons' },
+                { path: '/#/manage/config/process-params', name: 'config-process-params' },
+                { path: '/#/manage/config/batch-number', name: 'config-batch-number' },
+                { path: '/#/manage/config/quantity-type', name: 'config-quantity-type' },
+                { path: '/#/manage/audit', name: 'audit' },
+                { path: '/#/production/history', name: 'production-history' }
             ];
 
             for (const route of routes) {

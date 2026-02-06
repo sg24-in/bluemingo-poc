@@ -1,0 +1,142 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>Operation Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="operation">
+      <button
+        *ngIf="operation.status === 'READY'"
+        class="btn btn-primary"
+        (click)="startProduction()"
+      >
+        <i class="fas fa-play"></i> Start Production
+      </button>
+      <button
+        *ngIf="operation.status !== 'BLOCKED' && operation.status !== 'CONFIRMED'"
+        class="btn btn-warning"
+        (click)="blockOperation()"
+      >
+        <i class="fas fa-ban"></i> Block
+      </button>
+      <button
+        *ngIf="operation.status === 'BLOCKED'"
+        class="btn btn-success"
+        (click)="unblockOperation()"
+      >
+        <i class="fas fa-check"></i> Unblock
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading operation..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && operation" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <div class="header-title">
+          <h2>{{ operation.operationName }}</h2>
+          <span class="type-badge">{{ operation.operationType }}</span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(operation.status)">
+          {{ operation.status }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Operation Information</h3>
+          <div class="detail-row">
+            <span class="label">Operation ID</span>
+            <span class="value">{{ operation.operationId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Operation Code</span>
+            <span class="value code">{{ operation.operationCode }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Type</span>
+            <span class="value">{{ operation.operationType }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Sequence</span>
+            <span class="value">{{ operation.sequenceNumber }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Context</h3>
+          <div class="detail-row" *ngIf="operation.processId">
+            <span class="label">Process ID</span>
+            <span class="value link" (click)="viewProcess()">{{ operation.processId }}</span>
+          </div>
+          <div class="detail-row" *ngIf="operation.processName">
+            <span class="label">Process Name</span>
+            <span class="value">{{ operation.processName }}</span>
+          </div>
+          <div class="detail-row" *ngIf="operation.orderNumber">
+            <span class="label">Order Number</span>
+            <span class="value">{{ operation.orderNumber }}</span>
+          </div>
+          <div class="detail-row" *ngIf="operation.productSku">
+            <span class="label">Product SKU</span>
+            <span class="value code">{{ operation.productSku }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Quantity Progress</h3>
+          <div class="progress-section">
+            <div class="progress-header">
+              <span class="progress-label">{{ operation.confirmedQty || 0 }} / {{ operation.targetQty || 0 }}</span>
+              <span class="progress-percent">{{ getProgress() | number:'1.0-0' }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="getProgress()"></div>
+            </div>
+          </div>
+          <div class="quantity-details">
+            <div class="qty-item">
+              <span class="qty-label">Target</span>
+              <span class="qty-value">{{ operation.targetQty || '-' }}</span>
+            </div>
+            <div class="qty-item">
+              <span class="qty-label">Confirmed</span>
+              <span class="qty-value">{{ operation.confirmedQty || 0 }}</span>
+            </div>
+            <div class="qty-item">
+              <span class="qty-label">Remaining</span>
+              <span class="qty-value">{{ (operation.targetQty || 0) - (operation.confirmedQty || 0) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="operation.status === 'BLOCKED'">
+          <h3>Block Information</h3>
+          <div class="block-box">
+            <div class="detail-row">
+              <span class="label">Reason</span>
+              <span class="value">{{ operation.blockReason }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Blocked By</span>
+              <span class="value">{{ operation.blockedBy }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Blocked On</span>
+              <span class="value">{{ operation.blockedOn | date:'medium' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

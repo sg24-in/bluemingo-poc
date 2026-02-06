@@ -12,7 +12,7 @@
     <div class="summary-cards">
       <div class="summary-card clickable" (click)="navigateToOrders()">
         <div class="card-icon orders-icon">
-          <span>📋</span>
+          <i class="fas fa-list"></i>
         </div>
         <div class="card-info">
           <span class="card-label">Total Orders</span>
@@ -23,7 +23,7 @@
 
       <div class="summary-card ready-card">
         <div class="card-icon ready-icon">
-          <span>▶️</span>
+          <i class="fas fa-circle-play"></i>
         </div>
         <div class="card-info">
           <span class="card-label">Operations Ready</span>
@@ -34,7 +34,7 @@
 
       <div class="summary-card clickable" [ngClass]="{'warning-card': summary.activeHolds > 0}" (click)="navigateToHolds()">
         <div class="card-icon hold-icon">
-          <span>⏸️</span>
+          <i class="fas fa-circle-pause"></i>
         </div>
         <div class="card-info">
           <span class="card-label">Active Holds</span>
@@ -45,7 +45,7 @@
 
       <div class="summary-card">
         <div class="card-icon confirm-icon">
-          <span>✅</span>
+          <i class="fas fa-circle-check"></i>
         </div>
         <div class="card-info">
           <span class="card-label">Today's Confirmations</span>
@@ -56,7 +56,7 @@
 
       <div class="summary-card clickable" [ngClass]="{'quality-pending-card': summary.qualityPendingProcesses > 0}" (click)="navigateToQualityPending()">
         <div class="card-icon quality-icon">
-          <span>🔍</span>
+          <i class="fas fa-magnifying-glass"></i>
         </div>
         <div class="card-info">
           <span class="card-label">Quality Pending</span>
@@ -91,6 +91,19 @@
           <span class="card-label">On Hold</span>
           <span class="card-value">{{ inventorySummary.onHold }}</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Analytics Charts -->
+    <div class="charts-grid">
+      <div class="card chart-card">
+        <div #inventoryChart class="chart-container"></div>
+      </div>
+      <div class="card chart-card">
+        <div #orderStatusChart class="chart-container"></div>
+      </div>
+      <div class="card chart-card">
+        <div #operationsChart class="chart-container"></div>
       </div>
     </div>
 
@@ -131,7 +144,7 @@
         <div class="card-body">
           <div class="activity-list" *ngIf="summary.recentActivity && summary.recentActivity.length > 0">
             <div class="activity-item" *ngFor="let activity of summary.recentActivity">
-              <div class="activity-icon">✓</div>
+              <div class="activity-icon"><i class="fas fa-check"></i></div>
               <div class="activity-info">
                 <div class="activity-title">{{ activity.operationName }}</div>
                 <div class="activity-details">
@@ -156,7 +169,7 @@
         <div class="audit-list" *ngIf="summary.auditActivity && summary.auditActivity.length > 0">
           <div class="audit-item" *ngFor="let audit of summary.auditActivity">
             <div class="audit-icon" [ngClass]="getAuditIconClass(audit.action)">
-              {{ getAuditIcon(audit.action) }}
+              <i class="fas" [ngClass]="getAuditIcon(audit.action)"></i>
             </div>
             <div class="audit-info">
               <div class="audit-description">{{ audit.description }}</div>
@@ -205,19 +218,19 @@
       <div class="card-header">Quick Actions</div>
       <div class="quick-actions">
         <a routerLink="/orders" class="action-btn">
-          <span class="action-icon">📋</span>
+          <span class="action-icon"><i class="fas fa-list"></i></span>
           <span class="action-label">View Orders</span>
         </a>
         <a routerLink="/inventory" class="action-btn">
-          <span class="action-icon">📦</span>
+          <span class="action-icon"><i class="fas fa-box"></i></span>
           <span class="action-label">View Inventory</span>
         </a>
         <a routerLink="/batches" class="action-btn">
-          <span class="action-icon">🏷️</span>
+          <span class="action-icon"><i class="fas fa-tags"></i></span>
           <span class="action-label">Batch Traceability</span>
         </a>
         <a routerLink="/holds" class="action-btn">
-          <span class="action-icon">⏸️</span>
+          <span class="action-icon"><i class="fas fa-circle-pause"></i></span>
           <span class="action-label">Manage Holds</span>
         </a>
       </div>

@@ -31,6 +31,7 @@ export class CustomerFormComponent implements OnInit {
     if (id) {
       this.isEditMode = true;
       this.customerId = +id;
+      this.form.get('customerCode')?.disable();
       this.loadCustomer();
     }
   }
@@ -49,10 +50,6 @@ export class CustomerFormComponent implements OnInit {
       status: ['ACTIVE']
     });
 
-    // Customer code cannot be changed in edit mode
-    if (this.isEditMode) {
-      this.form.get('customerCode')?.disable();
-    }
   }
 
   loadCustomer(): void {

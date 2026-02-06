@@ -43,23 +43,7 @@ describe('OrderFormComponent', () => {
     ]
   };
 
-  const createComponent = (routeParams: any = {}) => {
-    TestBed.overrideProvider(ActivatedRoute, {
-      useValue: {
-        snapshot: {
-          paramMap: {
-            get: (key: string) => routeParams[key] || null
-          }
-        }
-      }
-    });
-
-    fixture = TestBed.createComponent(OrderFormComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  };
-
-  beforeEach(async () => {
+  const configureTestBed = async (routeParams: any = {}) => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getOrderById',
       'createOrder',
@@ -76,17 +60,38 @@ describe('OrderFormComponent', () => {
       ],
       declarations: [OrderFormComponent],
       providers: [
-        { provide: ApiService, useValue: spy }
+        { provide: ApiService, useValue: spy },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: {
+                get: (key: string) => routeParams[key] || null
+              }
+            }
+          }
+        }
       ]
     }).compileComponents();
 
     apiServiceSpy = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
     apiServiceSpy.getActiveCustomers.and.returnValue(of(mockCustomers));
     apiServiceSpy.getActiveProducts.and.returnValue(of(mockProducts));
+  };
+
+  const createComponent = () => {
+    fixture = TestBed.createComponent(OrderFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  };
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
   });
 
   describe('Create Mode', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      await configureTestBed();
       createComponent();
     });
 
@@ -166,9 +171,10 @@ describe('OrderFormComponent', () => {
   });
 
   describe('Edit Mode', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      await configureTestBed({ orderId: '1' });
       apiServiceSpy.getOrderById.and.returnValue(of(mockOrder));
-      createComponent({ orderId: '1' });
+      createComponent();
     });
 
     it('should be in edit mode when id param exists', () => {
@@ -210,7 +216,8 @@ describe('OrderFormComponent', () => {
   });
 
   describe('Form Validation', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      await configureTestBed();
       createComponent();
     });
 
@@ -248,7 +255,8 @@ describe('OrderFormComponent', () => {
   });
 
   describe('Error Handling', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      await configureTestBed();
       createComponent();
     });
 

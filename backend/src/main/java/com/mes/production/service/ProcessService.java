@@ -3,6 +3,8 @@ package com.mes.production.service;
 import com.mes.production.dto.ProcessDTO;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.Process;
+import com.mes.production.entity.Batch;
+import com.mes.production.repository.BatchRepository;
 import com.mes.production.repository.HoldRecordRepository;
 import com.mes.production.repository.OperationRepository;
 import com.mes.production.repository.ProcessRepository;
@@ -26,6 +28,7 @@ public class ProcessService {
     private final OperationRepository operationRepository;
     private final HoldRecordRepository holdRecordRepository;
     private final AuditService auditService;
+    private final BatchRepository batchRepository;
 
     // Valid status transitions
     private static final Set<String> VALID_STATUSES = Set.of(
@@ -141,6 +144,9 @@ public class ProcessService {
         // Audit
         auditService.logStatusChange("PROCESS", request.getProcessId(), oldStatus, newStatus);
 
+        // Propagate quality decision to batches generated in this process's operations
+        propagateQualityToBatches(process, decision, request.getReason(), currentUser);
+
         String message = Process.DECISION_ACCEPT.equals(decision)
                 ? "Process accepted and marked as completed"
                 : "Process rejected. Reason: " + (request.getReason() != null ? request.getReason() : "Not specified");
@@ -155,6 +161,35 @@ public class ProcessService {
                 .updatedOn(process.getUpdatedOn())
                 .message(message)
                 .build();
+    }
+
+    /**
+     * Propagate quality decision to all batches generated at operations in this process
+     */
+    private void propagateQualityToBatches(Process process, String decision, String reason, String currentUser) {
+        List<Operation> operations = operationRepository.findByProcessIdOrderBySequence(process.getProcessId());
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Operation operation : operations) {
+            List<Batch> batches = batchRepository.findByGeneratedAtOperation(operation.getOperationId());
+            for (Batch batch : batches) {
+                String oldBatchStatus = batch.getStatus();
+                if (Process.DECISION_ACCEPT.equals(decision)) {
+                    batch.setStatus(Batch.STATUS_AVAILABLE);
+                    batch.setApprovedBy(currentUser);
+                    batch.setApprovedOn(now);
+                } else if (Process.DECISION_REJECT.equals(decision)) {
+                    batch.setStatus(Batch.STATUS_BLOCKED);
+                    batch.setRejectedBy(currentUser);
+                    batch.setRejectedOn(now);
+                    batch.setRejectionReason(reason != null ? reason : "Quality rejected");
+                }
+                batchRepository.save(batch);
+                log.info("Batch {} quality propagated: {} -> {} (decision: {})",
+                    batch.getBatchId(), oldBatchStatus, batch.getStatus(), decision);
+                auditService.logStatusChange("BATCH", batch.getBatchId(), oldBatchStatus, batch.getStatus());
+            }
+        }
     }
 
     /**

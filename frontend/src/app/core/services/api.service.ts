@@ -21,9 +21,13 @@ import {
   BatchMergeRequest,
   BatchMergeResponse,
   BatchStatusUpdateResponse,
+  CreateBatchRequest,
+  UpdateBatchRequest,
   // Inventory
   Inventory,
   InventoryStateUpdateResponse,
+  CreateInventoryRequest,
+  UpdateInventoryRequest,
   // Equipment
   Equipment,
   EquipmentStatusUpdateResponse,
@@ -71,7 +75,17 @@ import {
   UpdateMaterialRequest,
   Product,
   CreateProductRequest,
-  UpdateProductRequest
+  UpdateProductRequest,
+  // Config
+  HoldReason,
+  DelayReason,
+  ProcessParametersConfig,
+  BatchNumberConfig,
+  QuantityTypeConfig,
+  // Audit
+  AuditEntry,
+  AuditHistory,
+  AuditSummary
 } from '../../shared/models';
 
 /**
@@ -120,6 +134,14 @@ export class ApiService {
 
   confirmProduction(request: ProductionConfirmationRequest): Observable<ProductionConfirmationResponse> {
     return this.http.post<ProductionConfirmationResponse>(`${environment.apiUrl}/production/confirm`, request);
+  }
+
+  getConfirmationById(id: number): Observable<ProductionConfirmationResponse> {
+    return this.http.get<ProductionConfirmationResponse>(`${environment.apiUrl}/production/confirmations/${id}`);
+  }
+
+  getConfirmationsByStatus(status: string): Observable<ProductionConfirmationResponse[]> {
+    return this.http.get<ProductionConfirmationResponse[]>(`${environment.apiUrl}/production/confirmations/status/${status}`);
   }
 
   // ============================================================
@@ -205,6 +227,18 @@ export class ApiService {
     return this.http.post<InventoryStateUpdateResponse>(`${environment.apiUrl}/inventory/${inventoryId}/release-reservation`, {});
   }
 
+  createInventory(data: CreateInventoryRequest): Observable<Inventory> {
+    return this.http.post<Inventory>(`${environment.apiUrl}/inventory`, data);
+  }
+
+  updateInventory(inventoryId: number, data: UpdateInventoryRequest): Observable<Inventory> {
+    return this.http.put<Inventory>(`${environment.apiUrl}/inventory/${inventoryId}`, data);
+  }
+
+  deleteInventory(inventoryId: number): Observable<InventoryStateUpdateResponse> {
+    return this.http.delete<InventoryStateUpdateResponse>(`${environment.apiUrl}/inventory/${inventoryId}`);
+  }
+
   // ============================================================
   // Batches
   // ============================================================
@@ -263,6 +297,27 @@ export class ApiService {
 
   rejectBatch(batchId: number, reason: string): Observable<BatchStatusUpdateResponse> {
     return this.http.post<BatchStatusUpdateResponse>(`${environment.apiUrl}/batches/${batchId}/reject`, { batchId, reason });
+  }
+
+  createBatch(data: CreateBatchRequest): Observable<Batch> {
+    return this.http.post<Batch>(`${environment.apiUrl}/batches`, data);
+  }
+
+  updateBatch(batchId: number, data: UpdateBatchRequest): Observable<Batch> {
+    return this.http.put<Batch>(`${environment.apiUrl}/batches/${batchId}`, data);
+  }
+
+  deleteBatch(batchId: number): Observable<BatchStatusUpdateResponse> {
+    return this.http.delete<BatchStatusUpdateResponse>(`${environment.apiUrl}/batches/${batchId}`);
+  }
+
+  // Batch quantity adjustment (per MES Batch Management Specification)
+  adjustBatchQuantity(batchId: number, request: AdjustQuantityRequest): Observable<AdjustQuantityResponse> {
+    return this.http.post<AdjustQuantityResponse>(`${environment.apiUrl}/batches/${batchId}/adjust-quantity`, request);
+  }
+
+  getBatchAdjustmentHistory(batchId: number): Observable<QuantityAdjustmentHistory[]> {
+    return this.http.get<QuantityAdjustmentHistory[]>(`${environment.apiUrl}/batches/${batchId}/adjustments`);
   }
 
   // ============================================================
@@ -419,6 +474,10 @@ export class ApiService {
     return this.http.delete(`${environment.apiUrl}/operators/${operatorId}`);
   }
 
+  activateOperator(operatorId: number): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/operators/${operatorId}/activate`, {});
+  }
+
   getDelayReasons(): Observable<{ reasonCode: string; description: string }[]> {
     return this.http.get<{ reasonCode: string; description: string }[]>(`${environment.apiUrl}/master/delay-reasons`);
   }
@@ -438,12 +497,46 @@ export class ApiService {
     return this.http.get<{ parameter_name: string; default_value: string; is_required: boolean }[]>(`${environment.apiUrl}/master/process-parameters`, { params });
   }
 
+  getEquipmentTypes(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/master/equipment-types`);
+  }
+
+  getEquipmentTypeConfig(type: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/master/equipment-types/${type}`);
+  }
+
+  getInventoryForms(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/master/inventory-forms`);
+  }
+
+  getInventoryFormConfig(formCode: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/master/inventory-forms/${formCode}`);
+  }
+
+  getQuantityTypeConfigForContext(params: {materialCode?: string, operationType?: string, equipmentType?: string}): Observable<any> {
+    let httpParams = new HttpParams();
+    if (params.materialCode) {
+      httpParams = httpParams.set('materialCode', params.materialCode);
+    }
+    if (params.operationType) {
+      httpParams = httpParams.set('operationType', params.operationType);
+    }
+    if (params.equipmentType) {
+      httpParams = httpParams.set('equipmentType', params.equipmentType);
+    }
+    return this.http.get<any>(`${environment.apiUrl}/master/quantity-type-config`, { params: httpParams });
+  }
+
   // ============================================================
   // Holds
   // ============================================================
 
   getActiveHolds(): Observable<Hold[]> {
     return this.http.get<Hold[]>(`${environment.apiUrl}/holds/active`);
+  }
+
+  getHoldById(holdId: number): Observable<Hold> {
+    return this.http.get<Hold>(`${environment.apiUrl}/holds/${holdId}`);
   }
 
   /**
@@ -708,6 +801,10 @@ export class ApiService {
     return this.http.delete<void>(`${environment.apiUrl}/customers/${customerId}`);
   }
 
+  activateCustomer(customerId: number): Observable<Customer> {
+    return this.http.post<Customer>(`${environment.apiUrl}/customers/${customerId}/activate`, {});
+  }
+
   // ============================================================
   // Materials
   // ============================================================
@@ -739,6 +836,10 @@ export class ApiService {
 
   deleteMaterial(materialId: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiUrl}/materials/${materialId}`);
+  }
+
+  activateMaterial(materialId: number): Observable<Material> {
+    return this.http.post<Material>(`${environment.apiUrl}/materials/${materialId}/activate`, {});
   }
 
   // ============================================================
@@ -774,6 +875,10 @@ export class ApiService {
     return this.http.delete<void>(`${environment.apiUrl}/products/${productId}`);
   }
 
+  activateProduct(productId: number): Observable<Product> {
+    return this.http.post<Product>(`${environment.apiUrl}/products/${productId}/activate`, {});
+  }
+
   // ============================================================
   // Orders CRUD
   // ============================================================
@@ -800,5 +905,214 @@ export class ApiService {
 
   deleteOrderLineItem(orderId: number, lineItemId: number): Observable<Order> {
     return this.http.delete<Order>(`${environment.apiUrl}/orders/${orderId}/line-items/${lineItemId}`);
+  }
+
+  // ============================================================
+  // Config: Hold Reasons
+  // ============================================================
+
+  getHoldReasonsPaged(request: PageRequest = {}): Observable<PagedResponse<HoldReason>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<HoldReason>>(`${environment.apiUrl}/config/hold-reasons/paged`, { params });
+  }
+
+  getHoldReasonById(id: number): Observable<HoldReason> {
+    return this.http.get<HoldReason>(`${environment.apiUrl}/config/hold-reasons/${id}`);
+  }
+
+  createHoldReason(request: Partial<HoldReason>): Observable<HoldReason> {
+    return this.http.post<HoldReason>(`${environment.apiUrl}/config/hold-reasons`, request);
+  }
+
+  updateHoldReason(id: number, request: Partial<HoldReason>): Observable<HoldReason> {
+    return this.http.put<HoldReason>(`${environment.apiUrl}/config/hold-reasons/${id}`, request);
+  }
+
+  deleteHoldReason(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/config/hold-reasons/${id}`);
+  }
+
+  // ============================================================
+  // Config: Delay Reasons
+  // ============================================================
+
+  getDelayReasonsPaged(request: PageRequest = {}): Observable<PagedResponse<DelayReason>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<DelayReason>>(`${environment.apiUrl}/config/delay-reasons/paged`, { params });
+  }
+
+  getDelayReasonById(id: number): Observable<DelayReason> {
+    return this.http.get<DelayReason>(`${environment.apiUrl}/config/delay-reasons/${id}`);
+  }
+
+  createDelayReason(request: Partial<DelayReason>): Observable<DelayReason> {
+    return this.http.post<DelayReason>(`${environment.apiUrl}/config/delay-reasons`, request);
+  }
+
+  updateDelayReason(id: number, request: Partial<DelayReason>): Observable<DelayReason> {
+    return this.http.put<DelayReason>(`${environment.apiUrl}/config/delay-reasons/${id}`, request);
+  }
+
+  deleteDelayReason(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/config/delay-reasons/${id}`);
+  }
+
+  // ============================================================
+  // Config: Process Parameters
+  // ============================================================
+
+  getProcessParamsPaged(request: PageRequest = {}): Observable<PagedResponse<ProcessParametersConfig>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<ProcessParametersConfig>>(`${environment.apiUrl}/config/process-parameters/paged`, { params });
+  }
+
+  getProcessParamById(id: number): Observable<ProcessParametersConfig> {
+    return this.http.get<ProcessParametersConfig>(`${environment.apiUrl}/config/process-parameters/${id}`);
+  }
+
+  createProcessParam(request: Partial<ProcessParametersConfig>): Observable<ProcessParametersConfig> {
+    return this.http.post<ProcessParametersConfig>(`${environment.apiUrl}/config/process-parameters`, request);
+  }
+
+  updateProcessParam(id: number, request: Partial<ProcessParametersConfig>): Observable<ProcessParametersConfig> {
+    return this.http.put<ProcessParametersConfig>(`${environment.apiUrl}/config/process-parameters/${id}`, request);
+  }
+
+  deleteProcessParam(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/config/process-parameters/${id}`);
+  }
+
+  // ============================================================
+  // Config: Batch Number
+  // ============================================================
+
+  getBatchNumberConfigsPaged(request: PageRequest = {}): Observable<PagedResponse<BatchNumberConfig>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<BatchNumberConfig>>(`${environment.apiUrl}/config/batch-number/paged`, { params });
+  }
+
+  getBatchNumberConfigById(id: number): Observable<BatchNumberConfig> {
+    return this.http.get<BatchNumberConfig>(`${environment.apiUrl}/config/batch-number/${id}`);
+  }
+
+  createBatchNumberConfig(request: Partial<BatchNumberConfig>): Observable<BatchNumberConfig> {
+    return this.http.post<BatchNumberConfig>(`${environment.apiUrl}/config/batch-number`, request);
+  }
+
+  updateBatchNumberConfig(id: number, request: Partial<BatchNumberConfig>): Observable<BatchNumberConfig> {
+    return this.http.put<BatchNumberConfig>(`${environment.apiUrl}/config/batch-number/${id}`, request);
+  }
+
+  deleteBatchNumberConfig(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/config/batch-number/${id}`);
+  }
+
+  // ============================================================
+  // Config: Quantity Type
+  // ============================================================
+
+  getQuantityTypeConfigsPaged(request: PageRequest = {}): Observable<PagedResponse<QuantityTypeConfig>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<QuantityTypeConfig>>(`${environment.apiUrl}/config/quantity-types/paged`, { params });
+  }
+
+  getQuantityTypeConfigById(id: number): Observable<QuantityTypeConfig> {
+    return this.http.get<QuantityTypeConfig>(`${environment.apiUrl}/config/quantity-types/${id}`);
+  }
+
+  createQuantityTypeConfig(request: Partial<QuantityTypeConfig>): Observable<QuantityTypeConfig> {
+    return this.http.post<QuantityTypeConfig>(`${environment.apiUrl}/config/quantity-types`, request);
+  }
+
+  updateQuantityTypeConfig(id: number, request: Partial<QuantityTypeConfig>): Observable<QuantityTypeConfig> {
+    return this.http.put<QuantityTypeConfig>(`${environment.apiUrl}/config/quantity-types/${id}`, request);
+  }
+
+  deleteQuantityTypeConfig(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/config/quantity-types/${id}`);
+  }
+
+  // ============================================================
+  // Audit Trail
+  // ============================================================
+
+  getAuditHistory(entityType: string, entityId: number): Observable<AuditHistory> {
+    return this.http.get<AuditHistory>(`${environment.apiUrl}/audit/entity/${entityType}/${entityId}`);
+  }
+
+  getRecentAuditActivity(limit: number = 50): Observable<AuditEntry[]> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<AuditEntry[]>(`${environment.apiUrl}/audit/recent`, { params });
+  }
+
+  getAuditByUser(username: string, limit: number = 50): Observable<AuditEntry[]> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<AuditEntry[]>(`${environment.apiUrl}/audit/user/${username}`, { params });
+  }
+
+  getAuditByDateRange(startDate: string, endDate: string): Observable<AuditEntry[]> {
+    const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
+    return this.http.get<AuditEntry[]>(`${environment.apiUrl}/audit/range`, { params });
+  }
+
+  getAuditSummary(): Observable<AuditSummary> {
+    return this.http.get<AuditSummary>(`${environment.apiUrl}/audit/summary`);
+  }
+
+  getAuditEntityTypes(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/audit/entity-types`);
+  }
+
+  getAuditActionTypes(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/audit/action-types`);
+  }
+
+  // ============================================================
+  // Users (CRUD endpoints)
+  // ============================================================
+
+  getUsersPaged(request: PageRequest = {}): Observable<PagedResponse<any>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<any>>(`${environment.apiUrl}/users/paged`, { params });
+  }
+
+  getAllUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/users`);
+  }
+
+  getActiveUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/users/active`);
+  }
+
+  getUserById(userId: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/users/${userId}`);
+  }
+
+  createUser(request: { email: string; name: string; password: string; employeeId?: string }): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/users`, request);
+  }
+
+  updateUser(userId: number, request: { name: string; employeeId?: string; status?: string }): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/users/${userId}`, request);
+  }
+
+  deleteUser(userId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${environment.apiUrl}/users/${userId}`);
+  }
+
+  changePassword(userId: number, request: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/users/${userId}/change-password`, request);
+  }
+
+  resetPassword(userId: number, request: { newPassword: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/users/${userId}/reset-password`, request);
+  }
+
+  activateUser(userId: number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/users/${userId}/activate`, {});
+  }
+
+  deactivateUser(userId: number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/users/${userId}/deactivate`, {});
   }
 }

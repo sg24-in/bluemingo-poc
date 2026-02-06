@@ -33,6 +33,7 @@ describe('BatchDetailComponent', () => {
         batchNumber: 'BATCH-002',
         materialName: 'Iron Ore',
         quantityConsumed: 100,
+        unit: 'KG',
         relationType: 'TRANSFORM'
       }
     ],
@@ -42,6 +43,7 @@ describe('BatchDetailComponent', () => {
         batchNumber: 'BATCH-003',
         materialName: 'Steel Rod',
         quantity: 450,
+        unit: 'KG',
         relationType: 'TRANSFORM'
       }
     ],

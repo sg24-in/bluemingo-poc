@@ -1,6 +1,6 @@
 <div class="container">
   <div class="page-header">
-    <button class="btn btn-secondary" (click)="goBack()">← Back to Orders</button>
+    <button class="btn btn-secondary" (click)="goBack()"><i class="fas fa-arrow-left"></i> Back to Orders</button>
     <button class="btn btn-primary" (click)="editOrder()" *ngIf="order">Edit Order</button>
   </div>
 
@@ -21,6 +21,12 @@
           <span *ngIf="order.orderDate">Order Date: <strong>{{ order.orderDate | date:'mediumDate' }}</strong></span>
         </div>
       </div>
+    </div>
+
+    <!-- Process Flow Visualization -->
+    <div class="card" *ngIf="order.lineItems?.length > 0">
+      <div class="card-header">Process Flow</div>
+      <div #processFlowChart class="process-flow-container"></div>
     </div>
 
     <!-- Line Items -->

@@ -7,6 +7,7 @@ import { BomNodeFormComponent } from './bom-node-form/bom-node-form.component';
 
 const routes: Routes = [
   { path: '', component: BomListComponent },
+  { path: 'create', component: BomNodeFormComponent },
   { path: ':productSku/tree', component: BomTreeComponent },
   { path: ':productSku/node/new', component: BomNodeFormComponent },
   { path: ':productSku/node/:bomId/edit', component: BomNodeFormComponent }
