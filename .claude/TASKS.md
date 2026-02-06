@@ -20,19 +20,19 @@
 
 ---
 
-## Consolidated Requirements Gap Analysis (NEW)
+## Consolidated Requirements Gap Analysis (Updated 2026-02-06)
 
-### Entity Comparison: Requirements vs Implementation
+### Entity Comparison: Requirements vs Implementation (Per MES Consolidated Spec)
 
 | Required Entity | Current Entity | Status | Notes |
 |----------------|---------------|--------|-------|
 | Orders | Order ✓ | ✅ Aligned | Has CustomerID, OrderDate, Status |
 | OrderLineItems | OrderLineItem ✓ | ✅ Aligned | ProductSKU, Quantity, DeliveryDate, Status |
 | BillOfMaterial | BillOfMaterial ✓ | ✅ Aligned | Multi-level BOM with ParentBOMID |
-| Processes | Process ✓ | ✅ Aligned | BOMID, StageName, Status, UsageDecision |
-| Routing | Routing ✓ | ✅ Aligned | RoutingType (Sequential/Parallel) |
-| RoutingSteps | RoutingStep ✓ | ✅ Aligned | IsParallel, MandatoryFlag |
-| Operations | Operation ✓ | ✅ Aligned | Status, TargetQty, ConfirmedQty |
+| Processes | Process ✓ | ✅ Aligned | ProcessID, ProcessName, Status (runtime entity) |
+| Routing | Routing ✓ | ✅ Aligned | ProcessID FK per spec, RoutingType (Sequential/Parallel) |
+| RoutingSteps | RoutingStep ✓ | ✅ Aligned | IsParallel, MandatoryFlag, batch behavior flags |
+| Operations | Operation ✓ | ✅ Aligned | ProcessID FK per spec, Status, TargetQty, ConfirmedQty |
 | Equipment | Equipment ✓ | ✅ Aligned | EquipmentType (Batch/Continuous), Capacity |
 | OperationEquipmentUsage | OperationEquipmentUsage ✓ | ✅ Aligned | StartTime, EndTime, OperatorID |
 | ProductionConfirmation | ProductionConfirmation ✓ | ✅ Aligned | All fields present |
@@ -43,17 +43,19 @@
 | BatchOrderAllocation | BatchOrderAllocation ✓ | ✅ Aligned | One-to-many allocation |
 | HoldRecords | HoldRecord ✓ | ✅ Aligned | All entity types supported |
 | AuditTrail | AuditTrail ✓ | ✅ Aligned | Field-level tracking |
+| ProcessTemplate | ProcessTemplate ✓ | ✅ Internal | Design-time only, not exposed in API (uses processId) |
 
-### Status Values Comparison
+### Status Values Comparison (Updated 2026-02-06)
 
 | Entity | Required Status | Current Status | Gap |
 |--------|----------------|----------------|-----|
-| Operation | NOT_STARTED, READY, IN_PROGRESS, PARTIALLY_CONFIRMED, CONFIRMED, BLOCKED, ON_HOLD | NOT_STARTED, READY, IN_PROGRESS, CONFIRMED, ON_HOLD, BLOCKED | ⚠️ Missing PARTIALLY_CONFIRMED constant |
+| Operation | NOT_STARTED, READY, IN_PROGRESS, PARTIALLY_CONFIRMED, CONFIRMED, BLOCKED, ON_HOLD | All present ✓ | ✅ None - PARTIALLY_CONFIRMED added |
 | Process | READY, IN_PROGRESS, QUALITY_PENDING, COMPLETED, REJECTED, ON_HOLD | All present ✓ | ✅ None |
-| OrderLine | CREATED, IN_PROGRESS, COMPLETED, BLOCKED, ON_HOLD | CREATED, IN_PROGRESS, COMPLETED | ⚠️ Missing BLOCKED, ON_HOLD constants |
+| OrderLine | CREATED, IN_PROGRESS, COMPLETED, BLOCKED, ON_HOLD | All present ✓ | ✅ None - READY, BLOCKED, ON_HOLD added |
 | Inventory | AVAILABLE, RESERVED, CONSUMED, PRODUCED, BLOCKED, SCRAPPED, ON_HOLD | All present ✓ | ✅ None |
 | Equipment | AVAILABLE, IN_USE, MAINTENANCE, ON_HOLD | All present + UNAVAILABLE | ✅ None |
-| Batch | AVAILABLE, CONSUMED, PRODUCED, ON_HOLD | PRODUCED, AVAILABLE, CONSUMED, BLOCKED, SCRAPPED, QUALITY_PENDING | ⚠️ ON_HOLD vs ON_HOLD (present but not constant) |
+| Batch | AVAILABLE, CONSUMED, PRODUCED, ON_HOLD | All present ✓ | ✅ None |
+| Routing | DRAFT, ACTIVE, INACTIVE, ON_HOLD | All present ✓ | ✅ None - DRAFT added |
 
 ### Features Comparison
 
@@ -1113,37 +1115,44 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 
 ---
 
-## Phase 9: Routing, Process & Operation Management (NEW - 2026-02-06)
+## Phase 9: Routing, Process & Operation Management (MOSTLY COMPLETE - 2026-02-06)
 
 **Reference:** `documents/MES-Routing-Process-Operation-Gap-Analysis.md`
 **Goal:** Implement design-time/runtime separation and batch behavior declaration
 
-### Core Issues to Fix
-- Process is runtime (tied to OrderLineItem) - should be design-time template
-- RoutingStep links to Operation - should define operation metadata
-- Missing batch behavior flags (ProducesOutputBatch, AllowsSplit, AllowsMerge)
-- No DRAFT status for design-time workflow
-- No single-active-routing enforcement
+### Architecture (Per MES Consolidated Specification)
+- **Routing** links to **Process** via `processId` (not processTemplateId in API)
+- **ProcessTemplate** kept internally for design-time management (not exposed in DTOs)
+- **RoutingStep** has batch behavior flags (producesOutputBatch, allowsSplit, allowsMerge)
+- **DRAFT** status added for design-time workflow
+- Single-active-routing enforcement implemented
 
-### Phase 9A: Schema Changes (Critical)
+### Core Issues - RESOLVED ✅
+- ✅ Process is runtime (tied to OrderLineItem) - ProcessTemplate for design-time
+- ✅ RoutingStep defines operation metadata (operationName, operationType, etc.)
+- ✅ Batch behavior flags added (ProducesOutputBatch, AllowsSplit, AllowsMerge)
+- ✅ DRAFT status for design-time workflow
+- ✅ Single-active-routing enforcement via deactivateOtherRoutings()
 
-| # | Task | Status | Priority | Notes |
-|---|------|--------|----------|-------|
-| R01 | Create `process_templates` table | PENDING | CRITICAL | Design-time process definitions |
-| R02 | Add batch behavior columns to routing_steps | PENDING | CRITICAL | produces_output_batch, allows_split, allows_merge |
-| R03 | Add operation_name, operation_type to routing_steps | PENDING | CRITICAL | Template fields |
-| R04 | Add routing_step_id FK to operations | PENDING | CRITICAL | Track source template |
-| R05 | Add DRAFT status to routing | PENDING | HIGH | Design-time workflow |
-
-### Phase 9B: Entity & Repository Changes
+### Phase 9A: Schema Changes (Critical) - COMPLETE
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| R06 | Create ProcessTemplate entity | PENDING | CRITICAL | New JPA entity |
-| R07 | Update RoutingStep entity | PENDING | CRITICAL | Add batch behavior fields |
-| R08 | Update Operation entity | PENDING | HIGH | Add routingStepId |
-| R09 | Create ProcessTemplateRepository | PENDING | HIGH | Spring Data repo |
-| R10 | Add batch behavior constants | PENDING | HIGH | RoutingStep constants |
+| R01 | Create `process_templates` table | ✅ DONE | CRITICAL | Patch 025 |
+| R02 | Add batch behavior columns to routing_steps | ✅ DONE | CRITICAL | Patch 025 |
+| R03 | Add operation_name, operation_type to routing_steps | ✅ DONE | CRITICAL | Patch 025 |
+| R04 | Add routing_step_id FK to operations | ✅ DONE | CRITICAL | Already existed |
+| R05 | Add DRAFT status to routing | ✅ DONE | HIGH | Patch 025 |
+
+### Phase 9B: Entity & Repository Changes - COMPLETE
+
+| # | Task | Status | Priority | Notes |
+|---|------|--------|----------|-------|
+| R06 | Create ProcessTemplate entity | ✅ DONE | CRITICAL | ProcessTemplate.java |
+| R07 | Update RoutingStep entity | ✅ DONE | CRITICAL | Has batch behavior fields |
+| R08 | Update Operation entity | ✅ DONE | HIGH | Has routingStepId |
+| R09 | Create ProcessTemplateRepository | ✅ DONE | HIGH | ProcessTemplateRepository.java |
+| R10 | Add batch behavior constants | ✅ DONE | HIGH | In RoutingStep entity |
 
 ### Phase 9C: Service Logic - COMPLETE
 
@@ -1197,14 +1206,14 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 - `ProcessTemplateServiceTest.java` - 16 tests covering CRUD, activation, versioning
 - `RoutingServiceTest.java` - Updated with 33+ tests including new CRUD methods
 
-### Phase 9D: Controllers & APIs
+### Phase 9D: Controllers & APIs - COMPLETE
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| R16 | Create ProcessTemplateController | PENDING | HIGH | CRUD endpoints |
-| R17 | Add Routing CRUD endpoints | PENDING | HIGH | POST/PUT/DELETE |
-| R18 | Add RoutingStep CRUD endpoints | PENDING | HIGH | Step management |
-| R19 | Add routing activate/reorder | PENDING | MEDIUM | POST /routing/{id}/activate |
+| R16 | Create ProcessTemplateController | ✅ DONE | HIGH | ProcessTemplateController.java |
+| R17 | Add Routing CRUD endpoints | ✅ DONE | HIGH | RoutingController.java |
+| R18 | Add RoutingStep CRUD endpoints | ✅ DONE | HIGH | Via ProcessTemplateController |
+| R19 | Add routing activate/reorder | ✅ DONE | MEDIUM | activate/deactivate/hold/release |
 
 ### Phase 9E: Frontend
 
@@ -1238,24 +1247,24 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 - No duration calculation display
 - No partial confirmation support
 
-### Phase 10A: Order Selection Flow (Critical)
+### Phase 10A: Order Selection Flow (Critical) - COMPLETE
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| P01 | Create production landing page with order dropdown | PENDING | CRITICAL | Select from IN_PROGRESS orders |
-| P02 | Add cascading operation dropdown | PENDING | CRITICAL | Filter READY operations |
-| P03 | Add API: GET /api/orders/with-ready-operations | PENDING | HIGH | New endpoint |
-| P04 | Show order context (customer, product, due date) | PENDING | HIGH | Display panel |
+| P01 | Create production landing page with order dropdown | ✅ DONE | CRITICAL | production-landing.component.ts |
+| P02 | Add cascading operation dropdown | ✅ DONE | CRITICAL | extractReadyOperations() |
+| P03 | Add API: GET /api/orders/available | ✅ DONE | HIGH | Endpoint + api.service.ts |
+| P04 | Show order context (customer, product, due date) | ✅ DONE | HIGH | orderContext getter + HTML |
 
-### Phase 10B: Display Enhancements
+### Phase 10B: Display Enhancements - PARTIAL
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| P05 | Add yield calculation display | PENDING | MEDIUM | (Good / Total) * 100 |
-| P06 | Add color indicator for yield | PENDING | MEDIUM | Green/yellow/red |
+| P05 | Add yield calculation display | ✅ DONE | MEDIUM | yieldPercentage getter + visual bar |
+| P06 | Add color indicator for yield | ✅ DONE | MEDIUM | Green(≥95%)/Yellow(80-95%)/Red(<80%) |
 | P07 | Add batch number preview API | PENDING | MEDIUM | GET /api/batches/preview-number |
 | P08 | Display previewed batch number | PENDING | MEDIUM | In output section |
-| P09 | Add duration calculation display | PENDING | MEDIUM | End - Start time |
+| P09 | Add duration calculation display | ✅ DONE | MEDIUM | durationMinutes + durationFormatted |
 
 ### Phase 10C: Workflow Enhancements
 
@@ -1287,21 +1296,21 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 
 ## Implementation Priority Summary
 
-### By Phase and Effort
+### By Phase and Effort (Updated 2026-02-06)
 
-| Phase | Focus | Tasks | Effort | Priority |
+| Phase | Focus | Tasks | Status | Priority |
 |-------|-------|-------|--------|----------|
-| 8A | Batch Critical Fixes | 5 | ~11h | CRITICAL |
-| 9A-B | Routing Schema + Entities | 10 | ~11h | CRITICAL |
-| 10A | Order Selection Flow | 4 | ~8h | CRITICAL |
-| 8B-D | Batch Workflow & Config | 14 | ~32h | HIGH |
-| 9C-D | Routing Services & APIs | 9 | ~22h | HIGH |
-| 10B-C | UI Enhancements | 9 | ~11.5h | MEDIUM |
-| 8E | Batch Testing | 3 | ~5h | HIGH |
-| 9E-F | Routing Frontend & Testing | 8 | ~27h | MEDIUM |
-| 10D-E | UI Optional & Testing | 7 | ~12h | LOW |
+| 9A-B | Routing Schema + Entities | 10 | ✅ COMPLETE | CRITICAL |
+| 9C-D | Routing Services & APIs | 9 | ✅ COMPLETE | HIGH |
+| 10A | Order Selection Flow | 4 | 🔄 IN PROGRESS | CRITICAL |
+| 8A | Batch Critical Fixes | 5 | PENDING | CRITICAL |
+| 8B-D | Batch Workflow & Config | 14 | PENDING | HIGH |
+| 10B-C | UI Enhancements | 9 | PENDING | MEDIUM |
+| 8E | Batch Testing | 3 | PENDING | HIGH |
+| 9E-F | Routing Frontend & Testing | 8 | PENDING | MEDIUM |
+| 10D-E | UI Optional & Testing | 7 | PENDING | LOW |
 
-**Total: 72 tasks, ~159 hours**
+**Completed: ~33h | Remaining: ~126h**
 
 ### Recommended Sprint Plan
 

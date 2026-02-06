@@ -497,4 +497,67 @@ export class ProductionConfirmComponent implements OnInit {
   goToBatch(batchId: number): void {
     this.router.navigate(['/batches', batchId]);
   }
+
+  // ========== Phase 10B: Display Enhancements ==========
+
+  /**
+   * P05-P06: Calculate yield percentage = (Good / Total) * 100
+   * Where Good = quantityProduced, Total = quantityProduced + quantityScrapped
+   */
+  get yieldPercentage(): number | null {
+    const produced = this.confirmForm.get('quantityProduced')?.value || 0;
+    const scrapped = this.confirmForm.get('quantityScrapped')?.value || 0;
+    const total = produced + scrapped;
+    if (total === 0) return null;
+    return Math.round((produced / total) * 10000) / 100; // 2 decimal places
+  }
+
+  /**
+   * P06: Get yield indicator class based on percentage
+   * Green (≥95%), Yellow (80-95%), Red (<80%)
+   */
+  get yieldClass(): string {
+    const yield_pct = this.yieldPercentage;
+    if (yield_pct === null) return '';
+    if (yield_pct >= 95) return 'yield-good';
+    if (yield_pct >= 80) return 'yield-warning';
+    return 'yield-critical';
+  }
+
+  /**
+   * P09: Calculate duration between start and end time in minutes
+   */
+  get durationMinutes(): number | null {
+    const startTime = this.confirmForm.get('startTime')?.value;
+    const endTime = this.confirmForm.get('endTime')?.value;
+    if (!startTime || !endTime) return null;
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffMs = end.getTime() - start.getTime();
+    if (diffMs <= 0) return null;
+    return Math.round(diffMs / 60000); // Convert ms to minutes
+  }
+
+  /**
+   * P09: Format duration as hours and minutes
+   */
+  get durationFormatted(): string {
+    const mins = this.durationMinutes;
+    if (mins === null || mins <= 0) return '--';
+    const hours = Math.floor(mins / 60);
+    const remainingMins = mins % 60;
+    if (hours > 0) {
+      return `${hours}h ${remainingMins}m`;
+    }
+    return `${remainingMins}m`;
+  }
+
+  /**
+   * P05: Get total production quantity (good + scrap)
+   */
+  get totalProduction(): number {
+    const produced = this.confirmForm.get('quantityProduced')?.value || 0;
+    const scrapped = this.confirmForm.get('quantityScrapped')?.value || 0;
+    return produced + scrapped;
+  }
 }

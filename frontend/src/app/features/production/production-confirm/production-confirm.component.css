@@ -349,6 +349,148 @@ input[type="datetime-local"] {
   color: white;
 }
 
+/* ========== Phase 10B: Display Enhancements ========== */
+
+/* P09: Duration Display */
+.duration-display {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.duration-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.duration-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.duration-detail {
+  color: #888;
+  font-size: 13px;
+}
+
+/* P05-P06: Yield Display */
+.yield-display {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.yield-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 12px;
+}
+
+.yield-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+.yield-percentage {
+  font-size: 24px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 8px;
+}
+
+.yield-percentage.yield-good {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.yield-percentage.yield-warning {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.yield-percentage.yield-critical {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Yield Bar */
+.yield-bar {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.yield-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.yield-fill.yield-good {
+  background: linear-gradient(90deg, #4caf50, #66bb6a);
+}
+
+.yield-fill.yield-warning {
+  background: linear-gradient(90deg, #ff9800, #ffb74d);
+}
+
+.yield-fill.yield-critical {
+  background: linear-gradient(90deg, #f44336, #ef5350);
+}
+
+/* Yield Legend */
+.yield-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #666;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.good {
+  background: #4caf50;
+}
+
+.legend-dot.warning {
+  background: #ff9800;
+}
+
+.legend-dot.critical {
+  background: #f44336;
+}
+
 @media (max-width: 768px) {
   .operation-info-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -365,5 +507,19 @@ input[type="datetime-local"] {
 
   .checkbox-group {
     max-height: 150px;
+  }
+
+  .yield-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .yield-legend {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .duration-display {
+    flex-wrap: wrap;
   }
 }

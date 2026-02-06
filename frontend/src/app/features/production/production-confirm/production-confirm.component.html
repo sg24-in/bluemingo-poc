@@ -114,6 +114,12 @@
         <div class="field-error" *ngIf="confirmForm.errors?.['invalidTimeRange']">
           End time must be after start time
         </div>
+        <!-- P09: Duration Display -->
+        <div class="duration-display" *ngIf="durationMinutes !== null && durationMinutes > 0">
+          <span class="duration-label">Duration:</span>
+          <span class="duration-value">{{ durationFormatted }}</span>
+          <span class="duration-detail">({{ durationMinutes }} minutes)</span>
+        </div>
       </div>
 
       <!-- Production Quantities -->
@@ -143,6 +149,29 @@
                 min="0"
               />
             </div>
+          </div>
+        </div>
+        <!-- P05-P06: Yield Calculation Display -->
+        <div class="yield-display" *ngIf="totalProduction > 0">
+          <div class="yield-stats">
+            <div class="yield-stat">
+              <span class="stat-label">Total Production:</span>
+              <span class="stat-value">{{ totalProduction }}</span>
+            </div>
+            <div class="yield-stat">
+              <span class="stat-label">Yield:</span>
+              <span class="yield-percentage" [ngClass]="yieldClass">
+                {{ yieldPercentage }}%
+              </span>
+            </div>
+          </div>
+          <div class="yield-bar">
+            <div class="yield-fill" [ngClass]="yieldClass" [style.width.%]="yieldPercentage"></div>
+          </div>
+          <div class="yield-legend">
+            <span class="legend-item"><span class="legend-dot good"></span> Good (≥95%)</span>
+            <span class="legend-item"><span class="legend-dot warning"></span> Warning (80-95%)</span>
+            <span class="legend-item"><span class="legend-dot critical"></span> Critical (&lt;80%)</span>
           </div>
         </div>
       </div>
