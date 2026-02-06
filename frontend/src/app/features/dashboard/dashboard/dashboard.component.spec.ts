@@ -51,7 +51,8 @@ describe('DashboardComponent', () => {
       'getAllInventory',
       'getOrders',
       'getQualityPendingProcesses',
-      'getAllOperations'
+      'getAllOperations',
+      'getBatchesByStatus'
     ]);
 
     const chartSpy = jasmine.createSpyObj('ChartService', [
@@ -83,6 +84,7 @@ describe('DashboardComponent', () => {
     apiServiceSpy.getAllBatches.and.returnValue(of(mockBatches as any));
     apiServiceSpy.getAllInventory.and.returnValue(of(mockInventory as any));
     apiServiceSpy.getQualityPendingProcesses.and.returnValue(of([]));
+    apiServiceSpy.getBatchesByStatus.and.returnValue(of([]));
     apiServiceSpy.getOrders.and.returnValue(of(mockOrders as any));
     apiServiceSpy.getAllOperations.and.returnValue(of([
       { operationId: 1, operationName: 'Melting', status: 'CONFIRMED' },

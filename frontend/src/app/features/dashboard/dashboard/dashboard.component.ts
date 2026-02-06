@@ -212,6 +212,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       error: (err) => console.error('Error loading quality pending processes:', err)
     });
 
+    // Load batches pending approval (QUALITY_PENDING status)
+    // Per MES Batch Management Specification: batches require approval before becoming AVAILABLE
+    this.apiService.getBatchesByStatus('QUALITY_PENDING').subscribe({
+      next: (batches) => {
+        this.summary.batchesPendingApproval = batches.length;
+      },
+      error: (err) => console.error('Error loading batches pending approval:', err)
+    });
+
     // Load all operations to build operations summary by status
     this.apiService.getAllOperations().subscribe({
       next: (operations) => {
