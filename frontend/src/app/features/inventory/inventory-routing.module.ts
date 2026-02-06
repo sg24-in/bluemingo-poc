@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { InventoryListComponent } from './inventory-list/inventory-list.component';
 import { InventoryFormComponent } from './inventory-form/inventory-form.component';
 import { InventoryDetailComponent } from './inventory-detail/inventory-detail.component';
+import { ReceiveMaterialComponent } from './receive-material/receive-material.component';
 
 const routes: Routes = [
   {
@@ -12,6 +13,10 @@ const routes: Routes = [
   {
     path: 'new',
     component: InventoryFormComponent
+  },
+  {
+    path: 'receive',
+    component: ReceiveMaterialComponent
   },
   {
     path: ':id',

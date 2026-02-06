@@ -4,6 +4,7 @@ import com.mes.production.dto.InventoryDTO;
 import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.service.InventoryService;
+import com.mes.production.service.ReceiveMaterialService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+    private final ReceiveMaterialService receiveMaterialService;
 
     /**
      * Get all inventory (legacy - non-paginated)
@@ -236,5 +238,18 @@ public class InventoryController {
         log.info("POST /api/inventory/{}/release-reservation", id);
         InventoryDTO.StateUpdateResponse response = inventoryService.releaseReservation(id);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Receive raw material into inventory.
+     * Creates Batch (QUALITY_PENDING) + Inventory (AVAILABLE) + InventoryMovement (RECEIVE).
+     */
+    @PostMapping("/receive-material")
+    public ResponseEntity<InventoryDTO.ReceiveMaterialResponse> receiveMaterial(
+            @Valid @RequestBody InventoryDTO.ReceiveMaterialRequest request) {
+        log.info("POST /api/inventory/receive-material - Material: {}, Qty: {}",
+                request.getMaterialId(), request.getQuantity());
+        InventoryDTO.ReceiveMaterialResponse response = receiveMaterialService.receiveMaterial(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

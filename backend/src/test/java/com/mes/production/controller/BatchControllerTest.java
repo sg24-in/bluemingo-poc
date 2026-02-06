@@ -252,9 +252,11 @@ class BatchControllerTest {
     @WithMockUser(username = "admin@mes.com")
     @DisplayName("Should update batch and return 200")
     void updateBatch_Returns200() throws Exception {
+        // Note: quantity field removed per MES Batch Management Specification
+        // Use adjustQuantity() endpoint for quantity changes
         BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
                 .materialName("Updated Steel Billet")
-                .quantity(new BigDecimal("600.00"))
+                .unit("LBS")
                 .build();
 
         when(batchService.updateBatch(eq(1L), any(BatchDTO.UpdateBatchRequest.class)))

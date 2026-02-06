@@ -1,6 +1,7 @@
-<div class="container">
+<div class="dashboard-page">
   <div class="page-header">
-    <h1 class="page-title">Dashboard</h1>
+    <h1 class="page-title">Production Dashboard</h1>
+    <span class="last-updated" *ngIf="!loading">Last updated: {{ lastUpdated | date:'medium' }}</span>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -8,112 +9,186 @@
   </div>
 
   <div *ngIf="!loading">
-    <!-- Summary Cards -->
-    <div class="summary-cards">
-      <div class="summary-card clickable" (click)="navigateToOrders()">
-        <div class="card-icon orders-icon">
-          <i class="fas fa-list"></i>
-        </div>
-        <div class="card-info">
-          <span class="card-label">Total Orders</span>
-          <span class="card-value">{{ summary.totalOrders }}</span>
-          <span class="card-subtitle">{{ summary.ordersInProgress }} in progress</span>
-        </div>
-      </div>
-
-      <div class="summary-card ready-card">
-        <div class="card-icon ready-icon">
-          <i class="fas fa-circle-play"></i>
-        </div>
-        <div class="card-info">
-          <span class="card-label">Operations Ready</span>
-          <span class="card-value">{{ summary.operationsReady }}</span>
-          <span class="card-subtitle">ready to start</span>
-        </div>
-      </div>
-
-      <div class="summary-card clickable" [ngClass]="{'warning-card': summary.activeHolds > 0}" (click)="navigateToHolds()">
-        <div class="card-icon hold-icon">
-          <i class="fas fa-circle-pause"></i>
-        </div>
-        <div class="card-info">
-          <span class="card-label">Active Holds</span>
-          <span class="card-value">{{ summary.activeHolds }}</span>
-          <span class="card-subtitle">items on hold</span>
-        </div>
-      </div>
-
-      <div class="summary-card">
-        <div class="card-icon confirm-icon">
-          <i class="fas fa-circle-check"></i>
-        </div>
-        <div class="card-info">
-          <span class="card-label">Today's Confirmations</span>
-          <span class="card-value">{{ summary.todayConfirmations }}</span>
-          <span class="card-subtitle">confirmed today</span>
-        </div>
-      </div>
-
-      <div class="summary-card clickable" [ngClass]="{'quality-pending-card': summary.qualityPendingProcesses > 0}" (click)="navigateToQualityPending()">
-        <div class="card-icon quality-icon">
-          <i class="fas fa-magnifying-glass"></i>
-        </div>
-        <div class="card-info">
-          <span class="card-label">Quality Pending</span>
-          <span class="card-value">{{ summary.qualityPendingProcesses }}</span>
-          <span class="card-subtitle">awaiting inspection</span>
+    <!-- Inventory Flow Pipeline (Generic: RM → WIP → IM → FG) -->
+    <div class="inventory-flow-section">
+      <h2 class="section-title"><i class="fas fa-arrows-turn-right"></i> Inventory Flow</h2>
+      <div class="inventory-flow">
+        <div class="flow-stage" *ngFor="let stage of inventoryFlowStages; let i = index">
+          <div class="flow-connector" *ngIf="i > 0">
+            <i class="fas fa-arrow-right"></i>
+          </div>
+          <div class="flow-card" [ngClass]="'stage-' + stage.status" (click)="navigateToInventoryType(stage.type)">
+            <div class="flow-icon">
+              <i class="fas" [ngClass]="stage.icon"></i>
+            </div>
+            <div class="flow-info">
+              <span class="flow-type">{{ stage.type }}</span>
+              <span class="flow-label">{{ stage.label }}</span>
+              <span class="flow-count">{{ stage.count }} available</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Inventory Summary -->
-    <div class="inventory-summary">
-      <div class="summary-card small">
-        <div class="card-info">
-          <span class="card-label">Total Inventory</span>
-          <span class="card-value">{{ inventorySummary.total }}</span>
-        </div>
-      </div>
-      <div class="summary-card small available">
-        <div class="card-info">
-          <span class="card-label">Available</span>
-          <span class="card-value">{{ inventorySummary.available }}</span>
-        </div>
-      </div>
-      <div class="summary-card small consumed">
-        <div class="card-info">
-          <span class="card-label">Consumed</span>
-          <span class="card-value">{{ inventorySummary.consumed }}</span>
-        </div>
-      </div>
-      <div class="summary-card small on-hold">
-        <div class="card-info">
-          <span class="card-label">On Hold</span>
-          <span class="card-value">{{ inventorySummary.onHold }}</span>
+    <!-- Operations Status Summary -->
+    <div class="operations-summary-section" *ngIf="operationsSummary.length > 0">
+      <h2 class="section-title"><i class="fas fa-tasks"></i> Operations Status</h2>
+      <div class="operations-summary">
+        <div class="operation-status-card" *ngFor="let op of operationsSummary"
+             [style.border-left-color]="op.color"
+             (click)="navigateToOperationsByStatus(op.status)">
+          <span class="op-count" [style.color]="op.color">{{ op.count }}</span>
+          <span class="op-status">{{ op.status | titlecase }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Analytics Charts -->
-    <div class="charts-grid">
-      <div class="card chart-card">
-        <div #inventoryChart class="chart-container"></div>
-      </div>
-      <div class="card chart-card">
-        <div #orderStatusChart class="chart-container"></div>
-      </div>
-      <div class="card chart-card">
-        <div #operationsChart class="chart-container"></div>
+    <!-- Alerts & Attention Needed -->
+    <div class="alerts-section" *ngIf="hasAlerts()">
+      <h2 class="section-title"><i class="fas fa-bell"></i> Needs Attention</h2>
+      <div class="alerts-grid">
+        <div class="alert-card warning" *ngIf="summary.activeHolds > 0" (click)="navigateToHolds()">
+          <div class="alert-icon"><i class="fas fa-circle-pause"></i></div>
+          <div class="alert-content">
+            <span class="alert-count">{{ summary.activeHolds }}</span>
+            <span class="alert-label">Active Holds</span>
+          </div>
+          <i class="fas fa-chevron-right alert-arrow"></i>
+        </div>
+
+        <div class="alert-card info" *ngIf="summary.batchesPendingApproval > 0" (click)="navigateToBatchApproval()">
+          <div class="alert-icon"><i class="fas fa-clipboard-check"></i></div>
+          <div class="alert-content">
+            <span class="alert-count">{{ summary.batchesPendingApproval }}</span>
+            <span class="alert-label">Batches Pending Approval</span>
+          </div>
+          <i class="fas fa-chevron-right alert-arrow"></i>
+        </div>
+
+        <div class="alert-card warning" *ngIf="summary.qualityPendingProcesses > 0" (click)="navigateToQualityPending()">
+          <div class="alert-icon"><i class="fas fa-magnifying-glass"></i></div>
+          <div class="alert-content">
+            <span class="alert-count">{{ summary.qualityPendingProcesses }}</span>
+            <span class="alert-label">Quality Inspections Pending</span>
+          </div>
+          <i class="fas fa-chevron-right alert-arrow"></i>
+        </div>
+
+        <div class="alert-card danger" *ngIf="blockedInventoryCount > 0" (click)="navigateToBlockedInventory()">
+          <div class="alert-icon"><i class="fas fa-ban"></i></div>
+          <div class="alert-content">
+            <span class="alert-count">{{ blockedInventoryCount }}</span>
+            <span class="alert-label">Blocked Inventory</span>
+          </div>
+          <i class="fas fa-chevron-right alert-arrow"></i>
+        </div>
       </div>
     </div>
 
-    <!-- Main Content Grid -->
+    <!-- Active Operations (Currently Running) -->
+    <div class="active-operations-section" *ngIf="activeOperations.length > 0">
+      <h2 class="section-title"><i class="fas fa-play-circle"></i> Currently Running</h2>
+      <div class="active-operations-grid">
+        <div class="active-op-card" *ngFor="let op of activeOperations" (click)="navigateToOrder(op.orderId)">
+          <div class="active-op-header">
+            <span class="active-op-type">{{ op.operationType }}</span>
+            <span class="active-op-status"><i class="fas fa-circle"></i> In Progress</span>
+          </div>
+          <div class="active-op-details">
+            <div class="active-op-item">
+              <i class="fas fa-hashtag"></i>
+              <span>{{ op.operationName || 'Operation #' + op.operationId }}</span>
+            </div>
+            <div class="active-op-item" *ngIf="op.equipmentName">
+              <i class="fas fa-cog"></i>
+              <span>{{ op.equipmentName }}</span>
+            </div>
+            <div class="active-op-item" *ngIf="op.operatorName">
+              <i class="fas fa-user"></i>
+              <span>{{ op.operatorName }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Metrics Row -->
+    <div class="metrics-section">
+      <h2 class="section-title"><i class="fas fa-chart-simple"></i> Key Metrics</h2>
+      <div class="metrics-grid">
+        <div class="metric-card" (click)="navigateToOrders()">
+          <div class="metric-header">
+            <span class="metric-label">Orders</span>
+            <span class="metric-badge">{{ summary.ordersInProgress }} in progress</span>
+          </div>
+          <div class="metric-value">{{ summary.totalOrders }}</div>
+          <div class="metric-footer">
+            <span class="metric-change positive" *ngIf="summary.operationsReady > 0">
+              {{ summary.operationsReady }} ready to start
+            </span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Today's Production</span>
+          </div>
+          <div class="metric-value">{{ summary.todayConfirmations }}</div>
+          <div class="metric-footer">
+            <span class="metric-sublabel">confirmations today</span>
+          </div>
+        </div>
+
+        <div class="metric-card" (click)="navigateToInventory()">
+          <div class="metric-header">
+            <span class="metric-label">Inventory Items</span>
+          </div>
+          <div class="metric-value">{{ inventorySummary.total }}</div>
+          <div class="metric-breakdown">
+            <span class="breakdown-item available">{{ inventorySummary.available }} available</span>
+            <span class="breakdown-item consumed">{{ inventorySummary.consumed }} consumed</span>
+          </div>
+        </div>
+
+        <div class="metric-card" (click)="navigateToBatches()">
+          <div class="metric-header">
+            <span class="metric-label">Active Batches</span>
+          </div>
+          <div class="metric-value">{{ activeBatchCount }}</div>
+          <div class="metric-footer">
+            <span class="metric-sublabel">{{ recentBatches.length }} created recently</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <h2 class="section-title"><i class="fas fa-chart-pie"></i> Analytics</h2>
+      <div class="charts-grid">
+        <div class="card chart-card">
+          <div class="chart-title">Inventory Distribution</div>
+          <div #inventoryChart class="chart-container"></div>
+        </div>
+        <div class="card chart-card">
+          <div class="chart-title">Order Status</div>
+          <div #orderStatusChart class="chart-container"></div>
+        </div>
+        <div class="card chart-card">
+          <div class="chart-title">Batch Status</div>
+          <div #batchStatusChart class="chart-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two Column Layout -->
     <div class="dashboard-grid">
-      <!-- Available Orders -->
+      <!-- Orders Ready for Production -->
       <div class="card">
         <div class="card-header">
-          <span>Orders Ready for Production</span>
-          <a routerLink="/orders" class="view-all">View All</a>
+          <span><i class="fas fa-play-circle"></i> Orders Ready for Production</span>
+          <a routerLink="/orders" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
         </div>
         <div class="card-body">
           <table class="table" *ngIf="availableOrders.length > 0">
@@ -121,25 +196,30 @@
               <tr>
                 <th>Order #</th>
                 <th>Product</th>
+                <th>Customer</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let order of availableOrders" class="clickable" (click)="navigateToOrder(order.orderId)">
-                <td>{{ order.orderNumber }}</td>
+                <td class="order-number">{{ order.orderNumber }}</td>
                 <td>{{ order.lineItems?.[0]?.productName || 'N/A' }}</td>
+                <td>{{ order.customerName || '-' }}</td>
                 <td><app-status-badge [status]="order.status"></app-status-badge></td>
               </tr>
             </tbody>
           </table>
-          <p *ngIf="availableOrders.length === 0" class="no-data">No orders ready for production</p>
+          <div class="empty-state" *ngIf="availableOrders.length === 0">
+            <i class="fas fa-inbox"></i>
+            <p>No orders ready for production</p>
+          </div>
         </div>
       </div>
 
       <!-- Recent Activity -->
       <div class="card">
         <div class="card-header">
-          <span>Recent Confirmations</span>
+          <span><i class="fas fa-clock-rotate-left"></i> Recent Confirmations</span>
         </div>
         <div class="card-body">
           <div class="activity-list" *ngIf="summary.recentActivity && summary.recentActivity.length > 0">
@@ -148,47 +228,26 @@
               <div class="activity-info">
                 <div class="activity-title">{{ activity.operationName }}</div>
                 <div class="activity-details">
-                  <span>{{ activity.productSku }}</span>
-                  <span>{{ activity.producedQty }} units</span>
+                  <span class="product-sku">{{ activity.productSku }}</span>
+                  <span class="qty-badge">{{ activity.producedQty }} units</span>
                 </div>
                 <div class="activity-time">{{ activity.confirmedAt | date:'short' }}</div>
               </div>
             </div>
           </div>
-          <p *ngIf="!summary.recentActivity?.length" class="no-data">No recent activity</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Audit Trail -->
-    <div class="card">
-      <div class="card-header">
-        <span>Audit Trail</span>
-      </div>
-      <div class="card-body">
-        <div class="audit-list" *ngIf="summary.auditActivity && summary.auditActivity.length > 0">
-          <div class="audit-item" *ngFor="let audit of summary.auditActivity">
-            <div class="audit-icon" [ngClass]="getAuditIconClass(audit.action)">
-              <i class="fas" [ngClass]="getAuditIcon(audit.action)"></i>
-            </div>
-            <div class="audit-info">
-              <div class="audit-description">{{ audit.description }}</div>
-              <div class="audit-meta">
-                <span class="audit-user">{{ audit.changedBy }}</span>
-                <span class="audit-time">{{ audit.timestamp | date:'short' }}</span>
-              </div>
-            </div>
+          <div class="empty-state" *ngIf="!summary.recentActivity?.length">
+            <i class="fas fa-history"></i>
+            <p>No recent activity</p>
           </div>
         </div>
-        <p *ngIf="!summary.auditActivity?.length" class="no-data">No audit entries</p>
       </div>
     </div>
 
     <!-- Recent Batches -->
     <div class="card">
       <div class="card-header">
-        <span>Recent Batches</span>
-        <a routerLink="/batches" class="view-all">View All</a>
+        <span><i class="fas fa-cubes"></i> Recent Batches</span>
+        <a routerLink="/batches" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
       </div>
       <div class="card-body">
         <table class="table" *ngIf="recentBatches.length > 0">
@@ -197,39 +256,48 @@
               <th>Batch #</th>
               <th>Material</th>
               <th>Quantity</th>
+              <th>Created</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let batch of recentBatches" class="clickable" (click)="navigateToBatch(batch.batchId)">
-              <td>{{ batch.batchNumber }}</td>
+              <td class="batch-number">{{ batch.batchNumber }}</td>
               <td>{{ batch.materialName || batch.materialId }}</td>
               <td>{{ batch.quantity }} {{ batch.unit }}</td>
+              <td>{{ batch.createdOn | date:'short' }}</td>
               <td><app-status-badge [status]="batch.status"></app-status-badge></td>
             </tr>
           </tbody>
         </table>
-        <p *ngIf="recentBatches.length === 0" class="no-data">No batches found</p>
+        <div class="empty-state" *ngIf="recentBatches.length === 0">
+          <i class="fas fa-boxes-stacked"></i>
+          <p>No batches found</p>
+        </div>
       </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="card">
-      <div class="card-header">Quick Actions</div>
+    <div class="quick-actions-section">
+      <h2 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h2>
       <div class="quick-actions">
+        <a routerLink="/production" class="action-btn primary">
+          <span class="action-icon"><i class="fas fa-industry"></i></span>
+          <span class="action-label">Confirm Production</span>
+        </a>
+        <a routerLink="/inventory/receive" class="action-btn success">
+          <span class="action-icon"><i class="fas fa-download"></i></span>
+          <span class="action-label">Receive Material</span>
+        </a>
         <a routerLink="/orders" class="action-btn">
           <span class="action-icon"><i class="fas fa-list"></i></span>
           <span class="action-label">View Orders</span>
         </a>
-        <a routerLink="/inventory" class="action-btn">
-          <span class="action-icon"><i class="fas fa-box"></i></span>
-          <span class="action-label">View Inventory</span>
-        </a>
         <a routerLink="/batches" class="action-btn">
-          <span class="action-icon"><i class="fas fa-tags"></i></span>
+          <span class="action-icon"><i class="fas fa-cubes"></i></span>
           <span class="action-label">Batch Traceability</span>
         </a>
-        <a routerLink="/holds" class="action-btn">
+        <a routerLink="/holds" class="action-btn warning">
           <span class="action-icon"><i class="fas fa-circle-pause"></i></span>
           <span class="action-label">Manage Holds</span>
         </a>

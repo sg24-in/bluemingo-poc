@@ -200,6 +200,10 @@ export class InventoryListComponent implements OnInit {
   }
 
   // CRUD actions
+  receiveMaterial(): void {
+    this.router.navigate(['/inventory/receive']);
+  }
+
   createInventory(): void {
     this.router.navigate(['/inventory/new']);
   }

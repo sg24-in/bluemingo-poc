@@ -52,11 +52,20 @@ public class Routing {
     @Builder.Default
     private List<RoutingStep> routingSteps = new ArrayList<>();
 
+    // Link to design-time process template
+    @Column(name = "process_template_id")
+    private Long processTemplateId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "process_template_id", insertable = false, updatable = false)
+    private ProcessTemplate processTemplate;
+
     // Routing type constants
     public static final String TYPE_SEQUENTIAL = "SEQUENTIAL";
     public static final String TYPE_PARALLEL = "PARALLEL";
 
     // Status constants
+    public static final String STATUS_DRAFT = "DRAFT";
     public static final String STATUS_ACTIVE = "ACTIVE";
     public static final String STATUS_INACTIVE = "INACTIVE";
     public static final String STATUS_ON_HOLD = "ON_HOLD";

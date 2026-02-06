@@ -1,0 +1,40 @@
+<div class="profile-page">
+  <div class="page-header">
+    <h1 class="page-title">My Profile</h1>
+  </div>
+
+  <div class="profile-content" *ngIf="currentUser">
+    <div class="profile-card">
+      <div class="profile-avatar-section">
+        <div class="avatar-large">
+          {{ getUserInitials() }}
+        </div>
+        <h2 class="profile-full-name">{{ currentUser.fullName }}</h2>
+        <span class="profile-role-badge">{{ currentUser.role || 'User' }}</span>
+      </div>
+
+      <div class="profile-details">
+        <div class="detail-group">
+          <label>Email</label>
+          <span class="detail-value">{{ currentUser.email }}</span>
+        </div>
+
+        <div class="detail-group">
+          <label>Full Name</label>
+          <span class="detail-value">{{ currentUser.fullName }}</span>
+        </div>
+
+        <div class="detail-group">
+          <label>Role</label>
+          <span class="detail-value">{{ currentUser.role || 'User' }}</span>
+        </div>
+      </div>
+
+      <div class="profile-actions">
+        <a routerLink="/change-password" class="btn btn-primary">
+          <i class="fas fa-key"></i> Change Password
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

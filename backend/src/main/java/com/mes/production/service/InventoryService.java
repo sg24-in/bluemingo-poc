@@ -27,6 +27,7 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final BatchRepository batchRepository;
     private final AuditService auditService;
+    private final InventoryStateValidator stateValidator;
 
     private static final Set<String> VALID_STATES = Set.of(
             Inventory.STATE_AVAILABLE,
@@ -133,14 +134,8 @@ public class InventoryService {
         Inventory inventory = getInventoryEntity(inventoryId);
         String oldState = inventory.getState();
 
-        // Validate current state
-        if (Inventory.STATE_CONSUMED.equals(oldState) || Inventory.STATE_SCRAPPED.equals(oldState)) {
-            throw new RuntimeException("Cannot block inventory in state: " + oldState);
-        }
-
-        if (Inventory.STATE_BLOCKED.equals(oldState)) {
-            throw new RuntimeException("Inventory is already blocked");
-        }
+        // Validate state transition using centralized validator
+        stateValidator.validateBlock(inventory);
 
         // Update state
         inventory.setState(Inventory.STATE_BLOCKED);
@@ -174,9 +169,8 @@ public class InventoryService {
         Inventory inventory = getInventoryEntity(inventoryId);
         String oldState = inventory.getState();
 
-        if (!Inventory.STATE_BLOCKED.equals(oldState)) {
-            throw new RuntimeException("Inventory is not blocked. Current state: " + oldState);
-        }
+        // Validate state transition using centralized validator
+        stateValidator.validateUnblock(inventory);
 
         // Update state back to AVAILABLE
         inventory.setState(Inventory.STATE_AVAILABLE);
@@ -210,14 +204,8 @@ public class InventoryService {
         Inventory inventory = getInventoryEntity(inventoryId);
         String oldState = inventory.getState();
 
-        // Validate current state
-        if (Inventory.STATE_CONSUMED.equals(oldState)) {
-            throw new RuntimeException("Cannot scrap already consumed inventory");
-        }
-
-        if (Inventory.STATE_SCRAPPED.equals(oldState)) {
-            throw new RuntimeException("Inventory is already scrapped");
-        }
+        // Validate state transition using centralized validator
+        stateValidator.validateScrap(inventory);
 
         // Update state
         inventory.setState(Inventory.STATE_SCRAPPED);
@@ -286,10 +274,8 @@ public class InventoryService {
         Inventory inventory = getInventoryEntity(inventoryId);
         String oldState = inventory.getState();
 
-        // Validate current state
-        if (!Inventory.STATE_AVAILABLE.equals(oldState)) {
-            throw new RuntimeException("Only AVAILABLE inventory can be reserved. Current state: " + oldState);
-        }
+        // Validate state transition using centralized validator (includes hold check)
+        stateValidator.validateReserve(inventory);
 
         // Validate quantity if specified
         if (quantity != null && quantity.compareTo(inventory.getQuantity()) > 0) {
@@ -330,9 +316,8 @@ public class InventoryService {
         Inventory inventory = getInventoryEntity(inventoryId);
         String oldState = inventory.getState();
 
-        if (!Inventory.STATE_RESERVED.equals(oldState)) {
-            throw new RuntimeException("Inventory is not reserved. Current state: " + oldState);
-        }
+        // Validate state transition using centralized validator
+        stateValidator.validateReleaseReservation(inventory);
 
         // Update state back to AVAILABLE
         inventory.setState(Inventory.STATE_AVAILABLE);

@@ -99,3 +99,33 @@ export interface UpdateInventoryRequest {
   state?: string;
   batchId?: number;
 }
+
+/**
+ * Matches: InventoryDTO.ReceiveMaterialRequest
+ * Used for goods receipt of raw materials.
+ */
+export interface ReceiveMaterialRequest {
+  materialId: string;
+  materialName?: string;
+  quantity: number;
+  unit?: string;
+  supplierBatchNumber?: string;
+  supplierId?: string;
+  receivedDate?: string; // LocalDate (YYYY-MM-DD)
+  location?: string;
+  notes?: string;
+}
+
+/**
+ * Matches: InventoryDTO.ReceiveMaterialResponse
+ */
+export interface ReceiveMaterialResponse {
+  batchId: number;
+  batchNumber: string;
+  inventoryId: number;
+  batchStatus: string;
+  inventoryState: string;
+  quantity: number;
+  unit: string;
+  message: string;
+}

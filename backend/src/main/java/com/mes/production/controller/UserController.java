@@ -106,7 +106,19 @@ public class UserController {
     }
 
     /**
-     * Change own password
+     * Change current user's password (uses JWT to identify user)
+     */
+    @PostMapping("/me/change-password")
+    public ResponseEntity<Map<String, String>> changeCurrentUserPassword(
+            @Valid @RequestBody UserDTO.ChangePasswordRequest request,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails userDetails) {
+        userService.changePasswordByEmail(userDetails.getUsername(), request);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+    }
+
+    /**
+     * Change password by user ID (admin)
      */
     @PostMapping("/{id}/change-password")
     public ResponseEntity<Map<String, String>> changePassword(

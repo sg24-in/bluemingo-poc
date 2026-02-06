@@ -138,7 +138,8 @@
       "Bash(cmd.exe /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test --tests com.mes.production.service.BatchServiceTest --tests com.mes.production.controller.BatchControllerTest -Dspring.profiles.active=test\")",
       "Bash(cmd.exe /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat test --tests com.mes.production.service.BatchServiceTest -Dspring.profiles.active=test 2>&1\")",
       "Bash(cmd.exe /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat compileTestJava 2>&1\")",
-      "Bash(cmd.exe /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat compileTestJava > build_output.txt 2>&1 && type build_output.txt\")"
+      "Bash(cmd.exe /c \"cd /d D:\\\\repositories\\\\bluemingo-poc\\\\backend && gradlew.bat compileTestJava > build_output.txt 2>&1 && type build_output.txt\")",
+      "Bash(gradlew compileJava:*)"
     ]
   }
 }

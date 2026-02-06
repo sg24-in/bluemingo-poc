@@ -659,9 +659,11 @@ class BatchServiceTest {
             when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
             when(batchRepository.save(any(Batch.class))).thenReturn(testBatch);
 
+            // Note: quantity field removed per MES Batch Management Specification
+            // Use adjustQuantity() for quantity changes
             BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
                     .materialName("Updated Steel Billet")
-                    .quantity(new BigDecimal("600.00"))
+                    .unit("LBS")
                     .build();
 
             BatchDTO result = batchService.updateBatch(1L, request);
@@ -678,8 +680,9 @@ class BatchServiceTest {
             testBatch.setStatus(Batch.STATUS_CONSUMED);
             when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
 
+            // Note: quantity field removed per MES Batch Management Specification
             BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
-                    .quantity(new BigDecimal("200.00"))
+                    .materialName("Updated Name")
                     .build();
 
             assertThrows(RuntimeException.class, () -> batchService.updateBatch(1L, request));
@@ -707,8 +710,9 @@ class BatchServiceTest {
 
             when(batchRepository.findById(99L)).thenReturn(Optional.empty());
 
+            // Note: quantity field removed per MES Batch Management Specification
             BatchDTO.UpdateBatchRequest request = BatchDTO.UpdateBatchRequest.builder()
-                    .quantity(new BigDecimal("200.00"))
+                    .materialName("Updated Name")
                     .build();
 
             assertThrows(RuntimeException.class, () -> batchService.updateBatch(99L, request));

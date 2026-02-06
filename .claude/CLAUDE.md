@@ -751,6 +751,40 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 
 ---
 
+## Help Content Documentation
+
+The application uses contextual help widgets (Task #73) to provide in-app guidance. Help content should be maintained here and kept updated as features change.
+
+### Page-Level Help Content
+
+| Page | Help Content |
+|------|-------------|
+| **Receive Material** | Raw material goods receipt creates a new Batch (QUALITY_PENDING status) and Inventory record (AVAILABLE state). The batch must be approved before the inventory can be used in production. |
+| **Production Confirm** | Production confirmation consumes input materials and produces output batches. Select an operation, choose input batches, enter process parameters, and confirm to complete the operation. |
+| **Inventory List** | Inventory items represent material at a location. States: AVAILABLE (can be used), ON_HOLD (temporarily blocked), BLOCKED (quality issue), CONSUMED (used in production). |
+| **Batch List** | Batches are trackable units of material. Statuses: QUALITY_PENDING (awaiting approval), AVAILABLE (approved for use), PRODUCED, CONSUMED, BLOCKED, SCRAPPED. |
+| **Holds** | Holds temporarily block entities from being used. Can be applied to: Orders, Operations, Batches, Inventory, Equipment. Release with reason when issue is resolved. |
+| **Orders** | Orders contain line items (products) and each line item has a process with operations. Operations must be confirmed in sequence based on routing. |
+
+### Feature Help
+
+| Feature | Help Content |
+|---------|-------------|
+| **Batch Approval** | New batches start in QUALITY_PENDING. Go to batch detail and click Approve/Reject. Approved batches become AVAILABLE for production. |
+| **Inventory Types** | RM = Raw Material, WIP = Work in Progress, IM = Intermediate, FG = Finished Goods. Type determines where material is in the production flow. |
+| **Genealogy** | Batch genealogy shows material traceability - parent batches (inputs) and child batches (outputs). Supports forward and backward tracing. |
+| **Split/Merge** | Batches can be split into multiple smaller batches or merged together. Original relationships are preserved in genealogy. |
+
+### Updating Help Content
+
+When adding or modifying features:
+1. Update the relevant help content in this section
+2. Ensure the HelpWidget component references the correct content key
+3. Keep explanations concise and action-oriented
+4. Include any prerequisites or dependencies
+
+---
+
 ## Git Info
 
 - **Branch:** main

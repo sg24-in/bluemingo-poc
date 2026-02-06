@@ -2,6 +2,7 @@ package com.mes.production.service;
 
 import com.mes.production.dto.DashboardDTO;
 import com.mes.production.entity.AuditTrail;
+import com.mes.production.entity.Batch;
 import com.mes.production.entity.Process;
 import com.mes.production.entity.ProductionConfirmation;
 import com.mes.production.repository.*;
@@ -26,6 +27,7 @@ public class DashboardService {
     private final ProcessRepository processRepository;
     private final HoldRecordRepository holdRecordRepository;
     private final ProductionConfirmationRepository confirmationRepository;
+    private final BatchRepository batchRepository;
     private final AuditService auditService;
 
     @Transactional(readOnly = true)
@@ -46,6 +48,9 @@ public class DashboardService {
         // Get quality pending processes count
         Long qualityPendingProcesses = (long) processRepository.findByStatus(Process.STATUS_QUALITY_PENDING).size();
 
+        // Get batches pending approval (QUALITY_PENDING status)
+        Long batchesPendingApproval = batchRepository.countByStatus(Batch.STATUS_QUALITY_PENDING);
+
         // Get recent activity
         List<DashboardDTO.RecentActivity> recentActivity = getRecentActivity(5);
 
@@ -60,6 +65,7 @@ public class DashboardService {
                 .activeHolds(activeHolds)
                 .todayConfirmations(todayConfirmations)
                 .qualityPendingProcesses(qualityPendingProcesses)
+                .batchesPendingApproval(batchesPendingApproval)
                 .recentActivity(recentActivity)
                 .auditActivity(auditActivity)
                 .build();

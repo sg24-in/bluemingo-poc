@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,7 @@ public class Batch {
     public static final String CREATED_VIA_MERGE = "MERGE";
     public static final String CREATED_VIA_MANUAL = "MANUAL";
     public static final String CREATED_VIA_SYSTEM = "SYSTEM";
+    public static final String CREATED_VIA_RECEIPT = "RECEIPT";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -77,10 +79,23 @@ public class Batch {
 
     /**
      * Tracks how the batch was created.
-     * Values: PRODUCTION, SPLIT, MERGE, MANUAL, SYSTEM
+     * Values: PRODUCTION, SPLIT, MERGE, MANUAL, SYSTEM, RECEIPT
      */
     @Column(name = "created_via", length = 50)
     private String createdVia;
+
+    // Supplier/Receipt tracking for RM entry
+    @Column(name = "supplier_batch_number", length = 100)
+    private String supplierBatchNumber;
+
+    @Column(name = "supplier_id", length = 50)
+    private String supplierId;
+
+    @Column(name = "received_date")
+    private LocalDate receivedDate;
+
+    @Column(name = "receipt_notes", length = 500)
+    private String receiptNotes;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn;
@@ -97,7 +112,9 @@ public class Batch {
     @PrePersist
     protected void onCreate() {
         createdOn = LocalDateTime.now();
-        if (status == null) status = "AVAILABLE";
+        // Per MES Batch Management Specification: Batches default to QUALITY_PENDING
+        // to enforce the approval workflow before becoming AVAILABLE
+        if (status == null) status = STATUS_QUALITY_PENDING;
         if (unit == null) unit = "T";
     }
 

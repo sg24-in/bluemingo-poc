@@ -23,11 +23,16 @@ import {
   BatchStatusUpdateResponse,
   CreateBatchRequest,
   UpdateBatchRequest,
+  AdjustQuantityRequest,
+  AdjustQuantityResponse,
+  QuantityAdjustmentHistory,
   // Inventory
   Inventory,
   InventoryStateUpdateResponse,
   CreateInventoryRequest,
   UpdateInventoryRequest,
+  ReceiveMaterialRequest,
+  ReceiveMaterialResponse,
   // Equipment
   Equipment,
   EquipmentStatusUpdateResponse,
@@ -237,6 +242,14 @@ export class ApiService {
 
   deleteInventory(inventoryId: number): Observable<InventoryStateUpdateResponse> {
     return this.http.delete<InventoryStateUpdateResponse>(`${environment.apiUrl}/inventory/${inventoryId}`);
+  }
+
+  /**
+   * Receive raw material into inventory.
+   * Creates Batch (QUALITY_PENDING) + Inventory (AVAILABLE) + InventoryMovement (RECEIVE).
+   */
+  receiveMaterial(request: ReceiveMaterialRequest): Observable<ReceiveMaterialResponse> {
+    return this.http.post<ReceiveMaterialResponse>(`${environment.apiUrl}/inventory/receive-material`, request);
   }
 
   // ============================================================
@@ -1100,8 +1113,13 @@ export class ApiService {
     return this.http.delete<{ message: string }>(`${environment.apiUrl}/users/${userId}`);
   }
 
-  changePassword(userId: number, request: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
+  changePasswordById(userId: number, request: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${environment.apiUrl}/users/${userId}/change-password`, request);
+  }
+
+  // Change password for currently authenticated user
+  changePassword(request: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/users/me/change-password`, request);
   }
 
   resetPassword(userId: number, request: { newPassword: string }): Observable<{ message: string }> {

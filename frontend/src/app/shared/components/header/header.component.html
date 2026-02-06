@@ -3,36 +3,119 @@
     <div class="logo">
       <a routerLink="/dashboard">MES Production</a>
     </div>
-    <nav class="nav-menu">
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    <button class="mobile-menu-toggle" (click)="toggleMobileMenu()">
+      <i class="fas" [ngClass]="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
+    </button>
+    <nav class="nav-menu" [class.open]="mobileMenuOpen">
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <i class="fas fa-chart-line"></i> Dashboard
+      </a>
 
-      <span class="nav-separator"></span>
+      <!-- Orders Dropdown -->
+      <div class="nav-dropdown" [class.expanded]="expandedDropdown === 'orders'">
+        <a class="dropdown-trigger" [class.active]="isOrdersActive()" (click)="toggleDropdown('orders', $event)">
+          <i class="fas fa-clipboard-list"></i> Orders <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </a>
+        <div class="dropdown-menu">
+          <a routerLink="/orders" routerLinkActive="active">
+            <i class="fas fa-list-check"></i> Order List
+          </a>
+          <a routerLink="/production" routerLinkActive="active">
+            <i class="fas fa-industry"></i> Production Confirm
+          </a>
+        </div>
+      </div>
 
-      <a routerLink="/orders" routerLinkActive="active">Orders</a>
+      <!-- Manufacturing Dropdown -->
+      <div class="nav-dropdown" [class.expanded]="expandedDropdown === 'manufacturing'">
+        <a class="dropdown-trigger" [class.active]="isManufacturingActive()" (click)="toggleDropdown('manufacturing', $event)">
+          <i class="fas fa-cogs"></i> Manufacturing <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </a>
+        <div class="dropdown-menu">
+          <a routerLink="/processes" routerLinkActive="active">
+            <i class="fas fa-diagram-project"></i> Processes
+          </a>
+          <a routerLink="/operations" routerLinkActive="active">
+            <i class="fas fa-gears"></i> Operations
+          </a>
+          <a routerLink="/equipment" routerLinkActive="active">
+            <i class="fas fa-wrench"></i> Equipment
+          </a>
+        </div>
+      </div>
 
-      <span class="nav-separator"></span>
+      <!-- Inventory Dropdown -->
+      <div class="nav-dropdown" [class.expanded]="expandedDropdown === 'inventory'">
+        <a class="dropdown-trigger" [class.active]="isInventoryActive()" (click)="toggleDropdown('inventory', $event)">
+          <i class="fas fa-boxes-stacked"></i> Inventory <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </a>
+        <div class="dropdown-menu">
+          <a routerLink="/inventory" routerLinkActive="active">
+            <i class="fas fa-warehouse"></i> Stock
+          </a>
+          <a routerLink="/batches" routerLinkActive="active">
+            <i class="fas fa-cubes"></i> Batches
+          </a>
+        </div>
+      </div>
 
-      <a routerLink="/production" routerLinkActive="active">Production</a>
-      <a routerLink="/processes" routerLinkActive="active">Processes</a>
-      <a routerLink="/operations" routerLinkActive="active">Operations</a>
+      <!-- Quality Dropdown -->
+      <div class="nav-dropdown" [class.expanded]="expandedDropdown === 'quality'">
+        <a class="dropdown-trigger" [class.active]="isQualityActive()" (click)="toggleDropdown('quality', $event)">
+          <i class="fas fa-shield-halved"></i> Quality <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </a>
+        <div class="dropdown-menu">
+          <a routerLink="/holds" routerLinkActive="active">
+            <i class="fas fa-hand"></i> Holds
+          </a>
+        </div>
+      </div>
 
-      <span class="nav-separator"></span>
-
-      <a routerLink="/inventory" routerLinkActive="active">Inventory</a>
-      <a routerLink="/batches" routerLinkActive="active">Batches</a>
-
-      <span class="nav-separator"></span>
-
-      <a routerLink="/equipment" routerLinkActive="active">Equipment</a>
-      <a routerLink="/holds" routerLinkActive="active">Holds</a>
-
-      <span class="nav-separator"></span>
-
-      <a routerLink="/manage" routerLinkActive="active">Manage</a>
+      <!-- Manage (Admin) -->
+      <a routerLink="/manage" routerLinkActive="active">
+        <i class="fas fa-sliders"></i> Manage
+      </a>
     </nav>
-    <div class="user-menu" *ngIf="currentUser">
-      <span class="user-name">{{ currentUser.fullName }}</span>
-      <button class="btn-logout" (click)="logout()">Logout</button>
+    <!-- User Profile Dropdown -->
+    <div class="user-dropdown" *ngIf="currentUser" (clickOutside)="closeProfileMenu()">
+      <button class="profile-trigger" (click)="toggleProfileMenu()">
+        <div class="user-avatar">
+          {{ getUserInitials() }}
+        </div>
+        <span class="user-name-display">{{ currentUser.fullName }}</span>
+        <i class="fas fa-chevron-down profile-arrow" [class.open]="profileMenuOpen"></i>
+      </button>
+
+      <div class="profile-menu" [class.open]="profileMenuOpen">
+        <div class="profile-header">
+          <div class="profile-avatar-lg">
+            {{ getUserInitials() }}
+          </div>
+          <div class="profile-info">
+            <span class="profile-name">{{ currentUser.fullName }}</span>
+            <span class="profile-email">{{ currentUser.email }}</span>
+            <span class="profile-role">{{ currentUser.role || 'User' }}</span>
+          </div>
+        </div>
+
+        <div class="profile-menu-divider"></div>
+
+        <a class="profile-menu-item" routerLink="/profile" (click)="closeProfileMenu()">
+          <i class="fas fa-user"></i>
+          <span>My Profile</span>
+        </a>
+        <a class="profile-menu-item" routerLink="/change-password" (click)="closeProfileMenu()">
+          <i class="fas fa-key"></i>
+          <span>Change Password</span>
+        </a>
+
+        <div class="profile-menu-divider"></div>
+
+        <button class="profile-menu-item logout-item" (click)="confirmLogout()">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </div>
     </div>
   </div>
 </header>

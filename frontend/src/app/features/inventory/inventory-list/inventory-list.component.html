@@ -1,7 +1,12 @@
 <div class="container">
   <div class="page-header">
     <h1 class="page-title">Inventory</h1>
-    <button class="btn btn-primary" (click)="createInventory()">New Inventory</button>
+    <div class="header-actions">
+      <button class="btn btn-success" (click)="receiveMaterial()">
+        <i class="fas fa-download"></i> Receive Material
+      </button>
+      <button class="btn btn-primary" (click)="createInventory()">New Inventory</button>
+    </div>
   </div>
 
   <div *ngIf="loading" class="text-center">

@@ -1,0 +1,133 @@
+<div class="production-landing-page">
+  <div class="page-header">
+    <h1>Production Confirmation</h1>
+    <button class="btn btn-secondary" (click)="goToHistory()">
+      View History
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading available orders...</div>
+
+  <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+  <div class="content" *ngIf="!loading && !error">
+    <div class="selection-section">
+      <h2>Select Order & Operation</h2>
+
+      <!-- Order Selection (P01) -->
+      <div class="form-group">
+        <label for="orderSelect">Order</label>
+        <select id="orderSelect" (change)="onOrderSelect($event)">
+          <option value="">-- Select an Order --</option>
+          <option *ngFor="let order of availableOrders" [value]="order.orderId">
+            {{ order.orderNumber }} - {{ order.customerName || order.customerId }}
+          </option>
+        </select>
+        <span class="help-text" *ngIf="availableOrders.length === 0">
+          No orders with ready operations available
+        </span>
+      </div>
+
+      <!-- Operation Selection (P02) - Only show when order is selected -->
+      <div class="form-group" *ngIf="selectedOrder">
+        <label for="operationSelect">Operation</label>
+        <select id="operationSelect" (change)="onOperationSelect($event)">
+          <option value="">-- Select an Operation --</option>
+          <option *ngFor="let op of readyOperations" [value]="op.operationId">
+            {{ op.operationName }} ({{ op.operationType || 'Unknown Type' }})
+          </option>
+        </select>
+        <span class="help-text" *ngIf="readyOperations.length === 0">
+          No READY operations found for this order
+        </span>
+      </div>
+
+      <!-- Start Confirmation Button -->
+      <div class="form-actions" *ngIf="selectedOperationId">
+        <button class="btn btn-primary" (click)="startConfirmation()">
+          Start Production Confirmation
+        </button>
+      </div>
+    </div>
+
+    <!-- Order Context Panel (P04) -->
+    <div class="context-panel" *ngIf="selectedOrder">
+      <h3>Order Details</h3>
+      <div class="context-grid">
+        <div class="context-item" *ngFor="let item of orderContext">
+          <span class="context-label">{{ item.label }}</span>
+          <span class="context-value">{{ item.value }}</span>
+        </div>
+      </div>
+
+      <!-- Line Items Summary -->
+      <div class="line-items-summary" *ngIf="selectedOrder?.lineItems?.length">
+        <h4>Line Items</h4>
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Delivery Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lineItem of selectedOrder.lineItems">
+              <td>{{ lineItem.productName || lineItem.productSku }}</td>
+              <td>{{ lineItem.quantity }} {{ lineItem.unit }}</td>
+              <td>{{ lineItem.deliveryDate | date:'shortDate' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="'status-' + lineItem.status?.toLowerCase()">
+                  {{ lineItem.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Selected Operation Details -->
+    <div class="operation-panel" *ngIf="selectedOperationDetails">
+      <h3>Selected Operation</h3>
+      <div class="operation-details">
+        <div class="detail-row">
+          <span class="detail-label">Operation Name</span>
+          <span class="detail-value">{{ selectedOperationDetails.operationName }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedOperationDetails.operationType">
+          <span class="detail-label">Operation Type</span>
+          <span class="detail-value">{{ selectedOperationDetails.operationType }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedOperationDetails.operationCode">
+          <span class="detail-label">Operation Code</span>
+          <span class="detail-value">{{ selectedOperationDetails.operationCode }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Sequence</span>
+          <span class="detail-value">#{{ selectedOperationDetails.sequenceNumber }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="status-badge status-ready">READY</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-panel" *ngIf="!selectedOrder">
+      <h3>Available for Production</h3>
+      <div class="stat-cards">
+        <div class="stat-card">
+          <span class="stat-value">{{ availableOrders.length }}</span>
+          <span class="stat-label">Orders</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ getTotalReadyOperations() }}</span>
+          <span class="stat-label">Ready Operations</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

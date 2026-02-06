@@ -11,18 +11,23 @@ interface DashboardSummary {
   activeHolds: number;
   todayConfirmations: number;
   qualityPendingProcesses: number;
+  batchesPendingApproval: number;
   recentActivity: any[];
-  auditActivity: AuditActivity[];
+  auditActivity: any[];
 }
 
-interface AuditActivity {
-  auditId: number;
-  entityType: string;
-  entityId: number;
-  action: string;
-  description: string;
-  changedBy: string;
-  timestamp: string;
+interface InventoryFlowStage {
+  type: string;
+  label: string;
+  icon: string;
+  count: number;
+  status: 'active' | 'idle' | 'warning';
+}
+
+interface OperationSummary {
+  status: string;
+  count: number;
+  color: string;
 }
 
 @Component({
@@ -33,15 +38,20 @@ interface AuditActivity {
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('inventoryChart') inventoryChartRef!: ElementRef<HTMLDivElement>;
   @ViewChild('orderStatusChart') orderStatusChartRef!: ElementRef<HTMLDivElement>;
-  @ViewChild('operationsChart') operationsChartRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('batchStatusChart') batchStatusChartRef!: ElementRef<HTMLDivElement>;
 
   chartsReady = false;
   dataLoaded = {
     inventory: false,
     orders: false,
-    summary: false
+    summary: false,
+    batches: false
   };
+
+  lastUpdated = new Date();
   allOrders: any[] = [];
+  allBatches: any[] = [];
+
   summary: DashboardSummary = {
     totalOrders: 0,
     ordersInProgress: 0,
@@ -50,11 +60,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     activeHolds: 0,
     todayConfirmations: 0,
     qualityPendingProcesses: 0,
+    batchesPendingApproval: 0,
     recentActivity: [],
     auditActivity: []
   };
 
-  qualityPendingProcesses: any[] = [];
+  // Inventory flow stages (generic: RM → WIP → FG)
+  inventoryFlowStages: InventoryFlowStage[] = [
+    { type: 'RM', label: 'Raw Materials', icon: 'fa-cubes', count: 0, status: 'idle' },
+    { type: 'WIP', label: 'Work in Progress', icon: 'fa-gear', count: 0, status: 'idle' },
+    { type: 'IM', label: 'Intermediates', icon: 'fa-box', count: 0, status: 'idle' },
+    { type: 'FG', label: 'Finished Goods', icon: 'fa-box-check', count: 0, status: 'idle' }
+  ];
+
+  // Operations by status
+  operationsSummary: OperationSummary[] = [];
+  activeOperations: any[] = [];
 
   availableOrders: any[] = [];
   recentBatches: any[] = [];
@@ -62,8 +83,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     total: 0,
     available: 0,
     consumed: 0,
-    onHold: 0
+    onHold: 0,
+    blocked: 0
   };
+
+  blockedInventoryCount = 0;
+  activeBatchCount = 0;
   loading = true;
 
   constructor(
@@ -87,7 +112,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   loadDashboardData(): void {
     this.loading = true;
-    this.dataLoaded = { inventory: false, orders: false, summary: false };
+    this.lastUpdated = new Date();
+    this.dataLoaded = { inventory: false, orders: false, summary: false, batches: false };
 
     // Load dashboard summary
     this.apiService.getDashboardSummary().subscribe({
@@ -111,12 +137,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       error: (err) => console.error('Error loading orders:', err)
     });
 
-    // Load recent batches
+    // Load all batches for chart and recent list
     this.apiService.getAllBatches().subscribe({
       next: (batches) => {
+        this.allBatches = batches;
         this.recentBatches = batches.slice(0, 5);
+        this.activeBatchCount = batches.filter(b =>
+          b.status === 'AVAILABLE' || b.status === 'QUALITY_PENDING' || b.status === 'PRODUCED'
+        ).length;
+        this.dataLoaded.batches = true;
+        this.checkLoadingComplete();
       },
-      error: (err) => console.error('Error loading batches:', err)
+      error: (err) => {
+        console.error('Error loading batches:', err);
+        this.dataLoaded.batches = true;
+        this.checkLoadingComplete();
+      }
     });
 
     // Load inventory summary
@@ -126,6 +162,24 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.inventorySummary.available = inventory.filter(i => i.state === 'AVAILABLE').length;
         this.inventorySummary.consumed = inventory.filter(i => i.state === 'CONSUMED').length;
         this.inventorySummary.onHold = inventory.filter(i => i.state === 'ON_HOLD').length;
+        this.inventorySummary.blocked = inventory.filter(i => i.state === 'BLOCKED').length;
+        this.blockedInventoryCount = this.inventorySummary.blocked;
+
+        // Update inventory flow stages (generic pipeline)
+        const rmCount = inventory.filter(i => i.inventoryType === 'RM' && i.state === 'AVAILABLE').length;
+        const wipCount = inventory.filter(i => i.inventoryType === 'WIP' && i.state === 'AVAILABLE').length;
+        const imCount = inventory.filter(i => i.inventoryType === 'IM' && i.state === 'AVAILABLE').length;
+        const fgCount = inventory.filter(i => i.inventoryType === 'FG' && i.state === 'AVAILABLE').length;
+
+        this.inventoryFlowStages[0].count = rmCount;
+        this.inventoryFlowStages[0].status = rmCount > 0 ? 'active' : 'idle';
+        this.inventoryFlowStages[1].count = wipCount;
+        this.inventoryFlowStages[1].status = wipCount > 0 ? 'active' : 'idle';
+        this.inventoryFlowStages[2].count = imCount;
+        this.inventoryFlowStages[2].status = imCount > 0 ? 'active' : 'idle';
+        this.inventoryFlowStages[3].count = fgCount;
+        this.inventoryFlowStages[3].status = fgCount > 0 ? 'active' : 'idle';
+
         this.dataLoaded.inventory = true;
         this.checkLoadingComplete();
       },
@@ -153,18 +207,60 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     // Load quality pending processes
     this.apiService.getQualityPendingProcesses().subscribe({
       next: (processes) => {
-        this.qualityPendingProcesses = processes;
         this.summary.qualityPendingProcesses = processes.length;
       },
       error: (err) => console.error('Error loading quality pending processes:', err)
     });
+
+    // Load all operations to build operations summary by status
+    this.apiService.getAllOperations().subscribe({
+      next: (operations) => {
+        // Count operations by status
+        const statusCounts: Record<string, number> = {};
+        operations.forEach(op => {
+          statusCounts[op.status] = (statusCounts[op.status] || 0) + 1;
+        });
+
+        // Build operations summary
+        const statusColors: Record<string, string> = {
+          'NOT_STARTED': '#9e9e9e',
+          'READY': '#4caf50',
+          'IN_PROGRESS': '#1976d2',
+          'CONFIRMED': '#388e3c',
+          'ON_HOLD': '#f44336',
+          'BLOCKED': '#d32f2f'
+        };
+
+        this.operationsSummary = Object.keys(statusCounts).map(status => ({
+          status,
+          count: statusCounts[status],
+          color: statusColors[status] || '#666'
+        })).sort((a, b) => {
+          const order = ['NOT_STARTED', 'READY', 'IN_PROGRESS', 'CONFIRMED', 'ON_HOLD', 'BLOCKED'];
+          return order.indexOf(a.status) - order.indexOf(b.status);
+        });
+
+        // Get active operations (IN_PROGRESS) for display
+        this.activeOperations = operations
+          .filter(op => op.status === 'IN_PROGRESS')
+          .slice(0, 5);
+      },
+      error: () => {}
+    });
   }
 
   private checkLoadingComplete(): void {
-    if (this.dataLoaded.inventory && this.dataLoaded.orders && this.dataLoaded.summary) {
+    if (this.dataLoaded.inventory && this.dataLoaded.orders && this.dataLoaded.summary && this.dataLoaded.batches) {
       this.loading = false;
       this.tryBuildCharts();
     }
+  }
+
+  hasAlerts(): boolean {
+    return this.summary.activeHolds > 0 ||
+           this.summary.batchesPendingApproval > 0 ||
+           this.summary.qualityPendingProcesses > 0 ||
+           this.blockedInventoryCount > 0;
   }
 
   navigateToQualityPending(): void {
@@ -187,21 +283,43 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.router.navigate(['/orders']);
   }
 
+  navigateToInventory(): void {
+    this.router.navigate(['/inventory']);
+  }
+
+  navigateToBatches(): void {
+    this.router.navigate(['/batches']);
+  }
+
+  navigateToBatchApproval(): void {
+    this.router.navigate(['/batches'], { queryParams: { status: 'QUALITY_PENDING' } });
+  }
+
+  navigateToBlockedInventory(): void {
+    this.router.navigate(['/inventory'], { queryParams: { state: 'BLOCKED' } });
+  }
+
+  navigateToInventoryType(type: string): void {
+    this.router.navigate(['/inventory'], { queryParams: { type } });
+  }
+
+  navigateToOperationsByStatus(status: string): void {
+    this.router.navigate(['/orders'], { queryParams: { operationStatus: status } });
+  }
+
   private tryBuildCharts(): void {
     if (!this.chartsReady || this.loading) return;
-    // Use setTimeout to ensure DOM is stable after Angular change detection
     setTimeout(() => {
       this.buildInventoryChart();
       this.buildOrderStatusChart();
-      this.buildOperationsChart();
+      this.buildBatchStatusChart();
     }, 0);
   }
 
   private buildInventoryChart(): void {
     if (!this.inventoryChartRef) return;
-    const chart = this.chartService.initChart(this.inventoryChartRef.nativeElement, 'dashboard-inventory');
+    this.chartService.initChart(this.inventoryChartRef.nativeElement, 'dashboard-inventory');
     this.chartService.setOption('dashboard-inventory', {
-      title: { text: 'Inventory Distribution', left: 'center', textStyle: { fontSize: CHART_FONT.title, fontWeight: 500 } },
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', textStyle: { fontSize: CHART_FONT.tooltip } },
       legend: { bottom: 0, left: 'center', textStyle: { fontSize: CHART_FONT.label } },
       series: [{
@@ -215,7 +333,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         data: [
           { value: this.inventorySummary.available, name: 'Available', itemStyle: { color: '#4caf50' } },
           { value: this.inventorySummary.consumed, name: 'Consumed', itemStyle: { color: '#9e9e9e' } },
-          { value: this.inventorySummary.onHold, name: 'On Hold', itemStyle: { color: '#ff9800' } }
+          { value: this.inventorySummary.onHold, name: 'On Hold', itemStyle: { color: '#ff9800' } },
+          { value: this.inventorySummary.blocked, name: 'Blocked', itemStyle: { color: '#f44336' } }
         ].filter(d => d.value > 0)
       }]
     });
@@ -237,12 +356,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       'ON_HOLD': '#f44336'
     };
     const statuses = Object.keys(statusCounts);
-    const chart = this.chartService.initChart(this.orderStatusChartRef.nativeElement, 'dashboard-orders');
+    this.chartService.initChart(this.orderStatusChartRef.nativeElement, 'dashboard-orders');
     this.chartService.setOption('dashboard-orders', {
-      title: { text: 'Order Status Breakdown', left: 'center', textStyle: { fontSize: CHART_FONT.title, fontWeight: 500 } },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { fontSize: CHART_FONT.tooltip } },
-      grid: { left: 40, right: 20, bottom: 30, top: 40 },
-      xAxis: { type: 'category', data: statuses, axisLabel: { fontSize: CHART_FONT.axisLabel } },
+      grid: { left: 40, right: 20, bottom: 30, top: 20 },
+      xAxis: { type: 'category', data: statuses, axisLabel: { fontSize: CHART_FONT.axisLabel, rotate: 30 } },
       yAxis: { type: 'value', minInterval: 1 },
       series: [{
         type: 'bar',
@@ -256,66 +374,37 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  private buildOperationsChart(): void {
-    if (!this.operationsChartRef) return;
-    const chart = this.chartService.initChart(this.operationsChartRef.nativeElement, 'dashboard-operations');
-    this.chartService.setOption('dashboard-operations', {
-      title: { text: 'Operations Overview', left: 'center', textStyle: { fontSize: CHART_FONT.title, fontWeight: 500 } },
+  private buildBatchStatusChart(): void {
+    if (!this.batchStatusChartRef || this.allBatches.length === 0) return;
+    const statusCounts: Record<string, number> = {};
+    this.allBatches.forEach(b => {
+      statusCounts[b.status] = (statusCounts[b.status] || 0) + 1;
+    });
+    const statusColors: Record<string, string> = {
+      'QUALITY_PENDING': '#ff9800',
+      'AVAILABLE': '#4caf50',
+      'PRODUCED': '#1976d2',
+      'CONSUMED': '#9e9e9e',
+      'BLOCKED': '#f44336',
+      'SCRAPPED': '#795548',
+      'ON_HOLD': '#e91e63'
+    };
+    const statuses = Object.keys(statusCounts);
+    this.chartService.initChart(this.batchStatusChartRef.nativeElement, 'dashboard-batches');
+    this.chartService.setOption('dashboard-batches', {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { fontSize: CHART_FONT.tooltip } },
-      grid: { left: 40, right: 20, bottom: 30, top: 40 },
-      xAxis: { type: 'category', data: ['Ready', 'In Progress'], axisLabel: { fontSize: CHART_FONT.axisLabel } },
+      grid: { left: 40, right: 20, bottom: 30, top: 20 },
+      xAxis: { type: 'category', data: statuses, axisLabel: { fontSize: CHART_FONT.axisLabel, rotate: 30 } },
       yAxis: { type: 'value', minInterval: 1 },
       series: [{
         type: 'bar',
-        data: [
-          { value: this.summary.operationsReady, itemStyle: { color: '#4caf50' } },
-          { value: this.summary.operationsInProgress, itemStyle: { color: '#1976d2' } }
-        ],
-        barMaxWidth: 60,
+        data: statuses.map(s => ({
+          value: statusCounts[s],
+          itemStyle: { color: statusColors[s] || '#1976d2' }
+        })),
+        barMaxWidth: 40,
         itemStyle: { borderRadius: [4, 4, 0, 0] }
       }]
     });
-  }
-
-  getAuditIcon(action: string): string {
-    switch (action) {
-      case 'CREATE':
-        return 'fa-plus';
-      case 'STATUS_CHANGE':
-        return 'fa-arrows-left-right';
-      case 'CONSUME':
-        return 'fa-minus';
-      case 'PRODUCE':
-        return 'fa-gear';
-      case 'HOLD':
-        return 'fa-pause';
-      case 'RELEASE':
-        return 'fa-play';
-      case 'UPDATE':
-        return 'fa-pencil';
-      default:
-        return 'fa-circle-dot';
-    }
-  }
-
-  getAuditIconClass(action: string): string {
-    switch (action) {
-      case 'CREATE':
-        return 'audit-icon-create';
-      case 'STATUS_CHANGE':
-        return 'audit-icon-status';
-      case 'CONSUME':
-        return 'audit-icon-consume';
-      case 'PRODUCE':
-        return 'audit-icon-produce';
-      case 'HOLD':
-        return 'audit-icon-hold';
-      case 'RELEASE':
-        return 'audit-icon-release';
-      case 'UPDATE':
-        return 'audit-icon-update';
-      default:
-        return 'audit-icon-default';
-    }
   }
 }

@@ -23,6 +23,8 @@ public class DashboardDTO {
         private Long activeHolds;
         private Long todayConfirmations;
         private Long qualityPendingProcesses;
+        // Batch approval queue count (QUALITY_PENDING status)
+        private Long batchesPendingApproval;
         private List<RecentActivity> recentActivity;
         private List<AuditActivity> auditActivity;
     }

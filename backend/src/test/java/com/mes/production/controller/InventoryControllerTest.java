@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.production.dto.InventoryDTO;
 import com.mes.production.security.JwtService;
 import com.mes.production.service.InventoryService;
+import com.mes.production.service.ReceiveMaterialService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ class InventoryControllerTest {
 
     @MockBean
     private InventoryService inventoryService;
+
+    @MockBean
+    private ReceiveMaterialService receiveMaterialService;
 
     @MockBean
     private JwtService jwtService;
@@ -390,6 +394,144 @@ class InventoryControllerTest {
                 .thenThrow(new RuntimeException("Cannot delete consumed inventory"));
 
         mockMvc.perform(delete("/api/inventory/1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ========================================
+    // Receive Material Tests (RM Entry)
+    // ========================================
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("Should receive raw material and return 201")
+    void receiveMaterial_ValidRequest_Returns201() throws Exception {
+        InventoryDTO.ReceiveMaterialRequest request = InventoryDTO.ReceiveMaterialRequest.builder()
+                .materialId("RM-001")
+                .materialName("Iron Ore")
+                .quantity(new BigDecimal("1000.00"))
+                .unit("KG")
+                .supplierBatchNumber("SUP-BATCH-001")
+                .supplierId("SUP-001")
+                .location("WH-01")
+                .notes("Quality check required")
+                .build();
+
+        InventoryDTO.ReceiveMaterialResponse response = InventoryDTO.ReceiveMaterialResponse.builder()
+                .batchId(1L)
+                .batchNumber("RM-RM001-20260206-001")
+                .inventoryId(1L)
+                .batchStatus("QUALITY_PENDING")
+                .inventoryState("AVAILABLE")
+                .quantity(new BigDecimal("1000.00"))
+                .unit("KG")
+                .message("Raw material received successfully. Batch pending quality approval.")
+                .build();
+
+        when(receiveMaterialService.receiveMaterial(any(InventoryDTO.ReceiveMaterialRequest.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/api/inventory/receive-material")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.batchId").value(1))
+                .andExpect(jsonPath("$.batchNumber").value("RM-RM001-20260206-001"))
+                .andExpect(jsonPath("$.inventoryId").value(1))
+                .andExpect(jsonPath("$.batchStatus").value("QUALITY_PENDING"))
+                .andExpect(jsonPath("$.inventoryState").value("AVAILABLE"))
+                .andExpect(jsonPath("$.quantity").value(1000.00))
+                .andExpect(jsonPath("$.unit").value("KG"));
+
+        verify(receiveMaterialService).receiveMaterial(any(InventoryDTO.ReceiveMaterialRequest.class));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("Should receive material with minimal fields")
+    void receiveMaterial_MinimalFields_Returns201() throws Exception {
+        InventoryDTO.ReceiveMaterialRequest request = InventoryDTO.ReceiveMaterialRequest.builder()
+                .materialId("RM-002")
+                .quantity(new BigDecimal("500.00"))
+                .build();
+
+        InventoryDTO.ReceiveMaterialResponse response = InventoryDTO.ReceiveMaterialResponse.builder()
+                .batchId(2L)
+                .batchNumber("RM-RM002-20260206-001")
+                .inventoryId(2L)
+                .batchStatus("QUALITY_PENDING")
+                .inventoryState("AVAILABLE")
+                .quantity(new BigDecimal("500.00"))
+                .unit("KG")
+                .message("Raw material received successfully. Batch pending quality approval.")
+                .build();
+
+        when(receiveMaterialService.receiveMaterial(any(InventoryDTO.ReceiveMaterialRequest.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/api/inventory/receive-material")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.batchId").value(2))
+                .andExpect(jsonPath("$.batchStatus").value("QUALITY_PENDING"));
+
+        verify(receiveMaterialService).receiveMaterial(any(InventoryDTO.ReceiveMaterialRequest.class));
+    }
+
+    @Test
+    @DisplayName("Should return 401 when receiving material without authentication")
+    void receiveMaterial_NotAuthenticated_Returns401() throws Exception {
+        InventoryDTO.ReceiveMaterialRequest request = InventoryDTO.ReceiveMaterialRequest.builder()
+                .materialId("RM-001")
+                .quantity(new BigDecimal("100.00"))
+                .build();
+
+        mockMvc.perform(post("/api/inventory/receive-material")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("Should return 400 when material ID is missing")
+    void receiveMaterial_MissingMaterialId_Returns400() throws Exception {
+        InventoryDTO.ReceiveMaterialRequest request = InventoryDTO.ReceiveMaterialRequest.builder()
+                .quantity(new BigDecimal("100.00"))
+                .build();
+
+        mockMvc.perform(post("/api/inventory/receive-material")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("Should return 400 when quantity is missing")
+    void receiveMaterial_MissingQuantity_Returns400() throws Exception {
+        InventoryDTO.ReceiveMaterialRequest request = InventoryDTO.ReceiveMaterialRequest.builder()
+                .materialId("RM-001")
+                .build();
+
+        mockMvc.perform(post("/api/inventory/receive-material")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@mes.com")
+    @DisplayName("Should return 400 when quantity is zero or negative")
+    void receiveMaterial_InvalidQuantity_Returns400() throws Exception {
+        InventoryDTO.ReceiveMaterialRequest request = InventoryDTO.ReceiveMaterialRequest.builder()
+                .materialId("RM-001")
+                .quantity(new BigDecimal("-10.00"))
+                .build();
+
+        mockMvc.perform(post("/api/inventory/receive-material")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 }

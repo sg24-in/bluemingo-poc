@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Batch } from '../../../shared/models';
 import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
@@ -25,13 +25,23 @@ export class BatchListComponent implements OnInit {
   filterStatus = '';
   searchTerm = '';
 
+  // Approval processing
+  processingBatch: number | null = null;
+
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadBatches();
+    // Read initial status from query params (e.g., ?status=QUALITY_PENDING)
+    this.route.queryParams.subscribe(params => {
+      if (params['status']) {
+        this.filterStatus = params['status'];
+      }
+      this.loadBatches();
+    });
   }
 
   loadBatches(): void {
@@ -124,5 +134,47 @@ export class BatchListComponent implements OnInit {
   canDelete(batch: Batch): boolean {
     const status = batch.status || batch.state;
     return status !== 'CONSUMED' && status !== 'SCRAPPED';
+  }
+
+  canApprove(batch: Batch): boolean {
+    const status = batch.status || batch.state;
+    return status === 'QUALITY_PENDING' || status === 'PRODUCED';
+  }
+
+  approveBatch(batch: Batch): void {
+    if (!confirm(`Approve batch ${batch.batchNumber} for release?`)) {
+      return;
+    }
+
+    this.processingBatch = batch.batchId;
+    this.apiService.approveBatch(batch.batchId).subscribe({
+      next: () => {
+        this.processingBatch = null;
+        this.loadBatches();
+      },
+      error: (err) => {
+        this.processingBatch = null;
+        alert(err.error?.message || 'Failed to approve batch.');
+      }
+    });
+  }
+
+  rejectBatch(batch: Batch): void {
+    const reason = prompt(`Enter reason for rejecting batch ${batch.batchNumber}:`);
+    if (!reason) {
+      return;
+    }
+
+    this.processingBatch = batch.batchId;
+    this.apiService.rejectBatch(batch.batchId, reason).subscribe({
+      next: () => {
+        this.processingBatch = null;
+        this.loadBatches();
+      },
+      error: (err) => {
+        this.processingBatch = null;
+        alert(err.error?.message || 'Failed to reject batch.');
+      }
+    });
   }
 }

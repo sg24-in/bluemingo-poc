@@ -215,6 +215,18 @@ public class BatchController {
     }
 
     /**
+     * Get batches pending quality approval (QUALITY_PENDING status)
+     * Per MES Batch Management Specification: batches default to QUALITY_PENDING
+     * and require approval before becoming AVAILABLE.
+     */
+    @GetMapping("/pending-approval")
+    public ResponseEntity<List<BatchDTO>> getPendingApprovalBatches() {
+        log.info("GET /api/batches/pending-approval");
+        List<BatchDTO> batches = batchService.getBatchesByStatus("QUALITY_PENDING");
+        return ResponseEntity.ok(batches);
+    }
+
+    /**
      * Send batch for quality check
      */
     @PostMapping("/{batchId}/quality-check")

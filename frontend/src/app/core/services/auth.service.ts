@@ -25,6 +25,7 @@ export interface LoginResponse {
 export interface User {
   email: string;
   fullName: string;
+  role?: string;
 }
 
 @Injectable({

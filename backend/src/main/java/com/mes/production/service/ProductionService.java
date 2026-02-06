@@ -41,6 +41,7 @@ public class ProductionService {
     private final InventoryMovementService inventoryMovementService;
     private final ProcessParameterService processParameterService;
     private final BatchNumberService batchNumberService;
+    private final InventoryStateValidator inventoryStateValidator;
 
     /**
      * Confirm production for an operation
@@ -100,20 +101,12 @@ public class ProductionService {
             Inventory inventory = inventoryRepository.findById(consumption.getInventoryId())
                     .orElseThrow(() -> new RuntimeException("Inventory not found: " + consumption.getInventoryId()));
 
-            if (!"AVAILABLE".equals(inventory.getState())) {
-                throw new RuntimeException("Inventory is not available: " + consumption.getInventoryId());
-            }
-
-            // Check if inventory is on hold
-            if (holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("INVENTORY", inventory.getInventoryId(), "ACTIVE")) {
-                throw new RuntimeException("Inventory is on hold and cannot be consumed: " + consumption.getInventoryId());
-            }
-
-            // Check if batch is on hold
-            if (inventory.getBatch() != null &&
-                holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("BATCH", inventory.getBatch().getBatchId(), "ACTIVE")) {
-                throw new RuntimeException("Batch is on hold and cannot be consumed: " + consumption.getBatchId());
-            }
+            // Use centralized state validator to check consumption is allowed
+            // This validates: state is AVAILABLE or RESERVED (for this order), no active holds on inventory/batch
+            Long orderId = operation.getProcess() != null && operation.getProcess().getOrderLineItem() != null
+                    ? operation.getProcess().getOrderLineItem().getOrder().getOrderId()
+                    : null;
+            inventoryStateValidator.validateConsumption(inventory, orderId);
 
             // Validate quantity
             if (consumption.getQuantity().compareTo(inventory.getQuantity()) > 0) {
@@ -334,6 +327,8 @@ public class ProductionService {
         String materialId = "IM-" + operation.getOperationType().toUpperCase();
         String materialName = operation.getOperationName() + " Output";
 
+        // Per MES Batch Management Specification: Batches created during production
+        // enter QUALITY_PENDING status and require approval before becoming AVAILABLE
         Batch batch = Batch.builder()
                 .batchNumber(batchNumber)
                 .materialId(materialId)
@@ -341,7 +336,7 @@ public class ProductionService {
                 .quantity(quantity)
                 .unit("T")
                 .generatedAtOperationId(operation.getOperationId())
-                .status("AVAILABLE")
+                .status(Batch.STATUS_QUALITY_PENDING)
                 .createdVia(Batch.CREATED_VIA_PRODUCTION)
                 .createdBy(currentUser)
                 .build();

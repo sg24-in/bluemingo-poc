@@ -145,7 +145,7 @@
               <input
                 type="number"
                 id="newQuantity"
-                [formControl]="adjustmentForm.controls['newQuantity']"
+                [formControl]="newQuantityControl"
                 [class.error]="hasAdjustmentError('newQuantity')"
                 step="0.01"
                 min="0"
@@ -159,7 +159,7 @@
               <label for="adjustmentType">Adjustment Type *</label>
               <select
                 id="adjustmentType"
-                [formControl]="adjustmentForm.controls['adjustmentType']"
+                [formControl]="adjustmentTypeControl"
               >
                 <option *ngFor="let type of adjustmentTypes" [value]="type.value">
                   {{ type.label }}
@@ -173,7 +173,7 @@
               <label for="reason">Reason for Adjustment * (min 10 characters)</label>
               <textarea
                 id="reason"
-                [formControl]="adjustmentForm.controls['reason']"
+                [formControl]="reasonControl"
                 [class.error]="hasAdjustmentError('reason')"
                 rows="3"
                 placeholder="Explain why this quantity adjustment is needed..."

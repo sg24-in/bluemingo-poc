@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Batch } from '../../../shared/models';
@@ -82,6 +82,19 @@ export class BatchFormComponent implements OnInit {
       adjustmentType: ['CORRECTION', Validators.required],
       reason: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]]
     });
+  }
+
+  // Typed getters for adjustment form controls
+  get newQuantityControl(): FormControl {
+    return this.adjustmentForm.get('newQuantity') as FormControl;
+  }
+
+  get adjustmentTypeControl(): FormControl {
+    return this.adjustmentForm.get('adjustmentType') as FormControl;
+  }
+
+  get reasonControl(): FormControl {
+    return this.adjustmentForm.get('reason') as FormControl;
   }
 
   loadBatch(): void {

@@ -1,0 +1,1 @@
+var a=[10,20,50,100];function i(t){let o={};return t.page!==void 0&&(o.page=t.page),t.size!==void 0&&(o.size=t.size),t.sortBy&&(o.sortBy=t.sortBy),t.sortDirection&&(o.sortDirection=t.sortDirection),t.search&&(o.search=t.search),t.status&&(o.status=t.status),t.type&&(o.type=t.type),t.dateFrom&&(o.dateFrom=t.dateFrom),t.dateTo&&(o.dateTo=t.dateTo),o}export{a,i as b};

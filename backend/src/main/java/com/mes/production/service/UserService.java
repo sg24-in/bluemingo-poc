@@ -152,7 +152,27 @@ public class UserService {
     }
 
     /**
-     * Change user's own password
+     * Change user's own password (by email/username from JWT)
+     */
+    @Transactional
+    public void changePasswordByEmail(String email, UserDTO.ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setUpdatedBy(email);
+        userRepository.save(user);
+
+        auditService.logUpdate("USER", user.getUserId(), "password", null, "Password changed");
+    }
+
+    /**
+     * Change user's own password (by user ID)
      */
     @Transactional
     public void changePassword(Long userId, UserDTO.ChangePasswordRequest request) {

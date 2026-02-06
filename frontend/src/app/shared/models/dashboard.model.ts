@@ -16,6 +16,8 @@ export interface DashboardSummary {
   activeHolds: number;
   todayConfirmations: number;
   qualityPendingProcesses: number;
+  // Batches in QUALITY_PENDING status awaiting approval
+  batchesPendingApproval: number;
   recentActivity: RecentActivity[];
   auditActivity: AuditActivity[];
 }
