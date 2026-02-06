@@ -158,12 +158,17 @@ public class BomValidationService {
         Operation operation = operationRepository.findByIdWithDetails(operationId)
                 .orElseThrow(() -> new RuntimeException("Operation not found: " + operationId));
 
-        String productSku = operation.getProcess().getOrderLineItem().getProductSku();
-        BigDecimal targetQty = operation.getTargetQty() != null ? operation.getTargetQty() :
-                operation.getProcess().getOrderLineItem().getQuantity();
+        // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
+        if (operation.getOrderLineItem() == null) {
+            throw new RuntimeException("Operation has no OrderLineItem: " + operationId);
+        }
 
-        // Get BOM requirements for the product at the operation's process level
-        Integer processLevel = operation.getProcess().getStageSequence();
+        String productSku = operation.getOrderLineItem().getProductSku();
+        BigDecimal targetQty = operation.getTargetQty() != null ? operation.getTargetQty() :
+                operation.getOrderLineItem().getQuantity();
+
+        // Get BOM requirements for the product at the operation's sequence level
+        Integer processLevel = operation.getSequenceNumber();
         List<BillOfMaterial> bomList = bomRepository.findByProductSkuAndSequenceLevel(productSku, processLevel);
 
         // If no level-specific BOM, get all active BOM entries

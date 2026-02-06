@@ -15,8 +15,6 @@ import java.util.List;
  *
  * Routings define the sequence of operations (routing steps) for a Process.
  * Per spec: Routing has ProcessID FK linking to Process entity.
- *
- * Additionally supports optional ProcessTemplate reference for design-time management.
  */
 @Entity
 @Table(name = "routing")
@@ -31,15 +29,10 @@ public class Routing {
     @Column(name = "routing_id")
     private Long routingId;
 
-    // Per spec: ProcessID (FK → Processes) - runtime reference
+    // Per spec: ProcessID (FK → Processes)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "process_id")
     private Process process;
-
-    // Design-time template reference (optional, for template management)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "process_template_id")
-    private ProcessTemplate processTemplate;
 
     @Column(name = "routing_name", nullable = false, length = 100)
     private String routingName;

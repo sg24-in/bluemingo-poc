@@ -169,11 +169,12 @@ public class OperationService {
         OperationDTO dto = convertToDTO(operation);
         if (operation.getProcess() != null) {
             dto.setProcessName(operation.getProcess().getProcessName());
-            if (operation.getProcess().getOrderLineItem() != null) {
-                dto.setProductSku(operation.getProcess().getOrderLineItem().getProductSku());
-                if (operation.getProcess().getOrderLineItem().getOrder() != null) {
-                    dto.setOrderNumber(String.valueOf(operation.getProcess().getOrderLineItem().getOrder().getOrderId()));
-                }
+        }
+        // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
+        if (operation.getOrderLineItem() != null) {
+            dto.setProductSku(operation.getOrderLineItem().getProductSku());
+            if (operation.getOrderLineItem().getOrder() != null) {
+                dto.setOrderNumber(String.valueOf(operation.getOrderLineItem().getOrder().getOrderId()));
             }
         }
         return dto;

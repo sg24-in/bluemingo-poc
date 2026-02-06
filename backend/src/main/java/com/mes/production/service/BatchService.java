@@ -134,11 +134,15 @@ public class BatchService {
             Operation op = operationRepository.findByIdWithDetails(batch.getGeneratedAtOperationId())
                     .orElse(null);
             if (op != null) {
+                String orderId = null;
+                if (op.getOrderLineItem() != null && op.getOrderLineItem().getOrder() != null) {
+                    orderId = op.getOrderLineItem().getOrder().getOrderId().toString();
+                }
                 productionInfo = BatchDTO.ProductionInfo.builder()
                         .operationId(op.getOperationId())
                         .operationName(op.getOperationName())
-                        .processName(op.getProcess().getProcessName())
-                        .orderId(op.getProcess().getOrderLineItem().getOrder().getOrderId().toString())
+                        .processName(op.getProcess() != null ? op.getProcess().getProcessName() : null)
+                        .orderId(orderId)
                         .productionDate(batch.getCreatedOn())
                         .build();
             }

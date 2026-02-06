@@ -16,8 +16,8 @@ export const OperationStatus = {
 } as const;
 export type OperationStatusType = typeof OperationStatus[keyof typeof OperationStatus];
 
-// Process Instance Status (runtime)
-export const ProcessInstanceStatus = {
+// Process Status (design-time process entity)
+export const ProcessStatus = {
   READY: 'READY',
   IN_PROGRESS: 'IN_PROGRESS',
   QUALITY_PENDING: 'QUALITY_PENDING',
@@ -25,11 +25,7 @@ export const ProcessInstanceStatus = {
   REJECTED: 'REJECTED',
   ON_HOLD: 'ON_HOLD'
 } as const;
-export type ProcessInstanceStatusType = typeof ProcessInstanceStatus[keyof typeof ProcessInstanceStatus];
-
-// Backward compatibility alias
-export const ProcessStatus = ProcessInstanceStatus;
-export type ProcessStatusType = ProcessInstanceStatusType;
+export type ProcessStatusType = typeof ProcessStatus[keyof typeof ProcessStatus];
 
 // Process Quality Decision
 export const ProcessDecision = {
@@ -137,7 +133,6 @@ export type AuditActionType = typeof AuditAction[keyof typeof AuditAction];
 export const EntityType = {
   OPERATION: 'OPERATION',
   PROCESS: 'PROCESS',
-  PROCESS_INSTANCE: 'PROCESS_INSTANCE',
   ORDER: 'ORDER',
   ORDER_LINE: 'ORDER_LINE',
   INVENTORY: 'INVENTORY',

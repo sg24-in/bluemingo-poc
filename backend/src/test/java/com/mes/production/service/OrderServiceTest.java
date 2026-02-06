@@ -70,6 +70,13 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Process is design-time only entity (no OrderLineItem reference)
+        testProcess = Process.builder()
+                .processId(1L)
+                .processName("Melting Stage")
+                .status("IN_PROGRESS")
+                .build();
+
         testOperation = Operation.builder()
                 .operationId(1L)
                 .operationName("Melting")
@@ -77,16 +84,8 @@ class OrderServiceTest {
                 .operationType("MELTING")
                 .sequenceNumber(1)
                 .status("READY")
+                .process(testProcess)
                 .build();
-
-        testProcess = Process.builder()
-                .processId(1L)
-                .processName("Melting Stage")
-                .stageSequence(1)
-                .status("IN_PROGRESS")
-                .operations(new ArrayList<>(List.of(testOperation)))
-                .build();
-        testOperation.setProcess(testProcess);
 
         testOrderLine = OrderLineItem.builder()
                 .orderLineId(1L)
@@ -95,9 +94,9 @@ class OrderServiceTest {
                 .quantity(BigDecimal.valueOf(100))
                 .unit("T")
                 .status("IN_PROGRESS")
-                .processes(new ArrayList<>(List.of(testProcess)))
+                .operations(new ArrayList<>(List.of(testOperation)))
                 .build();
-        testProcess.setOrderLineItem(testOrderLine);
+        testOperation.setOrderLineItem(testOrderLine);
 
         testOrder = Order.builder()
                 .orderId(1L)
@@ -189,23 +188,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Should include processes in order response")
-    void getOrderById_IncludesProcesses() {
-        // Arrange
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
-
-        // Act
-        OrderDTO result = orderService.getOrderById(1L);
-
-        // Assert
-        assertNotNull(result);
-        assertNotNull(result.getLineItems());
-        assertFalse(result.getLineItems().isEmpty());
-        assertNotNull(result.getLineItems().get(0).getProcesses());
-    }
-
-    @Test
-    @DisplayName("Should include operations in process response")
+    @DisplayName("Should include operations in order line item response")
     void getOrderById_IncludesOperations() {
         // Arrange
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
@@ -217,11 +200,9 @@ class OrderServiceTest {
         assertNotNull(result);
         assertNotNull(result.getLineItems());
         assertFalse(result.getLineItems().isEmpty());
-
-        var processes = result.getLineItems().get(0).getProcesses();
-        assertNotNull(processes);
-        assertFalse(processes.isEmpty());
-        assertNotNull(processes.get(0).getOperations());
+        // Operations are now directly on OrderLineItem (not via Process)
+        assertNotNull(result.getLineItems().get(0).getOperations());
+        assertFalse(result.getLineItems().get(0).getOperations().isEmpty());
     }
 
     @Nested

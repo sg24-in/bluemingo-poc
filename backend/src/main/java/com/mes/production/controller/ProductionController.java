@@ -37,22 +37,31 @@ public class ProductionController {
 
         var operation = productionService.getOperationDetails(operationId);
 
+        // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
+        java.util.Map<String, Object> processInfo = new java.util.LinkedHashMap<>();
+        if (operation.getProcess() != null) {
+            processInfo.put("processId", operation.getProcess().getProcessId());
+            processInfo.put("processName", operation.getProcess().getProcessName());
+        }
+
+        java.util.Map<String, Object> orderInfo = new java.util.LinkedHashMap<>();
+        if (operation.getOrderLineItem() != null) {
+            if (operation.getOrderLineItem().getOrder() != null) {
+                orderInfo.put("orderId", operation.getOrderLineItem().getOrder().getOrderId());
+            }
+            orderInfo.put("productSku", operation.getOrderLineItem().getProductSku());
+            orderInfo.put("productName", operation.getOrderLineItem().getProductName());
+            orderInfo.put("quantity", operation.getOrderLineItem().getQuantity());
+        }
+
         return ResponseEntity.ok(Map.of(
                 "operationId", operation.getOperationId(),
                 "operationName", operation.getOperationName(),
-                "operationCode", operation.getOperationCode(),
-                "operationType", operation.getOperationType(),
+                "operationCode", operation.getOperationCode() != null ? operation.getOperationCode() : "",
+                "operationType", operation.getOperationType() != null ? operation.getOperationType() : "",
                 "status", operation.getStatus(),
-                "process", Map.of(
-                        "processId", operation.getProcess().getProcessId(),
-                        "processName", operation.getProcess().getProcessName()
-                ),
-                "order", Map.of(
-                        "orderId", operation.getProcess().getOrderLineItem().getOrder().getOrderId(),
-                        "productSku", operation.getProcess().getOrderLineItem().getProductSku(),
-                        "productName", operation.getProcess().getOrderLineItem().getProductName(),
-                        "quantity", operation.getProcess().getOrderLineItem().getQuantity()
-                )
+                "process", processInfo,
+                "order", orderInfo
         ));
     }
 

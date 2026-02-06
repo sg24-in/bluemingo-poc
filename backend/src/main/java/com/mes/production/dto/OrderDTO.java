@@ -35,21 +35,9 @@ public class OrderDTO {
         private String unit;
         private LocalDate deliveryDate;
         private String status;
-        private List<ProcessDTO> processes;
-        private ProcessDTO currentProcess;
-        private OperationDTO currentOperation;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ProcessDTO {
-        private Long processId;
-        private String processName;
-        private Integer stageSequence;
-        private String status;
+        // Operations now link directly to OrderLineItem (no Process intermediary)
         private List<OperationDTO> operations;
+        private OperationDTO currentOperation;
     }
 
     @Data
@@ -63,5 +51,8 @@ public class OrderDTO {
         private String operationType;
         private Integer sequenceNumber;
         private String status;
+        // Reference to design-time Process (optional)
+        private Long processId;
+        private String processName;
     }
 }

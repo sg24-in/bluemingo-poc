@@ -56,19 +56,14 @@ class OrderControllerTest {
 
     @BeforeEach
     void setUp() {
-        OrderDTO.ProcessDTO processDTO = OrderDTO.ProcessDTO.builder()
+        // Operations are now directly on OrderLineItem (not via Process)
+        OrderDTO.OperationDTO operationDTO = OrderDTO.OperationDTO.builder()
+                .operationId(1L)
+                .operationName("Melt Iron")
+                .operationCode("MLT-001")
+                .status("READY")
                 .processId(1L)
                 .processName("Melting")
-                .stageSequence(1)
-                .status("IN_PROGRESS")
-                .operations(List.of(
-                        OrderDTO.OperationDTO.builder()
-                                .operationId(1L)
-                                .operationName("Melt Iron")
-                                .operationCode("MLT-001")
-                                .status("READY")
-                                .build()
-                ))
                 .build();
 
         OrderDTO.OrderLineDTO lineItem = OrderDTO.OrderLineDTO.builder()
@@ -76,7 +71,7 @@ class OrderControllerTest {
                 .productSku("STEEL-001")
                 .productName("Steel Rod")
                 .quantity(new BigDecimal("1000"))
-                .processes(List.of(processDTO))
+                .operations(List.of(operationDTO))
                 .build();
 
         testOrder = OrderDTO.builder()

@@ -54,7 +54,6 @@ class ProcessServiceTest {
     private ProcessService processService;
 
     private Process testProcess;
-    private OrderLineItem testOrderLineItem;
 
     @BeforeEach
     void setUp() {
@@ -63,17 +62,10 @@ class ProcessServiceTest {
         when(authentication.getName()).thenReturn("admin@mes.com");
         SecurityContextHolder.setContext(securityContext);
 
-        // Setup test data
-        testOrderLineItem = OrderLineItem.builder()
-                .orderLineId(1L)
-                .productSku("STEEL-001")
-                .build();
-
+        // Setup test data - Process is design-time only (no OrderLineItem reference)
         testProcess = Process.builder()
                 .processId(1L)
-                .orderLineItem(testOrderLineItem)
                 .processName("Melting")
-                .stageSequence(1)
                 .status(Process.STATUS_IN_PROGRESS)
                 .createdOn(LocalDateTime.now())
                 .build();

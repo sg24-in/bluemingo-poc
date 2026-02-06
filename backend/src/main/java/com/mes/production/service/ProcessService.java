@@ -20,11 +20,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Service for managing runtime Process entities.
+ * Service for managing Process entities.
  *
  * Per MES Consolidated Specification:
- * - Process is the runtime entity tracking execution for OrderLineItems
- * - ProcessTemplate handles design-time definitions
+ * - Process is design-time entity (ProcessID, ProcessName, Status)
+ * - Operations link to Process via ProcessID
+ * - Runtime tracking happens at Operation level via OrderLineItem FK
  */
 @Service
 @RequiredArgsConstructor
@@ -48,6 +49,16 @@ public class ProcessService {
     );
 
     /**
+     * Get all processes
+     */
+    @Transactional(readOnly = true)
+    public List<ProcessDTO.Response> getAllProcesses() {
+        return processRepository.findAll().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Get process by ID with operations
      */
     @Transactional(readOnly = true)
@@ -68,8 +79,55 @@ public class ProcessService {
     }
 
     /**
+     * Create a new process
+     */
+    @Transactional
+    public ProcessDTO.Response createProcess(ProcessDTO.CreateRequest request) {
+        String currentUser = getCurrentUser();
+
+        Process process = Process.builder()
+                .processName(request.getProcessName())
+                .status(request.getStatus() != null ? request.getStatus() : Process.STATUS_READY)
+                .createdBy(currentUser)
+                .build();
+
+        Process saved = processRepository.save(process);
+        log.info("Created process: {} by {}", saved.getProcessId(), currentUser);
+
+        auditService.logCreate("PROCESS", saved.getProcessId(), saved.getProcessName());
+
+        return toResponse(saved);
+    }
+
+    /**
+     * Update an existing process
+     */
+    @Transactional
+    public ProcessDTO.Response updateProcess(Long processId, ProcessDTO.UpdateRequest request) {
+        Process process = getProcessEntity(processId);
+        String currentUser = getCurrentUser();
+        String oldName = process.getProcessName();
+
+        if (request.getProcessName() != null) {
+            process.setProcessName(request.getProcessName());
+        }
+        if (request.getStatus() != null) {
+            process.setStatus(request.getStatus());
+        }
+
+        process.setUpdatedBy(currentUser);
+        process.setUpdatedOn(LocalDateTime.now());
+
+        Process saved = processRepository.save(process);
+        log.info("Updated process: {} by {}", processId, currentUser);
+
+        auditService.logUpdate("PROCESS", processId, "processName", oldName, saved.getProcessName());
+
+        return toResponse(saved);
+    }
+
+    /**
      * Transition process to QUALITY_PENDING status
-     * This is called when all operations are confirmed and quality inspection is needed
      */
     @Transactional
     public ProcessDTO.StatusUpdateResponse transitionToQualityPending(Long processId, String notes) {
@@ -111,7 +169,6 @@ public class ProcessService {
 
     /**
      * Make quality decision on a process
-     * ACCEPT -> COMPLETED, REJECT -> REJECTED
      */
     @Transactional
     public ProcessDTO.StatusUpdateResponse makeQualityDecision(ProcessDTO.QualityDecisionRequest request) {
@@ -262,31 +319,11 @@ public class ProcessService {
     }
 
     /**
-     * Get processes for an order
-     */
-    @Transactional(readOnly = true)
-    public List<ProcessDTO.Response> getProcessesByOrderId(Long orderId) {
-        return processRepository.findByOrderId(orderId).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Get quality pending processes
      */
     @Transactional(readOnly = true)
     public List<ProcessDTO.Response> getQualityPendingProcesses() {
         return processRepository.findQualityPending().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get processes for an order line
-     */
-    @Transactional(readOnly = true)
-    public List<ProcessDTO.Response> getProcessesByOrderLineId(Long orderLineId) {
-        return processRepository.findByOrderLineIdOrderBySequence(orderLineId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -329,15 +366,14 @@ public class ProcessService {
                             .operationCode(op.getOperationCode())
                             .status(op.getStatus())
                             .sequenceNumber(op.getSequenceNumber())
+                            .orderLineId(op.getOrderLineItem() != null ? op.getOrderLineItem().getOrderLineId() : null)
                             .build())
                     .collect(Collectors.toList());
         }
 
         return ProcessDTO.Response.builder()
                 .processId(process.getProcessId())
-                .orderLineId(process.getOrderLineItem() != null ? process.getOrderLineItem().getOrderLineId() : null)
                 .processName(process.getProcessName())
-                .stageSequence(process.getStageSequence())
                 .status(process.getStatus())
                 .usageDecision(process.getUsageDecision())
                 .createdOn(process.getCreatedOn())

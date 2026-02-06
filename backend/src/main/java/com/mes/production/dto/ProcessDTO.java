@@ -11,11 +11,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * DTOs for runtime Process operations.
+ * DTOs for Process operations.
  *
  * Per MES Consolidated Specification:
- * - Process is the runtime entity (not ProcessInstance)
- * - ProcessTemplate is for design-time definitions
+ * - Process is design-time entity (ProcessID, ProcessName, Status)
+ * - Operations link to Process via ProcessID
+ * - Runtime tracking happens at Operation level via OrderLineItem FK
  */
 public class ProcessDTO {
 
@@ -25,9 +26,7 @@ public class ProcessDTO {
     @AllArgsConstructor
     public static class Response {
         private Long processId;
-        private Long orderLineId;
         private String processName;
-        private Integer stageSequence;
         private String status;
         private String usageDecision;
         private LocalDateTime createdOn;
@@ -47,6 +46,27 @@ public class ProcessDTO {
         private String operationCode;
         private String status;
         private Integer sequenceNumber;
+        private Long orderLineId;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateRequest {
+        @NotBlank(message = "Process name is required")
+        private String processName;
+
+        private String status;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateRequest {
+        private String processName;
+        private String status;
     }
 
     @Data

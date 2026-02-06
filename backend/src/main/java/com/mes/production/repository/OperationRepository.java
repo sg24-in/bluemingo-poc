@@ -13,8 +13,9 @@ import java.util.Optional;
  * Repository for Operation entity.
  *
  * Per MES Consolidated Specification:
- * - Operations belong to Process (not ProcessInstance)
- * - Relationship: Orders → OrderLineItems → Processes → Operations
+ * - Operations link to Process via ProcessID (design-time reference)
+ * - Operations link to OrderLineItem via OrderLineID (runtime tracking)
+ * - Relationship: Orders → OrderLineItems → Operations (direct)
  */
 @Repository
 public interface OperationRepository extends JpaRepository<Operation, Long> {
@@ -25,12 +26,12 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
     List<Operation> findByStatus(String status);
 
     /**
-     * Find ready operations with full details
+     * Find ready operations with full details (via OrderLineItem)
      */
     @Query("SELECT op FROM Operation op " +
-           "JOIN FETCH op.process p " +
-           "JOIN FETCH p.orderLineItem oli " +
-           "JOIN FETCH oli.order o " +
+           "LEFT JOIN FETCH op.process p " +
+           "LEFT JOIN FETCH op.orderLineItem oli " +
+           "LEFT JOIN FETCH oli.order o " +
            "WHERE op.status = 'READY'")
     List<Operation> findReadyOperationsWithDetails();
 
@@ -50,11 +51,22 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
      * Find operation by ID with full details
      */
     @Query("SELECT op FROM Operation op " +
-           "JOIN FETCH op.process p " +
-           "JOIN FETCH p.orderLineItem oli " +
-           "JOIN FETCH oli.order o " +
+           "LEFT JOIN FETCH op.process p " +
+           "LEFT JOIN FETCH op.orderLineItem oli " +
+           "LEFT JOIN FETCH oli.order o " +
            "WHERE op.operationId = :operationId")
     Optional<Operation> findByIdWithDetails(@Param("operationId") Long operationId);
+
+    /**
+     * Find operations by order line item ID
+     */
+    List<Operation> findByOrderLineItem_OrderLineId(Long orderLineId);
+
+    /**
+     * Find operations by order line item ID ordered by sequence
+     */
+    @Query("SELECT op FROM Operation op WHERE op.orderLineItem.orderLineId = :orderLineId ORDER BY op.sequenceNumber")
+    List<Operation> findByOrderLineIdOrderBySequence(@Param("orderLineId") Long orderLineId);
 
     /**
      * Count operations by status

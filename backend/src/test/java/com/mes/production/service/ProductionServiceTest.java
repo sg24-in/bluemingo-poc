@@ -105,16 +105,18 @@ class ProductionServiceTest {
                 .quantity(BigDecimal.valueOf(100))
                 .build();
 
+        // Process is design-time only (no OrderLineItem reference)
         testProcess = Process.builder()
                 .processId(1L)
-                .orderLineItem(testOrderLine)
                 .processName("Test Stage")
                 .status("IN_PROGRESS")
                 .build();
 
+        // Operation links to both Process (design-time) and OrderLineItem (runtime)
         testOperation = Operation.builder()
                 .operationId(1L)
                 .process(testProcess)
+                .orderLineItem(testOrderLine)
                 .operationName("Test Operation")
                 .operationCode("OP001")
                 .operationType("MELTING")

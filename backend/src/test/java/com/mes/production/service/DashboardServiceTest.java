@@ -68,16 +68,18 @@ class DashboardServiceTest {
                 .productName("Test Product")
                 .build();
 
+        // Process is design-time only (no OrderLineItem reference)
         Process testProcess = Process.builder()
                 .processId(1L)
                 .processName("Test Stage")
-                .orderLineItem(testOrderLine)
                 .build();
 
+        // Operation links to both Process (design-time) and OrderLineItem (runtime)
         testOperation = Operation.builder()
                 .operationId(1L)
                 .operationName("Test Operation")
                 .process(testProcess)
+                .orderLineItem(testOrderLine)
                 .build();
 
         testConfirmation = ProductionConfirmation.builder()

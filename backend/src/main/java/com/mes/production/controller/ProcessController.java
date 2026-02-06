@@ -12,11 +12,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * REST controller for runtime Process operations.
+ * REST controller for Process operations.
  *
  * Per MES Consolidated Specification:
- * - Process is the runtime entity (at /api/processes)
- * - ProcessTemplate is for design-time (at /api/process-templates)
+ * - Process is a design-time entity (ProcessID, ProcessName, Status)
+ * - Operations link to Process via ProcessID
+ * - Runtime tracking happens at Operation level via OrderLineItem FK
  */
 @RestController
 @RequestMapping("/api/processes")
@@ -133,21 +134,6 @@ public class ProcessController {
         ));
     }
 
-    /**
-     * Get processes by order ID
-     */
-    @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<ProcessDTO.Response>> getProcessesByOrderId(@PathVariable Long orderId) {
-        log.info("GET /api/processes/order/{}", orderId);
-        return ResponseEntity.ok(processService.getProcessesByOrderId(orderId));
-    }
-
-    /**
-     * Get processes by order line ID
-     */
-    @GetMapping("/order-line/{orderLineId}")
-    public ResponseEntity<List<ProcessDTO.Response>> getProcessesByOrderLineId(@PathVariable Long orderLineId) {
-        log.info("GET /api/processes/order-line/{}", orderLineId);
-        return ResponseEntity.ok(processService.getProcessesByOrderLineId(orderLineId));
-    }
+    // NOTE: Process is design-time only per MES Consolidated Specification.
+    // Runtime queries by Order/OrderLine should go through OperationController.
 }

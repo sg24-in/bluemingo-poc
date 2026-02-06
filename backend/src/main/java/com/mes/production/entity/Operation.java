@@ -47,6 +47,12 @@ public class Operation {
     @Exclude
     private Process process;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_line_id")
+    @ToString.Exclude
+    @Exclude
+    private OrderLineItem orderLineItem;
+
     @Column(name = "routing_step_id")
     private Long routingStepId;
 

@@ -52,11 +52,10 @@ class ProcessControllerTest {
 
     @BeforeEach
     void setUp() {
+        // Process is design-time only (no orderLineId or stageSequence)
         testProcessResponse = ProcessDTO.Response.builder()
                 .processId(1L)
-                .orderLineId(1L)
                 .processName("Melting")
-                .stageSequence(1)
                 .status(Process.STATUS_IN_PROGRESS)
                 .createdOn(LocalDateTime.now())
                 .operations(List.of(

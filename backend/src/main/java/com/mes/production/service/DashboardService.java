@@ -134,10 +134,10 @@ public class DashboardService {
 
     private DashboardDTO.RecentActivity convertToRecentActivity(ProductionConfirmation confirmation) {
         String productSku = "";
+        // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
         if (confirmation.getOperation() != null &&
-            confirmation.getOperation().getProcess() != null &&
-            confirmation.getOperation().getProcess().getOrderLineItem() != null) {
-            productSku = confirmation.getOperation().getProcess().getOrderLineItem().getProductSku();
+            confirmation.getOperation().getOrderLineItem() != null) {
+            productSku = confirmation.getOperation().getOrderLineItem().getProductSku();
         }
 
         return DashboardDTO.RecentActivity.builder()

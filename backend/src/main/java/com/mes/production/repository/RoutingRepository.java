@@ -20,9 +20,14 @@ import java.util.Optional;
 public interface RoutingRepository extends JpaRepository<Routing, Long> {
 
     /**
-     * Find routing by process ID
+     * Find single routing by process ID (returns first match)
      */
-    Optional<Routing> findByProcess_ProcessId(Long processId);
+    Optional<Routing> findFirstByProcess_ProcessId(Long processId);
+
+    /**
+     * Find all routings for a process
+     */
+    List<Routing> findByProcess_ProcessId(Long processId);
 
     /**
      * Find all routings for a process by status
@@ -50,22 +55,4 @@ public interface RoutingRepository extends JpaRepository<Routing, Long> {
      * Count routings by status
      */
     long countByStatus(String status);
-
-    // ============ ProcessTemplate-based queries (for design-time template management) ============
-
-    /**
-     * Find routing by process template ID (design-time)
-     */
-    Optional<Routing> findByProcessTemplate_ProcessTemplateId(Long processTemplateId);
-
-    /**
-     * Find all routings for a process template by status (design-time)
-     */
-    List<Routing> findByProcessTemplate_ProcessTemplateIdAndStatus(Long processTemplateId, String status);
-
-    /**
-     * Find active routing by process template with steps (design-time)
-     */
-    @Query("SELECT r FROM Routing r LEFT JOIN FETCH r.routingSteps WHERE r.processTemplate.processTemplateId = :templateId AND r.status = 'ACTIVE'")
-    Optional<Routing> findActiveRoutingByTemplateWithSteps(@Param("templateId") Long templateId);
 }

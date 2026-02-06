@@ -69,7 +69,7 @@ public class OrderLineItem {
     @OneToMany(mappedBy = "orderLineItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @Exclude
-    private List<Process> processes;
+    private List<Operation> operations;
 
     @PrePersist
     protected void onCreate() {
