@@ -320,90 +320,93 @@ ALTER TABLE order_line_items ALTER COLUMN order_line_id RESTART WITH 11;
 -- =====================================================
 -- STEP 10: Processes and Operations
 -- =====================================================
+-- NOTE: Per MES Consolidated Specification:
+--   - Process = Design-time entity (process_name, status) - NO order_line_id FK
+--   - Operation = Links to Process via process_id AND to OrderLineItem via order_line_id
 
 -- --- Order 1: HR-COIL-2MM, 150T, IN_PROGRESS ---
-INSERT INTO processes (process_id, order_line_id, stage_name, stage_sequence, status, created_by) VALUES
-(1, 1, 'Melting',      1, 'COMPLETED',   'SYSTEM'),
-(2, 1, 'Casting',      2, 'COMPLETED',   'SYSTEM'),
-(3, 1, 'Hot Rolling',  3, 'IN_PROGRESS', 'SYSTEM'),
-(4, 1, 'Finishing',    4, 'READY',       'SYSTEM');
+INSERT INTO processes (process_id, process_name, status, created_by) VALUES
+(1, 'Melting',      'COMPLETED',   'SYSTEM'),
+(2, 'Casting',      'COMPLETED',   'SYSTEM'),
+(3, 'Hot Rolling',  'IN_PROGRESS', 'SYSTEM'),
+(4, 'Finishing',    'READY',       'SYSTEM');
 
-INSERT INTO operations (operation_id, process_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
--- Melting (completed)
-(1,  1, 'Scrap Charging',      'MELT-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
-(2,  1, 'EAF Melting',         'MELT-20', 'FURNACE', 2, 'CONFIRMED',   'SYSTEM'),
-(3,  1, 'Ladle Refining',      'MELT-30', 'FURNACE', 3, 'CONFIRMED',   'SYSTEM'),
--- Casting (completed)
-(4,  2, 'Slab Casting',        'CAST-10', 'CASTER',  1, 'CONFIRMED',   'SYSTEM'),
--- Hot Rolling (in progress)
-(5,  3, 'Slab Reheating',      'ROLL-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
-(6,  3, 'Rough Rolling',       'ROLL-20', 'ROLLING', 2, 'READY',       'SYSTEM'),
-(7,  3, 'Finish Rolling',      'ROLL-30', 'ROLLING', 3, 'NOT_STARTED', 'SYSTEM'),
--- Finishing
-(8,  4, 'Cooling',             'FIN-10',  'COOLING', 1, 'NOT_STARTED', 'SYSTEM'),
-(9,  4, 'Coiling & Inspection','FIN-20',  'FINISHING',2, 'NOT_STARTED', 'SYSTEM');
+INSERT INTO operations (operation_id, process_id, order_line_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
+-- Melting (completed) - linked to order line 1
+(1,  1, 1, 'Scrap Charging',      'MELT-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
+(2,  1, 1, 'EAF Melting',         'MELT-20', 'FURNACE', 2, 'CONFIRMED',   'SYSTEM'),
+(3,  1, 1, 'Ladle Refining',      'MELT-30', 'FURNACE', 3, 'CONFIRMED',   'SYSTEM'),
+-- Casting (completed) - linked to order line 1
+(4,  2, 1, 'Slab Casting',        'CAST-10', 'CASTER',  1, 'CONFIRMED',   'SYSTEM'),
+-- Hot Rolling (in progress) - linked to order line 1
+(5,  3, 1, 'Slab Reheating',      'ROLL-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
+(6,  3, 1, 'Rough Rolling',       'ROLL-20', 'ROLLING', 2, 'READY',       'SYSTEM'),
+(7,  3, 1, 'Finish Rolling',      'ROLL-30', 'ROLLING', 3, 'NOT_STARTED', 'SYSTEM'),
+-- Finishing - linked to order line 1
+(8,  4, 1, 'Cooling',             'FIN-10',  'COOLING', 1, 'NOT_STARTED', 'SYSTEM'),
+(9,  4, 1, 'Coiling & Inspection','FIN-20',  'FINISHING',2, 'NOT_STARTED', 'SYSTEM');
 
 -- --- Order 2: CR-SHEET-1MM, 80T, IN_PROGRESS ---
-INSERT INTO processes (process_id, order_line_id, stage_name, stage_sequence, status, created_by) VALUES
-(5,  2, 'Melting',       1, 'COMPLETED',   'SYSTEM'),
-(6,  2, 'Casting',       2, 'IN_PROGRESS', 'SYSTEM'),
-(7,  2, 'Hot Rolling',   3, 'READY',       'SYSTEM'),
-(8,  2, 'Pickling',      4, 'READY',       'SYSTEM'),
-(9,  2, 'Cold Rolling',  5, 'READY',       'SYSTEM'),
-(10, 2, 'Annealing',     6, 'READY',       'SYSTEM');
+INSERT INTO processes (process_id, process_name, status, created_by) VALUES
+(5,  'Melting',       'COMPLETED',   'SYSTEM'),
+(6,  'Casting',       'IN_PROGRESS', 'SYSTEM'),
+(7,  'Hot Rolling',   'READY',       'SYSTEM'),
+(8,  'Pickling',      'READY',       'SYSTEM'),
+(9,  'Cold Rolling',  'READY',       'SYSTEM'),
+(10, 'Annealing',     'READY',       'SYSTEM');
 
-INSERT INTO operations (operation_id, process_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
--- Melting (completed)
-(10, 5, 'Scrap Charging',       'MELT-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
-(11, 5, 'EAF Melting',          'MELT-20', 'FURNACE', 2, 'CONFIRMED',   'SYSTEM'),
--- Casting (in progress)
-(12, 6, 'Slab Casting',         'CAST-10', 'CASTER',  1, 'READY',       'SYSTEM'),
--- Hot Rolling
-(13, 7, 'Hot Rolling',          'ROLL-10', 'ROLLING', 1, 'NOT_STARTED', 'SYSTEM'),
--- Pickling
-(14, 8, 'Acid Pickling',        'PKL-10',  'PICKLING',1, 'NOT_STARTED', 'SYSTEM'),
--- Cold Rolling
-(15, 9, 'Cold Reduction',       'CRM-10',  'ROLLING', 1, 'NOT_STARTED', 'SYSTEM'),
--- Annealing
-(16, 10, 'Batch Annealing',     'ANN-10',  'FURNACE', 1, 'NOT_STARTED', 'SYSTEM');
+INSERT INTO operations (operation_id, process_id, order_line_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
+-- Melting (completed) - linked to order line 2
+(10, 5, 2, 'Scrap Charging',       'MELT-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
+(11, 5, 2, 'EAF Melting',          'MELT-20', 'FURNACE', 2, 'CONFIRMED',   'SYSTEM'),
+-- Casting (in progress) - linked to order line 2
+(12, 6, 2, 'Slab Casting',         'CAST-10', 'CASTER',  1, 'READY',       'SYSTEM'),
+-- Hot Rolling - linked to order line 2
+(13, 7, 2, 'Hot Rolling',          'ROLL-10', 'ROLLING', 1, 'NOT_STARTED', 'SYSTEM'),
+-- Pickling - linked to order line 2
+(14, 8, 2, 'Acid Pickling',        'PKL-10',  'PICKLING',1, 'NOT_STARTED', 'SYSTEM'),
+-- Cold Rolling - linked to order line 2
+(15, 9, 2, 'Cold Reduction',       'CRM-10',  'ROLLING', 1, 'NOT_STARTED', 'SYSTEM'),
+-- Annealing - linked to order line 2
+(16, 10, 2, 'Batch Annealing',     'ANN-10',  'FURNACE', 1, 'NOT_STARTED', 'SYSTEM');
 
 -- --- Order 3: REBAR-10MM, 200T, IN_PROGRESS ---
-INSERT INTO processes (process_id, order_line_id, stage_name, stage_sequence, status, created_by) VALUES
-(11, 3, 'Melting',       1, 'COMPLETED',   'SYSTEM'),
-(12, 3, 'Billet Casting',2, 'COMPLETED',   'SYSTEM'),
-(13, 3, 'Bar Rolling',   3, 'IN_PROGRESS', 'SYSTEM');
+INSERT INTO processes (process_id, process_name, status, created_by) VALUES
+(11, 'Melting',       'COMPLETED',   'SYSTEM'),
+(12, 'Billet Casting','COMPLETED',   'SYSTEM'),
+(13, 'Bar Rolling',   'IN_PROGRESS', 'SYSTEM');
 
-INSERT INTO operations (operation_id, process_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
--- Melting (completed)
-(17, 11, 'Scrap Charging',      'MELT-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
-(18, 11, 'EAF Melting',         'MELT-20', 'FURNACE', 2, 'CONFIRMED',   'SYSTEM'),
--- Billet Casting (completed)
-(19, 12, 'Billet Casting',      'CAST-10', 'CASTER',  1, 'CONFIRMED',   'SYSTEM'),
--- Bar Rolling (in progress)
-(20, 13, 'Billet Reheating',    'ROLL-10', 'FURNACE', 1, 'READY',       'SYSTEM'),
-(21, 13, 'Bar Rolling',         'ROLL-20', 'ROLLING', 2, 'NOT_STARTED', 'SYSTEM'),
-(22, 13, 'Quenching & Tempering','ROLL-30','COOLING', 3, 'NOT_STARTED', 'SYSTEM');
+INSERT INTO operations (operation_id, process_id, order_line_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
+-- Melting (completed) - linked to order line 3
+(17, 11, 3, 'Scrap Charging',      'MELT-10', 'FURNACE', 1, 'CONFIRMED',   'SYSTEM'),
+(18, 11, 3, 'EAF Melting',         'MELT-20', 'FURNACE', 2, 'CONFIRMED',   'SYSTEM'),
+-- Billet Casting (completed) - linked to order line 3
+(19, 12, 3, 'Billet Casting',      'CAST-10', 'CASTER',  1, 'CONFIRMED',   'SYSTEM'),
+-- Bar Rolling (in progress) - linked to order line 3
+(20, 13, 3, 'Billet Reheating',    'ROLL-10', 'FURNACE', 1, 'READY',       'SYSTEM'),
+(21, 13, 3, 'Bar Rolling',         'ROLL-20', 'ROLLING', 2, 'NOT_STARTED', 'SYSTEM'),
+(22, 13, 3, 'Quenching & Tempering','ROLL-30','COOLING', 3, 'NOT_STARTED', 'SYSTEM');
 
 -- --- Order 5: HR-COIL-2MM, 75T, COMPLETED ---
-INSERT INTO processes (process_id, order_line_id, stage_name, stage_sequence, status, created_by) VALUES
-(14, 6, 'Melting',      1, 'COMPLETED', 'SYSTEM'),
-(15, 6, 'Casting',      2, 'COMPLETED', 'SYSTEM'),
-(16, 6, 'Hot Rolling',  3, 'COMPLETED', 'SYSTEM'),
-(17, 6, 'Finishing',    4, 'COMPLETED', 'SYSTEM');
+INSERT INTO processes (process_id, process_name, status, created_by) VALUES
+(14, 'Melting',      'COMPLETED', 'SYSTEM'),
+(15, 'Casting',      'COMPLETED', 'SYSTEM'),
+(16, 'Hot Rolling',  'COMPLETED', 'SYSTEM'),
+(17, 'Finishing',    'COMPLETED', 'SYSTEM');
 
-INSERT INTO operations (operation_id, process_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
--- Melting
-(23, 14, 'Scrap Charging',      'MELT-10', 'FURNACE', 1, 'CONFIRMED', 'SYSTEM'),
-(24, 14, 'EAF Melting',         'MELT-20', 'FURNACE', 2, 'CONFIRMED', 'SYSTEM'),
-(25, 14, 'Ladle Refining',      'MELT-30', 'FURNACE', 3, 'CONFIRMED', 'SYSTEM'),
--- Casting
-(26, 15, 'Slab Casting',        'CAST-10', 'CASTER',  1, 'CONFIRMED', 'SYSTEM'),
--- Hot Rolling
-(27, 16, 'Slab Reheating',      'ROLL-10', 'FURNACE', 1, 'CONFIRMED', 'SYSTEM'),
-(28, 16, 'Rough Rolling',       'ROLL-20', 'ROLLING', 2, 'CONFIRMED', 'SYSTEM'),
-(29, 16, 'Finish Rolling',      'ROLL-30', 'ROLLING', 3, 'CONFIRMED', 'SYSTEM'),
--- Finishing
-(30, 17, 'Cooling & Coiling',   'FIN-10',  'FINISHING',1, 'CONFIRMED', 'SYSTEM');
+INSERT INTO operations (operation_id, process_id, order_line_id, operation_name, operation_code, operation_type, sequence_number, status, created_by) VALUES
+-- Melting - linked to order line 6
+(23, 14, 6, 'Scrap Charging',      'MELT-10', 'FURNACE', 1, 'CONFIRMED', 'SYSTEM'),
+(24, 14, 6, 'EAF Melting',         'MELT-20', 'FURNACE', 2, 'CONFIRMED', 'SYSTEM'),
+(25, 14, 6, 'Ladle Refining',      'MELT-30', 'FURNACE', 3, 'CONFIRMED', 'SYSTEM'),
+-- Casting - linked to order line 6
+(26, 15, 6, 'Slab Casting',        'CAST-10', 'CASTER',  1, 'CONFIRMED', 'SYSTEM'),
+-- Hot Rolling - linked to order line 6
+(27, 16, 6, 'Slab Reheating',      'ROLL-10', 'FURNACE', 1, 'CONFIRMED', 'SYSTEM'),
+(28, 16, 6, 'Rough Rolling',       'ROLL-20', 'ROLLING', 2, 'CONFIRMED', 'SYSTEM'),
+(29, 16, 6, 'Finish Rolling',      'ROLL-30', 'ROLLING', 3, 'CONFIRMED', 'SYSTEM'),
+-- Finishing - linked to order line 6
+(30, 17, 6, 'Cooling & Coiling',   'FIN-10',  'FINISHING',1, 'CONFIRMED', 'SYSTEM');
 
 ALTER TABLE processes ALTER COLUMN process_id RESTART WITH 18;
 ALTER TABLE operations ALTER COLUMN operation_id RESTART WITH 31;

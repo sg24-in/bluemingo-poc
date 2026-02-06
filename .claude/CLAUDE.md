@@ -265,6 +265,32 @@ psql -U postgres -c "CREATE DATABASE mes_test"
 - All schema changes are managed via SQL patches in `backend/src/main/resources/patches/`
 - Patches are numbered (001, 002, etc.) and run automatically on startup
 - Test mode resets schema (DROP/CREATE public) before running patches
+- Patches are tracked in `database_patches` table to prevent re-running
+
+### Demo Mode Schema Alignment (IMPORTANT)
+
+Demo mode uses H2 in-memory database with **separate schema files** that must be kept in sync with patches:
+
+| File | Purpose | When to Update |
+|------|---------|----------------|
+| `patches/*.sql` | **Source of truth** | Any schema change |
+| `demo/schema.sql` | H2-compatible DDL | After creating a patch |
+| `demo/data.sql` | Rich sample data | When patches add new tables |
+
+**When creating a new patch:**
+1. Create patch: `patches/NNN_description.sql`
+2. Update `demo/schema.sql` with equivalent H2-compatible DDL
+3. Update `demo/data.sql` if new tables need sample data
+
+**Entity Model (MES Consolidated Spec):**
+- **Process** = Design-time entity only (`process_name`, `status`) - NO `order_line_id` FK
+- **Operation** = Links to Process via `process_id` AND to OrderLineItem via `order_line_id`
+
+**Verify both profiles work:**
+```bash
+./gradlew bootRun -Dspring.profiles.active=test    # Patches (PostgreSQL)
+./gradlew bootRun --args='--spring.profiles.active=demo'  # H2 demo
+```
 
 ---
 
