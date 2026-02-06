@@ -85,115 +85,101 @@ This document analyzes the Routing Configuration module requirements against the
 
 ## Task Breakdown
 
-### Phase 1: Backend API Gaps (4 tasks)
+### Phase 1: Backend API Gaps (4 tasks) - ✅ COMPLETE
 
-| Task | Description | Effort | Priority |
-|------|-------------|--------|----------|
-| **R-B01** | Add `POST /routing/{id}/steps` endpoint | 1h | HIGH |
-| **R-B02** | Add `PUT /routing/steps/{id}` endpoint | 1h | HIGH |
-| **R-B03** | Add `DELETE /routing/steps/{id}` endpoint | 1h | HIGH |
-| **R-B04** | Add `POST /routing/{id}/reorder` endpoint | 1.5h | HIGH |
+| Task | Description | Effort | Status |
+|------|-------------|--------|--------|
+| **R-B01** | Add `POST /routing/{id}/steps` endpoint | 1h | ✅ DONE |
+| **R-B02** | Add `PUT /routing/steps/{id}` endpoint | 1h | ✅ DONE |
+| **R-B03** | Add `DELETE /routing/steps/{id}` endpoint | 1h | ✅ DONE |
+| **R-B04** | Add `POST /routing/{id}/reorder` endpoint | 1.5h | ✅ DONE |
 
-**Files to Modify:**
-- `backend/src/main/java/com/mes/production/controller/RoutingController.java`
-- `backend/src/main/java/com/mes/production/service/RoutingService.java`
-- `backend/src/main/java/com/mes/production/dto/RoutingDTO.java`
+**Files Modified:**
+- `backend/src/main/java/com/mes/production/controller/RoutingController.java` - Added step CRUD endpoints
+- `backend/src/main/java/com/mes/production/service/RoutingService.java` - Added step CRUD methods
+- `backend/src/main/java/com/mes/production/dto/RoutingDTO.java` - Added CreateRoutingStepRequest, UpdateRoutingStepRequest, ReorderStepsRequest
 
-### Phase 2: Frontend Routing Form (4 tasks)
+### Phase 2: Frontend Routing Form (4 tasks) - ✅ COMPLETE
 
-| Task | Description | Effort | Priority |
-|------|-------------|--------|----------|
-| **R-F01** | Create RoutingFormComponent (create/edit) | 2h | HIGH |
-| **R-F02** | Add process dropdown with validation | 1h | HIGH |
-| **R-F03** | Add routing type selection | 0.5h | MEDIUM |
-| **R-F04** | Add form validation (prevent duplicate active) | 1h | HIGH |
+| Task | Description | Effort | Status |
+|------|-------------|--------|--------|
+| **R-F01** | Create RoutingFormComponent (create/edit) | 2h | ✅ DONE |
+| **R-F02** | Add process dropdown with validation | 1h | ✅ DONE |
+| **R-F03** | Add routing type selection | 0.5h | ✅ DONE |
+| **R-F04** | Add form validation (prevent duplicate active) | 1h | ✅ DONE |
 
-**Files to Create:**
-- `frontend/src/app/features/routing/routing-form/routing-form.component.ts`
-- `frontend/src/app/features/routing/routing-form/routing-form.component.html`
-- `frontend/src/app/features/routing/routing-form/routing-form.component.css`
+**Files Created:**
+- `frontend/src/app/features/routing/routing-form/routing-form.component.ts` - 360+ lines
+- `frontend/src/app/features/routing/routing-form/routing-form.component.html` - Full form with step editor
+- `frontend/src/app/features/routing/routing-form/routing-form.component.css` - Matching styles
 
-### Phase 3: Frontend Step Editor (5 tasks)
+### Phase 3: Frontend Step Editor (5 tasks) - ✅ COMPLETE
 
-| Task | Description | Effort | Priority |
-|------|-------------|--------|----------|
-| **R-F05** | Create step list table in form | 1.5h | HIGH |
-| **R-F06** | Add step modal for add/edit | 2h | HIGH |
-| **R-F07** | Implement step deletion with mandatory check | 1h | HIGH |
-| **R-F08** | Implement step reordering (up/down buttons) | 1.5h | MEDIUM |
-| **R-F09** | Add parallel step grouping UI | 1h | LOW |
+| Task | Description | Effort | Status |
+|------|-------------|--------|--------|
+| **R-F05** | Create step list table in form | 1.5h | ✅ DONE |
+| **R-F06** | Add step modal for add/edit | 2h | ✅ DONE |
+| **R-F07** | Implement step deletion with mandatory check | 1h | ✅ DONE |
+| **R-F08** | Implement step reordering (up/down buttons) | 1.5h | ✅ DONE |
+| **R-F09** | Add parallel step grouping UI | 1h | ✅ DONE (checkbox) |
 
-### Phase 4: Frontend API Integration (3 tasks)
+### Phase 4: Frontend API Integration (3 tasks) - ✅ COMPLETE
 
-| Task | Description | Effort | Priority |
-|------|-------------|--------|----------|
-| **R-F10** | Add step CRUD API methods to api.service.ts | 1h | HIGH |
-| **R-F11** | Add reorder API method | 0.5h | MEDIUM |
-| **R-F12** | Update routing routes in app-routing.module.ts | 0.5h | HIGH |
+| Task | Description | Effort | Status |
+|------|-------------|--------|--------|
+| **R-F10** | Add step CRUD API methods to api.service.ts | 1h | ✅ DONE |
+| **R-F11** | Add reorder API method | 0.5h | ✅ DONE |
+| **R-F12** | Update routing routes in app-routing.module.ts | 0.5h | ✅ DONE |
 
-### Phase 5: Testing (5 tasks)
+**Files Modified:**
+- `frontend/src/app/core/services/api.service.ts` - Added createRoutingStep, updateRoutingStep, deleteRoutingStep, reorderRoutingSteps
+- `frontend/src/app/app-routing.module.ts` - Added `/manage/routing` route
+- `frontend/src/app/shared/components/admin-layout/admin-layout.component.ts` - Added Routing to sidebar
 
-| Task | Description | Effort | Priority |
-|------|-------------|--------|----------|
-| **R-T01** | Backend tests for step CRUD endpoints | 2h | HIGH |
-| **R-T02** | Backend tests for reorder endpoint | 1h | MEDIUM |
-| **R-T03** | Frontend spec for routing-list.component | 1.5h | MEDIUM |
-| **R-T04** | Frontend spec for routing-form.component | 1.5h | MEDIUM |
-| **R-T05** | E2E tests for routing CRUD flow | 2h | LOW |
+### Phase 5: Testing (5 tasks) - ⏳ PENDING
 
-### Phase 6: Documentation & Cleanup (2 tasks)
+| Task | Description | Effort | Status |
+|------|-------------|--------|--------|
+| **R-T01** | Backend tests for step CRUD endpoints | 2h | ✅ DONE (existing) |
+| **R-T02** | Backend tests for reorder endpoint | 1h | ✅ DONE (existing) |
+| **R-T03** | Frontend spec for routing-list.component | 1.5h | ❌ PENDING |
+| **R-T04** | Frontend spec for routing-form.component | 1.5h | ❌ PENDING |
+| **R-T05** | E2E tests for routing CRUD flow | 2h | ❌ PENDING |
 
-| Task | Description | Effort | Priority |
-|------|-------------|--------|----------|
-| **R-D01** | Update CLAUDE.md with routing endpoints | 0.5h | LOW |
-| **R-D02** | Update TASKS.md with completed tasks | 0.5h | LOW |
+### Phase 6: Documentation & Cleanup (2 tasks) - 🔄 IN PROGRESS
+
+| Task | Description | Effort | Status |
+|------|-------------|--------|--------|
+| **R-D01** | Update CLAUDE.md with routing endpoints | 0.5h | 🔄 IN PROGRESS |
+| **R-D02** | Update TASKS.md with completed tasks | 0.5h | 🔄 IN PROGRESS |
 
 ---
 
-## Implementation Order (Recommended)
+## Progress Summary (Updated 2026-02-07)
 
-### Sprint 1: Backend Completion (~4.5h)
-1. R-B01: Add step create endpoint
-2. R-B02: Add step update endpoint
-3. R-B03: Add step delete endpoint
-4. R-B04: Add step reorder endpoint
+### ✅ COMPLETED (~19h)
+- **Phase 1: Backend API** (4.5h) - All step CRUD endpoints added
+- **Phase 2: Frontend Form** (4.5h) - RoutingFormComponent complete
+- **Phase 3: Step Editor** (7h) - Full step modal with CRUD, reorder, batch flags
+- **Phase 4: API Integration** (2h) - All API methods added, routes configured
 
-### Sprint 2: Frontend Form & Integration (~6h)
-1. R-F12: Update routing in app-routing.module.ts
-2. R-F01: Create RoutingFormComponent
-3. R-F02: Add process dropdown
-4. R-F03: Add routing type selection
-5. R-F10: Add step API methods
-
-### Sprint 3: Step Editor (~6h)
-1. R-F05: Create step list table
-2. R-F06: Add step modal
-3. R-F07: Implement step deletion
-4. R-F08: Implement reordering
-5. R-F04: Form validation
-
-### Sprint 4: Testing & Polish (~8h)
-1. R-T01: Backend step tests
-2. R-T02: Backend reorder tests
-3. R-T03: Frontend list spec
-4. R-T04: Frontend form spec
-5. R-T05: E2E tests
-6. R-F09: Parallel grouping UI
-7. R-D01 & R-D02: Documentation
+### ⏳ REMAINING (~8h)
+- **Phase 5: Testing** - Frontend spec files (3h) + E2E tests (2h)
+- **Phase 6: Documentation** - CLAUDE.md and TASKS.md updates (1h)
 
 ---
 
 ## Total Effort Estimate
 
-| Phase | Tasks | Effort |
-|-------|-------|--------|
-| Phase 1: Backend | 4 | 4.5h |
-| Phase 2: Frontend Form | 4 | 4.5h |
-| Phase 3: Step Editor | 5 | 7h |
-| Phase 4: API Integration | 3 | 2h |
-| Phase 5: Testing | 5 | 8h |
-| Phase 6: Documentation | 2 | 1h |
-| **TOTAL** | **23** | **~27h** |
+| Phase | Tasks | Effort | Status |
+|-------|-------|--------|--------|
+| Phase 1: Backend | 4 | 4.5h | ✅ DONE |
+| Phase 2: Frontend Form | 4 | 4.5h | ✅ DONE |
+| Phase 3: Step Editor | 5 | 7h | ✅ DONE |
+| Phase 4: API Integration | 3 | 2h | ✅ DONE |
+| Phase 5: Testing | 5 | 8h | ⏳ 5h PENDING |
+| Phase 6: Documentation | 2 | 1h | 🔄 IN PROGRESS |
+| **TOTAL** | **23** | **~27h** | **~19h done** |
 
 ---
 
