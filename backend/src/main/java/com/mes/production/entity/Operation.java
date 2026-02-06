@@ -42,7 +42,7 @@ public class Operation {
     private Long operationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "process_id", nullable = false)
+    @JoinColumn(name = "process_id")
     @ToString.Exclude
     @Exclude
     private Process process;
