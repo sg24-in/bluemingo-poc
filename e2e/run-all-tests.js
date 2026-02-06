@@ -41,6 +41,7 @@ const { runProcessesTests } = require('./tests/18-processes.test');
 const { runUserProfileTests } = require('./tests/19-user-profile.test');
 const { runUsersTests } = require('./tests/20-users.test');
 const { runProductionHistoryTests } = require('./tests/21-production-history.test');
+const { runRoutingTests } = require('./tests/22-routing.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -146,6 +147,7 @@ async function runAllTests() {
         await runUserProfileTests(page, screenshots, results, runTest, submitActions);
         await runUsersTests(page, screenshots, results, runTest, submitActions);
         await runProductionHistoryTests(page, screenshots, results, runTest);
+        await runRoutingTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
@@ -164,6 +166,7 @@ async function runAllTests() {
                 { path: '/#/processes/list', name: 'processes' },
                 { path: '/#/processes/quality-pending', name: 'quality-pending' },
                 { path: '/#/operations', name: 'operations' },
+                { path: '/#/manage/routing', name: 'routing' },
                 { path: '/#/profile', name: 'profile' },
                 { path: '/#/change-password', name: 'change-password' },
                 { path: '/#/manage/customers', name: 'admin-customers' },

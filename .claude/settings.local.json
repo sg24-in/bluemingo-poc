@@ -145,7 +145,8 @@
       "Bash(./gradlew clean:*)",
       "Bash(./gradlew compileTestJava:*)",
       "Bash(cmd.exe:*)",
-      "Bash(./gradlew.bat:*)"
+      "Bash(./gradlew.bat:*)",
+      "Bash(npx playwright test:*)"
     ]
   }
 }

@@ -72,6 +72,10 @@ const ROUTES = {
     ADMIN_PROCESSES: '/#/manage/processes',
     ADMIN_PROCESSES_LIST: '/#/manage/processes/list',
     ADMIN_PROCESSES_QUALITY: '/#/manage/processes/quality-pending',
+    // Admin Routing
+    ADMIN_ROUTING: '/#/manage/routing',
+    ADMIN_ROUTING_NEW: '/#/manage/routing/new',
+    ADMIN_ROUTING_EDIT: (id) => `/#/manage/routing/${id}/edit`,
     // Profile & User Management
     PROFILE: '/#/profile',
     CHANGE_PASSWORD: '/#/change-password',

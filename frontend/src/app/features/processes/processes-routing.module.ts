@@ -19,7 +19,7 @@ const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: 'quality-pending',
+    redirectTo: 'list',
     pathMatch: 'full'
   }
 ];
