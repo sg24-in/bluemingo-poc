@@ -28,6 +28,46 @@ public class ProcessController {
     private final ProcessService processService;
 
     /**
+     * Get all processes
+     */
+    @GetMapping
+    public ResponseEntity<List<ProcessDTO.Response>> getAllProcesses() {
+        log.info("GET /api/processes");
+        return ResponseEntity.ok(processService.getAllProcesses());
+    }
+
+    /**
+     * Create a new process
+     */
+    @PostMapping
+    public ResponseEntity<ProcessDTO.Response> createProcess(
+            @Valid @RequestBody ProcessDTO.CreateRequest request) {
+        log.info("POST /api/processes - name={}", request.getProcessName());
+        return ResponseEntity.ok(processService.createProcess(request));
+    }
+
+    /**
+     * Update a process
+     */
+    @PutMapping("/{processId}")
+    public ResponseEntity<ProcessDTO.Response> updateProcess(
+            @PathVariable Long processId,
+            @Valid @RequestBody ProcessDTO.UpdateRequest request) {
+        log.info("PUT /api/processes/{}", processId);
+        return ResponseEntity.ok(processService.updateProcess(processId, request));
+    }
+
+    /**
+     * Delete a process (soft delete - sets status to DELETED)
+     */
+    @DeleteMapping("/{processId}")
+    public ResponseEntity<Void> deleteProcess(@PathVariable Long processId) {
+        log.info("DELETE /api/processes/{}", processId);
+        processService.deleteProcess(processId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Get process by ID
      */
     @GetMapping("/{processId}")

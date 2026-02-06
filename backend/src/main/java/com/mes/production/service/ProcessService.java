@@ -127,6 +127,29 @@ public class ProcessService {
     }
 
     /**
+     * Delete a process (soft delete - sets status to DELETED)
+     */
+    @Transactional
+    public void deleteProcess(Long processId) {
+        Process process = getProcessEntity(processId);
+        String currentUser = getCurrentUser();
+
+        // Check if process has operations
+        List<Operation> operations = operationRepository.findByProcessIdOrderBySequence(processId);
+        if (!operations.isEmpty()) {
+            throw new RuntimeException("Cannot delete process with existing operations. Found " + operations.size() + " operations.");
+        }
+
+        process.setStatus("DELETED");
+        process.setUpdatedBy(currentUser);
+        process.setUpdatedOn(LocalDateTime.now());
+        processRepository.save(process);
+
+        log.info("Deleted (soft) process: {} by {}", processId, currentUser);
+        auditService.logDelete("PROCESS", processId, process.getProcessName());
+    }
+
+    /**
      * Transition process to QUALITY_PENDING status
      */
     @Transactional

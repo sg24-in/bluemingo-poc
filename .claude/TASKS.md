@@ -1,11 +1,34 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Demo Schema & Frontend Tests Fixed
+**Session Status:** Active - E2E Tests & Routing Fixes
 
 ---
 
-## Latest Session Changes (2026-02-07)
+## Latest Session Changes (2026-02-07 - Continued)
+
+### Route Fix & E2E Tests - IN PROGRESS ✅
+
+**Fixed `/manage/processes` Route:**
+- Added missing route in `app-routing.module.ts` for `/manage/processes`
+- Route now points to ProcessesModule under AdminLayoutComponent
+- Updated E2E constants with ADMIN_PROCESSES routes
+
+**Created E2E Tests for Production History:**
+- New file: `e2e/tests/21-production-history.test.js`
+- Tests: Page load, table/list view, status filter, date range filter, search, detail view, summary stats, sorting, pagination
+
+**Updated E2E Tests for Admin Processes:**
+- Modified `e2e/tests/18-processes.test.js` to include admin processes tests
+- Tests: Admin page load, sidebar navigation, table/cards view, status filter, quality pending
+
+**Updated Test Runner:**
+- Added `runProductionHistoryTests` to `e2e/run-all-tests.js`
+- Added `/manage/processes` to navigation flow test
+
+---
+
+## Previous Session Changes (2026-02-07)
 
 ### Demo Schema Alignment - COMPLETE ✅
 

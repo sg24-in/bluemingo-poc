@@ -40,6 +40,7 @@ const { runOperationsTests } = require('./tests/17-operations.test');
 const { runProcessesTests } = require('./tests/18-processes.test');
 const { runUserProfileTests } = require('./tests/19-user-profile.test');
 const { runUsersTests } = require('./tests/20-users.test');
+const { runProductionHistoryTests } = require('./tests/21-production-history.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -144,6 +145,7 @@ async function runAllTests() {
         await runProcessesTests(page, screenshots, results, runTest, submitActions);
         await runUserProfileTests(page, screenshots, results, runTest, submitActions);
         await runUsersTests(page, screenshots, results, runTest, submitActions);
+        await runProductionHistoryTests(page, screenshots, results, runTest);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
@@ -176,7 +178,8 @@ async function runAllTests() {
                 { path: '/#/manage/config/batch-number', name: 'config-batch-number' },
                 { path: '/#/manage/config/quantity-type', name: 'config-quantity-type' },
                 { path: '/#/manage/audit', name: 'audit' },
-                { path: '/#/production/history', name: 'production-history' }
+                { path: '/#/production/history', name: 'production-history' },
+                { path: '/#/manage/processes', name: 'admin-processes' }
             ];
 
             for (const route of routes) {

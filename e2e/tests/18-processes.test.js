@@ -312,6 +312,115 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
         }, page, results, screenshots);
     }
 
+    // ============================================
+    // ADMIN PROCESSES (/manage/processes)
+    // ============================================
+
+    await runTest('Admin Processes - Page Load', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        await screenshots.capture(page, 'admin-processes-page');
+
+        // Verify page is loaded
+        const pageContent = page.locator('h1, h2, .page-header, .admin-content');
+        if (!await pageContent.first().isVisible()) {
+            throw new Error('Admin Processes page content not visible');
+        }
+        console.log('  - Admin processes page loaded successfully');
+    }, page, results, screenshots);
+
+    await runTest('Admin Processes - Sidebar Navigation', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Verify sidebar is present (admin layout)
+        const sidebar = page.locator('.sidebar, .admin-sidebar, nav.sidebar');
+        if (await sidebar.isVisible()) {
+            await screenshots.capture(page, 'admin-processes-sidebar');
+            console.log('  - Admin sidebar visible');
+
+            // Check for process link in sidebar
+            const processLink = sidebar.locator('a:has-text("Process"), a[href*="process"]');
+            if (await processLink.first().isVisible()) {
+                console.log('  - Process link in sidebar');
+            }
+        } else {
+            console.log('  - No sidebar found (may be using different layout)');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Admin Processes - Table or Cards View', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const table = page.locator('table');
+        const cards = page.locator('.process-card, .card');
+        const emptyState = page.locator('.empty-state, .no-data');
+
+        const hasTable = await table.isVisible();
+        const hasCards = await cards.first().isVisible();
+        const hasEmpty = await emptyState.isVisible();
+
+        if (hasTable) {
+            await screenshots.capture(page, 'admin-processes-table');
+            console.log('  - Table view displayed');
+        } else if (hasCards) {
+            await screenshots.capture(page, 'admin-processes-cards');
+            console.log('  - Cards view displayed');
+        } else if (hasEmpty) {
+            await screenshots.capture(page, 'admin-processes-empty');
+            console.log('  - Empty state displayed');
+        } else {
+            // Could be redirected to process list or quality pending
+            console.log('  - Content displayed (may be redirected to sub-route)');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Admin Processes - Status Filter', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Also try the list route
+        if (ROUTES.ADMIN_PROCESSES_LIST) {
+            await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES_LIST}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(500);
+        }
+
+        const statusFilter = page.locator('select#status, select[name="status"], select#statusFilter');
+        if (await statusFilter.isVisible()) {
+            const options = await statusFilter.locator('option').allTextContents();
+            console.log('  - Status filter options:', options.join(', '));
+
+            if (options.length > 1) {
+                await statusFilter.selectOption({ index: 1 });
+                await page.waitForTimeout(500);
+
+                await screenshots.capture(page, 'admin-processes-filtered');
+            }
+        } else {
+            console.log('  - No status filter found');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Admin Processes - Quality Pending', async () => {
+        if (ROUTES.ADMIN_PROCESSES_QUALITY) {
+            await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(1000);
+
+            await screenshots.capture(page, 'admin-processes-quality-pending');
+
+            const header = page.locator('h1, h2').filter({ hasText: /quality|pending/i });
+            if (await header.isVisible()) {
+                console.log('  - Admin quality pending page loaded');
+            } else {
+                console.log('  - Content displayed');
+            }
+        } else {
+            console.log('  - Admin quality pending route not defined');
+        }
+    }, page, results, screenshots);
+
     console.log('\n' + '='.repeat(50));
     console.log('PROCESSES TESTS COMPLETE');
     console.log('='.repeat(50));

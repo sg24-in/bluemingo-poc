@@ -68,6 +68,10 @@ const ROUTES = {
     PROCESSES_LIST: '/#/processes/list',
     PROCESSES_QUALITY: '/#/processes/quality-pending',
     PROCESS_DETAIL: (id) => `/#/processes/${id}`,
+    // Admin Processes
+    ADMIN_PROCESSES: '/#/manage/processes',
+    ADMIN_PROCESSES_LIST: '/#/manage/processes/list',
+    ADMIN_PROCESSES_QUALITY: '/#/manage/processes/quality-pending',
     // Profile & User Management
     PROFILE: '/#/profile',
     CHANGE_PASSWORD: '/#/change-password',
@@ -416,7 +420,8 @@ const SCREENSHOT_PREFIX = {
     operations: '17-operations',
     processes: '18-processes',
     userProfile: '19-user-profile',
-    users: '20-users'
+    users: '20-users',
+    productionHistory: '21-production-history'
 };
 
 module.exports = {
