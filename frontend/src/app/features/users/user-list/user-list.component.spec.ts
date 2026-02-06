@@ -25,7 +25,11 @@ describe('UserListComponent', () => {
     totalElements: 2,
     totalPages: 1,
     page: 0,
-    size: 20
+    size: 20,
+    first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false
   };
 
   beforeEach(async () => {
@@ -80,15 +84,15 @@ describe('UserListComponent', () => {
     it('should navigate to new user form', () => {
       spyOn(router, 'navigate');
 
-      component.navigateToNew();
+      component.createUser();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/manage/users/new']);
+      expect(router.navigate).toHaveBeenCalledWith(['/manage/users', 'new']);
     });
 
     it('should navigate to edit user form', () => {
       spyOn(router, 'navigate');
 
-      component.navigateToEdit(1);
+      component.editUser(1);
 
       expect(router.navigate).toHaveBeenCalledWith(['/manage/users', 1, 'edit']);
     });
@@ -96,7 +100,7 @@ describe('UserListComponent', () => {
     it('should navigate to user detail', () => {
       spyOn(router, 'navigate');
 
-      component.navigateToDetail(1);
+      component.viewUser(1);
 
       expect(router.navigate).toHaveBeenCalledWith(['/manage/users', 1]);
     });
@@ -105,10 +109,9 @@ describe('UserListComponent', () => {
   describe('delete', () => {
     it('should delete user on confirmation', () => {
       spyOn(window, 'confirm').and.returnValue(true);
-      apiServiceSpy.deleteUser.and.returnValue(of(void 0));
-      apiServiceSpy.getAllUsers.and.returnValue(of([mockUsers[1]]));
+      apiServiceSpy.deleteUser.and.returnValue(of({ message: 'User deactivated' }));
 
-      component.deleteUser(1);
+      component.deleteUser(mockUsers[0]);
 
       expect(apiServiceSpy.deleteUser).toHaveBeenCalledWith(1);
     });
@@ -116,7 +119,7 @@ describe('UserListComponent', () => {
     it('should not delete on cancel', () => {
       spyOn(window, 'confirm').and.returnValue(false);
 
-      component.deleteUser(1);
+      component.deleteUser(mockUsers[0]);
 
       expect(apiServiceSpy.deleteUser).not.toHaveBeenCalled();
     });
@@ -127,53 +130,31 @@ describe('UserListComponent', () => {
         throwError(() => ({ error: { message: 'Cannot delete' } }))
       );
 
-      component.deleteUser(1);
+      component.deleteUser(mockUsers[0]);
 
       expect(component.error).toBeTruthy();
     });
   });
 
   describe('filtering', () => {
-    it('should filter users by search term', () => {
-      component.users = mockUsers;
+    it('should trigger search with onSearch', () => {
       component.searchTerm = 'admin';
+      component.page = 2;
 
-      const filtered = component.filteredUsers;
+      component.onSearch();
 
-      expect(filtered.length).toBe(1);
-      expect(filtered[0].email).toContain('admin');
+      expect(component.page).toBe(0); // Reset to first page
+      expect(apiServiceSpy.getUsersPaged).toHaveBeenCalled();
     });
 
-    it('should filter users by role', () => {
-      component.users = mockUsers;
-      component.filterRole = 'ADMIN';
+    it('should trigger filter change with onFilterChange', () => {
+      component.statusFilter = 'ACTIVE';
+      component.page = 2;
 
-      const filtered = component.filteredUsers;
+      component.onFilterChange();
 
-      expect(filtered.length).toBe(1);
-      expect(filtered[0].role).toBe('ADMIN');
-    });
-
-    it('should show all when no filter', () => {
-      component.users = mockUsers;
-      component.searchTerm = '';
-      component.filterRole = 'all';
-
-      expect(component.filteredUsers.length).toBe(2);
-    });
-  });
-
-  describe('getRoleClass', () => {
-    it('should return correct class for ADMIN', () => {
-      expect(component.getRoleClass('ADMIN')).toBe('role-admin');
-    });
-
-    it('should return correct class for OPERATOR', () => {
-      expect(component.getRoleClass('OPERATOR')).toBe('role-operator');
-    });
-
-    it('should return correct class for VIEWER', () => {
-      expect(component.getRoleClass('VIEWER')).toBe('role-viewer');
+      expect(component.page).toBe(0); // Reset to first page
+      expect(apiServiceSpy.getUsersPaged).toHaveBeenCalled();
     });
   });
 

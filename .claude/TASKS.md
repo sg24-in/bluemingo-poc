@@ -29,6 +29,31 @@
 
 ---
 
+### Phase 8B: Default Batch Status & Approval Workflow - COMPLETE ✅
+
+- B06-B07: Already implemented - batches default to QUALITY_PENDING
+- B08: Added dashboard loading of pending approval batches
+- B09: Already implemented - batch list has Approve/Reject buttons
+
+**Dashboard Changes:**
+- Added `getBatchesByStatus('QUALITY_PENDING')` call in dashboard.component.ts
+- Alert card displays count of "Batches Pending Approval"
+- Click navigates to `/batches?status=QUALITY_PENDING`
+
+**Pre-existing Test Fixes (2026-02-07):**
+Fixed multiple test compilation errors in:
+- `user-list.component.spec.ts` - Updated to match component API
+- `user-form.component.spec.ts` - Removed tests for non-existent features
+- `profile.component.spec.ts` - Fixed User type mismatch
+- `change-password.component.spec.ts` - Fixed mock return types
+- `receive-material.component.spec.ts` - Added missing response fields
+- `production-landing.component.spec.ts` - Fixed orderLineId field name
+- `order-detail.component.spec.ts` - Fixed orderLineId field name
+
+**Frontend Test Status:** 1002/1007 passing (5 failures - navigation/routing issues)
+
+---
+
 ### Phase 9E Analysis: ProcessTemplate UI REDUNDANT ❌
 
 - R20-R21 (ProcessTemplate list/form) marked as N/A
@@ -1225,14 +1250,22 @@ Per MES Consolidated Spec, the data model was refactored:
 - Batch form quantity field disabled in edit mode with help text
 - **B05 Tests:** 7 integration tests verifying immutability rules (all pass)
 
-### Phase 8B: Default Status & Workflow
+### Phase 8B: Default Status & Workflow - ✅ COMPLETE
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| B06 | Change default batch status to BLOCKED | PENDING | HIGH | Currently AVAILABLE |
-| B07 | Update ProductionService batch creation | PENDING | HIGH | Create with BLOCKED status |
-| B08 | Add pending approval queue to dashboard | PENDING | HIGH | Show batches needing approval |
-| B09 | Update batch list for approval workflow | PENDING | HIGH | Approval actions in list |
+| B06 | Change default batch status to QUALITY_PENDING | ✅ DONE | HIGH | Already implemented in Batch.java @PrePersist |
+| B07 | Update ProductionService batch creation | ✅ DONE | HIGH | Already sets STATUS_QUALITY_PENDING (line 341) |
+| B08 | Add pending approval queue to dashboard | ✅ DONE | HIGH | Added getBatchesByStatus('QUALITY_PENDING') call |
+| B09 | Update batch list for approval workflow | ✅ DONE | HIGH | Already has canApprove/approveBatch/rejectBatch |
+
+**Implementation Details (2026-02-07):**
+- `Batch.java` @PrePersist sets default status to QUALITY_PENDING
+- `ProductionService.createOutputBatch()` explicitly sets STATUS_QUALITY_PENDING
+- `ReceiveMaterialService` also creates batches with QUALITY_PENDING
+- Dashboard now loads batches pending approval via `getBatchesByStatus('QUALITY_PENDING')`
+- Dashboard alert card shows count and links to `/batches?status=QUALITY_PENDING`
+- Batch list has Approve/Reject buttons for QUALITY_PENDING batches
 
 ### Phase 8C: Batch Size Configuration
 

@@ -11,7 +11,6 @@ describe('ProfileComponent', () => {
   let currentUserSubject: BehaviorSubject<User | null>;
 
   const mockUser: User = {
-    userId: 1,
     email: 'admin@mes.com',
     fullName: 'Admin User',
     role: 'ADMIN'
@@ -50,7 +49,6 @@ describe('ProfileComponent', () => {
 
   it('should update when user changes', () => {
     const newUser: User = {
-      userId: 2,
       email: 'operator@mes.com',
       fullName: 'Operator User',
       role: 'OPERATOR'

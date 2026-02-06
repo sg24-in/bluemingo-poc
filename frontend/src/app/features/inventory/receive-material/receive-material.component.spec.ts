@@ -45,6 +45,10 @@ describe('ReceiveMaterialComponent', () => {
     batchId: 101,
     batchNumber: 'B-RM-101',
     inventoryId: 201,
+    batchStatus: 'QUALITY_PENDING',
+    inventoryState: 'AVAILABLE',
+    quantity: 100,
+    unit: 'KG',
     message: 'Material received successfully'
   };
 

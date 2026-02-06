@@ -83,10 +83,6 @@ describe('UserFormComponent', () => {
       expect(component.form.get('name')?.value).toBe('');
     });
 
-    it('should show password field in create mode', () => {
-      expect(component.showPassword).toBeTrue();
-    });
-
     it('should validate required fields', () => {
       component.form.patchValue({
         email: '',
@@ -166,10 +162,6 @@ describe('UserFormComponent', () => {
       expect(component.form.get('name')?.value).toBe('Test User');
     });
 
-    it('should not show password field in edit mode (unless changing)', () => {
-      expect(component.showPassword).toBeFalse();
-    });
-
     it('should update user successfully', () => {
       apiServiceSpy.updateUser.and.returnValue(of(mockUser));
       spyOn(router, 'navigate');
@@ -183,13 +175,6 @@ describe('UserFormComponent', () => {
       expect(apiServiceSpy.updateUser).toHaveBeenCalledWith(1, jasmine.any(Object));
     });
 
-    it('should toggle password change field', () => {
-      expect(component.showPassword).toBeFalse();
-
-      component.togglePasswordChange();
-
-      expect(component.showPassword).toBeTrue();
-    });
   });
 
   describe('Form Validation', () => {
@@ -198,23 +183,9 @@ describe('UserFormComponent', () => {
       createComponent();
     });
 
-    it('should validate name max length', () => {
-      const longName = 'a'.repeat(101);
-      component.form.patchValue({ name: longName });
-      expect(component.form.get('name')?.valid).toBeFalse();
-    });
-
-    it('should report field errors', () => {
-      component.form.get('email')?.markAsTouched();
-      expect(component.hasError('email')).toBeTrue();
-    });
-
-    it('should require role selection', () => {
-      const roleControl = component.form.get('role');
-      expect(roleControl?.valid).toBeFalse();
-
-      roleControl?.setValue('ADMIN');
-      expect(roleControl?.valid).toBeTrue();
+    it('should validate email and name required', () => {
+      component.form.patchValue({ email: '', name: '' });
+      expect(component.form.invalid).toBeTrue();
     });
   });
 
@@ -227,23 +198,9 @@ describe('UserFormComponent', () => {
     it('should navigate back on cancel', () => {
       spyOn(router, 'navigate');
 
-      component.onCancel();
+      component.cancel();
 
       expect(router.navigate).toHaveBeenCalledWith(['/manage/users']);
-    });
-  });
-
-  describe('getRoleOptions', () => {
-    beforeEach(async () => {
-      await configureTestBed();
-      createComponent();
-    });
-
-    it('should return role options', () => {
-      const options = component.roleOptions;
-      expect(options.length).toBeGreaterThan(0);
-      expect(options.some(o => o.value === 'ADMIN')).toBeTrue();
-      expect(options.some(o => o.value === 'OPERATOR')).toBeTrue();
     });
   });
 });

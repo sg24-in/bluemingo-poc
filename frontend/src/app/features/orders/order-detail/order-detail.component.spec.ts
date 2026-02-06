@@ -21,7 +21,7 @@ describe('OrderDetailComponent', () => {
     status: 'IN_PROGRESS',
     customerName: 'Test Customer',
     lineItems: [{
-      lineItemId: 1,
+      orderLineId: 1,
       productSku: 'STEEL-001',
       productName: 'Steel Rod',
       quantity: 100,

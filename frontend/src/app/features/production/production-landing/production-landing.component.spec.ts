@@ -24,7 +24,7 @@ describe('ProductionLandingComponent', () => {
       status: 'IN_PROGRESS',
       lineItems: [
         {
-          lineItemId: 1,
+          orderLineId: 1,
           productSku: 'PROD-001',
           productName: 'Steel Rod',
           quantity: 100,

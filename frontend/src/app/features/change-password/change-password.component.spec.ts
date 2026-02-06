@@ -17,7 +17,6 @@ describe('ChangePasswordComponent', () => {
   let currentUserSubject: BehaviorSubject<User | null>;
 
   const mockUser: User = {
-    userId: 1,
     email: 'admin@mes.com',
     fullName: 'Admin User',
     role: 'ADMIN'
@@ -171,7 +170,7 @@ describe('ChangePasswordComponent', () => {
     });
 
     it('should submit valid form', () => {
-      apiServiceSpy.changePassword.and.returnValue(of({}));
+      apiServiceSpy.changePassword.and.returnValue(of({ message: 'Password changed' }));
 
       component.form.patchValue({
         currentPassword: 'oldpass',
@@ -188,7 +187,7 @@ describe('ChangePasswordComponent', () => {
     });
 
     it('should set success flag on successful submission', fakeAsync(() => {
-      apiServiceSpy.changePassword.and.returnValue(of({}));
+      apiServiceSpy.changePassword.and.returnValue(of({ message: 'Password changed' }));
       spyOn(router, 'navigate');
 
       component.form.patchValue({
@@ -240,7 +239,7 @@ describe('ChangePasswordComponent', () => {
     });
 
     it('should set loading during submission', () => {
-      apiServiceSpy.changePassword.and.returnValue(of({}));
+      apiServiceSpy.changePassword.and.returnValue(of({ message: 'Password changed' }));
 
       component.form.patchValue({
         currentPassword: 'oldpass',
