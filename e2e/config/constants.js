@@ -55,7 +55,26 @@ const ROUTES = {
     CONFIG_QUANTITY_TYPE_EDIT: (id) => `/#/manage/config/quantity-type/${id}/edit`,
     // Audit and Production History
     AUDIT: '/#/manage/audit',
-    PRODUCTION_HISTORY: '/#/production/history'
+    PRODUCTION_HISTORY: '/#/production/history',
+    // Operators
+    OPERATORS: '/#/manage/operators',
+    OPERATOR_NEW: '/#/manage/operators/new',
+    OPERATOR_EDIT: (id) => `/#/manage/operators/${id}/edit`,
+    // Operations
+    OPERATIONS: '/#/operations',
+    // Processes
+    PROCESSES: '/#/processes',
+    PROCESSES_LIST: '/#/processes/list',
+    PROCESSES_QUALITY: '/#/processes/quality-pending',
+    PROCESS_DETAIL: (id) => `/#/processes/${id}`,
+    // Profile & User Management
+    PROFILE: '/#/profile',
+    CHANGE_PASSWORD: '/#/change-password',
+    USERS: '/#/manage/users',
+    USER_NEW: '/#/manage/users/new',
+    USER_EDIT: (id) => `/#/manage/users/${id}/edit`,
+    // Production Landing
+    PRODUCTION_LANDING: '/#/production'
 };
 
 // CSS Selectors
@@ -161,7 +180,18 @@ const SELECTORS = {
         qtRoundingRule: '#roundingRule',
         qtMinQuantity: '#minQuantity',
         qtMaxQuantity: '#maxQuantity',
-        qtUnit: '#unit'
+        qtUnit: '#unit',
+        // Operator form
+        operatorCode: '#operatorCode',
+        operatorName: '#name',
+        operatorDepartment: '#department',
+        operatorShift: '#shift',
+        operatorStatus: '#status',
+        // User form
+        userName: '#name',
+        userEmail: '#email',
+        userPassword: '#password',
+        userRole: '#role'
     },
 
     // Header/Navigation
@@ -346,6 +376,20 @@ const TEST_DATA = {
             decimalPrecision: '2',
             roundingRule: 'HALF_UP',
             updatedPrecision: '3'
+        },
+        operator: {
+            code: 'E2E-OP-001',
+            name: 'E2E Test Operator',
+            department: 'Production',
+            shift: 'Day',
+            updatedName: 'E2E Test Operator Updated'
+        },
+        user: {
+            name: 'E2E Test User',
+            email: 'e2e-test@example.com',
+            password: 'TestPass123!',
+            role: 'OPERATOR',
+            updatedName: 'E2E Test User Updated'
         }
     }
 };
@@ -367,7 +411,11 @@ const SCREENSHOT_PREFIX = {
     bomCrud: '13-bom-crud',
     configCrud: '14-config-crud',
     auditHistory: '15-audit-history',
-    navigation: '16-navigation'
+    operators: '16-operators',
+    operations: '17-operations',
+    processes: '18-processes',
+    userProfile: '19-user-profile',
+    users: '20-users'
 };
 
 module.exports = {
