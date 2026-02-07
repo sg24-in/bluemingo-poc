@@ -303,4 +303,48 @@ describe('HoldListComponent', () => {
       expect(options).toEqual([]);
     });
   });
+
+  describe('Filter Highlighting', () => {
+    it('should apply filter-active class when status filter is set', () => {
+      component.onFilterStatusChange('ACTIVE');
+      fixture.detectChanges();
+
+      const filterGroups = fixture.nativeElement.querySelectorAll('.filter-group');
+      expect(filterGroups[0].classList.contains('filter-active')).toBeTrue();
+    });
+
+    it('should not apply filter-active class when status filter is all', () => {
+      component.onFilterStatusChange('all');
+      fixture.detectChanges();
+
+      const filterGroups = fixture.nativeElement.querySelectorAll('.filter-group');
+      expect(filterGroups[0].classList.contains('filter-active')).toBeFalse();
+    });
+
+    it('should apply filter-active class when entity type filter is set', () => {
+      component.onFilterEntityTypeChange('OPERATION');
+      fixture.detectChanges();
+
+      const filterGroups = fixture.nativeElement.querySelectorAll('.filter-group');
+      expect(filterGroups[1].classList.contains('filter-active')).toBeTrue();
+    });
+
+    it('should not apply filter-active class when entity type filter is all', () => {
+      component.onFilterEntityTypeChange('all');
+      fixture.detectChanges();
+
+      const filterGroups = fixture.nativeElement.querySelectorAll('.filter-group');
+      expect(filterGroups[1].classList.contains('filter-active')).toBeFalse();
+    });
+
+    it('should apply filter-active to both filters when both are set', () => {
+      component.onFilterStatusChange('ACTIVE');
+      component.onFilterEntityTypeChange('BATCH');
+      fixture.detectChanges();
+
+      const filterGroups = fixture.nativeElement.querySelectorAll('.filter-group');
+      expect(filterGroups[0].classList.contains('filter-active')).toBeTrue();
+      expect(filterGroups[1].classList.contains('filter-active')).toBeTrue();
+    });
+  });
 });

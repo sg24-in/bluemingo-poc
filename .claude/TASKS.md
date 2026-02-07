@@ -1,11 +1,71 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Phase 8E (B21-B22) DONE, Phase 9F (R24-R25, R27) DONE, Session Log Created
+**Session Status:** Active - Dashboard Navigation Fixes, Filter Highlighting, Query Param Tests
 
 ---
 
-## Latest Session Changes (2026-02-07 - Continued)
+## Latest Session Changes (2026-02-07 - Filter Highlighting & Tests)
+
+### Filter Highlighting Across System - COMPLETE ✅
+
+**User Request:** Selected filter tiles should be highlighted to show when a filter is active.
+
+**CSS Changes (styles.css):**
+- Added `.filter-active` class for filter groups and select elements
+- Blue border, light blue background, bold label when filter is applied
+- Box shadow for emphasis
+- Active filters bar with chips (optional, for future use)
+
+**Templates Updated (17 list components):**
+- `holds/hold-list/hold-list.component.html` - Status and Entity Type filters
+- `inventory/inventory-list/inventory-list.component.html` - State and Type filters
+- `operations/operation-list/operation-list.component.html` - Status filter
+- `batches/batch-list/batch-list.component.html` - State filter
+- `equipment/equipment-list/equipment-list.component.html` - Status and Type filters
+- `orders/order-list/order-list.component.html` - Status filter
+- `materials/material-list/material-list.component.html` - Status and Type filters
+- `products/product-list/product-list.component.html` - Status filter
+- `customers/customer-list/customer-list.component.html` - Status filter
+- `operators/operator-list/operator-list.component.html` - Status filter
+- `processes/process-list/process-list.component.html` - Status filter
+- `production/production-history/production-history.component.html` - Status filter
+- `config/hold-reasons/hold-reasons-list.component.html` - Status filter
+- `config/quantity-type/quantity-type-list.component.html` - Status filter
+- `config/delay-reasons/delay-reasons-list.component.html` - Status filter
+- `config/batch-number/batch-number-list.component.html` - Status filter
+- `config/process-params/process-params-list.component.html` - Status filter
+
+**Pattern Applied:**
+```html
+<div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
+  <select ... [class.filter-active]="filterStatus && filterStatus !== 'all'">
+```
+
+**Tests Added:**
+- `inventory-list.component.spec.ts` - 5 filter highlighting tests
+- `operation-list.component.spec.ts` - 4 filter highlighting tests
+- `hold-list.component.spec.ts` - 5 filter highlighting tests
+
+---
+
+### Dashboard Navigation Fixes - COMPLETE ✅
+
+**Issue:** Dashboard tiles routing to incorrect pages (operations status clicking but no filter applied).
+
+**Fixes Applied:**
+- `dashboard.component.ts` - Fixed `navigateToOperationsByStatus()` to use `/operations?status=...`
+- `operation-list.component.ts` - Added ActivatedRoute and query param reading
+- `inventory-list.component.ts` - Added query param reading for `state` and `type`
+
+**Tests Added:**
+- `dashboard.component.spec.ts` - 7 navigation tests for operations, inventory, batch approval
+- `operation-list.component.spec.ts` - 3 query param tests
+- `inventory-list.component.spec.ts` - 5 query param tests
+
+---
+
+## Previous Session Changes (2026-02-07 - Continued)
 
 ### Phase 8A: Batch Immutability - COMPLETE ✅
 

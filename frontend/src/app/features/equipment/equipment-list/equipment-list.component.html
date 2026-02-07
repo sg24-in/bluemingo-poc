@@ -14,9 +14,10 @@
     <!-- Filters -->
     <div class="card">
       <div class="filters">
-        <div class="filter-group">
+        <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
           <label>Status:</label>
-          <select (change)="onFilterStatusChange($any($event.target).value)" [value]="filterStatus || 'all'">
+          <select (change)="onFilterStatusChange($any($event.target).value)" [value]="filterStatus || 'all'"
+                  [class.filter-active]="filterStatus && filterStatus !== 'all'">
             <option value="all">All Statuses</option>
             <option value="AVAILABLE">Available</option>
             <option value="IN_USE">In Use</option>
@@ -26,9 +27,10 @@
           </select>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group" [class.filter-active]="filterType && filterType !== 'all'">
           <label>Type:</label>
-          <select (change)="onFilterTypeChange($any($event.target).value)" [value]="filterType || 'all'">
+          <select (change)="onFilterTypeChange($any($event.target).value)" [value]="filterType || 'all'"
+                  [class.filter-active]="filterType && filterType !== 'all'">
             <option value="all">All Types</option>
             <option value="BATCH">Batch</option>
             <option value="CONTINUOUS">Continuous</option>

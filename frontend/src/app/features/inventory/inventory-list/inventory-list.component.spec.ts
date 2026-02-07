@@ -364,4 +364,47 @@ describe('InventoryListComponent', () => {
       expect(component.filterType).toBe('');
     });
   });
+
+  describe('Filter Highlighting', () => {
+    it('should apply filter-active class when state filter is set', () => {
+      component.onFilterStateChange('BLOCKED');
+      fixture.detectChanges();
+
+      const stateFilterGroup = fixture.nativeElement.querySelector('.filter-group');
+      expect(stateFilterGroup.classList.contains('filter-active')).toBeTrue();
+    });
+
+    it('should not apply filter-active class when state filter is empty', () => {
+      component.onFilterStateChange('all');
+      fixture.detectChanges();
+
+      const stateFilterGroup = fixture.nativeElement.querySelector('.filter-group');
+      expect(stateFilterGroup.classList.contains('filter-active')).toBeFalse();
+    });
+
+    it('should apply filter-active class to select element when type filter is set', () => {
+      component.onFilterTypeChange('RM');
+      fixture.detectChanges();
+
+      const typeSelect = fixture.nativeElement.querySelectorAll('.filter-group select')[1];
+      expect(typeSelect.classList.contains('filter-active')).toBeTrue();
+    });
+
+    it('should not apply filter-active class to select element when type filter is all', () => {
+      component.onFilterTypeChange('all');
+      fixture.detectChanges();
+
+      const typeSelect = fixture.nativeElement.querySelectorAll('.filter-group select')[1];
+      expect(typeSelect.classList.contains('filter-active')).toBeFalse();
+    });
+
+    it('should apply filter-active class to both filters when both are set', () => {
+      queryParamsSubject.next({ state: 'AVAILABLE', type: 'FG' });
+      fixture.detectChanges();
+
+      const filterGroups = fixture.nativeElement.querySelectorAll('.filter-group');
+      expect(filterGroups[0].classList.contains('filter-active')).toBeTrue();
+      expect(filterGroups[1].classList.contains('filter-active')).toBeTrue();
+    });
+  });
 });

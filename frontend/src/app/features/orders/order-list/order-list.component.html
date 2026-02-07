@@ -15,9 +15,10 @@
           class="search-input"
         />
       </div>
-      <div class="filter-group">
+      <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
         <label>Status:</label>
-        <select (change)="onFilterChange($any($event.target).value)" [value]="filterStatus || 'all'">
+        <select (change)="onFilterChange($any($event.target).value)" [value]="filterStatus || 'all'"
+                [class.filter-active]="filterStatus && filterStatus !== 'all'">
           <option value="all">All</option>
           <option value="CREATED">Created</option>
           <option value="IN_PROGRESS">In Progress</option>

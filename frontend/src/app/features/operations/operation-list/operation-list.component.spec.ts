@@ -331,4 +331,38 @@ describe('OperationListComponent', () => {
       expect(component.operations[0].status).toBe('BLOCKED');
     });
   });
+
+  describe('Filter Highlighting', () => {
+    it('should apply filter-active class when status filter is set', () => {
+      component.onFilterStatusChange('READY');
+      fixture.detectChanges();
+
+      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
+      expect(filterGroup.classList.contains('filter-active')).toBeTrue();
+    });
+
+    it('should not apply filter-active class when status filter is all', () => {
+      component.onFilterStatusChange('all');
+      fixture.detectChanges();
+
+      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
+      expect(filterGroup.classList.contains('filter-active')).toBeFalse();
+    });
+
+    it('should apply filter-active class to select element when filter is set', () => {
+      component.onFilterStatusChange('BLOCKED');
+      fixture.detectChanges();
+
+      const select = fixture.nativeElement.querySelector('.filter-group select');
+      expect(select.classList.contains('filter-active')).toBeTrue();
+    });
+
+    it('should apply filter-active via query params', () => {
+      queryParamsSubject.next({ status: 'IN_PROGRESS' });
+      fixture.detectChanges();
+
+      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
+      expect(filterGroup.classList.contains('filter-active')).toBeTrue();
+    });
+  });
 });

@@ -8,18 +8,20 @@
 
   <div class="card">
     <div class="filters">
-      <div class="filter-group">
+      <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
         <label for="status-filter">Status:</label>
-        <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
+        <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)"
+                [class.filter-active]="filterStatus && filterStatus !== 'all'">
           <option value="all">All Statuses</option>
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
         </select>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group" [class.filter-active]="filterType && filterType !== 'all'">
         <label for="type-filter">Type:</label>
-        <select id="type-filter" [(ngModel)]="filterType" (change)="onFilterTypeChange(filterType)">
+        <select id="type-filter" [(ngModel)]="filterType" (change)="onFilterTypeChange(filterType)"
+                [class.filter-active]="filterType && filterType !== 'all'">
           <option value="all">All Types</option>
           <option *ngFor="let type of materialTypes" [value]="type.value">{{ type.label }}</option>
         </select>

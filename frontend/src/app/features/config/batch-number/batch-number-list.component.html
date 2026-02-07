@@ -6,9 +6,10 @@
 
   <div class="card">
     <div class="filters">
-      <div class="filter-group">
+      <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
         <label>Status:</label>
-        <select [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)">
+        <select [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)"
+                [class.filter-active]="filterStatus && filterStatus !== 'all'">
           <option value="all">All</option>
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
