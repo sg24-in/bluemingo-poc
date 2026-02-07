@@ -89,6 +89,8 @@ describe('ChangePasswordComponent', () => {
       const control = component.form.get('confirmPassword');
       expect(control?.valid).toBeFalse();
 
+      // Set matching passwords to avoid cross-field validation error
+      component.form.get('newPassword')?.setValue('password');
       control?.setValue('password');
       expect(control?.valid).toBeTrue();
     });
@@ -129,9 +131,10 @@ describe('ChangePasswordComponent', () => {
     });
 
     it('should return good for better password', () => {
-      component.form.get('newPassword')?.setValue('Abcdef12');
+      // 'Abcdef1' (7 chars): 6chars=20 + uppercase=20 + lowercase=10 + numbers=15 = 65 → Good
+      component.form.get('newPassword')?.setValue('Abcdef1');
       const strength = component.getPasswordStrength();
-      expect(['Fair', 'Good']).toContain(strength.label);
+      expect(strength.label).toBe('Good');
     });
 
     it('should return strong for complex password', () => {

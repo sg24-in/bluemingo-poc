@@ -36,6 +36,10 @@ export class OperationListComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['status'] && this.statuses.includes(params['status'])) {
         this.filterStatus = params['status'];
+        // Re-apply filters if operations are already loaded
+        if (this.allOperations.length > 0) {
+          this.applyFilters();
+        }
       }
     });
     this.loadOperations();

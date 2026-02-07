@@ -147,7 +147,7 @@ describe('UserFormComponent', () => {
 
   describe('Edit Mode', () => {
     beforeEach(async () => {
-      await configureTestBed({ userId: '1' });
+      await configureTestBed({ id: '1' });  // Route param is 'id', not 'userId'
       apiServiceSpy.getUserById.and.returnValue(of(mockUser));
       createComponent();
     });

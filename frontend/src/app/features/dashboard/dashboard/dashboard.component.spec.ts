@@ -20,6 +20,8 @@ describe('DashboardComponent', () => {
     operationsInProgress: 2,
     activeHolds: 1,
     todayConfirmations: 4,
+    qualityPendingProcesses: 0, // Process is design-time only, quality is at Batch level
+    batchesPendingApproval: 2,
     recentActivity: [
       { confirmationId: 1, operationName: 'Melting', productSku: 'STEEL-001', producedQty: 100 }
     ],
@@ -50,7 +52,6 @@ describe('DashboardComponent', () => {
       'getAllBatches',
       'getAllInventory',
       'getOrders',
-      'getQualityPendingProcesses',
       'getAllOperations',
       'getBatchesByStatus'
     ]);
@@ -83,7 +84,6 @@ describe('DashboardComponent', () => {
     apiServiceSpy.getAvailableOrders.and.returnValue(of(mockOrders as any));
     apiServiceSpy.getAllBatches.and.returnValue(of(mockBatches as any));
     apiServiceSpy.getAllInventory.and.returnValue(of(mockInventory as any));
-    apiServiceSpy.getQualityPendingProcesses.and.returnValue(of([]));
     apiServiceSpy.getBatchesByStatus.and.returnValue(of([]));
     apiServiceSpy.getOrders.and.returnValue(of(mockOrders as any));
     apiServiceSpy.getAllOperations.and.returnValue(of([
@@ -136,6 +136,10 @@ describe('DashboardComponent', () => {
   it('should have recent activity from summary', () => {
     expect(component.summary.recentActivity.length).toBe(1);
     expect(component.summary.recentActivity[0].operationName).toBe('Melting');
+  });
+
+  it('should load batches pending approval', () => {
+    expect(apiServiceSpy.getBatchesByStatus).toHaveBeenCalledWith('QUALITY_PENDING');
   });
 
   describe('navigation', () => {

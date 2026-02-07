@@ -35,7 +35,7 @@ describe('ProductionLandingComponent', () => {
             {
               processId: 1,
               processName: 'Melting',
-              status: 'IN_PROGRESS',
+              status: 'ACTIVE', // Process is design-time only, uses DRAFT/ACTIVE/INACTIVE
               operations: [
                 {
                   operationId: 101,

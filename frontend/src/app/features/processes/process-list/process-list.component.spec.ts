@@ -13,43 +13,38 @@ describe('ProcessListComponent', () => {
   let fixture: ComponentFixture<ProcessListComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
+  // Process is now design-time only with DRAFT/ACTIVE/INACTIVE statuses
   const mockProcesses: any[] = [
     {
       processId: 1,
-      orderLineId: 1,
-      processName: 'Melting',
-      stageSequence: 1,
-      status: 'READY',
-      usageDecision: null,
-      operations: [
-        { operationId: 1, operationName: 'Melt Iron', operationCode: 'MLT-001', status: 'READY', sequenceNumber: 1 }
-      ]
+      processName: 'Melting Process',
+      status: 'DRAFT',
+      createdOn: '2024-01-01T00:00:00',
+      createdBy: 'admin'
     },
     {
       processId: 2,
-      orderLineId: 1,
-      processName: 'Casting',
-      stageSequence: 2,
-      status: 'IN_PROGRESS',
-      usageDecision: null,
-      operations: [
-        { operationId: 2, operationName: 'Cast Steel', operationCode: 'CST-001', status: 'CONFIRMED', sequenceNumber: 1 },
-        { operationId: 3, operationName: 'Cool Down', operationCode: 'CST-002', status: 'IN_PROGRESS', sequenceNumber: 2 }
-      ]
+      processName: 'Casting Process',
+      status: 'ACTIVE',
+      createdOn: '2024-01-02T00:00:00',
+      createdBy: 'admin'
     },
     {
       processId: 3,
-      orderLineId: 2,
-      processName: 'Rolling',
-      stageSequence: 3,
-      status: 'COMPLETED',
-      usageDecision: 'ACCEPT',
-      operations: []
+      processName: 'Rolling Process',
+      status: 'INACTIVE',
+      createdOn: '2024-01-03T00:00:00',
+      createdBy: 'admin'
     }
   ];
 
   beforeEach(async () => {
-    const apiSpy = jasmine.createSpyObj('ApiService', ['getProcessesByStatus']);
+    const apiSpy = jasmine.createSpyObj('ApiService', [
+      'getProcessesByStatus',
+      'activateProcess',
+      'deactivateProcess',
+      'deleteProcess'
+    ]);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -89,8 +84,9 @@ describe('ProcessListComponent', () => {
     expect(component.loading).toBeFalse();
   });
 
-  it('should call getProcessesByStatus for each status', () => {
-    const statuses = ['READY', 'IN_PROGRESS', 'QUALITY_PENDING', 'COMPLETED', 'REJECTED', 'ON_HOLD'];
+  it('should call getProcessesByStatus for each design-time status', () => {
+    // Design-time statuses only: DRAFT, ACTIVE, INACTIVE
+    const statuses = ['DRAFT', 'ACTIVE', 'INACTIVE'];
     statuses.forEach(s => {
       expect(apiServiceSpy.getProcessesByStatus).toHaveBeenCalledWith(s);
     });
@@ -103,15 +99,15 @@ describe('ProcessListComponent', () => {
   });
 
   it('should apply status filter', () => {
-    component.onFilterStatusChange('READY');
+    component.onFilterStatusChange('DRAFT');
     expect(component.processes.length).toBe(1);
-    expect(component.processes[0].processName).toBe('Melting');
+    expect(component.processes[0].processName).toBe('Melting Process');
   });
 
   it('should apply search filter', () => {
     component.onSearchChange('Casting');
     expect(component.processes.length).toBe(1);
-    expect(component.processes[0].processName).toBe('Casting');
+    expect(component.processes[0].processName).toBe('Casting Process');
   });
 
   it('should search by process ID', () => {
@@ -121,11 +117,11 @@ describe('ProcessListComponent', () => {
   });
 
   it('should combine status and search filters', () => {
-    component.filterStatus = 'IN_PROGRESS';
+    component.filterStatus = 'ACTIVE';
     component.searchTerm = 'Cast';
     component.applyFilters();
     expect(component.processes.length).toBe(1);
-    expect(component.processes[0].processName).toBe('Casting');
+    expect(component.processes[0].processName).toBe('Casting Process');
   });
 
   it('should show all when filter is all', () => {
@@ -134,27 +130,15 @@ describe('ProcessListComponent', () => {
   });
 
   it('should return correct status class', () => {
-    expect(component.getStatusClass('IN_PROGRESS')).toBe('in-progress');
-    expect(component.getStatusClass('QUALITY_PENDING')).toBe('quality-pending');
-    expect(component.getStatusClass('READY')).toBe('ready');
-  });
-
-  it('should count operations', () => {
-    expect(component.getOperationCount(mockProcesses[0])).toBe(1);
-    expect(component.getOperationCount(mockProcesses[1])).toBe(2);
-    expect(component.getOperationCount(mockProcesses[2])).toBe(0);
-  });
-
-  it('should count confirmed operations', () => {
-    expect(component.getConfirmedCount(mockProcesses[1])).toBe(1);
-    expect(component.getConfirmedCount(mockProcesses[0])).toBe(0);
+    expect(component.getStatusClass('DRAFT')).toBe('draft');
+    expect(component.getStatusClass('ACTIVE')).toBe('active');
+    expect(component.getStatusClass('INACTIVE')).toBe('inactive');
   });
 
   it('should count by status', () => {
-    expect(component.countByStatus('READY')).toBe(1);
-    expect(component.countByStatus('IN_PROGRESS')).toBe(1);
-    expect(component.countByStatus('COMPLETED')).toBe(1);
-    expect(component.countByStatus('QUALITY_PENDING')).toBe(0);
+    expect(component.countByStatus('DRAFT')).toBe(1);
+    expect(component.countByStatus('ACTIVE')).toBe(1);
+    expect(component.countByStatus('INACTIVE')).toBe(1);
   });
 
   it('should handle API errors gracefully', () => {
@@ -166,7 +150,93 @@ describe('ProcessListComponent', () => {
   });
 
   it('should show empty state when no processes match filter', () => {
-    component.onFilterStatusChange('ON_HOLD');
+    component.onFilterStatusChange('NONEXISTENT');
     expect(component.processes.length).toBe(0);
+  });
+
+  describe('activate/deactivate', () => {
+    it('should activate a process', () => {
+      apiServiceSpy.activateProcess.and.returnValue(of({ processId: 1, status: 'ACTIVE' } as any));
+      apiServiceSpy.getProcessesByStatus.and.returnValue(of([]));
+
+      component.activateProcess(mockProcesses[0]);
+
+      expect(apiServiceSpy.activateProcess).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle activate error', () => {
+      apiServiceSpy.activateProcess.and.returnValue(
+        throwError(() => ({ error: { message: 'Cannot activate' } }))
+      );
+
+      component.activateProcess(mockProcesses[0]);
+
+      expect(component.error).toBe('Cannot activate');
+      expect(component.processing).toBeFalse();
+    });
+
+    it('should deactivate a process', () => {
+      apiServiceSpy.deactivateProcess.and.returnValue(of({ processId: 2, status: 'INACTIVE' } as any));
+      apiServiceSpy.getProcessesByStatus.and.returnValue(of([]));
+
+      component.deactivateProcess(mockProcesses[1]);
+
+      expect(apiServiceSpy.deactivateProcess).toHaveBeenCalledWith(2);
+    });
+
+    it('should handle deactivate error', () => {
+      apiServiceSpy.deactivateProcess.and.returnValue(
+        throwError(() => ({ error: { message: 'Cannot deactivate' } }))
+      );
+
+      component.deactivateProcess(mockProcesses[1]);
+
+      expect(component.error).toBe('Cannot deactivate');
+      expect(component.processing).toBeFalse();
+    });
+  });
+
+  describe('delete', () => {
+    it('should open delete confirmation modal', () => {
+      component.confirmDelete(mockProcesses[0]);
+      expect(component.showDeleteModal).toBeTrue();
+      expect(component.processToDelete).toEqual(mockProcesses[0]);
+    });
+
+    it('should cancel delete', () => {
+      component.confirmDelete(mockProcesses[0]);
+      component.cancelDelete();
+      expect(component.showDeleteModal).toBeFalse();
+      expect(component.processToDelete).toBeNull();
+    });
+
+    it('should delete a process', () => {
+      apiServiceSpy.deleteProcess.and.returnValue(of(void 0));
+      apiServiceSpy.getProcessesByStatus.and.returnValue(of([]));
+
+      component.processToDelete = mockProcesses[0];
+      component.deleteProcess();
+
+      expect(apiServiceSpy.deleteProcess).toHaveBeenCalledWith(1);
+      expect(component.showDeleteModal).toBeFalse();
+    });
+
+    it('should handle delete error', () => {
+      apiServiceSpy.deleteProcess.and.returnValue(
+        throwError(() => ({ error: { message: 'Cannot delete' } }))
+      );
+
+      component.processToDelete = mockProcesses[0];
+      component.deleteProcess();
+
+      expect(component.error).toBe('Cannot delete');
+      expect(component.deleting).toBeFalse();
+    });
+
+    it('should not delete without selected process', () => {
+      component.processToDelete = null;
+      component.deleteProcess();
+      expect(apiServiceSpy.deleteProcess).not.toHaveBeenCalled();
+    });
   });
 });

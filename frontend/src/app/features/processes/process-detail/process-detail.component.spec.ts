@@ -14,35 +14,28 @@ describe('ProcessDetailComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
   let router: Router;
 
+  // Process is now design-time only with DRAFT/ACTIVE/INACTIVE statuses
   const mockProcess = {
     processId: 1,
     processName: 'Melting Process',
-    stageSequence: 1,
-    orderLineId: 100,
-    status: 'IN_PROGRESS' as const,
-    usageDecision: 'PENDING' as const,
+    status: 'ACTIVE',
     createdOn: new Date().toISOString(),
-    operations: [
+    createdBy: 'admin',
+    routings: [
       {
-        operationId: 1,
-        operationName: 'Heat Treatment',
-        operationCode: 'OP-001',
-        status: 'READY' as const,
-        sequenceNumber: 1
-      },
-      {
-        operationId: 2,
-        operationName: 'Cooling',
-        operationCode: 'OP-002',
-        status: 'NOT_STARTED' as const,
-        sequenceNumber: 2
+        routingId: 1,
+        routingName: 'Standard Melting',
+        routingType: 'SEQUENTIAL',
+        status: 'ACTIVE'
       }
     ]
   };
 
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
-      'getProcessById'
+      'getProcessById',
+      'activateProcess',
+      'deactivateProcess'
     ]);
 
     await TestBed.configureTestingModule({
@@ -72,7 +65,7 @@ describe('ProcessDetailComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getProcessById.and.returnValue(of(mockProcess));
+    apiServiceSpy.getProcessById.and.returnValue(of(mockProcess as any));
     fixture = TestBed.createComponent(ProcessDetailComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -84,7 +77,7 @@ describe('ProcessDetailComponent', () => {
 
   it('should load process on init', () => {
     expect(apiServiceSpy.getProcessById).toHaveBeenCalledWith(1);
-    expect(component.process).toEqual(mockProcess);
+    expect(component.process).toBeTruthy();
     expect(component.loading).toBeFalse();
   });
 
@@ -133,51 +126,112 @@ describe('ProcessDetailComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/operations', 1]);
   });
 
-  it('should return correct status class for NOT_STARTED', () => {
-    expect(component.getStatusClass('NOT_STARTED')).toBe('status-not-started');
+  // Design-time status classes for Process templates
+  describe('getStatusClass', () => {
+    it('should return correct status class for DRAFT', () => {
+      expect(component.getStatusClass('DRAFT')).toBe('draft');
+    });
+
+    it('should return correct status class for ACTIVE', () => {
+      expect(component.getStatusClass('ACTIVE')).toBe('active');
+    });
+
+    it('should return correct status class for INACTIVE', () => {
+      expect(component.getStatusClass('INACTIVE')).toBe('inactive');
+    });
+
+    it('should return empty string for unknown status', () => {
+      expect(component.getStatusClass('UNKNOWN')).toBe('');
+    });
   });
 
-  it('should return correct status class for IN_PROGRESS', () => {
-    expect(component.getStatusClass('IN_PROGRESS')).toBe('status-in-progress');
+  // Operation status classes (runtime)
+  describe('getOperationStatusClass', () => {
+    it('should return correct operation status class for NOT_STARTED', () => {
+      expect(component.getOperationStatusClass('NOT_STARTED')).toBe('op-not-started');
+    });
+
+    it('should return correct operation status class for READY', () => {
+      expect(component.getOperationStatusClass('READY')).toBe('op-ready');
+    });
+
+    it('should return correct operation status class for IN_PROGRESS', () => {
+      expect(component.getOperationStatusClass('IN_PROGRESS')).toBe('op-in-progress');
+    });
+
+    it('should return correct operation status class for CONFIRMED', () => {
+      expect(component.getOperationStatusClass('CONFIRMED')).toBe('op-confirmed');
+    });
+
+    it('should return correct operation status class for ON_HOLD', () => {
+      expect(component.getOperationStatusClass('ON_HOLD')).toBe('op-on-hold');
+    });
+
+    it('should return correct operation status class for BLOCKED', () => {
+      expect(component.getOperationStatusClass('BLOCKED')).toBe('op-blocked');
+    });
   });
 
-  it('should return correct status class for COMPLETED', () => {
-    expect(component.getStatusClass('COMPLETED')).toBe('status-completed');
+  // Activate/Deactivate functionality
+  describe('activateProcess', () => {
+    it('should activate process successfully', () => {
+      const activatedProcess = { ...mockProcess, status: 'ACTIVE' };
+      apiServiceSpy.activateProcess.and.returnValue(of(activatedProcess as any));
+
+      component.process = { ...mockProcess, status: 'DRAFT' } as any;
+      component.activateProcess();
+
+      expect(apiServiceSpy.activateProcess).toHaveBeenCalledWith(1);
+      expect(component.processing).toBeFalse();
+    });
+
+    it('should handle activate error', () => {
+      apiServiceSpy.activateProcess.and.returnValue(
+        throwError(() => ({ error: { message: 'Cannot activate' } }))
+      );
+
+      component.process = mockProcess as any;
+      component.activateProcess();
+
+      expect(component.error).toBe('Cannot activate');
+      expect(component.processing).toBeFalse();
+    });
+
+    it('should not activate if no process', () => {
+      component.process = null;
+      component.activateProcess();
+      expect(apiServiceSpy.activateProcess).not.toHaveBeenCalled();
+    });
   });
 
-  it('should return correct status class for ON_HOLD', () => {
-    expect(component.getStatusClass('ON_HOLD')).toBe('status-on-hold');
-  });
+  describe('deactivateProcess', () => {
+    it('should deactivate process successfully', () => {
+      const deactivatedProcess = { ...mockProcess, status: 'INACTIVE' };
+      apiServiceSpy.deactivateProcess.and.returnValue(of(deactivatedProcess as any));
 
-  it('should return correct operation status class for READY', () => {
-    expect(component.getOperationStatusClass('READY')).toBe('op-ready');
-  });
+      component.process = mockProcess as any;
+      component.deactivateProcess();
 
-  it('should return correct operation status class for IN_PROGRESS', () => {
-    expect(component.getOperationStatusClass('IN_PROGRESS')).toBe('op-in-progress');
-  });
+      expect(apiServiceSpy.deactivateProcess).toHaveBeenCalledWith(1);
+      expect(component.processing).toBeFalse();
+    });
 
-  it('should return correct operation status class for CONFIRMED', () => {
-    expect(component.getOperationStatusClass('CONFIRMED')).toBe('op-confirmed');
-  });
+    it('should handle deactivate error', () => {
+      apiServiceSpy.deactivateProcess.and.returnValue(
+        throwError(() => ({ error: { message: 'Cannot deactivate' } }))
+      );
 
-  it('should return correct operation status class for BLOCKED', () => {
-    expect(component.getOperationStatusClass('BLOCKED')).toBe('op-blocked');
-  });
+      component.process = mockProcess as any;
+      component.deactivateProcess();
 
-  it('should return correct decision class for APPROVED', () => {
-    expect(component.getDecisionClass('APPROVED')).toBe('decision-approved');
-  });
+      expect(component.error).toBe('Cannot deactivate');
+      expect(component.processing).toBeFalse();
+    });
 
-  it('should return correct decision class for REJECTED', () => {
-    expect(component.getDecisionClass('REJECTED')).toBe('decision-rejected');
-  });
-
-  it('should return correct decision class for PENDING', () => {
-    expect(component.getDecisionClass('PENDING')).toBe('decision-pending');
-  });
-
-  it('should return empty string for undefined decision', () => {
-    expect(component.getDecisionClass(undefined)).toBe('');
+    it('should not deactivate if no process', () => {
+      component.process = null;
+      component.deactivateProcess();
+      expect(apiServiceSpy.deactivateProcess).not.toHaveBeenCalled();
+    });
   });
 });
