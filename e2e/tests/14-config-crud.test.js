@@ -293,7 +293,7 @@ async function runConfigCrudTests(page, screenshots, results, runTest, submitAct
 
         // Check for table or empty state - both are valid
         const table = page.locator('table');
-        const emptyState = page.locator('.empty-state, .no-data, p:has-text("No process parameters")');
+        const emptyState = page.locator('.empty-state').first();
         const pageContent = await page.content();
 
         const hasTable = await table.isVisible();
@@ -408,7 +408,7 @@ async function runConfigCrudTests(page, screenshots, results, runTest, submitAct
 
         // Check for table or empty state - both are valid
         const table = page.locator('table');
-        const emptyState = page.locator('.empty-state, .no-data, p:has-text("No batch number")');
+        const emptyState = page.locator('.empty-state').first();
         const pageContent = await page.content();
 
         const hasTable = await table.isVisible();
