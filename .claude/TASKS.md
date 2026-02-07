@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Phase 8A Batch Immutability COMPLETE
+**Session Status:** Active - Phase 8E Testing DONE (B21-B22), Phase 9F Next
 
 ---
 
@@ -51,6 +51,27 @@ Fixed multiple test compilation errors in:
 - `order-detail.component.spec.ts` - Fixed orderLineId field name
 
 **Frontend Test Status:** 1002/1007 passing (5 failures - navigation/routing issues)
+
+---
+
+### Phase 8E: Testing & Documentation - PARTIAL ✅
+
+**B21: Backend unit tests for batch rules - DONE**
+- Verified 65+ existing tests cover all batch constraints
+- BatchServiceTest: 20 tests (split, merge, genealogy, status transitions)
+- BatchServiceComprehensiveTest: 40+ edge case tests
+- BatchControllerTest: 25+ integration tests including B05 immutability
+
+**B22: E2E tests for batch workflow - DONE**
+Added 6 new E2E tests to `e2e/tests/06-batches.test.js`:
+- Test 11: Filter QUALITY_PENDING batches
+- Test 12: Batch Approval Buttons Visible
+- Test 13: Batch Approval Modal
+- Test 14: Batch Rejection Modal
+- Test 15: Batch Quantity Adjustment
+- Test 16: Batch Adjustment History
+
+**B23: User documentation - PENDING**
 
 ---
 
@@ -1292,8 +1313,8 @@ Per MES Consolidated Spec, the data model was refactored:
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| B21 | Backend unit tests for batch rules | PENDING | HIGH | Test all constraints |
-| B22 | E2E tests for batch workflow | PENDING | HIGH | Approval/split/merge |
+| B21 | Backend unit tests for batch rules | DONE | HIGH | 65+ tests in BatchServiceTest, BatchServiceComprehensiveTest, BatchControllerTest |
+| B22 | E2E tests for batch workflow | DONE | HIGH | Added 6 tests: approval filter, buttons, modal, rejection, adjustment, history |
 | B23 | Update user documentation | PENDING | MEDIUM | New workflow docs |
 
 ### Database Schema Changes (Patch 024)
@@ -1421,10 +1442,10 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| R24 | Unit tests for new services | PENDING | HIGH | Service tests |
-| R25 | Integration tests for instantiation | PENDING | HIGH | Operation creation |
+| R24 | Unit tests for new services | DONE | HIGH | RoutingServiceTest: 50+ tests (19 base + 7 nested classes) |
+| R25 | Integration tests for instantiation | DONE | HIGH | RoutingControllerTest: 14 tests, all passing |
 | R26 | E2E tests for routing workflow | PENDING | MEDIUM | Full flow |
-| R27 | Batch behavior validation tests | PENDING | HIGH | Flag enforcement |
+| R27 | Batch behavior validation tests | DONE | HIGH | Tested in RoutingServiceTest (canOperationProceed, sequencing) |
 | R28 | Routing frontend spec tests | PENDING | MEDIUM | routing-list.spec.ts, routing-form.spec.ts |
 
 ---
