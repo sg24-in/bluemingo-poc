@@ -10,6 +10,7 @@
 | `.claude/TASKS.md` | **Active tasks, session log, next steps** |
 | `documents/MES-Development-Session-Log.md` | **Permanent historical record of all sessions** |
 | `documents/MES-Requirements-Gaps-Analysis.md` | Requirements gaps to implement |
+| `documents/reference/` | **Technical reference docs (keep updated!)** |
 
 ### Resuming Work
 1. Read `.claude/TASKS.md` for current sprint and in-progress tasks
@@ -55,6 +56,27 @@
 ```
 
 This ensures traceability and allows future sessions to understand the development history.
+
+### Documentation Maintenance (IMPORTANT)
+
+**Keep reference documents updated with every enhancement!**
+
+When making changes that affect APIs, entities, validations, or database schema, update the corresponding reference documents:
+
+| Document | Update When |
+|----------|-------------|
+| `documents/reference/MES-Entity-Reference.md` | Adding/modifying JPA entities, fields, or relationships |
+| `documents/reference/MES-API-Reference.md` | Adding/modifying REST endpoints |
+| `documents/reference/MES-Validation-Rules.md` | Adding/modifying validation rules in services |
+| `documents/reference/MES-Database-Schema.md` | Creating new SQL patches or tables |
+| `documents/MES-Functional-Document-Complete.md` | Major feature additions or workflow changes |
+
+**Update Checklist:**
+1. After adding a new entity → Update Entity Reference + Database Schema
+2. After adding a new endpoint → Update API Reference
+3. After adding validation rules → Update Validation Rules Reference
+4. After creating SQL patches → Update Database Schema Reference
+5. After major features → Update main Functional Document
 
 ---
 
