@@ -1,11 +1,44 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Process Status Validation, Documentation
+**Session Status:** Completed - E2E Testing, Process CRUD, Demo Data, Partial Confirmation
 
 ---
 
-## Latest Session Changes (2026-02-07 - Process Status Validation & Documentation)
+## Latest Session Changes (2026-02-07 - E2E Testing Enhancements)
+
+### PR-E2E: E2E Test Enhancements - COMPLETE ✅
+
+**Tasks Completed:**
+
+| Task | Description | Status |
+|------|-------------|--------|
+| Task #2 | Add E2E tests for Process CRUD workflow | ✅ DONE |
+| Task #3 | Update demo/data.sql with sample processes | ✅ DONE |
+| Task #4 | Add E2E tests for partial confirmation flow | ✅ DONE |
+
+**Changes Made:**
+
+1. **Process CRUD E2E Tests** (`e2e/tests/18-processes.test.js`):
+   - Added submit-mode tests for Create/Edit/Activate/Deactivate
+   - Tests for filtering DRAFT/ACTIVE processes
+   - Confirmation modals for activate/deactivate actions
+
+2. **Demo Data Update** (`backend/src/main/resources/demo/data.sql`):
+   - Fixed process statuses to use correct design-time values (DRAFT, ACTIVE, INACTIVE)
+   - Added 19 total processes: 13 ACTIVE, 3 DRAFT, 3 INACTIVE
+   - Updated operation references to use ACTIVE process templates
+
+3. **Partial Confirmation E2E Tests** (`e2e/tests/24-partial-confirmation.test.js`):
+   - 7 new tests for partial confirmation workflow
+   - Tests for yield display, remaining quantity, multiple confirmations
+   - Submit-mode tests for confirming less than target quantity
+
+**Test Results:** ✅ 236/236 E2E tests passing
+
+---
+
+## Previous Session Changes (2026-02-07 - Process Status Validation & Documentation)
 
 ### PR-VAL: Process Status Validation - ALL GAPS FIXED ✅
 
@@ -164,8 +197,8 @@
 |------|-------------|--------|
 | PR-FE07 | Add Activate/Deactivate buttons to process-list.component | DONE ✅ |
 | PR-FE08 | Add Activate/Deactivate buttons to process-detail.component | DONE ✅ |
-| PR-FE09 | E2E tests for Process CRUD workflow | PENDING |
-| PR-FE10 | Update demo/data.sql with sample DRAFT/ACTIVE/INACTIVE processes | PENDING |
+| PR-FE09 | E2E tests for Process CRUD workflow | DONE ✅ |
+| PR-FE10 | Update demo/data.sql with sample DRAFT/ACTIVE/INACTIVE processes | DONE ✅ |
 | PR-VAL01 | Add Process.status validation to OperationInstantiationService | DONE ✅ |
 | PR-VAL02 | Add Process.status validation to ProductionService.confirmProduction() | DONE ✅ |
 | PR-VAL03 | Add status transition validation to ProcessService.updateProcess() | DONE ✅ |
@@ -1585,10 +1618,10 @@ cd backend
 | Gap | Priority | Status |
 |-----|----------|--------|
 | GAP-001: Multi-Order Batch Confirmation | Medium | DONE | BatchOrderAllocation entity + UI in batch-detail |
-| GAP-002: Equipment Type Logic | Low | PENDING |
+| GAP-002: Equipment Type Logic | Low | DONE | EquipmentTypeService + 18 tests |
 | GAP-006: Quantity Type Configuration | Low | DONE | Phase 6B/6C: QuantityTypeConfig CRUD + frontend pages |
-| GAP-008: Inventory Form Tracking | Low | PENDING |
-| GAP-009: Quality Workflow | Medium | PENDING |
+| GAP-008: Inventory Form Tracking | Low | DONE | InventoryFormService + 27 tests |
+| GAP-009: Quality Workflow | Medium | DONE | Quality pending page with accept/reject workflow |
 
 All HIGH priority gaps are complete (GAP-003, GAP-004, GAP-005, GAP-007, GAP-010).
 GAP-001 and GAP-006 also completed.
@@ -1944,7 +1977,7 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 |---|------|--------|----------|-------|
 | P18 | E2E tests for order selection flow | ✅ DONE | HIGH | 23-order-selection.test.js - 8 tests |
 | P19 | E2E tests for yield/duration | ✅ DONE | MEDIUM | Included in P18 test file |
-| P20 | E2E tests for partial confirmation | PENDING | MEDIUM | Partial flow |
+| P20 | E2E tests for partial confirmation | ✅ DONE | MEDIUM | 24-partial-confirmation.test.js - 7 tests |
 
 ---
 
