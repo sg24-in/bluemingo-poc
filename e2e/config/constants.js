@@ -439,7 +439,12 @@ const SCREENSHOT_PREFIX = {
     processes: '18-processes',
     userProfile: '19-user-profile',
     users: '20-users',
-    productionHistory: '21-production-history'
+    productionHistory: '21-production-history',
+    routing: '22-routing',
+    orderSelection: '23-order-selection',
+    partialConfirmation: '24-partial-confirmation',
+    detailPages: '25-detail-pages',
+    processParameters: '26-process-parameters'
 };
 
 module.exports = {
