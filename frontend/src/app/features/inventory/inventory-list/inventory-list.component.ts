@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Inventory } from '../../../shared/models';
 import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
@@ -36,11 +36,21 @@ export class InventoryListComponent implements OnInit {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadInventory();
+    // Read filters from query params
+    this.route.queryParams.subscribe(params => {
+      if (params['state']) {
+        this.filterState = params['state'];
+      }
+      if (params['type']) {
+        this.filterType = params['type'];
+      }
+      this.loadInventory();
+    });
   }
 
   loadInventory(): void {

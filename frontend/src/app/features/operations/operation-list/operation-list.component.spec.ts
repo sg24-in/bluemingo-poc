@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { of, throwError, BehaviorSubject } from 'rxjs';
 
 import { OperationListComponent } from './operation-list.component';
 import { ApiService } from '../../../core/services/api.service';
@@ -12,6 +13,7 @@ describe('OperationListComponent', () => {
   let component: OperationListComponent;
   let fixture: ComponentFixture<OperationListComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
+  let queryParamsSubject: BehaviorSubject<any>;
 
   const mockOperations: any[] = [
     {
@@ -76,6 +78,8 @@ describe('OperationListComponent', () => {
       'unblockOperation'
     ]);
 
+    queryParamsSubject = new BehaviorSubject<any>({});
+
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
@@ -85,7 +89,13 @@ describe('OperationListComponent', () => {
       ],
       declarations: [OperationListComponent],
       providers: [
-        { provide: ApiService, useValue: apiSpy }
+        { provide: ApiService, useValue: apiSpy },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParams: queryParamsSubject.asObservable()
+          }
+        }
       ]
     }).compileComponents();
 
@@ -294,5 +304,31 @@ describe('OperationListComponent', () => {
   it('should show empty state when no operations match', () => {
     component.onFilterStatusChange('ON_HOLD');
     expect(component.operations.length).toBe(0);
+  });
+
+  describe('Query Params', () => {
+    it('should set filter from query params', () => {
+      queryParamsSubject.next({ status: 'READY' });
+      fixture.detectChanges();
+
+      expect(component.filterStatus).toBe('READY');
+    });
+
+    it('should ignore invalid status from query params', () => {
+      queryParamsSubject.next({ status: 'INVALID_STATUS' });
+      fixture.detectChanges();
+
+      // Should keep default 'all' filter
+      expect(component.filterStatus).toBe('all');
+    });
+
+    it('should filter operations based on query param status', () => {
+      queryParamsSubject.next({ status: 'BLOCKED' });
+      fixture.detectChanges();
+
+      expect(component.filterStatus).toBe('BLOCKED');
+      expect(component.operations.length).toBe(1);
+      expect(component.operations[0].status).toBe('BLOCKED');
+    });
   });
 });

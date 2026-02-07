@@ -13,9 +13,10 @@
     <!-- Filters -->
     <div class="card">
       <div class="filters">
-        <div class="filter-group">
+        <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
           <label>State:</label>
-          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterStatus || 'all'">
+          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterStatus || 'all'"
+                  [class.filter-active]="filterStatus && filterStatus !== 'all'">
             <option value="all">All States</option>
             <option value="QUALITY_PENDING">Quality Pending</option>
             <option value="AVAILABLE">Available</option>

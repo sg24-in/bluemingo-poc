@@ -171,6 +171,46 @@ describe('DashboardComponent', () => {
 
       expect(component['router'].navigate).toHaveBeenCalledWith(['/batches', 1]);
     });
+
+    it('should navigate to operations with status filter', () => {
+      spyOn(component['router'], 'navigate');
+
+      component.navigateToOperationsByStatus('READY');
+
+      expect(component['router'].navigate).toHaveBeenCalledWith(['/operations'], { queryParams: { status: 'READY' } });
+    });
+
+    it('should navigate to operations with IN_PROGRESS status', () => {
+      spyOn(component['router'], 'navigate');
+
+      component.navigateToOperationsByStatus('IN_PROGRESS');
+
+      expect(component['router'].navigate).toHaveBeenCalledWith(['/operations'], { queryParams: { status: 'IN_PROGRESS' } });
+    });
+
+    it('should navigate to inventory with type filter', () => {
+      spyOn(component['router'], 'navigate');
+
+      component.navigateToInventoryType('RM');
+
+      expect(component['router'].navigate).toHaveBeenCalledWith(['/inventory'], { queryParams: { type: 'RM' } });
+    });
+
+    it('should navigate to blocked inventory', () => {
+      spyOn(component['router'], 'navigate');
+
+      component.navigateToBlockedInventory();
+
+      expect(component['router'].navigate).toHaveBeenCalledWith(['/inventory'], { queryParams: { state: 'BLOCKED' } });
+    });
+
+    it('should navigate to batch approval (QUALITY_PENDING)', () => {
+      spyOn(component['router'], 'navigate');
+
+      component.navigateToBatchApproval();
+
+      expect(component['router'].navigate).toHaveBeenCalledWith(['/batches'], { queryParams: { status: 'QUALITY_PENDING' } });
+    });
   });
 
   describe('audit trail', () => {

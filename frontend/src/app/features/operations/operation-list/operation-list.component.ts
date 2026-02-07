@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Operation } from '../../../shared/models';
 
@@ -25,9 +26,18 @@ export class OperationListComponent implements OnInit {
   blockReason = '';
   blockLoading = false;
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
+    // Read status from query params
+    this.route.queryParams.subscribe(params => {
+      if (params['status'] && this.statuses.includes(params['status'])) {
+        this.filterStatus = params['status'];
+      }
+    });
     this.loadOperations();
   }
 

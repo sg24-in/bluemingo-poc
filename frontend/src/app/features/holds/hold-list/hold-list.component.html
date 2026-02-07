@@ -17,18 +17,20 @@
     <!-- Filters -->
     <div class="card">
       <div class="filters">
-        <div class="filter-group">
+        <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
           <label>Status:</label>
-          <select (change)="onFilterStatusChange($any($event.target).value)" [value]="filterStatus || 'all'">
+          <select (change)="onFilterStatusChange($any($event.target).value)" [value]="filterStatus || 'all'"
+                  [class.filter-active]="filterStatus && filterStatus !== 'all'">
             <option value="all">All Statuses</option>
             <option value="ACTIVE">Active</option>
             <option value="RELEASED">Released</option>
           </select>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group" [class.filter-active]="filterEntityType && filterEntityType !== 'all'">
           <label>Entity Type:</label>
-          <select (change)="onFilterEntityTypeChange($any($event.target).value)" [value]="filterEntityType || 'all'">
+          <select (change)="onFilterEntityTypeChange($any($event.target).value)" [value]="filterEntityType || 'all'"
+                  [class.filter-active]="filterEntityType && filterEntityType !== 'all'">
             <option value="all">All Types</option>
             <option value="OPERATION">Operation</option>
             <option value="PROCESS">Process</option>

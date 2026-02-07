@@ -278,6 +278,76 @@ body {
   border-color: #1976d2;
 }
 
+/* Active filter highlighting - shows when filter is applied */
+.filter-group select.filter-active,
+.filter-group.filter-active select {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+  font-weight: 500;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.filter-group.filter-active label {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+/* Filter indicator badge */
+.filter-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background-color: #1976d2;
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.filter-indicator i {
+  font-size: 10px;
+}
+
+/* Filters active summary bar */
+.active-filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #1976d2;
+}
+
+.active-filters-bar .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: #1976d2;
+  color: white;
+  border-radius: 16px;
+  font-size: 12px;
+}
+
+.active-filters-bar .clear-filters {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.active-filters-bar .clear-filters:hover {
+  color: #0d47a1;
+}
+
 .search-group input {
   width: 250px;
 }

@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FormsModule } from '@angular/forms';
-import { of, throwError } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { of, throwError, BehaviorSubject } from 'rxjs';
 
 import { InventoryListComponent } from './inventory-list.component';
 import { ApiService } from '../../../core/services/api.service';
@@ -14,6 +15,7 @@ describe('InventoryListComponent', () => {
   let component: InventoryListComponent;
   let fixture: ComponentFixture<InventoryListComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
+  let queryParamsSubject: BehaviorSubject<any>;
 
   const mockInventory: Inventory[] = [
     {
@@ -68,6 +70,8 @@ describe('InventoryListComponent', () => {
       'scrapInventory'
     ]);
 
+    queryParamsSubject = new BehaviorSubject<any>({});
+
     await TestBed.configureTestingModule({
       imports: [
         HttpClientTestingModule,
@@ -77,7 +81,13 @@ describe('InventoryListComponent', () => {
       ],
       declarations: [InventoryListComponent],
       providers: [
-        { provide: ApiService, useValue: spy }
+        { provide: ApiService, useValue: spy },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParams: queryParamsSubject.asObservable()
+          }
+        }
       ]
     }).compileComponents();
 
@@ -312,6 +322,46 @@ describe('InventoryListComponent', () => {
       expect(component.canScrap({ state: 'BLOCKED' } as any)).toBeTrue();
       expect(component.canScrap({ state: 'CONSUMED' } as any)).toBeFalse();
       expect(component.canScrap({ state: 'SCRAPPED' } as any)).toBeFalse();
+    });
+  });
+
+  describe('Query Params', () => {
+    it('should set state filter from query params', () => {
+      queryParamsSubject.next({ state: 'BLOCKED' });
+      fixture.detectChanges();
+
+      expect(component.filterState).toBe('BLOCKED');
+    });
+
+    it('should set type filter from query params', () => {
+      queryParamsSubject.next({ type: 'RM' });
+      fixture.detectChanges();
+
+      expect(component.filterType).toBe('RM');
+    });
+
+    it('should set both state and type filters from query params', () => {
+      queryParamsSubject.next({ state: 'AVAILABLE', type: 'FG' });
+      fixture.detectChanges();
+
+      expect(component.filterState).toBe('AVAILABLE');
+      expect(component.filterType).toBe('FG');
+    });
+
+    it('should reload inventory when query params change', () => {
+      apiServiceSpy.getInventoryPaged.calls.reset();
+      queryParamsSubject.next({ state: 'BLOCKED' });
+      fixture.detectChanges();
+
+      expect(apiServiceSpy.getInventoryPaged).toHaveBeenCalled();
+    });
+
+    it('should handle empty query params', () => {
+      queryParamsSubject.next({});
+      fixture.detectChanges();
+
+      expect(component.filterState).toBe('');
+      expect(component.filterType).toBe('');
     });
   });
 });

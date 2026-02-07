@@ -17,9 +17,10 @@
     <!-- Filters -->
     <div class="card">
       <div class="filters">
-        <div class="filter-group">
+        <div class="filter-group" [class.filter-active]="filterState">
           <label>State:</label>
-          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterState || 'all'">
+          <select (change)="onFilterStateChange($any($event.target).value)" [value]="filterState || 'all'"
+                  [class.filter-active]="filterState">
             <option value="all">All States</option>
             <option value="AVAILABLE">Available</option>
             <option value="CONSUMED">Consumed</option>
@@ -29,9 +30,10 @@
           </select>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group" [class.filter-active]="filterType">
           <label>Type:</label>
-          <select (change)="onFilterTypeChange($any($event.target).value)" [value]="filterType || 'all'">
+          <select (change)="onFilterTypeChange($any($event.target).value)" [value]="filterType || 'all'"
+                  [class.filter-active]="filterType">
             <option value="all">All Types</option>
             <option value="RM">Raw Material (RM)</option>
             <option value="IM">Intermediate (IM)</option>
