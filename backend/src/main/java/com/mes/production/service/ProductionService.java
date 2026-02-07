@@ -207,8 +207,13 @@ public class ProductionService {
         BigDecimal newConfirmedQty = previousConfirmedQty.add(request.getProducedQty());
 
         // Determine if this is a partial or full confirmation
+        // P10-P11: Respect explicit saveAsPartial flag
         String confirmationStatus;
-        if (targetQty != null && newConfirmedQty.compareTo(targetQty) < 0) {
+        if (Boolean.TRUE.equals(request.getSaveAsPartial())) {
+            // User explicitly requested to save as partial
+            confirmationStatus = ProductionConfirmation.STATUS_PARTIALLY_CONFIRMED;
+            log.info("Explicit partial confirmation (saveAsPartial=true): {} units", request.getProducedQty());
+        } else if (targetQty != null && newConfirmedQty.compareTo(targetQty) < 0) {
             confirmationStatus = ProductionConfirmation.STATUS_PARTIALLY_CONFIRMED;
             log.info("Partial confirmation: {}/{} units", newConfirmedQty, targetQty);
         } else {
@@ -329,6 +334,13 @@ public class ProductionService {
                         .build())
                 .collect(Collectors.toList());
 
+        // P12: Calculate remaining quantity for partial confirmations
+        boolean isPartialConfirmation = ProductionConfirmation.STATUS_PARTIALLY_CONFIRMED.equals(confirmationStatus);
+        BigDecimal remainingQty = null;
+        if (isPartialConfirmation && targetQty != null) {
+            remainingQty = targetQty.subtract(newConfirmedQty);
+        }
+
         return ProductionConfirmationDTO.Response.builder()
                 .confirmationId(confirmation.getConfirmationId())
                 .operationId(operation.getOperationId())
@@ -343,6 +355,9 @@ public class ProductionService {
                 .notes(confirmation.getNotes())
                 .status(confirmation.getStatus())
                 .createdOn(confirmation.getCreatedOn())
+                // P12: Partial confirmation indicator
+                .isPartial(isPartialConfirmation)
+                .remainingQty(remainingQty)
                 // Primary batch (first one, for backward compatibility)
                 .outputBatch(outputBatchInfos.get(0))
                 // All output batches (for multi-batch production)
@@ -583,6 +598,49 @@ public class ProductionService {
     public List<ProductionConfirmationDTO.Response> getConfirmationsByStatus(String status) {
         return confirmationRepository.findByStatus(status).stream()
                 .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * P13: Get operations that can be continued (have partial progress).
+     * Returns operations with status IN_PROGRESS and confirmed quantity less than target.
+     */
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> getContinuableOperations() {
+        // Find operations that are IN_PROGRESS and have some confirmed quantity
+        List<Operation> continuableOps = operationRepository.findByStatus("IN_PROGRESS").stream()
+                .filter(op -> op.getConfirmedQty() != null && op.getConfirmedQty().compareTo(java.math.BigDecimal.ZERO) > 0)
+                .collect(Collectors.toList());
+
+        return continuableOps.stream()
+                .map(op -> {
+                    java.util.Map<String, Object> opInfo = new java.util.LinkedHashMap<>();
+                    opInfo.put("operationId", op.getOperationId());
+                    opInfo.put("operationName", op.getOperationName());
+                    opInfo.put("operationCode", op.getOperationCode());
+                    opInfo.put("operationType", op.getOperationType());
+                    opInfo.put("status", op.getStatus());
+                    opInfo.put("confirmedQty", op.getConfirmedQty());
+                    opInfo.put("targetQty", op.getTargetQty());
+
+                    // Calculate remaining
+                    java.math.BigDecimal remaining = java.math.BigDecimal.ZERO;
+                    if (op.getTargetQty() != null && op.getConfirmedQty() != null) {
+                        remaining = op.getTargetQty().subtract(op.getConfirmedQty());
+                    }
+                    opInfo.put("remainingQty", remaining);
+
+                    // Add order/product info
+                    if (op.getOrderLineItem() != null) {
+                        opInfo.put("productSku", op.getOrderLineItem().getProductSku());
+                        opInfo.put("productName", op.getOrderLineItem().getProductName());
+                        if (op.getOrderLineItem().getOrder() != null) {
+                            opInfo.put("orderId", op.getOrderLineItem().getOrder().getOrderId());
+                        }
+                    }
+
+                    return opInfo;
+                })
                 .collect(Collectors.toList());
     }
 

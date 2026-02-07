@@ -204,7 +204,10 @@ To scrap a material (permanent):
 
 ## Batch Traceability
 
-Batches are trackable units of material that flow through production.
+Batches are trackable units of material that flow through production. Per the MES Batch Management Specification:
+- Batches are **only created** at operation boundaries (production confirmation or raw material receipt)
+- Batch quantities are **never edited directly** - only adjusted with mandatory reason
+- All batch changes are **fully auditable**
 
 ### Viewing Batches
 
@@ -212,11 +215,60 @@ Navigate to **Batches** to see all batches.
 
 ![Batches List](../e2e/output/screenshots/user-journey/015-batches-list.png)
 
+### Batch Status Workflow
+
+Batches follow this lifecycle:
+
+```
+QUALITY_PENDING → AVAILABLE → CONSUMED/PRODUCED
+       ↓              ↓
+    BLOCKED      SPLIT/MERGED
+       ↓
+   SCRAPPED
+```
+
+- **QUALITY_PENDING** - New batches await quality approval
+- **AVAILABLE** - Approved and ready for production use
+- **BLOCKED** - On hold (quality issue or manual hold)
+- **CONSUMED** - Used in production
+- **PRODUCED** - Output of a production operation
+- **SPLIT/MERGED** - Original batch after split/merge operation
+- **SCRAPPED** - Permanently removed
+
+### Batch Approval
+
+New batches start in **QUALITY_PENDING** status and require approval before use:
+
+1. Navigate to **Batches** and filter by "Quality Pending"
+2. Click on a batch to view details
+3. Review batch information
+4. Click **Approve** to make the batch AVAILABLE, or
+5. Click **Reject** with a reason to mark as BLOCKED
+
+The dashboard shows a count of batches pending approval for quick access.
+
 ### Batch Detail
 
 Click on a batch to view its details.
 
 ![Batch Detail](../e2e/output/screenshots/user-journey/016-batch-detail-view.png)
+
+### Quantity Adjustment
+
+Batch quantities can only be changed via the **Adjust Quantity** feature with a mandatory reason:
+
+1. Navigate to the batch detail page
+2. Click **Adjust Quantity**
+3. Enter the new quantity
+4. Select the adjustment type:
+   - **CORRECTION** - Fix data entry error
+   - **INVENTORY_COUNT** - Physical count variance
+   - **DAMAGE** - Material damaged
+   - **SCRAP_RECOVERY** - Recovered material from scrap
+5. Enter a detailed reason (minimum 10 characters)
+6. Click **Submit**
+
+All adjustments are recorded in the adjustment history with full audit trail.
 
 ### Genealogy / Traceability
 
@@ -234,8 +286,34 @@ This is essential for:
 ### Batch Operations
 
 Depending on the batch state, you may be able to:
-- **Split** - Divide a batch into smaller batches
-- **Merge** - Combine batches of the same material
+- **Split** - Divide a batch into smaller batches (if allowed by routing step)
+- **Merge** - Combine batches of the same material (if allowed by routing step)
+
+**Split Batch:**
+1. Navigate to batch detail
+2. Click **Split**
+3. Enter the portions (quantities for each new batch)
+4. Optionally provide custom suffixes (e.g., "A", "B")
+5. Click **Split**
+
+The original batch quantity is reduced, and new child batches are created with genealogy links.
+
+**Merge Batches:**
+1. Navigate to any batch you want to merge
+2. Click **Merge**
+3. Select additional batches of the same material
+4. Click **Merge**
+
+A new batch is created with the combined quantity, and source batches are marked as MERGED.
+
+### Batch Number Generation
+
+Batch numbers are automatically generated using configurable patterns:
+
+- Format: `{PREFIX}{SEPARATOR}{DATE}{SEPARATOR}{SEQUENCE}`
+- Example: `FURN-20260207-0001`
+
+Administrators can configure batch number patterns per operation type or product in **Manage > Config > Batch Number**.
 
 ---
 

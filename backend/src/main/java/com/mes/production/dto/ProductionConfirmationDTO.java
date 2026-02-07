@@ -52,6 +52,13 @@ public class ProductionConfirmationDTO {
         private Map<String, Object> processParameters;
 
         private String notes;
+
+        /**
+         * P10-P11: Flag to explicitly save as partial confirmation.
+         * When true, the confirmation is saved as PARTIAL even if full quantity is produced.
+         * This allows users to continue the confirmation later.
+         */
+        private Boolean saveAsPartial;
     }
 
     @Data
@@ -89,6 +96,18 @@ public class ProductionConfirmationDTO {
         private String notes;
         private String status;
         private LocalDateTime createdOn;
+
+        /**
+         * P12: Indicates if this is a partial confirmation.
+         * True when status is PARTIAL and operation can be continued.
+         */
+        private Boolean isPartial;
+
+        /**
+         * P13: Remaining quantity to be confirmed to complete the operation.
+         * Only set for partial confirmations.
+         */
+        private BigDecimal remainingQty;
 
         // Rejection fields
         private String rejectionReason;

@@ -111,6 +111,26 @@ public class ProductionController {
         return ResponseEntity.ok(productionService.getConfirmationsByStatus("REJECTED"));
     }
 
+    /**
+     * P13: Get partial confirmations - confirmations that can be continued.
+     * Returns confirmations with status PARTIAL.
+     */
+    @GetMapping("/confirmations/partial")
+    public ResponseEntity<java.util.List<ProductionConfirmationDTO.Response>> getPartialConfirmations() {
+        log.info("GET /api/production/confirmations/partial");
+        return ResponseEntity.ok(productionService.getConfirmationsByStatus("PARTIAL"));
+    }
+
+    /**
+     * P13: Get operations that have partial progress and can be continued.
+     * Returns operations with status IN_PROGRESS that have at least one partial confirmation.
+     */
+    @GetMapping("/operations/continuable")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getContinuableOperations() {
+        log.info("GET /api/production/operations/continuable");
+        return ResponseEntity.ok(productionService.getContinuableOperations());
+    }
+
     // Need to import Map
     private static final class Map {
         static java.util.Map<String, Object> of(Object... keyValues) {

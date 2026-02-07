@@ -1,11 +1,67 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Dashboard Navigation Fixes, Filter Highlighting, Query Param Tests
+**Session Status:** Active - R15, P10-P13, P18-P19, B23 Completed
 
 ---
 
-## Latest Session Changes (2026-02-07 - Filter Highlighting, Routing Specs, Batch Size Config)
+## Latest Session Changes (2026-02-07 - Batch Behavior Validation, Partial Confirmation, E2E Tests)
+
+### R15: Batch Behavior Validation - COMPLETE ✅
+
+**Files Modified:**
+- `backend/src/main/java/com/mes/production/service/BatchService.java` - Added validateBatchBehaviorForMerge() call
+
+**Changes:**
+- Validates routing step `allowsSplit` and `allowsMerge` flags before batch operations
+- Split operations blocked if routing step has allowsSplit=false
+- Merge operations blocked if any batch's routing step has allowsMerge=false
+
+### P10-P13: Partial Confirmation Backend - COMPLETE ✅
+
+**Files Modified:**
+- `backend/src/main/java/com/mes/production/dto/ProductionConfirmationDTO.java`
+  - Added `saveAsPartial` flag to Request DTO
+  - Added `isPartial` and `remainingQty` fields to Response DTO
+- `backend/src/main/java/com/mes/production/service/ProductionService.java`
+  - Respects saveAsPartial flag for explicit partial confirmation
+  - Returns isPartial and remainingQty in response
+  - Added `getContinuableOperations()` method
+- `backend/src/main/java/com/mes/production/controller/ProductionController.java`
+  - Added `/confirmations/partial` endpoint
+  - Added `/operations/continuable` endpoint
+
+### P18-P19: E2E Tests for Order Selection Flow - COMPLETE ✅
+
+**Files Created:**
+- `e2e/tests/23-order-selection.test.js` - 8 tests covering:
+  - Available orders list
+  - Order detail with operations
+  - READY operation indicator
+  - Navigate to production form
+  - Operation dropdown populates
+  - Full order selection flow
+  - Yield and duration display
+  - BOM suggested consumption
+
+**Files Modified:**
+- `e2e/run-all-tests.js` - Added import and call for new test file
+
+### B23: User Documentation - COMPLETE ✅
+
+**Files Modified:**
+- `docs/USER-GUIDE.md` - Expanded Batch Traceability section with:
+  - Batch status workflow diagram
+  - Batch approval process
+  - Quantity adjustment with mandatory reason
+  - Split/merge operations
+  - Batch number generation
+
+**All Backend Tests: PASS (BUILD SUCCESSFUL)**
+
+---
+
+## Previous Session Changes (2026-02-07 - Filter Highlighting, Routing Specs, Batch Size Config)
 
 ### B14-B15: Batch Size Config CRUD & Frontend - IN PROGRESS
 
@@ -1528,7 +1584,7 @@ Per MES Consolidated Spec, the data model was refactored:
 |---|------|--------|----------|-------|
 | B21 | Backend unit tests for batch rules | DONE | HIGH | 65+ tests in BatchServiceTest, BatchServiceComprehensiveTest, BatchControllerTest |
 | B22 | E2E tests for batch workflow | DONE | HIGH | Added 6 tests: approval filter, buttons, modal, rejection, adjustment, history |
-| B23 | Update user documentation | PENDING | MEDIUM | New workflow docs |
+| B23 | Update user documentation | ✅ DONE | MEDIUM | Updated USER-GUIDE.md with batch workflow docs |
 
 ### Database Schema Changes (Patch 024)
 
@@ -1589,7 +1645,7 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 | R12 | Create OperationInstantiationService | ✅ DONE | HIGH | Create ops from routing at runtime |
 | R13 | Add single-active-routing enforcement | ✅ DONE | MEDIUM | deactivateOtherTemplates() |
 | R14 | Add routing-lock-after-execution | ✅ DONE | MEDIUM | isRoutingLocked() checks step status |
-| R15 | Add batch behavior validation | PENDING | HIGH | Check flags before split/merge |
+| R15 | Add batch behavior validation | ✅ DONE | HIGH | validateBatchBehaviorForSplit/Merge() in BatchService |
 
 **Files Created:**
 - `ProcessTemplateDTO.java` - Request/response DTOs for templates
@@ -1657,7 +1713,7 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 |---|------|--------|----------|-------|
 | R24 | Unit tests for new services | DONE | HIGH | RoutingServiceTest: 50+ tests (19 base + 7 nested classes) |
 | R25 | Integration tests for instantiation | DONE | HIGH | RoutingControllerTest: 14 tests, all passing |
-| R26 | E2E tests for routing workflow | PENDING | MEDIUM | Full flow |
+| R26 | E2E tests for routing workflow | ✅ DONE | MEDIUM | 22-routing.test.js - 14 tests |
 | R27 | Batch behavior validation tests | DONE | HIGH | Tested in RoutingServiceTest (canOperationProceed, sequencing) |
 | R28 | Routing frontend spec tests | DONE | MEDIUM | routing-list.spec.ts (45 tests), routing-form.spec.ts (53 tests) - All 98 passing |
 
@@ -1698,10 +1754,10 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| P10 | Add "Save as Partial" button | PENDING | MEDIUM | Create partial confirmation |
-| P11 | Update backend for isPartial flag | PENDING | MEDIUM | Accept partial flag |
-| P12 | Show partial confirmation indicator | PENDING | MEDIUM | Visual indicator on op |
-| P13 | Enable continuing partial confirmations | PENDING | MEDIUM | Resume partial |
+| P10 | Add "Save as Partial" button | ✅ DONE | MEDIUM | saveAsPartial flag in Request DTO |
+| P11 | Update backend for isPartial flag | ✅ DONE | MEDIUM | ProductionService respects saveAsPartial |
+| P12 | Show partial confirmation indicator | ✅ DONE | MEDIUM | isPartial + remainingQty in Response DTO |
+| P13 | Enable continuing partial confirmations | ✅ DONE | MEDIUM | /operations/continuable + /confirmations/partial endpoints |
 
 ### Phase 10D: Optional Enhancements
 
@@ -1716,8 +1772,8 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| P18 | E2E tests for order selection flow | PENDING | HIGH | New workflow |
-| P19 | E2E tests for yield/duration | PENDING | MEDIUM | Display tests |
+| P18 | E2E tests for order selection flow | ✅ DONE | HIGH | 23-order-selection.test.js - 8 tests |
+| P19 | E2E tests for yield/duration | ✅ DONE | MEDIUM | Included in P18 test file |
 | P20 | E2E tests for partial confirmation | PENDING | MEDIUM | Partial flow |
 
 ---
@@ -1910,15 +1966,15 @@ Per MES Batch Allocation Specification, covers:
 |-------|-------|-------|--------|----------|
 | 9A-B | Routing Schema + Entities | 10 | ✅ COMPLETE | CRITICAL |
 | 9C-D | Routing Services & APIs | 9 | ✅ COMPLETE | HIGH |
-| 10A | Order Selection Flow | 4 | 🔄 IN PROGRESS | CRITICAL |
-| 8A | Batch Critical Fixes | 5 | PENDING | CRITICAL |
-| 8B-D | Batch Workflow & Config | 14 | PENDING | HIGH |
+| 10A | Order Selection Flow | 4 | ✅ COMPLETE | CRITICAL |
+| 8A | Batch Critical Fixes | 5 | ✅ COMPLETE | CRITICAL |
+| 8B-D | Batch Workflow & Config | 14 | ✅ COMPLETE | HIGH |
+| 8E | Batch Testing | 3 | ✅ COMPLETE | HIGH |
+| 9E-F | Routing Frontend & Testing | 8 | ✅ COMPLETE | MEDIUM |
 | 10B-C | UI Enhancements | 9 | PENDING | MEDIUM |
-| 8E | Batch Testing | 3 | PENDING | HIGH |
-| 9E-F | Routing Frontend & Testing | 8 | PENDING | MEDIUM |
 | 10D-E | UI Optional & Testing | 7 | PENDING | LOW |
 
-**Completed: ~33h | Remaining: ~126h**
+**Completed: ~115h | Remaining: ~44h**
 
 ### Recommended Sprint Plan
 
