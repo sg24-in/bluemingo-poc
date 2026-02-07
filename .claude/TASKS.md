@@ -812,6 +812,25 @@ Fixed 19 failing frontend tests:
 
 ## Recent Session Changes (2026-02-07)
 
+### B13: Multi-Batch Production Support - COMPLETE ✅
+
+**Goal:** Integrate BatchSizeService into ProductionService for creating multiple batches when quantity exceeds max batch size
+
+**Files Modified:**
+- `backend/src/main/java/com/mes/production/dto/ProductionConfirmationDTO.java` - Added outputBatches, batchCount, hasPartialBatch fields
+- `backend/src/main/java/com/mes/production/service/ProductionService.java` - Integrated BatchSizeService, creates multiple batches
+- `backend/src/test/java/com/mes/production/service/ProductionServiceTest.java` - Added BatchSizeService mock
+
+**Features:**
+- Automatic batch splitting when produced quantity exceeds configured max batch size
+- Sequential batch numbers with suffix (e.g., BATCH-001-01, BATCH-001-02)
+- Response includes all output batches plus backward-compatible single batch field
+- Creates inventory and batch relations for all split batches
+
+**Test Results:** All backend tests pass (BUILD SUCCESSFUL)
+
+---
+
 ### UI Consistency Fixes
 
 **Goal:** Fix padding, margin, and button size inconsistencies across list pages
@@ -1474,7 +1493,7 @@ Per MES Consolidated Spec, the data model was refactored:
 | B10 | Create `batch_size_config` table (patch) | DONE | MEDIUM | SQL patch 026_batch_size_config.sql |
 | B11 | Create `BatchSizeConfig` entity | DONE | MEDIUM | BatchSizeConfig.java |
 | B12 | Create `BatchSizeService` | DONE | MEDIUM | BatchSizeService.java with calculateBatchSizes() |
-| B13 | Update ProductionService multi-batch | PENDING | MEDIUM | Create multiple batches |
+| B13 | Update ProductionService multi-batch | DONE | MEDIUM | Integrated BatchSizeService, creates multiple batches when qty > max |
 | B14 | Add BatchSizeConfig CRUD endpoints | DONE | MEDIUM | BatchSizeConfigController.java |
 | B15 | Add frontend config page | DONE | MEDIUM | /manage/config/batch-size - list & form components |
 

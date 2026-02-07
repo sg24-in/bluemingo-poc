@@ -75,6 +75,9 @@ class ProductionServiceTest {
     @Mock
     private InventoryStateValidator inventoryStateValidator;
 
+    @Mock
+    private BatchSizeService batchSizeService;
+
     @InjectMocks
     private ProductionService productionService;
 
@@ -145,6 +148,19 @@ class ProductionServiceTest {
                 .quantity(BigDecimal.valueOf(50))
                 .batch(testBatch)
                 .build();
+
+        // Default batch size service mock - returns single batch (backward compatible)
+        when(batchSizeService.calculateBatchSizes(any(), any(), any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    BigDecimal qty = invocation.getArgument(0);
+                    return new BatchSizeService.BatchSizeResult(
+                            List.of(qty),
+                            1,
+                            qty,
+                            false,
+                            null
+                    );
+                });
     }
 
     @Test

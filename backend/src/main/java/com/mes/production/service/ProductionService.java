@@ -163,14 +163,43 @@ public class ProductionService {
             log.info("Consumed {} from batch {}", consumption.getQuantity(), consumption.getBatchId());
         }
 
-        // 3. Generate output batch
-        Batch outputBatch = generateOutputBatch(operation, request.getProducedQty(), currentUser);
+        // 3. Calculate batch splits using BatchSizeService (B13: Multi-batch support)
+        String operationType = operation.getOperationType();
+        String productSku = operation.getOrderLineItem() != null ?
+                operation.getOrderLineItem().getProductSku() : null;
+        String equipmentType = null; // Could be enhanced to get from request.getEquipmentIds()
 
-        // 4. Create inventory for output
-        Inventory outputInventory = createOutputInventory(operation, outputBatch, request.getProducedQty(), currentUser);
+        BatchSizeService.BatchSizeResult batchSizeResult = batchSizeService.calculateBatchSizes(
+                request.getProducedQty(),
+                operationType,
+                null, // materialId - not used for output
+                productSku,
+                equipmentType);
 
-        // 5. Create batch relations
-        createBatchRelations(request.getMaterialsConsumed(), outputBatch, operation.getOperationId(), currentUser);
+        log.info("Batch size calculation: {} batches for {} qty",
+                batchSizeResult.batchCount(), request.getProducedQty());
+
+        // 4. Generate output batches (may be multiple if quantity exceeds max batch size)
+        List<Batch> outputBatches = new java.util.ArrayList<>();
+        List<Inventory> outputInventories = new java.util.ArrayList<>();
+
+        for (int i = 0; i < batchSizeResult.batchSizes().size(); i++) {
+            BigDecimal batchQty = batchSizeResult.batchSizes().get(i);
+            Batch outputBatch = generateOutputBatch(operation, batchQty, currentUser, i + 1, batchSizeResult.batchCount());
+            outputBatches.add(outputBatch);
+
+            // Create inventory for each batch
+            Inventory outputInventory = createOutputInventory(operation, outputBatch, batchQty, currentUser);
+            outputInventories.add(outputInventory);
+        }
+
+        // Primary output batch (first one, for backward compatibility)
+        Batch primaryOutputBatch = outputBatches.get(0);
+
+        // 5. Create batch relations (link all output batches to consumed inputs)
+        for (Batch outputBatch : outputBatches) {
+            createBatchRelations(request.getMaterialsConsumed(), outputBatch, operation.getOperationId(), currentUser);
+        }
 
         // 6. Determine confirmation status (partial vs full)
         BigDecimal targetQty = operation.getTargetQty();
@@ -229,12 +258,15 @@ public class ProductionService {
                 request.getStartTime(),
                 request.getEndTime());
 
-        // Record inventory movement for produced output
-        inventoryMovementService.recordProduce(
-                outputInventory.getInventoryId(),
-                operation.getOperationId(),
-                request.getProducedQty(),
-                "Production confirmation output");
+        // Record inventory movement for all produced outputs
+        for (Inventory outputInventory : outputInventories) {
+            inventoryMovementService.recordProduce(
+                    outputInventory.getInventoryId(),
+                    operation.getOperationId(),
+                    outputInventory.getQuantity(),
+                    "Production confirmation output" + (outputBatches.size() > 1 ?
+                            " (batch " + (outputInventories.indexOf(outputInventory) + 1) + " of " + outputBatches.size() + ")" : ""));
+        }
 
         // 7. Update operation status based on confirmation type
         String oldOperationStatus = operation.getStatus();
@@ -285,7 +317,18 @@ public class ProductionService {
                                 .build())
                         .collect(Collectors.toList()) : List.of();
 
-        // 10. Build response
+        // 10. Build response with multi-batch support
+        List<ProductionConfirmationDTO.BatchInfo> outputBatchInfos = outputBatches.stream()
+                .map(batch -> ProductionConfirmationDTO.BatchInfo.builder()
+                        .batchId(batch.getBatchId())
+                        .batchNumber(batch.getBatchNumber())
+                        .materialId(batch.getMaterialId())
+                        .materialName(batch.getMaterialName())
+                        .quantity(batch.getQuantity())
+                        .unit(batch.getUnit())
+                        .build())
+                .collect(Collectors.toList());
+
         return ProductionConfirmationDTO.Response.builder()
                 .confirmationId(confirmation.getConfirmationId())
                 .operationId(operation.getOperationId())
@@ -300,14 +343,12 @@ public class ProductionService {
                 .notes(confirmation.getNotes())
                 .status(confirmation.getStatus())
                 .createdOn(confirmation.getCreatedOn())
-                .outputBatch(ProductionConfirmationDTO.BatchInfo.builder()
-                        .batchId(outputBatch.getBatchId())
-                        .batchNumber(outputBatch.getBatchNumber())
-                        .materialId(outputBatch.getMaterialId())
-                        .materialName(outputBatch.getMaterialName())
-                        .quantity(outputBatch.getQuantity())
-                        .unit(outputBatch.getUnit())
-                        .build())
+                // Primary batch (first one, for backward compatibility)
+                .outputBatch(outputBatchInfos.get(0))
+                // All output batches (for multi-batch production)
+                .outputBatches(outputBatchInfos)
+                .batchCount(batchSizeResult.batchCount())
+                .hasPartialBatch(batchSizeResult.hasPartialBatch())
                 .nextOperation(nextOpInfo)
                 .equipment(equipmentInfo)
                 .operators(operatorInfo)
@@ -316,6 +357,11 @@ public class ProductionService {
     }
 
     private Batch generateOutputBatch(Operation operation, BigDecimal quantity, String currentUser) {
+        return generateOutputBatch(operation, quantity, currentUser, 1, 1);
+    }
+
+    private Batch generateOutputBatch(Operation operation, BigDecimal quantity, String currentUser,
+                                      int sequenceNumber, int totalBatches) {
         // Get product SKU for configuration lookup
         // Per MES Consolidated Specification: Operation has OrderLineItem (runtime ref)
         String productSku = null;
@@ -324,7 +370,12 @@ public class ProductionService {
         }
 
         // Generate batch number using configurable service (GAP-005)
+        // For multi-batch, append sequence suffix (e.g., -01, -02)
         String batchNumber = batchNumberService.generateBatchNumber(operation.getOperationType(), productSku);
+        if (totalBatches > 1) {
+            batchNumber = batchNumber + String.format("-%02d", sequenceNumber);
+            log.info("Multi-batch: generated batch {} of {} with number {}", sequenceNumber, totalBatches, batchNumber);
+        }
 
         // Determine output material based on operation
         String materialId = "IM-" + operation.getOperationType().toUpperCase();
