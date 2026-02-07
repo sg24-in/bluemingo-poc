@@ -1,5 +1,6 @@
 package com.mes.production.controller;
 
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.ProcessDTO;
 import com.mes.production.service.ProcessService;
 import jakarta.validation.Valid;
@@ -32,6 +33,23 @@ public class ProcessController {
     public ResponseEntity<List<ProcessDTO.Response>> getAllProcesses() {
         log.info("GET /api/processes");
         return ResponseEntity.ok(processService.getAllProcesses());
+    }
+
+    /**
+     * Get processes with pagination and filters
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<ProcessDTO.Response>> getProcessesPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "processId") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
+        log.info("GET /api/processes/paged - page={}, size={}, search={}, status={}",
+                page, size, search, status);
+        return ResponseEntity.ok(processService.getProcessesPaged(
+                page, size, sortBy, sortDirection, search, status));
     }
 
     /**

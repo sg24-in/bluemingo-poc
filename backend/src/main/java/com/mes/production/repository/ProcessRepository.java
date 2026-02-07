@@ -2,6 +2,8 @@ package com.mes.production.repository;
 
 import com.mes.production.entity.Process;
 import com.mes.production.entity.ProcessStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +49,16 @@ public interface ProcessRepository extends JpaRepository<Process, Long> {
      * Count processes by status
      */
     long countByStatus(ProcessStatus status);
+
+    /**
+     * Find processes with pagination and filters
+     */
+    @Query("SELECT p FROM Process p WHERE " +
+           "(:search IS NULL OR :search = '' OR " +
+           "LOWER(p.processName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:status IS NULL OR p.status = :status)")
+    Page<Process> findByFilters(
+            @Param("search") String search,
+            @Param("status") ProcessStatus status,
+            Pageable pageable);
 }

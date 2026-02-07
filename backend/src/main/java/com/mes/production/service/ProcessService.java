@@ -1,5 +1,6 @@
 package com.mes.production.service;
 
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.ProcessDTO;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.Process;
@@ -8,6 +9,10 @@ import com.mes.production.repository.OperationRepository;
 import com.mes.production.repository.ProcessRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +77,43 @@ public class ProcessService {
         return processRepository.findByStatus(ProcessStatus.ACTIVE).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get processes with pagination and filters
+     */
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<ProcessDTO.Response> getProcessesPaged(
+            int page, int size, String sortBy, String sortDirection,
+            String search, String status) {
+
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        ProcessStatus statusEnum = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                statusEnum = ProcessStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid process status filter: {}", status);
+            }
+        }
+
+        Page<Process> pageResult = processRepository.findByFilters(search, statusEnum, pageable);
+
+        List<ProcessDTO.Response> content = pageResult.getContent().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        return PagedResponseDTO.<ProcessDTO.Response>builder()
+                .content(content)
+                .page(pageResult.getNumber())
+                .size(pageResult.getSize())
+                .totalElements(pageResult.getTotalElements())
+                .totalPages(pageResult.getTotalPages())
+                .first(pageResult.isFirst())
+                .last(pageResult.isLast())
+                .build();
     }
 
     /**
