@@ -15,7 +15,7 @@ describe('BatchSizeListComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
   let router: Router;
 
-  const mockConfigs = [
+  const mockConfigs: any[] = [
     {
       configId: 1,
       operationType: 'MELTING',

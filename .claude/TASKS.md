@@ -810,6 +810,31 @@ Fixed 19 failing frontend tests:
 
 ---
 
+## Recent Session Changes (2026-02-07)
+
+### UI Consistency Fixes
+
+**Goal:** Fix padding, margin, and button size inconsistencies across list pages
+
+**Files Modified:**
+
+| File | Changes |
+|------|---------|
+| `frontend/src/app/features/users/user-list/user-list.component.css` | Removed conflicting button/filter overrides, use global styles |
+| `frontend/src/app/features/equipment/equipment-list/equipment-list.component.css` | Fixed padding, consistent with other list pages |
+| `frontend/src/app/features/config/batch-size/batch-size-list.component.spec.ts` | Fixed TypeScript null vs undefined issue |
+
+**Issues Fixed:**
+1. User Management page - Buttons/padding not matching other pages (local CSS overriding global)
+2. Equipment Management page - Padding/margin inconsistencies
+3. Batch size spec tests - Type errors with null values in mock data
+
+**Test Results:**
+- Frontend: 1168 pass, 6 fail (pre-existing user-form failures)
+- Build: Successful
+
+---
+
 ## Recent Session Changes (2026-02-06)
 
 ### MES Consolidated Data Model Gap Analysis & Implementation
