@@ -2,11 +2,12 @@ package com.mes.production.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mes.production.dto.ProcessDTO;
-import com.mes.production.entity.Process;
+import com.mes.production.entity.ProcessStatus;
 import com.mes.production.security.JwtService;
 import com.mes.production.service.ProcessService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -22,13 +23,20 @@ import com.mes.production.config.TestSecurityConfig;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Tests for ProcessController - design-time Process template management.
+ *
+ * Process Status Model (Design-Time Only):
+ * - DRAFT: Process being defined, not ready for use
+ * - ACTIVE: Process approved and usable for execution
+ * - INACTIVE: Process retired/disabled, historical access only
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -47,300 +55,359 @@ class ProcessControllerTest {
     @MockBean
     private JwtService jwtService;
 
-    private ProcessDTO.Response testProcessResponse;
-    private ProcessDTO.StatusUpdateResponse statusUpdateResponse;
+    private ProcessDTO.Response draftProcessResponse;
+    private ProcessDTO.Response activeProcessResponse;
+    private ProcessDTO.Response inactiveProcessResponse;
 
     @BeforeEach
     void setUp() {
-        // Process is design-time only (no orderLineId or stageSequence)
-        testProcessResponse = ProcessDTO.Response.builder()
+        draftProcessResponse = ProcessDTO.Response.builder()
                 .processId(1L)
-                .processName("Melting")
-                .status(Process.STATUS_IN_PROGRESS)
+                .processName("Melting Process")
+                .status("DRAFT")
                 .createdOn(LocalDateTime.now())
+                .createdBy("admin@mes.com")
                 .operations(List.of(
                         ProcessDTO.OperationSummary.builder()
                                 .operationId(1L)
                                 .operationName("Melt Iron")
                                 .operationCode("MLT-001")
-                                .status("CONFIRMED")
+                                .status("NOT_STARTED")
                                 .sequenceNumber(1)
                                 .build()
                 ))
                 .build();
 
-        statusUpdateResponse = ProcessDTO.StatusUpdateResponse.builder()
-                .processId(1L)
-                .processName("Melting")
-                .previousStatus(Process.STATUS_IN_PROGRESS)
-                .newStatus(Process.STATUS_QUALITY_PENDING)
-                .usageDecision(Process.DECISION_PENDING)
-                .updatedBy("admin@mes.com")
-                .updatedOn(LocalDateTime.now())
-                .message("Process moved to quality pending status")
+        activeProcessResponse = ProcessDTO.Response.builder()
+                .processId(2L)
+                .processName("Casting Process")
+                .status("ACTIVE")
+                .createdOn(LocalDateTime.now())
+                .createdBy("admin@mes.com")
+                .build();
+
+        inactiveProcessResponse = ProcessDTO.Response.builder()
+                .processId(3L)
+                .processName("Old Rolling Process")
+                .status("INACTIVE")
+                .createdOn(LocalDateTime.now())
+                .createdBy("admin@mes.com")
                 .build();
     }
 
-    @Test
-    @DisplayName("Should get process by ID")
-    @WithMockUser(username = "admin@mes.com")
-    void getProcessById_ValidId_ReturnsProcess() throws Exception {
-        when(processService.getProcessById(1L)).thenReturn(testProcessResponse);
+    // ==================== GET Endpoints ====================
 
-        mockMvc.perform(get("/api/processes/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.processId").value(1))
-                .andExpect(jsonPath("$.processName").value("Melting"))
-                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+    @Nested
+    @DisplayName("GET Endpoints")
+    class GetEndpoints {
 
-        verify(processService, times(1)).getProcessById(1L);
+        @Test
+        @DisplayName("Should get process by ID")
+        @WithMockUser(username = "admin@mes.com")
+        void getProcessById_ValidId_ReturnsProcess() throws Exception {
+            when(processService.getProcessById(1L)).thenReturn(draftProcessResponse);
+
+            mockMvc.perform(get("/api/processes/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.processId").value(1))
+                    .andExpect(jsonPath("$.processName").value("Melting Process"))
+                    .andExpect(jsonPath("$.status").value("DRAFT"));
+
+            verify(processService, times(1)).getProcessById(1L);
+        }
+
+        @Test
+        @DisplayName("Should get all processes")
+        @WithMockUser(username = "admin@mes.com")
+        void getAllProcesses_ReturnsAllProcesses() throws Exception {
+            when(processService.getAllProcesses())
+                    .thenReturn(List.of(draftProcessResponse, activeProcessResponse, inactiveProcessResponse));
+
+            mockMvc.perform(get("/api/processes"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$").isArray())
+                    .andExpect(jsonPath("$.length()").value(3));
+
+            verify(processService, times(1)).getAllProcesses();
+        }
+
+        @Test
+        @DisplayName("Should get processes by DRAFT status")
+        @WithMockUser(username = "admin@mes.com")
+        void getProcessesByStatus_Draft_ReturnsDraftProcesses() throws Exception {
+            when(processService.getProcessesByStatus("DRAFT"))
+                    .thenReturn(List.of(draftProcessResponse));
+
+            mockMvc.perform(get("/api/processes/status/DRAFT"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].processId").value(1))
+                    .andExpect(jsonPath("$[0].status").value("DRAFT"));
+
+            verify(processService, times(1)).getProcessesByStatus("DRAFT");
+        }
+
+        @Test
+        @DisplayName("Should get active processes only")
+        @WithMockUser(username = "admin@mes.com")
+        void getActiveProcesses_ReturnsActiveOnly() throws Exception {
+            when(processService.getActiveProcesses())
+                    .thenReturn(List.of(activeProcessResponse));
+
+            mockMvc.perform(get("/api/processes/active"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].processId").value(2))
+                    .andExpect(jsonPath("$[0].status").value("ACTIVE"));
+
+            verify(processService, times(1)).getActiveProcesses();
+        }
+
+        @Test
+        @DisplayName("Should handle process not found")
+        @WithMockUser(username = "admin@mes.com")
+        void getProcessById_NotFound_ReturnsError() throws Exception {
+            when(processService.getProcessById(999L))
+                    .thenThrow(new RuntimeException("Process not found: 999"));
+
+            mockMvc.perform(get("/api/processes/999"))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
-    @Test
-    @DisplayName("Should get processes by status")
-    @WithMockUser(username = "admin@mes.com")
-    void getProcessesByStatus_ValidStatus_ReturnsProcesses() throws Exception {
-        when(processService.getProcessesByStatus("QUALITY_PENDING"))
-                .thenReturn(List.of(testProcessResponse));
+    // ==================== CREATE/UPDATE Endpoints ====================
 
-        mockMvc.perform(get("/api/processes/status/QUALITY_PENDING"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].processId").value(1));
+    @Nested
+    @DisplayName("CREATE/UPDATE Endpoints")
+    class CreateUpdateEndpoints {
 
-        verify(processService, times(1)).getProcessesByStatus("QUALITY_PENDING");
+        @Test
+        @DisplayName("Should create process with DRAFT status")
+        @WithMockUser(username = "admin@mes.com")
+        void createProcess_DefaultDraft_ReturnsCreated() throws Exception {
+            ProcessDTO.CreateRequest request = ProcessDTO.CreateRequest.builder()
+                    .processName("New Process")
+                    .build();
+
+            when(processService.createProcess(any(ProcessDTO.CreateRequest.class)))
+                    .thenReturn(draftProcessResponse);
+
+            mockMvc.perform(post("/api/processes")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.processName").value("Melting Process"))
+                    .andExpect(jsonPath("$.status").value("DRAFT"));
+
+            verify(processService, times(1)).createProcess(any(ProcessDTO.CreateRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should update process name")
+        @WithMockUser(username = "admin@mes.com")
+        void updateProcess_ValidRequest_ReturnsUpdated() throws Exception {
+            ProcessDTO.UpdateRequest request = ProcessDTO.UpdateRequest.builder()
+                    .processName("Updated Process Name")
+                    .build();
+
+            ProcessDTO.Response updatedResponse = ProcessDTO.Response.builder()
+                    .processId(1L)
+                    .processName("Updated Process Name")
+                    .status("DRAFT")
+                    .build();
+
+            when(processService.updateProcess(eq(1L), any(ProcessDTO.UpdateRequest.class)))
+                    .thenReturn(updatedResponse);
+
+            mockMvc.perform(put("/api/processes/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.processName").value("Updated Process Name"));
+
+            verify(processService, times(1)).updateProcess(eq(1L), any(ProcessDTO.UpdateRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should delete process (soft delete to INACTIVE)")
+        @WithMockUser(username = "admin@mes.com")
+        void deleteProcess_ValidId_ReturnsNoContent() throws Exception {
+            doNothing().when(processService).deleteProcess(1L);
+
+            mockMvc.perform(delete("/api/processes/1"))
+                    .andExpect(status().isNoContent());
+
+            verify(processService, times(1)).deleteProcess(1L);
+        }
     }
 
-    @Test
-    @DisplayName("Should get quality pending processes")
-    @WithMockUser(username = "admin@mes.com")
-    void getQualityPendingProcesses_ReturnsProcesses() throws Exception {
-        ProcessDTO.Response qualityPendingProcess = ProcessDTO.Response.builder()
-                .processId(1L)
-                .processName("Melting")
-                .status(Process.STATUS_QUALITY_PENDING)
-                .build();
+    // ==================== Activate/Deactivate Endpoints ====================
 
-        when(processService.getQualityPendingProcesses())
-                .thenReturn(List.of(qualityPendingProcess));
+    @Nested
+    @DisplayName("Activate/Deactivate Endpoints")
+    class ActivateDeactivateEndpoints {
 
-        mockMvc.perform(get("/api/processes/quality-pending"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("QUALITY_PENDING"));
+        @Test
+        @DisplayName("Should activate DRAFT process")
+        @WithMockUser(username = "admin@mes.com")
+        void activateProcess_FromDraft_ReturnsActive() throws Exception {
+            ProcessDTO.Response activatedResponse = ProcessDTO.Response.builder()
+                    .processId(1L)
+                    .processName("Melting Process")
+                    .status("ACTIVE")
+                    .updatedBy("admin@mes.com")
+                    .updatedOn(LocalDateTime.now())
+                    .build();
 
-        verify(processService, times(1)).getQualityPendingProcesses();
+            when(processService.activateProcess(1L)).thenReturn(activatedResponse);
+
+            mockMvc.perform(post("/api/processes/1/activate"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.processId").value(1))
+                    .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+            verify(processService, times(1)).activateProcess(1L);
+        }
+
+        @Test
+        @DisplayName("Should reactivate INACTIVE process")
+        @WithMockUser(username = "admin@mes.com")
+        void activateProcess_FromInactive_ReturnsActive() throws Exception {
+            ProcessDTO.Response reactivatedResponse = ProcessDTO.Response.builder()
+                    .processId(3L)
+                    .processName("Old Rolling Process")
+                    .status("ACTIVE")
+                    .updatedBy("admin@mes.com")
+                    .updatedOn(LocalDateTime.now())
+                    .build();
+
+            when(processService.activateProcess(3L)).thenReturn(reactivatedResponse);
+
+            mockMvc.perform(post("/api/processes/3/activate"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.processId").value(3))
+                    .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+            verify(processService, times(1)).activateProcess(3L);
+        }
+
+        @Test
+        @DisplayName("Should deactivate ACTIVE process")
+        @WithMockUser(username = "admin@mes.com")
+        void deactivateProcess_FromActive_ReturnsInactive() throws Exception {
+            ProcessDTO.Response deactivatedResponse = ProcessDTO.Response.builder()
+                    .processId(2L)
+                    .processName("Casting Process")
+                    .status("INACTIVE")
+                    .updatedBy("admin@mes.com")
+                    .updatedOn(LocalDateTime.now())
+                    .build();
+
+            when(processService.deactivateProcess(2L)).thenReturn(deactivatedResponse);
+
+            mockMvc.perform(post("/api/processes/2/deactivate"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.processId").value(2))
+                    .andExpect(jsonPath("$.status").value("INACTIVE"));
+
+            verify(processService, times(1)).deactivateProcess(2L);
+        }
+
+        @Test
+        @DisplayName("Should fail to activate already ACTIVE process")
+        @WithMockUser(username = "admin@mes.com")
+        void activateProcess_AlreadyActive_ReturnsError() throws Exception {
+            when(processService.activateProcess(2L))
+                    .thenThrow(new RuntimeException("Process must be DRAFT or INACTIVE to activate. Current status: ACTIVE"));
+
+            mockMvc.perform(post("/api/processes/2/activate"))
+                    .andExpect(status().isBadRequest());
+
+            verify(processService, times(1)).activateProcess(2L);
+        }
+
+        @Test
+        @DisplayName("Should fail to deactivate DRAFT process")
+        @WithMockUser(username = "admin@mes.com")
+        void deactivateProcess_FromDraft_ReturnsError() throws Exception {
+            when(processService.deactivateProcess(1L))
+                    .thenThrow(new RuntimeException("Process must be ACTIVE to deactivate. Current status: DRAFT"));
+
+            mockMvc.perform(post("/api/processes/1/deactivate"))
+                    .andExpect(status().isBadRequest());
+
+            verify(processService, times(1)).deactivateProcess(1L);
+        }
     }
 
-    @Test
-    @DisplayName("Should transition process to quality pending")
-    @WithMockUser(username = "admin@mes.com")
-    void transitionToQualityPending_ValidProcess_ReturnsSuccess() throws Exception {
-        when(processService.transitionToQualityPending(eq(1L), anyString()))
-                .thenReturn(statusUpdateResponse);
+    // ==================== Authentication ====================
 
-        mockMvc.perform(post("/api/processes/1/quality-pending")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("notes", "Ready for quality check"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.processId").value(1))
-                .andExpect(jsonPath("$.previousStatus").value("IN_PROGRESS"))
-                .andExpect(jsonPath("$.newStatus").value("QUALITY_PENDING"))
-                .andExpect(jsonPath("$.usageDecision").value("PENDING"));
+    @Nested
+    @DisplayName("Authentication")
+    class Authentication {
 
-        verify(processService, times(1)).transitionToQualityPending(eq(1L), anyString());
+        @Test
+        @DisplayName("Should return 401 when not authenticated")
+        void getProcess_NotAuthenticated_Returns401() throws Exception {
+            mockMvc.perform(get("/api/processes/1"))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("Should return 401 for activate when not authenticated")
+        void activateProcess_NotAuthenticated_Returns401() throws Exception {
+            mockMvc.perform(post("/api/processes/1/activate"))
+                    .andExpect(status().isUnauthorized());
+        }
     }
 
-    @Test
-    @DisplayName("Should make quality decision - ACCEPT")
-    @WithMockUser(username = "admin@mes.com")
-    void makeQualityDecision_Accept_ReturnsSuccess() throws Exception {
-        ProcessDTO.StatusUpdateResponse acceptResponse = ProcessDTO.StatusUpdateResponse.builder()
-                .processId(1L)
-                .processName("Melting")
-                .previousStatus(Process.STATUS_QUALITY_PENDING)
-                .newStatus(Process.STATUS_COMPLETED)
-                .usageDecision(Process.DECISION_ACCEPT)
-                .updatedBy("admin@mes.com")
-                .updatedOn(LocalDateTime.now())
-                .message("Process accepted and marked as completed")
-                .build();
+    // ==================== Error Handling ====================
 
-        when(processService.makeQualityDecision(any(ProcessDTO.QualityDecisionRequest.class)))
-                .thenReturn(acceptResponse);
+    @Nested
+    @DisplayName("Error Handling")
+    class ErrorHandling {
 
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(1L)
-                .decision("ACCEPT")
-                .notes("Quality approved")
-                .build();
+        @Test
+        @DisplayName("Should handle delete with existing operations")
+        @WithMockUser(username = "admin@mes.com")
+        void deleteProcess_HasOperations_ReturnsError() throws Exception {
+            doThrow(new RuntimeException("Cannot delete process with existing operations. Found 3 operations."))
+                    .when(processService).deleteProcess(1L);
 
-        mockMvc.perform(post("/api/processes/quality-decision")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.newStatus").value("COMPLETED"))
-                .andExpect(jsonPath("$.usageDecision").value("ACCEPT"));
+            mockMvc.perform(delete("/api/processes/1"))
+                    .andExpect(status().isBadRequest());
+        }
 
-        verify(processService, times(1)).makeQualityDecision(any());
-    }
+        @Test
+        @DisplayName("Should handle invalid status in request")
+        @WithMockUser(username = "admin@mes.com")
+        void updateProcess_InvalidStatus_ReturnsError() throws Exception {
+            ProcessDTO.UpdateRequest request = ProcessDTO.UpdateRequest.builder()
+                    .status("INVALID_STATUS")
+                    .build();
 
-    @Test
-    @DisplayName("Should make quality decision - REJECT")
-    @WithMockUser(username = "admin@mes.com")
-    void makeQualityDecision_Reject_ReturnsSuccess() throws Exception {
-        ProcessDTO.StatusUpdateResponse rejectResponse = ProcessDTO.StatusUpdateResponse.builder()
-                .processId(1L)
-                .processName("Melting")
-                .previousStatus(Process.STATUS_QUALITY_PENDING)
-                .newStatus(Process.STATUS_REJECTED)
-                .usageDecision(Process.DECISION_REJECT)
-                .updatedBy("admin@mes.com")
-                .updatedOn(LocalDateTime.now())
-                .message("Process rejected. Reason: Quality defects found")
-                .build();
+            when(processService.updateProcess(eq(1L), any(ProcessDTO.UpdateRequest.class)))
+                    .thenThrow(new IllegalArgumentException("No enum constant ProcessStatus.INVALID_STATUS"));
 
-        when(processService.makeQualityDecision(any(ProcessDTO.QualityDecisionRequest.class)))
-                .thenReturn(rejectResponse);
+            mockMvc.perform(put("/api/processes/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
 
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(1L)
-                .decision("REJECT")
-                .reason("Quality defects found")
-                .build();
+        @Test
+        @DisplayName("Should handle invalid status transition")
+        @WithMockUser(username = "admin@mes.com")
+        void updateProcess_InvalidTransition_ReturnsError() throws Exception {
+            ProcessDTO.UpdateRequest request = ProcessDTO.UpdateRequest.builder()
+                    .status("DRAFT")
+                    .build();
 
-        mockMvc.perform(post("/api/processes/quality-decision")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.newStatus").value("REJECTED"))
-                .andExpect(jsonPath("$.usageDecision").value("REJECT"));
+            when(processService.updateProcess(eq(2L), any(ProcessDTO.UpdateRequest.class)))
+                    .thenThrow(new RuntimeException("Invalid status transition: Cannot change Process status from ACTIVE to DRAFT"));
 
-        verify(processService, times(1)).makeQualityDecision(any());
-    }
-
-    @Test
-    @DisplayName("Should accept process using shorthand endpoint")
-    @WithMockUser(username = "admin@mes.com")
-    void acceptProcess_ValidProcess_ReturnsSuccess() throws Exception {
-        ProcessDTO.StatusUpdateResponse acceptResponse = ProcessDTO.StatusUpdateResponse.builder()
-                .processId(1L)
-                .newStatus(Process.STATUS_COMPLETED)
-                .usageDecision(Process.DECISION_ACCEPT)
-                .build();
-
-        when(processService.makeQualityDecision(any(ProcessDTO.QualityDecisionRequest.class)))
-                .thenReturn(acceptResponse);
-
-        mockMvc.perform(post("/api/processes/1/accept")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("notes", "Approved"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.newStatus").value("COMPLETED"))
-                .andExpect(jsonPath("$.usageDecision").value("ACCEPT"));
-    }
-
-    @Test
-    @DisplayName("Should reject process using shorthand endpoint")
-    @WithMockUser(username = "admin@mes.com")
-    void rejectProcess_ValidProcess_ReturnsSuccess() throws Exception {
-        ProcessDTO.StatusUpdateResponse rejectResponse = ProcessDTO.StatusUpdateResponse.builder()
-                .processId(1L)
-                .newStatus(Process.STATUS_REJECTED)
-                .usageDecision(Process.DECISION_REJECT)
-                .build();
-
-        when(processService.makeQualityDecision(any(ProcessDTO.QualityDecisionRequest.class)))
-                .thenReturn(rejectResponse);
-
-        mockMvc.perform(post("/api/processes/1/reject")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("reason", "Defects found"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.newStatus").value("REJECTED"));
-    }
-
-    @Test
-    @DisplayName("Should update process status")
-    @WithMockUser(username = "admin@mes.com")
-    void updateStatus_ValidRequest_ReturnsSuccess() throws Exception {
-        ProcessDTO.StatusUpdateResponse response = ProcessDTO.StatusUpdateResponse.builder()
-                .processId(1L)
-                .previousStatus(Process.STATUS_READY)
-                .newStatus(Process.STATUS_IN_PROGRESS)
-                .message("Process status updated successfully")
-                .build();
-
-        when(processService.updateStatus(any(ProcessDTO.StatusUpdateRequest.class)))
-                .thenReturn(response);
-
-        ProcessDTO.StatusUpdateRequest request = ProcessDTO.StatusUpdateRequest.builder()
-                .processId(1L)
-                .newStatus("IN_PROGRESS")
-                .build();
-
-        mockMvc.perform(put("/api/processes/status")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.newStatus").value("IN_PROGRESS"));
-
-        verify(processService, times(1)).updateStatus(any());
-    }
-
-    @Test
-    @DisplayName("Should check if all operations are confirmed")
-    @WithMockUser(username = "admin@mes.com")
-    void checkAllOperationsConfirmed_ReturnsResult() throws Exception {
-        when(processService.areAllOperationsConfirmed(1L)).thenReturn(true);
-
-        mockMvc.perform(get("/api/processes/1/all-confirmed"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.processId").value(1))
-                .andExpect(jsonPath("$.allOperationsConfirmed").value(true));
-
-        verify(processService, times(1)).areAllOperationsConfirmed(1L);
-    }
-
-    @Test
-    @DisplayName("Should return 401 when not authenticated")
-    void getProcess_NotAuthenticated_Returns401() throws Exception {
-        mockMvc.perform(get("/api/processes/1"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("Should handle process not found")
-    @WithMockUser(username = "admin@mes.com")
-    void getProcessById_NotFound_ReturnsError() throws Exception {
-        when(processService.getProcessById(999L))
-                .thenThrow(new RuntimeException("Process not found: 999"));
-
-        mockMvc.perform(get("/api/processes/999"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("Should handle invalid status transition")
-    @WithMockUser(username = "admin@mes.com")
-    void transitionToQualityPending_InvalidStatus_ReturnsError() throws Exception {
-        when(processService.transitionToQualityPending(eq(1L), any()))
-                .thenThrow(new RuntimeException("Process must be IN_PROGRESS or COMPLETED to transition to QUALITY_PENDING"));
-
-        mockMvc.perform(post("/api/processes/1/quality-pending")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("Should handle process on hold")
-    @WithMockUser(username = "admin@mes.com")
-    void transitionToQualityPending_OnHold_ReturnsError() throws Exception {
-        when(processService.transitionToQualityPending(eq(1L), any()))
-                .thenThrow(new RuntimeException("Process is on hold and cannot be updated"));
-
-        mockMvc.perform(post("/api/processes/1/quality-pending")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest());
+            mockMvc.perform(put("/api/processes/2")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }

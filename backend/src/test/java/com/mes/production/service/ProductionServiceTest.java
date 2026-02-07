@@ -3,6 +3,7 @@ package com.mes.production.service;
 import com.mes.production.dto.ProductionConfirmationDTO;
 import com.mes.production.entity.*;
 import com.mes.production.entity.Process;
+import com.mes.production.entity.ProcessStatus;
 import com.mes.production.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -115,7 +116,7 @@ class ProductionServiceTest {
         testProcess = Process.builder()
                 .processId(1L)
                 .processName("Test Stage")
-                .status("IN_PROGRESS")
+                .status(ProcessStatus.ACTIVE)
                 .build();
 
         // Operation links to both Process (design-time) and OrderLineItem (runtime)

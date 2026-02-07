@@ -103,7 +103,7 @@ class DashboardServiceTest {
         when(operationRepository.countByStatus("IN_PROGRESS")).thenReturn(2L);
         when(holdRecordRepository.countByStatus("ACTIVE")).thenReturn(1L);
         when(confirmationRepository.countByCreatedOnAfter(any(LocalDateTime.class))).thenReturn(8L);
-        when(processRepository.findByStatus(Process.STATUS_QUALITY_PENDING)).thenReturn(List.of());
+        // Process quality pending is no longer tracked (design-time entity only)
         when(confirmationRepository.findRecentConfirmations(any(Pageable.class))).thenReturn(List.of(testConfirmation));
         when(auditService.getRecentActivity(10)).thenReturn(List.of(testAuditTrail));
 
@@ -166,7 +166,7 @@ class DashboardServiceTest {
         when(operationRepository.countByStatus("IN_PROGRESS")).thenReturn(0L);
         when(holdRecordRepository.countByStatus("ACTIVE")).thenReturn(0L);
         when(confirmationRepository.countByCreatedOnAfter(any(LocalDateTime.class))).thenReturn(0L);
-        when(processRepository.findByStatus(Process.STATUS_QUALITY_PENDING)).thenReturn(List.of());
+        // Process quality pending is no longer tracked (design-time entity only)
         when(confirmationRepository.findRecentConfirmations(any(Pageable.class))).thenReturn(List.of());
         when(auditService.getRecentActivity(10)).thenReturn(List.of());
 

@@ -3,6 +3,7 @@ package com.mes.production.service;
 import com.mes.production.dto.RoutingDTO;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.Process;
+import com.mes.production.entity.ProcessStatus;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
 import com.mes.production.repository.ProcessRepository;
@@ -55,7 +56,7 @@ class RoutingServiceTest {
         testProcess = Process.builder()
                 .processId(1L)
                 .processName("Melting Stage")
-                .status(Process.STATUS_READY)
+                .status(ProcessStatus.ACTIVE)
                 .build();
 
         testOperation1 = Operation.builder()

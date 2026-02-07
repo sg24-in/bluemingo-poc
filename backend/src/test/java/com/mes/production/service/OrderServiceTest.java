@@ -7,6 +7,7 @@ import com.mes.production.dto.order.UpdateOrderRequest;
 import com.mes.production.entity.Order;
 import com.mes.production.entity.OrderLineItem;
 import com.mes.production.entity.Process;
+import com.mes.production.entity.ProcessStatus;
 import com.mes.production.entity.Operation;
 import com.mes.production.repository.AuditTrailRepository;
 import com.mes.production.repository.OperationRepository;
@@ -74,7 +75,7 @@ class OrderServiceTest {
         testProcess = Process.builder()
                 .processId(1L)
                 .processName("Melting Stage")
-                .status("IN_PROGRESS")
+                .status(ProcessStatus.ACTIVE)
                 .build();
 
         testOperation = Operation.builder()
