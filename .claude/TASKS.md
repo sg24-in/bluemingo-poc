@@ -823,11 +823,14 @@ Fixed 19 failing frontend tests:
 | `frontend/src/app/features/users/user-list/user-list.component.css` | Removed conflicting button/filter overrides, use global styles |
 | `frontend/src/app/features/equipment/equipment-list/equipment-list.component.css` | Fixed padding, consistent with other list pages |
 | `frontend/src/app/features/config/batch-size/batch-size-list.component.spec.ts` | Fixed TypeScript null vs undefined issue |
+| `frontend/src/app/features/equipment/equipment-list/equipment-list.component.html` | Changed table wrapper from `.card` to `.table-container` |
+| `frontend/src/app/shared/components/pagination/pagination.component.css` | Added horizontal padding (16px all sides) |
 
 **Issues Fixed:**
 1. User Management page - Buttons/padding not matching other pages (local CSS overriding global)
-2. Equipment Management page - Padding/margin inconsistencies
-3. Batch size spec tests - Type errors with null values in mock data
+2. Equipment Management page - Extra space between filter card and table (changed to table-container)
+3. Equipment Management page - Pagination panel missing horizontal margin (updated shared component)
+4. Batch size spec tests - Type errors with null values in mock data
 
 **Test Results:**
 - Frontend: 1168 pass, 6 fail (pre-existing user-form failures)
