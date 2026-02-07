@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Process } from '../../../shared/models';
+import { PagedResponse, PageRequest, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-process-list',
@@ -9,13 +10,28 @@ import { Process } from '../../../shared/models';
   styleUrls: ['./process-list.component.css']
 })
 export class ProcessListComponent implements OnInit {
-  allProcesses: Process[] = [];
   processes: Process[] = [];
   loading = true;
   error = '';
 
-  filterStatus = 'all';
+  // Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  filterStatus = '';
   searchTerm = '';
+
+  // Status counts for summary cards
+  statusCounts: { [key: string]: number } = {
+    DRAFT: 0,
+    ACTIVE: 0,
+    INACTIVE: 0
+  };
 
   // Delete modal
   showDeleteModal = false;
@@ -25,8 +41,7 @@ export class ProcessListComponent implements OnInit {
   // Processing state for activate/deactivate
   processing = false;
 
-  // Design-time statuses for process templates (per MES Consolidated Spec)
-  // Runtime execution statuses (READY, IN_PROGRESS, etc.) are for ProcessInstance tracking
+  // Design-time statuses for process templates
   statuses = ['DRAFT', 'ACTIVE', 'INACTIVE'];
 
   constructor(
@@ -36,64 +51,75 @@ export class ProcessListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProcesses();
+    this.loadStatusCounts();
   }
 
   loadProcesses(): void {
     this.loading = true;
     this.error = '';
-    this.allProcesses = [];
 
-    let loaded = 0;
-    const total = this.statuses.length;
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'processId',
+      sortDirection: 'DESC',
+      status: this.filterStatus || undefined,
+      search: this.searchTerm || undefined
+    };
 
+    this.apiService.getProcessesPaged(request).subscribe({
+      next: (response: PagedResponse<Process>) => {
+        this.processes = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = !response.last;
+        this.hasPrevious = !response.first;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading processes:', err);
+        this.error = 'Failed to load processes.';
+        this.loading = false;
+      }
+    });
+  }
+
+  loadStatusCounts(): void {
     this.statuses.forEach(status => {
       this.apiService.getProcessesByStatus(status).subscribe({
         next: (processes) => {
-          this.allProcesses.push(...processes);
-          loaded++;
-          if (loaded === total) {
-            this.allProcesses.sort((a, b) => (b.processId || 0) - (a.processId || 0));
-            this.applyFilters();
-            this.loading = false;
-          }
+          this.statusCounts[status] = processes.length;
         },
         error: () => {
-          loaded++;
-          if (loaded === total) {
-            this.applyFilters();
-            this.loading = false;
-          }
+          this.statusCounts[status] = 0;
         }
       });
     });
   }
 
-  applyFilters(): void {
-    let filtered = [...this.allProcesses];
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadProcesses();
+  }
 
-    if (this.filterStatus && this.filterStatus !== 'all') {
-      filtered = filtered.filter(p => p.status === this.filterStatus);
-    }
-
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.processName?.toLowerCase().includes(term) ||
-        String(p.processId).includes(term)
-      );
-    }
-
-    this.processes = filtered;
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadProcesses();
   }
 
   onFilterStatusChange(status: string): void {
-    this.filterStatus = status;
-    this.applyFilters();
+    this.filterStatus = status === 'all' ? '' : status;
+    this.page = 0;
+    this.loadProcesses();
   }
 
   onSearchChange(term: string): void {
     this.searchTerm = term;
-    this.applyFilters();
+    this.page = 0;
+    this.loadProcesses();
   }
 
   getStatusClass(status: string): string {
@@ -101,12 +127,11 @@ export class ProcessListComponent implements OnInit {
   }
 
   countByStatus(status: string): number {
-    return this.allProcesses.filter(p => p.status === status).length;
+    return this.statusCounts[status] || 0;
   }
 
   // Navigation methods
   createProcess(): void {
-    // Check if we're in admin context
     if (this.router.url.includes('/manage/')) {
       this.router.navigate(['/manage/processes/new']);
     } else {
@@ -138,6 +163,7 @@ export class ProcessListComponent implements OnInit {
       next: () => {
         this.processing = false;
         this.loadProcesses();
+        this.loadStatusCounts();
       },
       error: (err) => {
         this.processing = false;
@@ -153,6 +179,7 @@ export class ProcessListComponent implements OnInit {
       next: () => {
         this.processing = false;
         this.loadProcesses();
+        this.loadStatusCounts();
       },
       error: (err) => {
         this.processing = false;
@@ -181,8 +208,8 @@ export class ProcessListComponent implements OnInit {
         this.deleting = false;
         this.showDeleteModal = false;
         this.processToDelete = null;
-        // Reload the list
         this.loadProcesses();
+        this.loadStatusCounts();
       },
       error: (err) => {
         this.deleting = false;

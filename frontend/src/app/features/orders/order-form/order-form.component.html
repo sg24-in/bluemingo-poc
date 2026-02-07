@@ -1,6 +1,6 @@
 <div class="order-form-page">
   <div class="page-header">
-    <h1>{{ isEditMode ? 'Edit Order: ' + (form.get('orderNumber')?.value || 'ORD-' + orderId) : 'New Order' }}</h1>
+    <h1 class="page-title">{{ isEditMode ? 'Edit Order: ' + (form.get('orderNumber')?.value || 'ORD-' + orderId) : 'New Order' }}</h1>
   </div>
 
   <div class="loading" *ngIf="loading">Loading order...</div>

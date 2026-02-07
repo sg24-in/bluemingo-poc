@@ -5,7 +5,7 @@
         &larr; Back
       </button>
       <div class="title-section">
-        <h1>BOM Tree: {{ productSku }}</h1>
+        <h1 class="page-title">BOM Tree: {{ productSku }}</h1>
         <div *ngIf="bomTree" class="tree-meta">
           Version: {{ bomTree.bomVersion }} | Nodes: {{ bomTree.totalNodes }} | Depth: {{ bomTree.maxDepth }}
           <span *ngIf="bomTree.tree.length > 0" class="tree-status">

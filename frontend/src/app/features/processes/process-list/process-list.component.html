@@ -1,6 +1,6 @@
 <div class="process-list-page">
   <div class="page-header">
-    <h1>Processes</h1>
+    <h1 class="page-title">Processes</h1>
     <button class="btn btn-primary" (click)="createProcess()">+ New Process</button>
   </div>
 
@@ -30,19 +30,19 @@
 
   <div class="summary-cards" *ngIf="!loading">
     <div class="summary-card">
-      <span class="count">{{ allProcesses.length }}</span>
+      <span class="count">{{ statusCounts['DRAFT'] + statusCounts['ACTIVE'] + statusCounts['INACTIVE'] }}</span>
       <span class="label">Total</span>
     </div>
     <div class="summary-card draft">
-      <span class="count">{{ countByStatus('DRAFT') }}</span>
+      <span class="count">{{ statusCounts['DRAFT'] }}</span>
       <span class="label">Draft</span>
     </div>
     <div class="summary-card active">
-      <span class="count">{{ countByStatus('ACTIVE') }}</span>
+      <span class="count">{{ statusCounts['ACTIVE'] }}</span>
       <span class="label">Active</span>
     </div>
     <div class="summary-card inactive">
-      <span class="count">{{ countByStatus('INACTIVE') }}</span>
+      <span class="count">{{ statusCounts['INACTIVE'] }}</span>
       <span class="label">Inactive</span>
     </div>
   </div>
@@ -104,9 +104,18 @@
       </div>
     </ng-template>
 
-    <div class="result-count" *ngIf="processes.length > 0">
-      Showing {{ processes.length }} of {{ allProcesses.length }} processes
-    </div>
+    <!-- Pagination -->
+    <app-pagination
+      *ngIf="processes.length > 0"
+      [page]="page"
+      [size]="size"
+      [totalElements]="totalElements"
+      [totalPages]="totalPages"
+      [hasNext]="hasNext"
+      [hasPrevious]="hasPrevious"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-pagination>
   </div>
 
   <ng-template #loadingTpl>

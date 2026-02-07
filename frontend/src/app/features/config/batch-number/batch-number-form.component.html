@@ -1,5 +1,5 @@
 <div class="config-form-page">
-  <div class="page-header"><h1>{{ isEditMode ? 'Edit Batch Number Config' : 'New Batch Number Config' }}</h1></div>
+  <div class="page-header"><h1 class="page-title">{{ isEditMode ? 'Edit Batch Number Config' : 'New Batch Number Config' }}</h1></div>
   <div class="loading" *ngIf="loading">Loading...</div>
   <div class="form-container" *ngIf="!loading">
     <form [formGroup]="form" (ngSubmit)="onSubmit()">

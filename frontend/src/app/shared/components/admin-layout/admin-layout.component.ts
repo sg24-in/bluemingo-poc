@@ -37,10 +37,20 @@ export class AdminLayoutComponent {
       ]
     },
     {
+      title: 'Configuration',
+      items: [
+        { path: '/manage/config/hold-reasons', label: 'Hold Reasons', icon: 'ban' },
+        { path: '/manage/config/delay-reasons', label: 'Delay Reasons', icon: 'hourglass-half' },
+        { path: '/manage/config/process-params', label: 'Process Parameters', icon: 'sliders' },
+        { path: '/manage/config/batch-number', label: 'Batch Number', icon: 'hashtag' },
+        { path: '/manage/config/batch-size', label: 'Batch Size', icon: 'weight-scale' },
+        { path: '/manage/config/quantity-type', label: 'Quantity Types', icon: 'list-ol' }
+      ]
+    },
+    {
       title: 'System',
       items: [
         { path: '/manage/users', label: 'Users', icon: 'user-gear' },
-        { path: '/manage/config', label: 'Configuration', icon: 'sliders' },
         { path: '/manage/audit', label: 'Audit Trail', icon: 'clock-rotate-left' }
       ]
     }
