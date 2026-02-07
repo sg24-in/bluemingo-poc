@@ -15,6 +15,8 @@ This guide walks you through the complete user journey of the MES Production Con
 7. [Hold Management](#hold-management)
 8. [Equipment Management](#equipment-management)
 9. [Quality Inspection](#quality-inspection)
+10. [Administration](#administration)
+11. [Configuration](#configuration)
 
 ---
 
@@ -421,6 +423,158 @@ Navigate to **Quality** to see items pending inspection.
 3. Click **Confirm**
 
 ![Quality Rejected](../e2e/output/screenshots/user-journey/022-quality-rejected.png)
+
+---
+
+## Administration
+
+The Administration area provides access to master data management, system configuration, and user management.
+
+### Accessing Administration
+
+1. Click the **Manage** menu in the header
+2. Select any option to open the admin sidebar
+3. The sidebar provides navigation to all admin functions
+
+### Admin Sidebar Groups
+
+The admin sidebar is organized into four groups:
+
+**Master Data:**
+- **Customers** - Manage customer records
+- **Products** - Product catalog with SKUs
+- **Materials** - Raw materials, intermediates, finished goods
+
+**Production:**
+- **Processes** - Design-time process templates (Melting, Casting, Rolling)
+- **Routing** - Production routing with steps
+- **Equipment** - Equipment master data
+- **Operators** - Personnel management
+- **Bill of Materials** - BOM configuration
+
+**Configuration:**
+- **Hold Reasons** - Configurable hold reason codes
+- **Delay Reasons** - Production delay reason codes
+- **Process Parameters** - Parameter min/max validation rules
+- **Batch Number** - Batch number generation patterns
+- **Batch Size** - Batch sizing rules per product/operation
+- **Quantity Types** - Units of measure configuration
+
+**System:**
+- **Users** - User account management
+- **Audit Trail** - System-wide audit log
+
+---
+
+## Configuration
+
+Configuration entities define system behavior and validation rules.
+
+### Hold Reasons
+
+Hold reasons categorize why an item is placed on hold.
+
+**Managing Hold Reasons:**
+1. Navigate to **Manage > Configuration > Hold Reasons**
+2. Click **+ New Hold Reason** to create
+3. Enter:
+   - **Reason Code** - Unique identifier (e.g., QC-001)
+   - **Description** - Full description
+   - **Entity Types** - Which entities can use this reason
+   - **Severity** - LOW, MEDIUM, HIGH, CRITICAL
+4. Click **Save**
+
+### Delay Reasons
+
+Delay reasons categorize production delays for reporting.
+
+**Managing Delay Reasons:**
+1. Navigate to **Manage > Configuration > Delay Reasons**
+2. Click **+ New Delay Reason** to create
+3. Enter:
+   - **Reason Code** - Unique identifier
+   - **Description** - Full description
+   - **Category** - EQUIPMENT, MATERIAL, LABOR, QUALITY, OTHER
+4. Click **Save**
+
+### Process Parameters
+
+Process parameters define validation rules for production confirmation.
+
+**Managing Process Parameters:**
+1. Navigate to **Manage > Configuration > Process Parameters**
+2. Click **+ New Process Parameter** to create
+3. Enter:
+   - **Operation Type** - Which operation this applies to
+   - **Product SKU** - Optional product-specific config
+   - **Parameter Name** - e.g., Temperature, Pressure
+   - **Min Value** / **Max Value** - Validation range
+   - **Unit** - Unit of measure
+   - **Required** - Whether the parameter is mandatory
+4. Click **Save**
+
+Values outside the configured range will show validation errors during production confirmation.
+
+### Batch Number Configuration
+
+Batch number patterns control automatic batch number generation.
+
+**Pattern Format:**
+`{PREFIX}{SEPARATOR}{DATE}{SEPARATOR}{SEQUENCE}`
+
+**Example Patterns:**
+- `FURN-20260207-0001` (Furnace operation, daily sequence)
+- `CAST-2602-001` (Caster, monthly sequence)
+- `HR-COIL-001` (Product-specific, no date)
+
+**Managing Batch Number Config:**
+1. Navigate to **Manage > Configuration > Batch Number**
+2. Click **+ New Batch Number Config** to create
+3. Enter:
+   - **Config Name** - Descriptive name
+   - **Operation Type** - FURNACE, CASTER, ROLLING, etc.
+   - **Product SKU** - Optional product-specific pattern
+   - **Prefix** - Text prefix (e.g., FURN, CAST)
+   - **Separator** - Character between parts (-, /)
+   - **Date Format** - yyyyMMdd, yyMM, etc.
+   - **Sequence Digits** - Number of sequence digits (3-6)
+   - **Reset Frequency** - DAILY, MONTHLY, YEARLY, NEVER
+4. Click **Save**
+
+### Batch Size Configuration
+
+Batch size rules define target quantities per product and operation.
+
+**Managing Batch Size Config:**
+1. Navigate to **Manage > Configuration > Batch Size**
+2. Click **+ New Configuration** to create
+3. Enter:
+   - **Product** - Target product
+   - **Operation** - Target operation type
+   - **Min Quantity** / **Max Quantity** - Allowed range
+   - **Target Quantity** - Default suggested quantity
+   - **Unit** - Unit of measure
+4. Click **Save**
+
+### Quantity Types (Units of Measure)
+
+Units of measure and conversion factors.
+
+**Pre-configured Units:**
+- **Weight:** KG (base), TONS, LB, G
+- **Length:** M (base), MM, CM, FT, IN
+- **Volume:** L (base), M3, GAL
+- **Pieces:** PCS (base), EA
+- **Area:** M2 (base)
+
+**Managing Quantity Types:**
+1. Navigate to **Manage > Configuration > Quantity Types**
+2. View configured units and conversion factors
+3. Add new units as needed with:
+   - **Unit Code** - Short code
+   - **Unit Name** - Full name
+   - **Type** - WEIGHT, LENGTH, VOLUME, etc.
+   - **Decimal Precision** - Number of decimal places
 
 ---
 

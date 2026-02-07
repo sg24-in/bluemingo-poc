@@ -619,6 +619,80 @@ Seed data is included in patches:
 - `002_seed_data.sql` - Initial master data and sample data
 - `004_additional_seed_data.sql` - Additional sample data
 
+### Batch Number Generation
+
+The `BatchNumberService` generates batch numbers based on configurable patterns stored in `batch_number_config` table.
+
+#### Configuration Table Schema
+
+```sql
+CREATE TABLE batch_number_config (
+    config_id BIGINT PRIMARY KEY,
+    config_name VARCHAR(100) NOT NULL,
+    operation_type VARCHAR(50),           -- FURNACE, CASTER, ROLLING, etc.
+    product_sku VARCHAR(100),              -- Optional product-specific pattern
+    prefix VARCHAR(20) DEFAULT 'BATCH',
+    separator VARCHAR(5) DEFAULT '-',
+    include_date BOOLEAN DEFAULT true,
+    date_format VARCHAR(20) DEFAULT 'yyyyMMdd',
+    sequence_digits INT DEFAULT 4,
+    reset_frequency VARCHAR(20) DEFAULT 'DAILY',  -- DAILY, MONTHLY, YEARLY, NEVER
+    current_sequence INT DEFAULT 0,
+    last_reset_date DATE,
+    status VARCHAR(20) DEFAULT 'ACTIVE'
+);
+```
+
+#### Pattern Resolution
+
+The service uses this priority order:
+1. **Product + Operation** - Most specific match
+2. **Operation only** - Operation-type default
+3. **Product only** - Product default
+4. **Fallback** - Uses `BATCH-{date}-{seq}` pattern
+
+#### Example Patterns
+
+| Config | Operation | Product | Example Output |
+|--------|-----------|---------|----------------|
+| Furnace Default | FURNACE | - | `FURN-20260207-0001` |
+| Caster Monthly | CASTER | - | `CAST-2602-001` |
+| Product Specific | - | HR-COIL | `HR-COIL-20260207-0001` |
+| Rolling + Product | ROLLING | CR-SHEET | `CR-SHEET-ROLL-001` |
+
+#### Using BatchNumberService
+
+```java
+@Service
+public class ProductionService {
+    private final BatchNumberService batchNumberService;
+
+    public Batch createBatch(String operationType, String productSku) {
+        // Generates batch number based on config
+        String batchNumber = batchNumberService.generateBatchNumber(
+            operationType, productSku);
+
+        return Batch.builder()
+            .batchNumber(batchNumber)
+            .build();
+    }
+}
+```
+
+#### Sequence Reset
+
+Sequences reset based on `reset_frequency`:
+- **DAILY** - Resets at midnight each day
+- **MONTHLY** - Resets on the 1st of each month
+- **YEARLY** - Resets on January 1st
+- **NEVER** - Continuous sequence (no reset)
+
+#### Split/Merge Batch Numbers
+
+When splitting or merging batches:
+- **Split**: Appends suffix to original (e.g., `FURN-20260207-0001-A`, `-B`)
+- **Merge**: Generates new number with `MERGED-` prefix
+
 ### Demo Mode Schema Alignment
 
 **IMPORTANT:** Demo mode (`--spring.profiles.active=demo`) uses separate schema files that must be kept in sync with patches.
