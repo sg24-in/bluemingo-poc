@@ -22,6 +22,9 @@ export class ProcessListComponent implements OnInit {
   processToDelete: Process | null = null;
   deleting = false;
 
+  // Processing state for activate/deactivate
+  processing = false;
+
   // Design-time statuses for process templates (per MES Consolidated Spec)
   // Runtime execution statuses (READY, IN_PROGRESS, etc.) are for ProcessInstance tracking
   statuses = ['DRAFT', 'ACTIVE', 'INACTIVE'];
@@ -125,6 +128,37 @@ export class ProcessListComponent implements OnInit {
     } else {
       this.router.navigate(['/processes', process.processId, 'edit']);
     }
+  }
+
+  // Activate/Deactivate methods
+  activateProcess(process: Process): void {
+    this.processing = true;
+    this.error = '';
+    this.apiService.activateProcess(process.processId).subscribe({
+      next: () => {
+        this.processing = false;
+        this.loadProcesses();
+      },
+      error: (err) => {
+        this.processing = false;
+        this.error = err.error?.message || 'Failed to activate process.';
+      }
+    });
+  }
+
+  deactivateProcess(process: Process): void {
+    this.processing = true;
+    this.error = '';
+    this.apiService.deactivateProcess(process.processId).subscribe({
+      next: () => {
+        this.processing = false;
+        this.loadProcesses();
+      },
+      error: (err) => {
+        this.processing = false;
+        this.error = err.error?.message || 'Failed to deactivate process.';
+      }
+    });
   }
 
   // Delete methods

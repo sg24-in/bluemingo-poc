@@ -3,6 +3,7 @@ package com.mes.production.service;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.OrderLineItem;
 import com.mes.production.entity.Process;
+import com.mes.production.entity.ProcessStatus;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
 import com.mes.production.repository.OperationRepository;
@@ -69,6 +70,13 @@ public class OperationInstantiationService {
         // Get the process definition
         Process process = processRepository.findById(processId)
                 .orElseThrow(() -> new IllegalArgumentException("Process not found: " + processId));
+
+        // Validate process status - only ACTIVE processes can be used for execution
+        if (process.getStatus() != ProcessStatus.ACTIVE) {
+            throw new IllegalStateException(
+                    "Cannot instantiate operations: Process " + processId +
+                    " status is " + process.getStatus() + ", must be ACTIVE");
+        }
 
         // Get routing for this process
         List<Routing> routings = routingRepository.findByProcess_ProcessId(processId);

@@ -71,6 +71,22 @@
           <td>{{ process.createdOn | date:'short' }}</td>
           <td>{{ process.updatedOn | date:'short' }}</td>
           <td class="actions-cell" (click)="$event.stopPropagation()">
+            <button
+              *ngIf="process.status === 'DRAFT' || process.status === 'INACTIVE'"
+              class="btn-icon btn-success"
+              title="Activate"
+              (click)="activateProcess(process)"
+              [disabled]="processing">
+              <span class="icon">&#10003;</span>
+            </button>
+            <button
+              *ngIf="process.status === 'ACTIVE'"
+              class="btn-icon btn-warning"
+              title="Deactivate"
+              (click)="deactivateProcess(process)"
+              [disabled]="processing">
+              <span class="icon">&#10007;</span>
+            </button>
             <button class="btn-icon" title="Edit" (click)="editProcess(process)">
               <span class="icon">&#9998;</span>
             </button>

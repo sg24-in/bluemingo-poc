@@ -1,11 +1,85 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Process CRUD UI, Design-Time Status Alignment
+**Session Status:** Active - Process Status Validation, Documentation
 
 ---
 
-## Latest Session Changes (2026-02-07 - Process Design-Time Architecture Refactor)
+## Latest Session Changes (2026-02-07 - Process Status Validation & Documentation)
+
+### PR-VAL: Process Status Validation - ALL GAPS FIXED ✅
+
+**Comprehensive validation and implementation of Process status handling across all layers.**
+
+**Validations Implemented:**
+
+| File | Validation Added |
+|------|------------------|
+| `OperationInstantiationService.java` | Blocks operation creation for DRAFT/INACTIVE processes |
+| `ProductionService.java` | Blocks production confirmation for DRAFT/INACTIVE processes |
+| `ProcessService.java` | Blocks ACTIVE→DRAFT and INACTIVE→DRAFT transitions |
+
+**Code Changes:**
+
+1. **OperationInstantiationService.instantiateOperationsForOrder()** (line 73-78):
+   ```java
+   if (process.getStatus() != ProcessStatus.ACTIVE) {
+       throw new IllegalStateException(
+           "Cannot instantiate operations: Process " + processId +
+           " status is " + process.getStatus() + ", must be ACTIVE");
+   }
+   ```
+
+2. **ProductionService.confirmProduction()** (line 75-80):
+   ```java
+   if (process.getStatus() != ProcessStatus.ACTIVE) {
+       throw new RuntimeException(
+           "Cannot confirm production: Process " + process.getProcessId() +
+           " status is " + process.getStatus() + ", must be ACTIVE");
+   }
+   ```
+
+3. **ProcessService.validateStatusTransition()** (new method):
+   - Blocks ACTIVE → DRAFT transition
+   - Blocks INACTIVE → DRAFT transition
+   - Allows all other valid transitions
+   - Logs transition for audit trail
+
+**Documentation Updated:**
+- `documents/Process-Status-Validation-Report.md` - Updated to reflect PASS status
+
+**Tests Created/Updated:**
+- `ProcessServiceTest.java` - 26 tests for CRUD, transitions, audit
+- `ProcessStatusValidationTest.java` - 20 tests for validation scenarios
+
+**Final Validation Status:**
+
+| Layer | Status | Notes |
+|-------|--------|-------|
+| Entity Layer | PASS | Correct enum, proper defaults |
+| Service Layer | PASS | All transitions validated |
+| Order/Routing Layer | PASS | Status validation added |
+| Production Layer | PASS | Status validation added |
+| Hold Layer | PASS | Correctly handles design-time entity |
+| API Layer | PASS | All validations in place |
+| UI Layer | PASS | Visual indicators, activate/deactivate buttons |
+
+### PR-FE07-08: Activate/Deactivate Buttons - COMPLETE ✅
+
+**Files Modified:**
+
+| File | Changes |
+|------|---------|
+| `process-list.component.ts` | Added `processing` state, `activateProcess()`, `deactivateProcess()` methods |
+| `process-list.component.html` | Added activate/deactivate buttons in Actions column |
+| `process-list.component.css` | Added `.btn-icon.btn-success`, `.btn-icon.btn-warning` styles |
+| `process-detail.component.ts` | Added `processing` state, `activateProcess()`, `deactivateProcess()` methods, updated `getStatusClass()` |
+| `process-detail.component.html` | Added activate/deactivate buttons in status section |
+| `process-detail.component.css` | Added design-time status badge styles, button styles, status-actions container |
+
+---
+
+## Previous Session Changes (2026-02-07 - Process Design-Time Architecture Refactor)
 
 ### PR-ARCH: Process Design-Time Architecture - COMPLETE ✅
 
@@ -88,10 +162,16 @@
 
 | Task | Description | Status |
 |------|-------------|--------|
-| PR-FE07 | Add Activate/Deactivate buttons to process-list.component | PENDING |
-| PR-FE08 | Add Activate/Deactivate buttons to process-detail.component | PENDING |
+| PR-FE07 | Add Activate/Deactivate buttons to process-list.component | DONE ✅ |
+| PR-FE08 | Add Activate/Deactivate buttons to process-detail.component | DONE ✅ |
 | PR-FE09 | E2E tests for Process CRUD workflow | PENDING |
 | PR-FE10 | Update demo/data.sql with sample DRAFT/ACTIVE/INACTIVE processes | PENDING |
+| PR-VAL01 | Add Process.status validation to OperationInstantiationService | DONE ✅ |
+| PR-VAL02 | Add Process.status validation to ProductionService.confirmProduction() | DONE ✅ |
+| PR-VAL03 | Add status transition validation to ProcessService.updateProcess() | DONE ✅ |
+| PR-DOC01 | Process Status Validation Report created | DONE ✅ |
+| PR-TEST01 | ProcessServiceTest rewritten for design-time statuses | DONE ✅ |
+| PR-TEST02 | ProcessStatusValidationTest updated with implementation tests | DONE ✅ |
 
 ---
 

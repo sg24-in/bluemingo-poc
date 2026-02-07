@@ -12,6 +12,7 @@ export class ProcessDetailComponent implements OnInit {
   process: Process | null = null;
   loading = true;
   error: string | null = null;
+  processing = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -54,16 +55,49 @@ export class ProcessDetailComponent implements OnInit {
     this.router.navigate(['/operations', operationId]);
   }
 
+  activateProcess(): void {
+    if (!this.process) return;
+    this.processing = true;
+    this.error = null;
+
+    this.apiService.activateProcess(this.process.processId).subscribe({
+      next: (updatedProcess) => {
+        this.process = updatedProcess;
+        this.processing = false;
+      },
+      error: (err) => {
+        this.processing = false;
+        this.error = err.error?.message || 'Failed to activate process.';
+      }
+    });
+  }
+
+  deactivateProcess(): void {
+    if (!this.process) return;
+    this.processing = true;
+    this.error = null;
+
+    this.apiService.deactivateProcess(this.process.processId).subscribe({
+      next: (updatedProcess) => {
+        this.process = updatedProcess;
+        this.processing = false;
+      },
+      error: (err) => {
+        this.processing = false;
+        this.error = err.error?.message || 'Failed to deactivate process.';
+      }
+    });
+  }
+
   getStatusClass(status: string): string {
+    // Design-time statuses for Process templates
     switch (status?.toUpperCase()) {
-      case 'NOT_STARTED':
-        return 'status-not-started';
-      case 'IN_PROGRESS':
-        return 'status-in-progress';
-      case 'COMPLETED':
-        return 'status-completed';
-      case 'ON_HOLD':
-        return 'status-on-hold';
+      case 'DRAFT':
+        return 'draft';
+      case 'ACTIVE':
+        return 'active';
+      case 'INACTIVE':
+        return 'inactive';
       default:
         return '';
     }

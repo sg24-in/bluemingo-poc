@@ -2,13 +2,13 @@ package com.mes.production.service;
 
 import com.mes.production.dto.ProcessDTO;
 import com.mes.production.entity.Operation;
-import com.mes.production.entity.OrderLineItem;
 import com.mes.production.entity.Process;
-import com.mes.production.repository.HoldRecordRepository;
+import com.mes.production.entity.ProcessStatus;
 import com.mes.production.repository.OperationRepository;
 import com.mes.production.repository.ProcessRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +29,23 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests for ProcessService - design-time Process template management.
+ *
+ * Process Status Model (Design-Time Only):
+ * - DRAFT: Process being defined, not ready for use
+ * - ACTIVE: Process approved and usable for execution
+ * - INACTIVE: Process retired/disabled, historical access only
+ *
+ * Valid Transitions:
+ * - DRAFT → ACTIVE (via activateProcess)
+ * - INACTIVE → ACTIVE (via activateProcess)
+ * - ACTIVE → INACTIVE (via deactivateProcess or deleteProcess)
+ *
+ * Blocked Transitions:
+ * - ACTIVE → DRAFT (not allowed)
+ * - INACTIVE → DRAFT (not allowed)
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ProcessServiceTest {
@@ -37,9 +55,6 @@ class ProcessServiceTest {
 
     @Mock
     private OperationRepository operationRepository;
-
-    @Mock
-    private HoldRecordRepository holdRecordRepository;
 
     @Mock
     private AuditService auditService;
@@ -62,324 +77,436 @@ class ProcessServiceTest {
         when(authentication.getName()).thenReturn("admin@mes.com");
         SecurityContextHolder.setContext(securityContext);
 
-        // Setup test data - Process is design-time only (no OrderLineItem reference)
+        // Setup test data - Process is design-time only (DRAFT/ACTIVE/INACTIVE)
         testProcess = Process.builder()
                 .processId(1L)
-                .processName("Melting")
-                .status(Process.STATUS_IN_PROGRESS)
+                .processName("Melting Process")
+                .status(ProcessStatus.DRAFT)
                 .createdOn(LocalDateTime.now())
+                .createdBy("admin@mes.com")
                 .build();
     }
 
-    @Test
-    @DisplayName("Should get process by ID with operations")
-    void getProcessById_ValidId_ReturnsProcess() {
-        Operation operation = Operation.builder()
-                .operationId(1L)
-                .operationName("Melt Iron")
-                .status("CONFIRMED")
-                .sequenceNumber(1)
-                .build();
-        testProcess.setOperations(List.of(operation));
+    // ==================== CRUD Operations ====================
 
-        when(processRepository.findByIdWithOperations(1L)).thenReturn(Optional.of(testProcess));
+    @Nested
+    @DisplayName("CRUD Operations")
+    class CrudOperations {
 
-        ProcessDTO.Response result = processService.getProcessById(1L);
+        @Test
+        @DisplayName("Should get process by ID with operations")
+        void getProcessById_ValidId_ReturnsProcess() {
+            Operation operation = Operation.builder()
+                    .operationId(1L)
+                    .operationName("Melt Iron")
+                    .status("READY")
+                    .sequenceNumber(1)
+                    .build();
+            testProcess.setOperations(List.of(operation));
 
-        assertNotNull(result);
-        assertEquals(1L, result.getProcessId());
-        assertEquals("Melting", result.getProcessName());
-        assertEquals(Process.STATUS_IN_PROGRESS, result.getStatus());
-        assertNotNull(result.getOperations());
-        assertEquals(1, result.getOperations().size());
+            when(processRepository.findByIdWithOperations(1L)).thenReturn(Optional.of(testProcess));
 
-        verify(processRepository, times(1)).findByIdWithOperations(1L);
+            ProcessDTO.Response result = processService.getProcessById(1L);
+
+            assertNotNull(result);
+            assertEquals(1L, result.getProcessId());
+            assertEquals("Melting Process", result.getProcessName());
+            assertEquals("DRAFT", result.getStatus());
+            assertNotNull(result.getOperations());
+            assertEquals(1, result.getOperations().size());
+
+            verify(processRepository, times(1)).findByIdWithOperations(1L);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when process not found")
+        void getProcessById_NotFound_ThrowsException() {
+            when(processRepository.findByIdWithOperations(999L)).thenReturn(Optional.empty());
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> processService.getProcessById(999L));
+
+            assertEquals("Process not found: 999", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should create process with DRAFT status by default")
+        void createProcess_NoStatus_DefaultsToDraft() {
+            ProcessDTO.CreateRequest request = ProcessDTO.CreateRequest.builder()
+                    .processName("New Process")
+                    .build();
+
+            when(processRepository.save(any(Process.class))).thenAnswer(inv -> {
+                Process p = inv.getArgument(0);
+                p.setProcessId(2L);
+                return p;
+            });
+
+            ProcessDTO.Response result = processService.createProcess(request);
+
+            assertNotNull(result);
+            assertEquals("DRAFT", result.getStatus());
+            verify(auditService, times(1)).logCreate(eq("PROCESS"), eq(2L), eq("New Process"));
+        }
+
+        @Test
+        @DisplayName("Should update process name")
+        void updateProcess_ValidUpdate_Success() {
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            ProcessDTO.UpdateRequest request = ProcessDTO.UpdateRequest.builder()
+                    .processName("Updated Melting Process")
+                    .build();
+
+            ProcessDTO.Response result = processService.updateProcess(1L, request);
+
+            assertNotNull(result);
+            assertEquals("Updated Melting Process", result.getProcessName());
+            verify(auditService, times(1)).logUpdate(eq("PROCESS"), eq(1L), eq("processName"),
+                    eq("Melting Process"), eq("Updated Melting Process"));
+        }
+
+        @Test
+        @DisplayName("Should soft delete process (set INACTIVE)")
+        void deleteProcess_NoOperations_SetsInactive() {
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(operationRepository.findByProcessIdOrderBySequence(1L)).thenReturn(Collections.emptyList());
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            processService.deleteProcess(1L);
+
+            assertEquals(ProcessStatus.INACTIVE, testProcess.getStatus());
+            verify(auditService, times(1)).logDelete(eq("PROCESS"), eq(1L), eq("Melting Process"));
+        }
+
+        @Test
+        @DisplayName("Should not delete process with existing operations")
+        void deleteProcess_HasOperations_ThrowsException() {
+            Operation operation = Operation.builder().operationId(1L).build();
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(operationRepository.findByProcessIdOrderBySequence(1L)).thenReturn(List.of(operation));
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> processService.deleteProcess(1L));
+
+            assertTrue(exception.getMessage().contains("Cannot delete process with existing operations"));
+        }
     }
 
-    @Test
-    @DisplayName("Should throw exception when process not found")
-    void getProcessById_NotFound_ThrowsException() {
-        when(processRepository.findByIdWithOperations(999L)).thenReturn(Optional.empty());
+    // ==================== Status Transitions ====================
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> processService.getProcessById(999L));
+    @Nested
+    @DisplayName("Status Transitions - Valid")
+    class ValidStatusTransitions {
 
-        assertEquals("Process not found: 999", exception.getMessage());
+        @Test
+        @DisplayName("Should activate DRAFT process")
+        void activateProcess_FromDraft_Success() {
+            testProcess.setStatus(ProcessStatus.DRAFT);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            ProcessDTO.Response result = processService.activateProcess(1L);
+
+            assertNotNull(result);
+            assertEquals("ACTIVE", result.getStatus());
+            verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
+                    eq("DRAFT"), eq("ACTIVE"));
+        }
+
+        @Test
+        @DisplayName("Should reactivate INACTIVE process")
+        void activateProcess_FromInactive_Success() {
+            testProcess.setStatus(ProcessStatus.INACTIVE);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            ProcessDTO.Response result = processService.activateProcess(1L);
+
+            assertNotNull(result);
+            assertEquals("ACTIVE", result.getStatus());
+            verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
+                    eq("INACTIVE"), eq("ACTIVE"));
+        }
+
+        @Test
+        @DisplayName("Should deactivate ACTIVE process")
+        void deactivateProcess_FromActive_Success() {
+            testProcess.setStatus(ProcessStatus.ACTIVE);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            ProcessDTO.Response result = processService.deactivateProcess(1L);
+
+            assertNotNull(result);
+            assertEquals("INACTIVE", result.getStatus());
+            verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
+                    eq("ACTIVE"), eq("INACTIVE"));
+        }
     }
 
-    @Test
-    @DisplayName("Should transition process to QUALITY_PENDING")
-    void transitionToQualityPending_ValidProcess_Success() {
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(false);
-        when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+    @Nested
+    @DisplayName("Status Transitions - Invalid")
+    class InvalidStatusTransitions {
 
-        ProcessDTO.StatusUpdateResponse result = processService.transitionToQualityPending(1L, "Ready for QC");
+        @Test
+        @DisplayName("Should not activate already ACTIVE process")
+        void activateProcess_AlreadyActive_ThrowsException() {
+            testProcess.setStatus(ProcessStatus.ACTIVE);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
 
-        assertNotNull(result);
-        assertEquals(1L, result.getProcessId());
-        assertEquals(Process.STATUS_IN_PROGRESS, result.getPreviousStatus());
-        assertEquals(Process.STATUS_QUALITY_PENDING, result.getNewStatus());
-        assertEquals(Process.DECISION_PENDING, result.getUsageDecision());
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> processService.activateProcess(1L));
 
-        verify(processRepository, times(1)).save(any(Process.class));
-        verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
-                eq(Process.STATUS_IN_PROGRESS), eq(Process.STATUS_QUALITY_PENDING));
+            assertTrue(exception.getMessage().contains("must be DRAFT or INACTIVE to activate"));
+            verify(processRepository, never()).save(any(Process.class));
+        }
+
+        @Test
+        @DisplayName("Should not deactivate DRAFT process")
+        void deactivateProcess_FromDraft_ThrowsException() {
+            testProcess.setStatus(ProcessStatus.DRAFT);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> processService.deactivateProcess(1L));
+
+            assertTrue(exception.getMessage().contains("must be ACTIVE to deactivate"));
+            verify(processRepository, never()).save(any(Process.class));
+        }
+
+        @Test
+        @DisplayName("Should not deactivate INACTIVE process")
+        void deactivateProcess_FromInactive_ThrowsException() {
+            testProcess.setStatus(ProcessStatus.INACTIVE);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> processService.deactivateProcess(1L));
+
+            assertTrue(exception.getMessage().contains("must be ACTIVE to deactivate"));
+            verify(processRepository, never()).save(any(Process.class));
+        }
     }
 
-    @Test
-    @DisplayName("Should throw exception when transitioning from invalid status")
-    void transitionToQualityPending_InvalidStatus_ThrowsException() {
-        testProcess.setStatus(Process.STATUS_READY);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+    // ==================== Query Operations ====================
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> processService.transitionToQualityPending(1L, null));
+    @Nested
+    @DisplayName("Query Operations")
+    class QueryOperations {
 
-        assertTrue(exception.getMessage().contains("must be IN_PROGRESS or COMPLETED"));
+        @Test
+        @DisplayName("Should get all processes")
+        void getAllProcesses_ReturnsAll() {
+            Process draftProcess = Process.builder().processId(1L).processName("Draft").status(ProcessStatus.DRAFT).build();
+            Process activeProcess = Process.builder().processId(2L).processName("Active").status(ProcessStatus.ACTIVE).build();
+            Process inactiveProcess = Process.builder().processId(3L).processName("Inactive").status(ProcessStatus.INACTIVE).build();
+
+            when(processRepository.findAll()).thenReturn(List.of(draftProcess, activeProcess, inactiveProcess));
+
+            List<ProcessDTO.Response> result = processService.getAllProcesses();
+
+            assertEquals(3, result.size());
+        }
+
+        @Test
+        @DisplayName("Should get active processes only")
+        void getActiveProcesses_ReturnsOnlyActive() {
+            Process activeProcess = Process.builder().processId(1L).processName("Active").status(ProcessStatus.ACTIVE).build();
+
+            when(processRepository.findByStatus(ProcessStatus.ACTIVE)).thenReturn(List.of(activeProcess));
+
+            List<ProcessDTO.Response> result = processService.getActiveProcesses();
+
+            assertEquals(1, result.size());
+            assertEquals("ACTIVE", result.get(0).getStatus());
+        }
+
+        @Test
+        @DisplayName("Should get processes by DRAFT status")
+        void getProcessesByStatus_Draft_ReturnsDraftProcesses() {
+            when(processRepository.findByStatus(ProcessStatus.DRAFT)).thenReturn(List.of(testProcess));
+
+            List<ProcessDTO.Response> result = processService.getProcessesByStatus("DRAFT");
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("DRAFT", result.get(0).getStatus());
+        }
+
+        @Test
+        @DisplayName("Should get processes by INACTIVE status")
+        void getProcessesByStatus_Inactive_ReturnsInactiveProcesses() {
+            testProcess.setStatus(ProcessStatus.INACTIVE);
+            when(processRepository.findByStatus(ProcessStatus.INACTIVE)).thenReturn(List.of(testProcess));
+
+            List<ProcessDTO.Response> result = processService.getProcessesByStatus("INACTIVE");
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("INACTIVE", result.get(0).getStatus());
+        }
+
+        @Test
+        @DisplayName("Should throw exception for invalid status")
+        void getProcessesByStatus_InvalidStatus_ThrowsException() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> processService.getProcessesByStatus("INVALID_STATUS"));
+        }
     }
 
-    @Test
-    @DisplayName("Should throw exception when process is on hold")
-    void transitionToQualityPending_OnHold_ThrowsException() {
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(true);
+    // ==================== Audit Trail ====================
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> processService.transitionToQualityPending(1L, null));
+    @Nested
+    @DisplayName("Audit Trail")
+    class AuditTrail {
 
-        assertEquals("Process is on hold and cannot be updated", exception.getMessage());
+        @Test
+        @DisplayName("Should log create event")
+        void createProcess_LogsAudit() {
+            ProcessDTO.CreateRequest request = ProcessDTO.CreateRequest.builder()
+                    .processName("Audited Process")
+                    .build();
+
+            when(processRepository.save(any(Process.class))).thenAnswer(inv -> {
+                Process p = inv.getArgument(0);
+                p.setProcessId(5L);
+                return p;
+            });
+
+            processService.createProcess(request);
+
+            verify(auditService, times(1)).logCreate(eq("PROCESS"), eq(5L), eq("Audited Process"));
+        }
+
+        @Test
+        @DisplayName("Should log update event")
+        void updateProcess_LogsAudit() {
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            ProcessDTO.UpdateRequest request = ProcessDTO.UpdateRequest.builder()
+                    .processName("New Name")
+                    .build();
+
+            processService.updateProcess(1L, request);
+
+            verify(auditService, times(1)).logUpdate(eq("PROCESS"), eq(1L), eq("processName"),
+                    eq("Melting Process"), eq("New Name"));
+        }
+
+        @Test
+        @DisplayName("Should log status change on activate")
+        void activateProcess_LogsStatusChange() {
+            testProcess.setStatus(ProcessStatus.DRAFT);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            processService.activateProcess(1L);
+
+            verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
+                    eq("DRAFT"), eq("ACTIVE"));
+        }
+
+        @Test
+        @DisplayName("Should log status change on deactivate")
+        void deactivateProcess_LogsStatusChange() {
+            testProcess.setStatus(ProcessStatus.ACTIVE);
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            processService.deactivateProcess(1L);
+
+            verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
+                    eq("ACTIVE"), eq("INACTIVE"));
+        }
+
+        @Test
+        @DisplayName("Should log delete event")
+        void deleteProcess_LogsAudit() {
+            when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(operationRepository.findByProcessIdOrderBySequence(1L)).thenReturn(Collections.emptyList());
+            when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+
+            processService.deleteProcess(1L);
+
+            verify(auditService, times(1)).logDelete(eq("PROCESS"), eq(1L), eq("Melting Process"));
+        }
     }
 
-    @Test
-    @DisplayName("Should accept process and transition to COMPLETED")
-    void makeQualityDecision_Accept_Success() {
-        testProcess.setStatus(Process.STATUS_QUALITY_PENDING);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(false);
-        when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+    // ==================== Design-Time Behavior Validation ====================
 
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(1L)
-                .decision("ACCEPT")
-                .notes("Quality approved")
-                .build();
+    @Nested
+    @DisplayName("Design-Time Entity Behavior")
+    class DesignTimeBehavior {
 
-        ProcessDTO.StatusUpdateResponse result = processService.makeQualityDecision(request);
+        @Test
+        @DisplayName("DRAFT process should not be available for execution queries")
+        void draftProcess_NotInActiveList() {
+            testProcess.setStatus(ProcessStatus.DRAFT);
+            when(processRepository.findByStatus(ProcessStatus.ACTIVE)).thenReturn(Collections.emptyList());
 
-        assertNotNull(result);
-        assertEquals(Process.STATUS_QUALITY_PENDING, result.getPreviousStatus());
-        assertEquals(Process.STATUS_COMPLETED, result.getNewStatus());
-        assertEquals(Process.DECISION_ACCEPT, result.getUsageDecision());
-        assertTrue(result.getMessage().contains("accepted"));
+            List<ProcessDTO.Response> result = processService.getActiveProcesses();
 
-        verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
-                eq(Process.STATUS_QUALITY_PENDING), eq(Process.STATUS_COMPLETED));
-    }
+            assertTrue(result.isEmpty());
+        }
 
-    @Test
-    @DisplayName("Should reject process and transition to REJECTED")
-    void makeQualityDecision_Reject_Success() {
-        testProcess.setStatus(Process.STATUS_QUALITY_PENDING);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(false);
-        when(processRepository.save(any(Process.class))).thenReturn(testProcess);
+        @Test
+        @DisplayName("INACTIVE process should not be available for execution queries")
+        void inactiveProcess_NotInActiveList() {
+            testProcess.setStatus(ProcessStatus.INACTIVE);
+            when(processRepository.findByStatus(ProcessStatus.ACTIVE)).thenReturn(Collections.emptyList());
 
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(1L)
-                .decision("REJECT")
-                .reason("Quality defects found")
-                .build();
+            List<ProcessDTO.Response> result = processService.getActiveProcesses();
 
-        ProcessDTO.StatusUpdateResponse result = processService.makeQualityDecision(request);
+            assertTrue(result.isEmpty());
+        }
 
-        assertNotNull(result);
-        assertEquals(Process.STATUS_QUALITY_PENDING, result.getPreviousStatus());
-        assertEquals(Process.STATUS_REJECTED, result.getNewStatus());
-        assertEquals(Process.DECISION_REJECT, result.getUsageDecision());
-        assertTrue(result.getMessage().contains("rejected"));
+        @Test
+        @DisplayName("Only ACTIVE process should be in active list")
+        void onlyActiveProcess_InActiveList() {
+            Process activeProcess = Process.builder()
+                    .processId(1L)
+                    .processName("Active Process")
+                    .status(ProcessStatus.ACTIVE)
+                    .build();
 
-        verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
-                eq(Process.STATUS_QUALITY_PENDING), eq(Process.STATUS_REJECTED));
-    }
+            when(processRepository.findByStatus(ProcessStatus.ACTIVE)).thenReturn(List.of(activeProcess));
 
-    @Test
-    @DisplayName("Should throw exception for invalid decision")
-    void makeQualityDecision_InvalidDecision_ThrowsException() {
-        testProcess.setStatus(Process.STATUS_QUALITY_PENDING);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(false);
+            List<ProcessDTO.Response> result = processService.getActiveProcesses();
 
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(1L)
-                .decision("INVALID")
-                .build();
+            assertEquals(1, result.size());
+            assertEquals("Active Process", result.get(0).getProcessName());
+            assertEquals("ACTIVE", result.get(0).getStatus());
+        }
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> processService.makeQualityDecision(request));
+        @Test
+        @DisplayName("Process status should use enum (not strings)")
+        void processStatus_UsesEnum() {
+            assertNotNull(ProcessStatus.DRAFT);
+            assertNotNull(ProcessStatus.ACTIVE);
+            assertNotNull(ProcessStatus.INACTIVE);
+            assertEquals(3, ProcessStatus.values().length);
+        }
 
-        assertTrue(exception.getMessage().contains("Invalid decision"));
-    }
+        @Test
+        @DisplayName("New process should default to DRAFT status")
+        void newProcess_DefaultsToDraft() {
+            ProcessDTO.CreateRequest request = ProcessDTO.CreateRequest.builder()
+                    .processName("Default Status Test")
+                    .build();
 
-    @Test
-    @DisplayName("Should throw exception when making decision on non-QUALITY_PENDING process")
-    void makeQualityDecision_WrongStatus_ThrowsException() {
-        testProcess.setStatus(Process.STATUS_IN_PROGRESS);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
+            when(processRepository.save(any(Process.class))).thenAnswer(inv -> {
+                Process p = inv.getArgument(0);
+                assertEquals(ProcessStatus.DRAFT, p.getStatus());
+                p.setProcessId(10L);
+                return p;
+            });
 
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(1L)
-                .decision("ACCEPT")
-                .build();
+            ProcessDTO.Response result = processService.createProcess(request);
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> processService.makeQualityDecision(request));
-
-        assertTrue(exception.getMessage().contains("must be in QUALITY_PENDING status"));
-    }
-
-    @Test
-    @DisplayName("Should update process status with valid transition")
-    void updateStatus_ValidTransition_Success() {
-        testProcess.setStatus(Process.STATUS_READY);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(false);
-        when(processRepository.save(any(Process.class))).thenReturn(testProcess);
-
-        ProcessDTO.StatusUpdateRequest request = ProcessDTO.StatusUpdateRequest.builder()
-                .processId(1L)
-                .newStatus("IN_PROGRESS")
-                .build();
-
-        ProcessDTO.StatusUpdateResponse result = processService.updateStatus(request);
-
-        assertNotNull(result);
-        assertEquals(Process.STATUS_READY, result.getPreviousStatus());
-        assertEquals(Process.STATUS_IN_PROGRESS, result.getNewStatus());
-    }
-
-    @Test
-    @DisplayName("Should throw exception for invalid status transition")
-    void updateStatus_InvalidTransition_ThrowsException() {
-        testProcess.setStatus(Process.STATUS_READY);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(false);
-
-        ProcessDTO.StatusUpdateRequest request = ProcessDTO.StatusUpdateRequest.builder()
-                .processId(1L)
-                .newStatus("COMPLETED") // Invalid: READY cannot go directly to COMPLETED
-                .build();
-
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> processService.updateStatus(request));
-
-        assertTrue(exception.getMessage().contains("Invalid status transition"));
-    }
-
-    @Test
-    @DisplayName("Should check if all operations are confirmed - true")
-    void areAllOperationsConfirmed_AllConfirmed_ReturnsTrue() {
-        Operation op1 = Operation.builder().operationId(1L).status("CONFIRMED").build();
-        Operation op2 = Operation.builder().operationId(2L).status("CONFIRMED").build();
-        testProcess.setOperations(List.of(op1, op2));
-
-        when(processRepository.findByIdWithOperations(1L)).thenReturn(Optional.of(testProcess));
-
-        boolean result = processService.areAllOperationsConfirmed(1L);
-
-        assertTrue(result);
-    }
-
-    @Test
-    @DisplayName("Should check if all operations are confirmed - false")
-    void areAllOperationsConfirmed_NotAllConfirmed_ReturnsFalse() {
-        Operation op1 = Operation.builder().operationId(1L).status("CONFIRMED").build();
-        Operation op2 = Operation.builder().operationId(2L).status("IN_PROGRESS").build();
-        testProcess.setOperations(List.of(op1, op2));
-
-        when(processRepository.findByIdWithOperations(1L)).thenReturn(Optional.of(testProcess));
-
-        boolean result = processService.areAllOperationsConfirmed(1L);
-
-        assertFalse(result);
-    }
-
-    @Test
-    @DisplayName("Should get processes by status")
-    void getProcessesByStatus_ValidStatus_ReturnsProcesses() {
-        when(processRepository.findByStatus(Process.STATUS_QUALITY_PENDING))
-                .thenReturn(List.of(testProcess));
-
-        List<ProcessDTO.Response> result = processService.getProcessesByStatus(Process.STATUS_QUALITY_PENDING);
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(processRepository, times(1)).findByStatus(Process.STATUS_QUALITY_PENDING);
-    }
-
-    @Test
-    @DisplayName("Should allow retry - REJECTED to QUALITY_PENDING transition")
-    void updateStatus_RejectedToQualityPending_Success() {
-        testProcess.setStatus(Process.STATUS_REJECTED);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", 1L, "ACTIVE"))
-                .thenReturn(false);
-        when(processRepository.save(any(Process.class))).thenReturn(testProcess);
-
-        ProcessDTO.StatusUpdateRequest request = ProcessDTO.StatusUpdateRequest.builder()
-                .processId(1L)
-                .newStatus("QUALITY_PENDING")
-                .build();
-
-        ProcessDTO.StatusUpdateResponse result = processService.updateStatus(request);
-
-        assertNotNull(result);
-        assertEquals(Process.STATUS_REJECTED, result.getPreviousStatus());
-        assertEquals(Process.STATUS_QUALITY_PENDING, result.getNewStatus());
-
-        verify(processRepository, times(1)).save(any(Process.class));
-        verify(auditService, times(1)).logStatusChange(eq("PROCESS"), eq(1L),
-                eq(Process.STATUS_REJECTED), eq(Process.STATUS_QUALITY_PENDING));
-    }
-
-    @Test
-    @DisplayName("Should allow REJECTED to ON_HOLD transition")
-    void updateStatus_RejectedToOnHold_Success() {
-        testProcess.setStatus(Process.STATUS_REJECTED);
-        when(processRepository.findById(1L)).thenReturn(Optional.of(testProcess));
-        when(processRepository.save(any(Process.class))).thenReturn(testProcess);
-
-        ProcessDTO.StatusUpdateRequest request = ProcessDTO.StatusUpdateRequest.builder()
-                .processId(1L)
-                .newStatus("ON_HOLD")
-                .build();
-
-        ProcessDTO.StatusUpdateResponse result = processService.updateStatus(request);
-
-        assertNotNull(result);
-        assertEquals(Process.STATUS_REJECTED, result.getPreviousStatus());
-        assertEquals(Process.STATUS_ON_HOLD, result.getNewStatus());
-    }
-
-    @Test
-    @DisplayName("Should get processes by REJECTED status")
-    void getProcessesByStatus_Rejected_ReturnsProcesses() {
-        testProcess.setStatus(Process.STATUS_REJECTED);
-        when(processRepository.findByStatus(Process.STATUS_REJECTED))
-                .thenReturn(List.of(testProcess));
-
-        List<ProcessDTO.Response> result = processService.getProcessesByStatus(Process.STATUS_REJECTED);
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(Process.STATUS_REJECTED, result.get(0).getStatus());
-        verify(processRepository, times(1)).findByStatus(Process.STATUS_REJECTED);
+            assertEquals("DRAFT", result.getStatus());
+        }
     }
 }

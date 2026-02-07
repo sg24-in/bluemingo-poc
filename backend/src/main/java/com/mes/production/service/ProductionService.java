@@ -71,6 +71,13 @@ public class ProductionService {
             throw new RuntimeException("Process is on hold and cannot be confirmed");
         }
 
+        // Validate process status - only ACTIVE processes can be used for production confirmation
+        if (process.getStatus() != ProcessStatus.ACTIVE) {
+            throw new RuntimeException(
+                    "Cannot confirm production: Process " + process.getProcessId() +
+                    " status is " + process.getStatus() + ", must be ACTIVE");
+        }
+
         // 2. Validate process parameters against configured min/max values
         if (request.getProcessParameters() != null && !request.getProcessParameters().isEmpty()) {
             String operationType = operation.getOperationType();

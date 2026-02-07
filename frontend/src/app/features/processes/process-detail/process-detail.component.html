@@ -49,9 +49,22 @@
               {{ process.status }}
             </span>
           </div>
-          <p class="status-note">
-            Process templates use design-time statuses: DRAFT, ACTIVE, INACTIVE
-          </p>
+          <div class="status-actions">
+            <button
+              *ngIf="process.status === 'DRAFT' || process.status === 'INACTIVE'"
+              class="btn btn-success"
+              (click)="activateProcess()"
+              [disabled]="processing">
+              {{ processing ? 'Activating...' : 'Activate' }}
+            </button>
+            <button
+              *ngIf="process.status === 'ACTIVE'"
+              class="btn btn-warning"
+              (click)="deactivateProcess()"
+              [disabled]="processing">
+              {{ processing ? 'Deactivating...' : 'Deactivate' }}
+            </button>
+          </div>
         </div>
 
         <div class="detail-section">

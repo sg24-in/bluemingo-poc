@@ -108,13 +108,23 @@ public class ProcessService {
         Process process = getProcessEntity(processId);
         String currentUser = getCurrentUser();
         String oldName = process.getProcessName();
+        ProcessStatus oldStatus = process.getStatus();
 
         if (request.getProcessName() != null) {
             process.setProcessName(request.getProcessName());
         }
         if (request.getStatus() != null) {
             ProcessStatus newStatus = ProcessStatus.valueOf(request.getStatus().toUpperCase());
+
+            // Validate status transition
+            validateStatusTransition(oldStatus, newStatus);
+
             process.setStatus(newStatus);
+
+            // Log status change if different
+            if (oldStatus != newStatus) {
+                auditService.logStatusChange("PROCESS", processId, oldStatus.name(), newStatus.name());
+            }
         }
 
         process.setUpdatedBy(currentUser);
@@ -126,6 +136,38 @@ public class ProcessService {
         auditService.logUpdate("PROCESS", processId, "processName", oldName, saved.getProcessName());
 
         return toResponse(saved);
+    }
+
+    /**
+     * Validate status transition rules.
+     *
+     * Valid transitions:
+     * - DRAFT → ACTIVE (via activateProcess)
+     * - DRAFT → INACTIVE (via deleteProcess)
+     * - ACTIVE → INACTIVE (via deactivateProcess)
+     * - INACTIVE → ACTIVE (via activateProcess)
+     *
+     * Invalid transitions:
+     * - ACTIVE → DRAFT (cannot revert active process)
+     * - INACTIVE → DRAFT (cannot revert retired process)
+     */
+    private void validateStatusTransition(ProcessStatus currentStatus, ProcessStatus newStatus) {
+        // Same status - no transition
+        if (currentStatus == newStatus) {
+            return;
+        }
+
+        // Cannot transition TO DRAFT from ACTIVE or INACTIVE
+        if (newStatus == ProcessStatus.DRAFT) {
+            if (currentStatus == ProcessStatus.ACTIVE || currentStatus == ProcessStatus.INACTIVE) {
+                throw new RuntimeException(
+                        "Invalid status transition: Cannot change Process status from " +
+                        currentStatus + " to DRAFT. Use activateProcess() or deactivateProcess() for valid transitions.");
+            }
+        }
+
+        // Log valid transition
+        log.info("Process status transition: {} -> {}", currentStatus, newStatus);
     }
 
     /**

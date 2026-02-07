@@ -164,6 +164,22 @@
   font-size: 14px;
 }
 
+/* Design-time statuses for Process templates */
+.status-badge.draft {
+  background: #e0e0e0;
+  color: #424242;
+}
+
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
 .status-not-started {
   background: #f1f5f9;
   color: #64748b;
@@ -338,6 +354,36 @@
 .btn-back:hover {
   background: #f1f5f9;
   color: #1e293b;
+}
+
+.btn-success {
+  background: #4caf50;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #43a047;
+}
+
+.btn-warning {
+  background: #ff9800;
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #fb8c00;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
