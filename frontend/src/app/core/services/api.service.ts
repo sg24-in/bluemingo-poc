@@ -1079,6 +1079,42 @@ export class ApiService {
   }
 
   // ============================================================
+  // Config: Batch Size
+  // ============================================================
+
+  getBatchSizeConfigs(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/batch-size-config`);
+  }
+
+  getActiveBatchSizeConfigs(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/batch-size-config/active`);
+  }
+
+  getBatchSizeConfig(id: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/batch-size-config/${id}`);
+  }
+
+  createBatchSizeConfig(request: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/batch-size-config`, request);
+  }
+
+  updateBatchSizeConfig(id: number, request: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/batch-size-config/${id}`, request);
+  }
+
+  deleteBatchSizeConfig(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/batch-size-config/${id}`);
+  }
+
+  calculateBatchSizes(quantity: number, operationType?: string, materialId?: string, productSku?: string): Observable<any> {
+    let params = new HttpParams().set('quantity', quantity.toString());
+    if (operationType) params = params.set('operationType', operationType);
+    if (materialId) params = params.set('materialId', materialId);
+    if (productSku) params = params.set('productSku', productSku);
+    return this.http.get<any>(`${environment.apiUrl}/batch-size-config/calculate`, { params });
+  }
+
+  // ============================================================
   // Audit Trail
   // ============================================================
 

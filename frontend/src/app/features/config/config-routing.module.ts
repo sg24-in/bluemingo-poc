@@ -10,6 +10,8 @@ import { BatchNumberListComponent } from './batch-number/batch-number-list.compo
 import { BatchNumberFormComponent } from './batch-number/batch-number-form.component';
 import { QuantityTypeListComponent } from './quantity-type/quantity-type-list.component';
 import { QuantityTypeFormComponent } from './quantity-type/quantity-type-form.component';
+import { BatchSizeListComponent } from './batch-size/batch-size-list.component';
+import { BatchSizeFormComponent } from './batch-size/batch-size-form.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'hold-reasons', pathMatch: 'full' },
@@ -27,7 +29,10 @@ const routes: Routes = [
   { path: 'batch-number/:id/edit', component: BatchNumberFormComponent },
   { path: 'quantity-type', component: QuantityTypeListComponent },
   { path: 'quantity-type/new', component: QuantityTypeFormComponent },
-  { path: 'quantity-type/:id/edit', component: QuantityTypeFormComponent }
+  { path: 'quantity-type/:id/edit', component: QuantityTypeFormComponent },
+  { path: 'batch-size', component: BatchSizeListComponent },
+  { path: 'batch-size/new', component: BatchSizeFormComponent },
+  { path: 'batch-size/:id/edit', component: BatchSizeFormComponent }
 ];
 
 @NgModule({

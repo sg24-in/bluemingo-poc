@@ -12,6 +12,8 @@ import { BatchNumberListComponent } from './batch-number/batch-number-list.compo
 import { BatchNumberFormComponent } from './batch-number/batch-number-form.component';
 import { QuantityTypeListComponent } from './quantity-type/quantity-type-list.component';
 import { QuantityTypeFormComponent } from './quantity-type/quantity-type-form.component';
+import { BatchSizeListComponent } from './batch-size/batch-size-list.component';
+import { BatchSizeFormComponent } from './batch-size/batch-size-form.component';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
@@ -25,7 +27,9 @@ import { SharedModule } from '../../shared/shared.module';
     BatchNumberListComponent,
     BatchNumberFormComponent,
     QuantityTypeListComponent,
-    QuantityTypeFormComponent
+    QuantityTypeFormComponent,
+    BatchSizeListComponent,
+    BatchSizeFormComponent
   ],
   imports: [
     CommonModule,
