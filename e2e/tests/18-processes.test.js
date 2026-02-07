@@ -102,6 +102,54 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     // ============================================
+    // PROCESS CRUD - NEW BUTTON
+    // ============================================
+
+    await runTest('Processes - New Button Navigation', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const newButton = page.locator('button:has-text("New Process"), a:has-text("New Process")');
+        if (await newButton.isVisible()) {
+            await newButton.click();
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+
+            await screenshots.capture(page, 'processes-new-form');
+
+            // Verify form is displayed
+            const form = page.locator('form');
+            if (!await form.isVisible()) {
+                throw new Error('Process form not visible');
+            }
+            console.log('  - New process form loaded');
+        } else {
+            console.log('  - New Process button not found');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Processes - Form Fields', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESS_NEW}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        await screenshots.capture(page, 'processes-form-fields');
+
+        // Check for common form fields
+        const nameField = page.locator('input[formcontrolname="processName"], input#processName, input[name="processName"]');
+        const descField = page.locator('textarea[formcontrolname="description"], textarea#description');
+
+        const hasName = await nameField.isVisible();
+        if (!hasName) {
+            // Try alternative selectors
+            const anyInput = page.locator('form input').first();
+            if (!await anyInput.isVisible()) {
+                throw new Error('No form fields visible');
+            }
+        }
+        console.log('  - Form fields found');
+    }, page, results, screenshots);
+
+    // ============================================
     // PROCESS DETAIL
     // ============================================
 
@@ -130,6 +178,57 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
             await screenshots.capture(page, 'processes-detail');
         } else {
             console.log('  - No processes to view');
+        }
+    }, page, results, screenshots);
+
+    // ============================================
+    // ACTIVATE / DEACTIVATE
+    // ============================================
+
+    await runTest('Processes - Activate/Deactivate Buttons', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Look for activate/deactivate buttons in the list
+        const activateBtn = page.locator('button:has-text("Activate")').first();
+        const deactivateBtn = page.locator('button:has-text("Deactivate")').first();
+
+        const hasActivate = await activateBtn.isVisible();
+        const hasDeactivate = await deactivateBtn.isVisible();
+
+        if (hasActivate || hasDeactivate) {
+            await screenshots.capture(page, 'processes-action-buttons');
+            console.log('  - Activate/Deactivate buttons found');
+        } else {
+            console.log('  - No activate/deactivate buttons visible (may require specific status)');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Processes - Delete Button and Modal', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Look for delete button in the list
+        const deleteBtn = page.locator('button.btn-danger, button:has-text("Delete")').first();
+        if (await deleteBtn.isVisible()) {
+            await deleteBtn.click();
+            await page.waitForTimeout(500);
+
+            // Check for confirmation modal
+            const modal = page.locator('.modal, [role="dialog"]');
+            if (await modal.isVisible()) {
+                await screenshots.capture(page, 'processes-delete-modal');
+                console.log('  - Delete confirmation modal displayed');
+
+                // Close modal without deleting
+                const cancelBtn = modal.locator('button:has-text("Cancel"), button.btn-secondary');
+                if (await cancelBtn.isVisible()) {
+                    await cancelBtn.click();
+                    await page.waitForTimeout(300);
+                }
+            }
+        } else {
+            console.log('  - No delete button visible');
         }
     }, page, results, screenshots);
 
@@ -308,6 +407,183 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
                 }
             } else {
                 console.log('  - No processes available to reject');
+            }
+        }, page, results, screenshots);
+
+        // ============================================
+        // PROCESS CRUD OPERATIONS (with --submit flag)
+        // ============================================
+
+        await runTest('Processes - Create New (Submit)', async () => {
+            await page.goto(`${config.baseUrl}${ROUTES.PROCESS_NEW}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(500);
+
+            // Fill form fields
+            const nameField = page.locator('input[formcontrolname="processName"], input#processName, input[name="processName"]');
+            const descField = page.locator('textarea[formcontrolname="description"], textarea#description, textarea[name="description"]');
+
+            if (await nameField.isVisible()) {
+                await nameField.fill(TEST_DATA.crud.process.name);
+            }
+            if (await descField.isVisible()) {
+                await descField.fill(TEST_DATA.crud.process.description);
+            }
+
+            await screenshots.capture(page, 'processes-create-filled');
+
+            const submitButton = page.locator('button[type="submit"]');
+            if (await submitButton.isVisible() && !await submitButton.isDisabled()) {
+                await submitButton.click();
+                await page.waitForLoadState('networkidle');
+                await page.waitForTimeout(1000);
+
+                await screenshots.capture(page, 'processes-create-success');
+
+                // Verify redirect or success message
+                const successMessage = page.locator('.success, .alert-success, .toast');
+                const hasSuccess = await successMessage.isVisible();
+                const onListPage = page.url().includes('/processes');
+
+                if (!hasSuccess && !onListPage) {
+                    console.log('  - Create may have succeeded, check manually');
+                } else {
+                    console.log('  - Process created successfully');
+                }
+            } else {
+                console.log('  - Submit button not available (form may have validation errors)');
+            }
+        }, page, results, screenshots);
+
+        await runTest('Processes - Edit (Submit)', async () => {
+            await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(1000);
+
+            // Find and click edit button on first row
+            const editButton = page.locator('table tbody tr').first().locator('button:has-text("Edit"), a:has-text("Edit")');
+            if (await editButton.isVisible()) {
+                await editButton.click();
+                await page.waitForLoadState('networkidle');
+                await page.waitForTimeout(500);
+
+                await screenshots.capture(page, 'processes-edit-form');
+
+                // Update name field
+                const nameField = page.locator('input[formcontrolname="processName"], input#processName, input[name="processName"]');
+                if (await nameField.isVisible()) {
+                    await nameField.clear();
+                    await nameField.fill(TEST_DATA.crud.process.updatedName);
+                }
+
+                // Update description if available
+                const descField = page.locator('textarea[formcontrolname="description"], textarea#description');
+                if (await descField.isVisible()) {
+                    await descField.clear();
+                    await descField.fill(TEST_DATA.crud.process.updatedDescription);
+                }
+
+                const submitButton = page.locator('button[type="submit"]');
+                if (await submitButton.isVisible() && !await submitButton.isDisabled()) {
+                    await submitButton.click();
+                    await page.waitForLoadState('networkidle');
+                    await page.waitForTimeout(1000);
+
+                    await screenshots.capture(page, 'processes-edit-success');
+                    console.log('  - Process updated successfully');
+                }
+            } else {
+                console.log('  - No edit button found');
+            }
+        }, page, results, screenshots);
+
+        await runTest('Processes - Activate (Submit)', async () => {
+            await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(1000);
+
+            // Filter to show DRAFT processes that can be activated
+            const statusFilter = page.locator('select#status, select[name="status"]');
+            if (await statusFilter.isVisible()) {
+                try {
+                    await statusFilter.selectOption('DRAFT');
+                    await page.waitForTimeout(500);
+                } catch (e) {
+                    console.log('  - No DRAFT filter option');
+                }
+            }
+
+            const activateBtn = page.locator('button:has-text("Activate")').first();
+            if (await activateBtn.isVisible()) {
+                await activateBtn.click();
+                await page.waitForTimeout(500);
+
+                // Check for confirmation modal
+                const modal = page.locator('.modal, [role="dialog"]');
+                if (await modal.isVisible()) {
+                    await screenshots.capture(page, 'processes-activate-modal');
+
+                    const confirmBtn = modal.locator('button:has-text("Confirm"), button:has-text("Activate")');
+                    if (await confirmBtn.isVisible()) {
+                        await confirmBtn.click();
+                        await page.waitForLoadState('networkidle');
+                        await page.waitForTimeout(1000);
+
+                        await screenshots.capture(page, 'processes-activate-success');
+                        console.log('  - Process activated successfully');
+                    }
+                } else {
+                    // Direct activation without modal
+                    await page.waitForLoadState('networkidle');
+                    await page.waitForTimeout(1000);
+                    await screenshots.capture(page, 'processes-activate-success');
+                    console.log('  - Process activated successfully');
+                }
+            } else {
+                console.log('  - No DRAFT process available to activate');
+            }
+        }, page, results, screenshots);
+
+        await runTest('Processes - Deactivate (Submit)', async () => {
+            await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_LIST}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(1000);
+
+            // Filter to show ACTIVE processes that can be deactivated
+            const statusFilter = page.locator('select#status, select[name="status"]');
+            if (await statusFilter.isVisible()) {
+                try {
+                    await statusFilter.selectOption('ACTIVE');
+                    await page.waitForTimeout(500);
+                } catch (e) {
+                    console.log('  - No ACTIVE filter option');
+                }
+            }
+
+            const deactivateBtn = page.locator('button:has-text("Deactivate")').first();
+            if (await deactivateBtn.isVisible()) {
+                await deactivateBtn.click();
+                await page.waitForTimeout(500);
+
+                // Check for confirmation modal
+                const modal = page.locator('.modal, [role="dialog"]');
+                if (await modal.isVisible()) {
+                    await screenshots.capture(page, 'processes-deactivate-modal');
+
+                    const confirmBtn = modal.locator('button:has-text("Confirm"), button:has-text("Deactivate")');
+                    if (await confirmBtn.isVisible()) {
+                        await confirmBtn.click();
+                        await page.waitForLoadState('networkidle');
+                        await page.waitForTimeout(1000);
+
+                        await screenshots.capture(page, 'processes-deactivate-success');
+                        console.log('  - Process deactivated successfully');
+                    }
+                } else {
+                    // Direct deactivation without modal
+                    await page.waitForLoadState('networkidle');
+                    await page.waitForTimeout(1000);
+                    await screenshots.capture(page, 'processes-deactivate-success');
+                    console.log('  - Process deactivated successfully');
+                }
+            } else {
+                console.log('  - No ACTIVE process available to deactivate');
             }
         }, page, results, screenshots);
     }

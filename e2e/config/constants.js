@@ -72,10 +72,14 @@ const ROUTES = {
     PROCESSES_LIST: '/#/processes/list',
     PROCESSES_QUALITY: '/#/processes/quality-pending',
     PROCESS_DETAIL: (id) => `/#/processes/${id}`,
+    PROCESS_NEW: '/#/processes/new',
+    PROCESS_EDIT: (id) => `/#/processes/${id}/edit`,
     // Admin Processes
     ADMIN_PROCESSES: '/#/manage/processes',
     ADMIN_PROCESSES_LIST: '/#/manage/processes/list',
     ADMIN_PROCESSES_QUALITY: '/#/manage/processes/quality-pending',
+    ADMIN_PROCESS_NEW: '/#/manage/processes/new',
+    ADMIN_PROCESS_EDIT: (id) => `/#/manage/processes/${id}/edit`,
     // Admin Routing
     ADMIN_ROUTING: '/#/manage/routing',
     ADMIN_ROUTING_NEW: '/#/manage/routing/new',
@@ -403,6 +407,12 @@ const TEST_DATA = {
             password: 'TestPass123!',
             role: 'OPERATOR',
             updatedName: 'E2E Test User Updated'
+        },
+        process: {
+            name: 'E2E Test Process',
+            description: 'Test process created by E2E tests',
+            updatedName: 'E2E Test Process Updated',
+            updatedDescription: 'Updated description by E2E tests'
         }
     }
 };

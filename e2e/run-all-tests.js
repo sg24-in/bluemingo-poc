@@ -43,6 +43,7 @@ const { runUsersTests } = require('./tests/20-users.test');
 const { runProductionHistoryTests } = require('./tests/21-production-history.test');
 const { runRoutingTests } = require('./tests/22-routing.test');
 const { runOrderSelectionTests } = require('./tests/23-order-selection.test');
+const { runPartialConfirmationTests } = require('./tests/24-partial-confirmation.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -150,6 +151,7 @@ async function runAllTests() {
         await runProductionHistoryTests(page, screenshots, results, runTest);
         await runRoutingTests(page, screenshots, results, runTest, submitActions);
         await runOrderSelectionTests(page, screenshots, results, runTest);
+        await runPartialConfirmationTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
