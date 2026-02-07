@@ -8,6 +8,7 @@
 |------|---------|
 | `.claude/CLAUDE.md` | Project context, conventions, architecture |
 | `.claude/TASKS.md` | **Active tasks, session log, next steps** |
+| `documents/MES-Development-Session-Log.md` | **Permanent historical record of all sessions** |
 | `documents/MES-Requirements-Gaps-Analysis.md` | Requirements gaps to implement |
 
 ### Resuming Work
@@ -15,6 +16,45 @@
 2. Check "Next Steps" section for immediate actions
 3. Update task status as you work
 4. Update TASKS.md before session ends with progress
+
+### Session Logging (IMPORTANT)
+
+**At session end, update both files:**
+
+1. **`.claude/TASKS.md`** - Update with:
+   - Task status changes (PENDING → DONE)
+   - Current session changes section
+   - Next steps for continuity
+
+2. **`documents/MES-Development-Session-Log.md`** - Add permanent record of:
+   - Session date and focus areas
+   - Key accomplishments with file changes
+   - Implementation decisions and rationale
+   - Test status summary
+   - Pending work for future sessions
+
+**Session Log Structure:**
+```markdown
+## Session: YYYY-MM-DD
+
+### Session Overview
+**Primary Focus:** [Phase/Feature name]
+**Key Accomplishments:**
+- [Major change 1]
+- [Major change 2]
+
+### [Feature/Phase Name] - [STATUS]
+**Files Modified:**
+- `path/to/file.java` - [What was changed]
+
+### Test Status Summary
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Backend | X | PASS/FAIL |
+| Frontend | X | PASS/FAIL |
+```
+
+This ensures traceability and allows future sessions to understand the development history.
 
 ---
 

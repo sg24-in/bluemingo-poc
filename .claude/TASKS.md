@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - Phase 8E Testing DONE (B21-B22), Phase 9F Next
+**Session Status:** Active - Phase 8E (B21-B22) DONE, Phase 9F (R24-R25, R27) DONE, Session Log Created
 
 ---
 
@@ -72,6 +72,37 @@ Added 6 new E2E tests to `e2e/tests/06-batches.test.js`:
 - Test 16: Batch Adjustment History
 
 **B23: User documentation - PENDING**
+
+---
+
+### Phase 9F: Routing Tests - PARTIAL ✅
+
+**R24: Unit tests for new services - DONE**
+- RoutingServiceTest: 50+ tests (19 base + 7 nested classes)
+- Covers: CRUD, activation/deactivation, hold/release, status checks
+
+**R25: Integration tests for instantiation - DONE**
+- RoutingControllerTest: 14 integration tests
+- Covers: API endpoints, error handling, authentication
+
+**R27: Batch behavior validation tests - DONE**
+- Tested in RoutingServiceTest: canOperationProceed, sequencing validation
+- Tests parallel vs sequential routing, mandatory step completion
+
+**Pending:**
+- R26: E2E tests for routing workflow
+- R28: Frontend spec tests for routing components
+
+---
+
+### Session Log Documentation - CREATED ✅
+
+**New Files:**
+- `documents/MES-Development-Session-Log.md` - Permanent historical record
+
+**Updated Instructions:**
+- `.claude/CLAUDE.md` - Added session logging instructions
+- `.claude/TASKS.md` - Added reference to session log document
 
 ---
 
@@ -180,6 +211,7 @@ Fixed 19 failing frontend tests:
 | Document | Purpose |
 |----------|---------|
 | `.claude/TASKS.md` | Active tasks and session log (this file) |
+| `documents/MES-Development-Session-Log.md` | **Permanent session history for traceability** |
 | `documents/MES-Batch-Number-Creation-Specification.md` | **Batch number generation rules (NEW)** |
 | `documents/MES-Consolidated-Requirements-Implementation-Plan.md` | **Master plan: 72 tasks across 4 phases (~159h)** |
 | `documents/MES-Data-Model-Gap-Analysis-Feb2026.md` | Data model alignment (~95-98%) |
@@ -188,6 +220,8 @@ Fixed 19 failing frontend tests:
 | `documents/MES-Production-Confirmation-UI-Gap-Analysis.md` | Production UI workflow (~85% aligned) |
 | `documents/MES-CRUD-Implementation-Tasks.md` | 128 CRUD tasks - Backend, Frontend, Tests, E2E |
 | `documents/MES-Requirements-Gaps-Analysis.md` | Original requirements gaps |
+
+**Session Logging:** At session end, update `documents/MES-Development-Session-Log.md` with permanent record of changes.
 
 ---
 

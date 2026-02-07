@@ -313,7 +313,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   navigateToOperationsByStatus(status: string): void {
-    this.router.navigate(['/orders'], { queryParams: { operationStatus: status } });
+    // Route based on operation status to appropriate page
+    if (status === 'READY') {
+      // Production landing shows READY operations
+      this.router.navigate(['/production']);
+    } else if (status === 'IN_PROGRESS' || status === 'CONFIRMED') {
+      // Production history shows completed/in-progress confirmations
+      this.router.navigate(['/production/history'], { queryParams: { status } });
+    } else {
+      // For other statuses, go to orders page (operations are within orders)
+      this.router.navigate(['/orders']);
+    }
   }
 
   private tryBuildCharts(): void {
