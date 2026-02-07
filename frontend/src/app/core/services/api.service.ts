@@ -42,8 +42,6 @@ import {
   OperationStatusUpdateResponse,
   // Processes
   Process,
-  ProcessStatusUpdateResponse,
-  ProcessQualityDecisionRequest,
   // Holds
   Hold,
   ApplyHoldRequest,
@@ -755,32 +753,16 @@ export class ApiService {
     return this.http.delete<void>(`${environment.apiUrl}/processes/${processId}`);
   }
 
-  getQualityPendingProcesses(): Observable<Process[]> {
-    return this.http.get<Process[]>(`${environment.apiUrl}/processes/quality-pending`);
+  getActiveProcesses(): Observable<Process[]> {
+    return this.http.get<Process[]>(`${environment.apiUrl}/processes/active`);
   }
 
-  transitionToQualityPending(processId: number, notes?: string): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/${processId}/quality-pending`, { notes });
+  activateProcess(processId: number): Observable<Process> {
+    return this.http.post<Process>(`${environment.apiUrl}/processes/${processId}/activate`, {});
   }
 
-  makeQualityDecision(request: ProcessQualityDecisionRequest): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/quality-decision`, request);
-  }
-
-  acceptProcess(processId: number, notes?: string): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/${processId}/accept`, { notes });
-  }
-
-  rejectProcess(processId: number, reason: string, notes?: string): Observable<ProcessStatusUpdateResponse> {
-    return this.http.post<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/${processId}/reject`, { reason, notes });
-  }
-
-  updateProcessStatus(request: { processId: number; newStatus: string; reason?: string }): Observable<ProcessStatusUpdateResponse> {
-    return this.http.put<ProcessStatusUpdateResponse>(`${environment.apiUrl}/processes/status`, request);
-  }
-
-  checkAllOperationsConfirmed(processId: number): Observable<{ allConfirmed: boolean; confirmedCount: number; totalCount: number }> {
-    return this.http.get<{ allConfirmed: boolean; confirmedCount: number; totalCount: number }>(`${environment.apiUrl}/processes/${processId}/all-confirmed`);
+  deactivateProcess(processId: number): Observable<Process> {
+    return this.http.post<Process>(`${environment.apiUrl}/processes/${processId}/deactivate`, {});
   }
 
   // ============================================================
@@ -1184,14 +1166,6 @@ export class ApiService {
 
   deleteProcessDefinition(processId: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiUrl}/processes/${processId}`);
-  }
-
-  activateProcess(processId: number, request?: any): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/processes/${processId}/activate`, request || {});
-  }
-
-  deactivateProcess(processId: number): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/processes/${processId}/deactivate`, {});
   }
 
   createProcessVersion(processId: number): Observable<any> {

@@ -88,17 +88,4 @@ export class ProcessDetailComponent implements OnInit {
     }
   }
 
-  getDecisionClass(decision: string | undefined): string {
-    if (!decision) return '';
-    switch (decision.toUpperCase()) {
-      case 'APPROVED':
-        return 'decision-approved';
-      case 'REJECTED':
-        return 'decision-rejected';
-      case 'PENDING':
-        return 'decision-pending';
-      default:
-        return '';
-    }
-  }
 }

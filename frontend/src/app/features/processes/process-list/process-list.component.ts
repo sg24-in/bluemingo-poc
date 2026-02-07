@@ -97,18 +97,6 @@ export class ProcessListComponent implements OnInit {
     return status?.toLowerCase().replace(/_/g, '-') || '';
   }
 
-  getDecisionClass(decision: string | undefined): string {
-    return decision?.toLowerCase() || '';
-  }
-
-  getOperationCount(process: Process): number {
-    return process.operations?.length || 0;
-  }
-
-  getConfirmedCount(process: Process): number {
-    return process.operations?.filter(op => op.status === 'CONFIRMED').length || 0;
-  }
-
   countByStatus(status: string): number {
     return this.allProcesses.filter(p => p.status === status).length;
   }

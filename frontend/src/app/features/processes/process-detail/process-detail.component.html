@@ -26,13 +26,6 @@
           <span class="status-badge" [ngClass]="getStatusClass(process.status)">
             {{ process.status }}
           </span>
-          <span
-            *ngIf="process.usageDecision"
-            class="decision-badge"
-            [ngClass]="getDecisionClass(process.usageDecision)"
-          >
-            {{ process.usageDecision }}
-          </span>
         </div>
       </div>
 
@@ -56,12 +49,9 @@
               {{ process.status }}
             </span>
           </div>
-          <div class="decision-display" *ngIf="process.usageDecision">
-            <span class="decision-label">Quality Decision:</span>
-            <span class="decision-badge" [ngClass]="getDecisionClass(process.usageDecision)">
-              {{ process.usageDecision }}
-            </span>
-          </div>
+          <p class="status-note">
+            Process templates use design-time statuses: DRAFT, ACTIVE, INACTIVE
+          </p>
         </div>
 
         <div class="detail-section">

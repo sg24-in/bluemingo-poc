@@ -54,9 +54,8 @@
           <th>ID</th>
           <th>Process Name</th>
           <th>Status</th>
-          <th>Decision</th>
-          <th>Operations</th>
-          <th>Progress</th>
+          <th>Created</th>
+          <th>Updated</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -69,19 +68,8 @@
               {{ process.status }}
             </span>
           </td>
-          <td>
-            <span class="decision-badge" [ngClass]="getDecisionClass(process.usageDecision)" *ngIf="process.usageDecision">
-              {{ process.usageDecision }}
-            </span>
-            <span *ngIf="!process.usageDecision">-</span>
-          </td>
-          <td>{{ getOperationCount(process) }}</td>
-          <td>
-            <ng-container *ngIf="getOperationCount(process) > 0">
-              <span class="progress-text">{{ getConfirmedCount(process) }}/{{ getOperationCount(process) }} confirmed</span>
-            </ng-container>
-            <span *ngIf="getOperationCount(process) === 0">-</span>
-          </td>
+          <td>{{ process.createdOn | date:'short' }}</td>
+          <td>{{ process.updatedOn | date:'short' }}</td>
           <td class="actions-cell" (click)="$event.stopPropagation()">
             <button class="btn-icon" title="Edit" (click)="editProcess(process)">
               <span class="icon">&#9998;</span>
