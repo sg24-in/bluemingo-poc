@@ -289,4 +289,50 @@ public class BatchController {
         BatchDTO.StatusUpdateResponse response = batchService.rejectBatch(batchId, request.getReason());
         return ResponseEntity.ok(response);
     }
+
+    // ===== B16-B19: Validation Endpoints =====
+
+    /**
+     * B16: Validate split quantity invariant
+     */
+    @GetMapping("/{batchId}/validate/split")
+    public ResponseEntity<BatchDTO.ValidationResult> validateSplitInvariant(@PathVariable Long batchId) {
+        log.info("GET /api/batches/{}/validate/split", batchId);
+        BatchDTO.ValidationResult result = batchService.validateSplitInvariant(batchId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * B17: Validate merge quantity invariant
+     */
+    @GetMapping("/{batchId}/validate/merge")
+    public ResponseEntity<BatchDTO.ValidationResult> validateMergeInvariant(@PathVariable Long batchId) {
+        log.info("GET /api/batches/{}/validate/merge", batchId);
+        BatchDTO.ValidationResult result = batchService.validateMergeInvariant(batchId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Validate all genealogy invariants for a batch
+     */
+    @GetMapping("/{batchId}/validate/genealogy")
+    public ResponseEntity<java.util.List<BatchDTO.ValidationResult>> validateGenealogyIntegrity(@PathVariable Long batchId) {
+        log.info("GET /api/batches/{}/validate/genealogy", batchId);
+        java.util.List<BatchDTO.ValidationResult> results = batchService.validateGenealogyIntegrity(batchId);
+        return ResponseEntity.ok(results);
+    }
+
+    /**
+     * B19: Check if a batch can be consumed (not on hold)
+     */
+    @GetMapping("/{batchId}/can-consume")
+    public ResponseEntity<java.util.Map<String, Object>> checkCanConsume(@PathVariable Long batchId) {
+        log.info("GET /api/batches/{}/can-consume", batchId);
+        boolean canConsume = batchService.canConsumeBatch(batchId);
+        return ResponseEntity.ok(java.util.Map.of(
+                "batchId", batchId,
+                "canConsume", canConsume,
+                "reason", canConsume ? "Batch is available for consumption" : "Batch is blocked or not available"
+        ));
+    }
 }

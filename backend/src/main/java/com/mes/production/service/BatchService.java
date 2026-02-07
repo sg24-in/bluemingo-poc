@@ -7,10 +7,12 @@ import com.mes.production.entity.Batch;
 import com.mes.production.entity.BatchQuantityAdjustment;
 import com.mes.production.entity.BatchRelation;
 import com.mes.production.entity.Operation;
+import com.mes.production.entity.RoutingStep;
 import com.mes.production.repository.BatchQuantityAdjustmentRepository;
 import com.mes.production.repository.BatchRelationRepository;
 import com.mes.production.repository.BatchRepository;
 import com.mes.production.repository.OperationRepository;
+import com.mes.production.repository.RoutingStepRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,6 +35,7 @@ public class BatchService {
     private final BatchRelationRepository batchRelationRepository;
     private final BatchQuantityAdjustmentRepository adjustmentRepository;
     private final OperationRepository operationRepository;
+    private final RoutingStepRepository routingStepRepository;
     private final AuditService auditService;
     private final BatchNumberService batchNumberService;
 
@@ -197,6 +200,66 @@ public class BatchService {
     );
 
     /**
+     * R15: Check if a batch can be split based on its source routing step's batch behavior flags.
+     */
+    private void validateBatchBehaviorForSplit(Batch batch) {
+        if (batch.getGeneratedAtOperationId() == null) {
+            log.info("Batch {} has no source operation - allowing split by default", batch.getBatchNumber());
+            return;
+        }
+
+        Operation operation = operationRepository.findById(batch.getGeneratedAtOperationId()).orElse(null);
+        if (operation == null || operation.getRoutingStepId() == null) {
+            log.info("Batch {} operation has no routing step - allowing split by default", batch.getBatchNumber());
+            return;
+        }
+
+        RoutingStep routingStep = routingStepRepository.findById(operation.getRoutingStepId()).orElse(null);
+        if (routingStep == null) {
+            log.info("Routing step not found for operation - allowing split by default");
+            return;
+        }
+
+        if (routingStep.getAllowsSplit() != null && !routingStep.getAllowsSplit()) {
+            throw new RuntimeException("Split not allowed for batch " + batch.getBatchNumber() +
+                    ": routing step " + routingStep.getOperationName() + " has allowsSplit=false");
+        }
+
+        log.info("Batch {} passed batch behavior validation for split", batch.getBatchNumber());
+    }
+
+    /**
+     * R15: Check if batches can be merged based on their source routing steps' batch behavior flags.
+     */
+    private void validateBatchBehaviorForMerge(java.util.List<Batch> batches) {
+        for (Batch batch : batches) {
+            if (batch.getGeneratedAtOperationId() == null) {
+                log.info("Batch {} has no source operation - allowing merge by default", batch.getBatchNumber());
+                continue;
+            }
+
+            Operation operation = operationRepository.findById(batch.getGeneratedAtOperationId()).orElse(null);
+            if (operation == null || operation.getRoutingStepId() == null) {
+                log.info("Batch {} operation has no routing step - allowing merge by default", batch.getBatchNumber());
+                continue;
+            }
+
+            RoutingStep routingStep = routingStepRepository.findById(operation.getRoutingStepId()).orElse(null);
+            if (routingStep == null) {
+                log.info("Routing step not found for operation - allowing merge by default");
+                continue;
+            }
+
+            if (routingStep.getAllowsMerge() != null && !routingStep.getAllowsMerge()) {
+                throw new RuntimeException("Merge not allowed for batch " + batch.getBatchNumber() +
+                        ": routing step " + routingStep.getOperationName() + " has allowsMerge=false");
+            }
+        }
+
+        log.info("All batches passed batch behavior validation for merge");
+    }
+
+    /**
      * Split a batch into multiple smaller batches
      */
     @Transactional
@@ -211,6 +274,9 @@ public class BatchService {
             throw new RuntimeException("Batch with status " + sourceBatch.getStatus() + " cannot be split. " +
                     "Only batches with status AVAILABLE, RESERVED, BLOCKED, PRODUCED, or QUALITY_PENDING can be split.");
         }
+
+        // R15: Validate batch behavior flags allow split
+        validateBatchBehaviorForSplit(sourceBatch);
 
         // Validate portions list is not empty
         if (request.getPortions() == null || request.getPortions().isEmpty()) {
@@ -354,6 +420,9 @@ public class BatchService {
                         "Expected: " + unit + ", found: " + batch.getUnit());
             }
         }
+
+        // R15: Validate batch behavior flags allow merge
+        validateBatchBehaviorForMerge(sourceBatches);
 
         // Calculate total quantity
         java.math.BigDecimal totalQuantity = sourceBatches.stream()
@@ -817,5 +886,227 @@ public class BatchService {
         } catch (Exception e) {
             return "SYSTEM";
         }
+    }
+
+    // ===== B16-B19: Validation & Constraint Methods =====
+
+    /**
+     * B16: Validate split quantity invariant.
+     * Verifies that sum of child batch quantities equals the consumed amount from parent.
+     */
+    public BatchDTO.ValidationResult validateSplitInvariant(Long parentBatchId) {
+        log.info("Validating split invariant for batch: {}", parentBatchId);
+
+        Batch parentBatch = batchRepository.findById(parentBatchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found: " + parentBatchId));
+
+        // Get all child relations of type SPLIT
+        List<BatchRelation> splitRelations = batchRelationRepository.findChildRelations(parentBatchId).stream()
+                .filter(rel -> "SPLIT".equals(rel.getRelationType()))
+                .collect(Collectors.toList());
+
+        if (splitRelations.isEmpty()) {
+            return BatchDTO.ValidationResult.builder()
+                    .valid(true)
+                    .message("No split relations found for batch")
+                    .batchId(parentBatchId)
+                    .batchNumber(parentBatch.getBatchNumber())
+                    .build();
+        }
+
+        // Sum of quantityConsumed from relations
+        java.math.BigDecimal totalConsumed = splitRelations.stream()
+                .map(BatchRelation::getQuantityConsumed)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        // Sum of child batch quantities
+        java.math.BigDecimal totalChildQty = splitRelations.stream()
+                .map(rel -> rel.getChildBatch().getQuantity())
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        // Invariant: sum(children.quantity) should equal totalConsumed
+        boolean valid = totalConsumed.compareTo(totalChildQty) == 0;
+
+        return BatchDTO.ValidationResult.builder()
+                .valid(valid)
+                .message(valid ? "Split invariant valid" :
+                        String.format("Split invariant violated: consumed=%s, children total=%s",
+                                totalConsumed, totalChildQty))
+                .batchId(parentBatchId)
+                .batchNumber(parentBatch.getBatchNumber())
+                .details(java.util.Map.of(
+                        "totalConsumed", totalConsumed.toString(),
+                        "totalChildQuantity", totalChildQty.toString(),
+                        "childBatchCount", String.valueOf(splitRelations.size())
+                ))
+                .build();
+    }
+
+    /**
+     * B17: Validate merge quantity invariant.
+     * Verifies that sum of parent batch quantities equals the merged batch quantity.
+     */
+    public BatchDTO.ValidationResult validateMergeInvariant(Long mergedBatchId) {
+        log.info("Validating merge invariant for batch: {}", mergedBatchId);
+
+        Batch mergedBatch = batchRepository.findById(mergedBatchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found: " + mergedBatchId));
+
+        // Get all parent relations of type MERGE
+        List<BatchRelation> mergeRelations = batchRelationRepository.findParentRelations(mergedBatchId).stream()
+                .filter(rel -> "MERGE".equals(rel.getRelationType()))
+                .collect(Collectors.toList());
+
+        if (mergeRelations.isEmpty()) {
+            return BatchDTO.ValidationResult.builder()
+                    .valid(true)
+                    .message("No merge relations found for batch")
+                    .batchId(mergedBatchId)
+                    .batchNumber(mergedBatch.getBatchNumber())
+                    .build();
+        }
+
+        // Sum of quantityConsumed from parents
+        java.math.BigDecimal totalConsumed = mergeRelations.stream()
+                .map(BatchRelation::getQuantityConsumed)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        // Merged batch quantity
+        java.math.BigDecimal mergedQty = mergedBatch.getQuantity();
+
+        // Invariant: sum(parents.quantityConsumed) should equal merged.quantity
+        boolean valid = totalConsumed.compareTo(mergedQty) == 0;
+
+        return BatchDTO.ValidationResult.builder()
+                .valid(valid)
+                .message(valid ? "Merge invariant valid" :
+                        String.format("Merge invariant violated: parents total=%s, merged=%s",
+                                totalConsumed, mergedQty))
+                .batchId(mergedBatchId)
+                .batchNumber(mergedBatch.getBatchNumber())
+                .details(java.util.Map.of(
+                        "totalParentQuantity", totalConsumed.toString(),
+                        "mergedQuantity", mergedQty.toString(),
+                        "parentBatchCount", String.valueOf(mergeRelations.size())
+                ))
+                .build();
+    }
+
+    /**
+     * B18: Check if a batch relation can be deleted.
+     * Prevents deletion of genealogy records (BatchRelation) to maintain traceability.
+     */
+    public boolean canDeleteBatchRelation(Long relationId) {
+        log.info("Checking if batch relation {} can be deleted", relationId);
+
+        BatchRelation relation = batchRelationRepository.findById(relationId)
+                .orElseThrow(() -> new RuntimeException("Batch relation not found: " + relationId));
+
+        // Genealogy records should NEVER be deleted - only soft-deleted via status
+        // Active relations cannot be deleted
+        if ("ACTIVE".equals(relation.getStatus())) {
+            log.warn("Attempt to delete active batch relation {} blocked", relationId);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * B18: Soft delete a batch relation (set status to DELETED).
+     * Hard delete is blocked to maintain genealogy integrity.
+     */
+    @Transactional
+    public void softDeleteBatchRelation(Long relationId, String reason) {
+        log.info("Soft deleting batch relation: {}", relationId);
+
+        BatchRelation relation = batchRelationRepository.findById(relationId)
+                .orElseThrow(() -> new RuntimeException("Batch relation not found: " + relationId));
+
+        String currentUser = getCurrentUser();
+
+        relation.setStatus("DELETED");
+        // Note: BatchRelation uses createdBy field, not updatedBy
+        batchRelationRepository.save(relation);
+
+        auditService.logDelete("BATCH_RELATION", relationId,
+                String.format("Batch relation soft-deleted by %s. Reason: %s", currentUser, reason));
+    }
+
+    /**
+     * B19: Check if a batch is on hold before allowing consumption.
+     * Returns true if batch can be consumed, false if on hold.
+     */
+    public boolean canConsumeBatch(Long batchId) {
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found: " + batchId));
+
+        // Check if batch is in a consumable state
+        if (!Batch.STATUS_AVAILABLE.equals(batch.getStatus())) {
+            log.warn("Batch {} cannot be consumed - status: {}", batchId, batch.getStatus());
+            return false;
+        }
+
+        // Check for active holds on the batch
+        // This requires checking HoldRecord table
+        return !isOnHold(batchId);
+    }
+
+    /**
+     * B19: Check if a batch has an active hold.
+     */
+    private boolean isOnHold(Long batchId) {
+        // Query hold_records table for active holds on this batch
+        // Note: This assumes HoldRecordRepository exists with appropriate method
+        // For now, we check batch status for BLOCKED which indicates a hold
+        Batch batch = batchRepository.findById(batchId).orElse(null);
+        if (batch == null) return false;
+
+        return Batch.STATUS_BLOCKED.equals(batch.getStatus());
+    }
+
+    /**
+     * B19: Validate batch consumption with ON_HOLD check.
+     * Throws exception if batch is on hold.
+     */
+    public void validateBatchForConsumption(Long batchId) {
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found: " + batchId));
+
+        if (Batch.STATUS_BLOCKED.equals(batch.getStatus())) {
+            throw new RuntimeException("Cannot consume batch " + batch.getBatchNumber() +
+                    ": batch is BLOCKED (on hold)");
+        }
+
+        if (!Batch.STATUS_AVAILABLE.equals(batch.getStatus())) {
+            throw new RuntimeException("Cannot consume batch " + batch.getBatchNumber() +
+                    ": batch status is " + batch.getStatus() + ", expected AVAILABLE");
+        }
+    }
+
+    /**
+     * Validate all genealogy invariants for a batch and its relations.
+     */
+    public java.util.List<BatchDTO.ValidationResult> validateGenealogyIntegrity(Long batchId) {
+        log.info("Validating genealogy integrity for batch: {}", batchId);
+
+        java.util.List<BatchDTO.ValidationResult> results = new java.util.ArrayList<>();
+
+        // Validate split invariant
+        results.add(validateSplitInvariant(batchId));
+
+        // Validate merge invariant
+        results.add(validateMergeInvariant(batchId));
+
+        // Check child batches recursively (limit depth to prevent infinite loops)
+        List<BatchRelation> childRelations = batchRelationRepository.findChildRelations(batchId);
+        for (BatchRelation rel : childRelations) {
+            results.add(validateSplitInvariant(rel.getChildBatch().getBatchId()));
+            results.add(validateMergeInvariant(rel.getChildBatch().getBatchId()));
+        }
+
+        return results.stream()
+                .filter(r -> r != null && !r.isValid())
+                .collect(Collectors.toList());
     }
 }

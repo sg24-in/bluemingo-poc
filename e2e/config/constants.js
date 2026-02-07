@@ -54,6 +54,10 @@ const ROUTES = {
     CONFIG_QUANTITY_TYPE: '/#/manage/config/quantity-type',
     CONFIG_QUANTITY_TYPE_NEW: '/#/manage/config/quantity-type/new',
     CONFIG_QUANTITY_TYPE_EDIT: (id) => `/#/manage/config/quantity-type/${id}/edit`,
+    // Batch Size Config
+    CONFIG_BATCH_SIZE: '/#/manage/config/batch-size',
+    CONFIG_BATCH_SIZE_NEW: '/#/manage/config/batch-size/new',
+    CONFIG_BATCH_SIZE_EDIT: (id) => `/#/manage/config/batch-size/${id}/edit`,
     // Audit and Production History
     AUDIT: '/#/manage/audit',
     PRODUCTION_HISTORY: '/#/production/history',

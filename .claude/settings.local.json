@@ -147,7 +147,8 @@
       "Bash(cmd.exe:*)",
       "Bash(./gradlew.bat:*)",
       "Bash(npx playwright test:*)",
-      "Bash(while read name)"
+      "Bash(while read name)",
+      "Bash(\"/d/repositories/bluemingo-poc/backend/gradlew.bat\" test -Dspring.profiles.active=test)"
     ]
   }
 }

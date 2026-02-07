@@ -587,6 +587,87 @@ async function runConfigCrudTests(page, screenshots, results, runTest, submitAct
     }
 
     // ============================================
+    // BATCH SIZE CONFIG
+    // ============================================
+
+    await runTest('Config - Batch Size List View', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.CONFIG_BATCH_SIZE}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        await screenshots.capture(page, 'config-batch-size-list');
+
+        const table = page.locator('table');
+        if (!await table.isVisible()) {
+            throw new Error('Batch size config table not visible');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Config - Batch Size Create Form Navigation', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.CONFIG_BATCH_SIZE}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        const newButton = page.locator('button:has-text("New Batch Size")');
+        if (await newButton.isVisible()) {
+            await newButton.click();
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+
+            await screenshots.capture(page, 'config-batch-size-form');
+
+            // Verify form has key fields
+            const maxBatchSize = page.locator('input#maxBatchSize, input[formcontrolname="maxBatchSize"]');
+            if (!await maxBatchSize.isVisible()) {
+                throw new Error('Max batch size field not visible');
+            }
+        }
+    }, page, results, screenshots);
+
+    await runTest('Config - Batch Size Form Validation', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.CONFIG_BATCH_SIZE_NEW}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Verify min/max/preferred fields exist
+        const minBatchSize = page.locator('input#minBatchSize, input[formcontrolname="minBatchSize"]');
+        const maxBatchSize = page.locator('input#maxBatchSize, input[formcontrolname="maxBatchSize"]');
+        const preferredBatchSize = page.locator('input#preferredBatchSize, input[formcontrolname="preferredBatchSize"]');
+
+        if (!await maxBatchSize.isVisible()) {
+            throw new Error('Max batch size field not found');
+        }
+
+        await screenshots.capture(page, 'config-batch-size-form-fields');
+    }, page, results, screenshots);
+
+    if (submitActions) {
+        await runTest('Config - Batch Size Create', async () => {
+            await page.goto(`${config.baseUrl}${ROUTES.CONFIG_BATCH_SIZE_NEW}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(500);
+
+            // Fill form
+            const operationType = page.locator('select#operationType, select[formcontrolname="operationType"]');
+            if (await operationType.isVisible()) {
+                const options = await operationType.locator('option').allTextContents();
+                if (options.length > 1) {
+                    await operationType.selectOption({ index: 1 });
+                }
+            }
+
+            await page.fill('input#maxBatchSize, input[formcontrolname="maxBatchSize"]', '100');
+            await page.fill('input#minBatchSize, input[formcontrolname="minBatchSize"]', '10');
+            await page.fill('input#preferredBatchSize, input[formcontrolname="preferredBatchSize"]', '50');
+
+            await screenshots.capture(page, 'config-batch-size-create-filled');
+
+            const submitBtn = page.locator('button[type="submit"]');
+            await submitBtn.click();
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(1000);
+
+            await screenshots.capture(page, 'config-batch-size-create-success');
+        }, page, results, screenshots);
+    }
+
+    // ============================================
     // CONFIG FILTERS & PAGINATION
     // ============================================
 
@@ -660,7 +741,8 @@ async function runConfigCrudTests(page, screenshots, results, runTest, submitAct
             { path: ROUTES.CONFIG_DELAY_REASONS, name: 'delay-reasons' },
             { path: ROUTES.CONFIG_PROCESS_PARAMS, name: 'process-params' },
             { path: ROUTES.CONFIG_BATCH_NUMBER, name: 'batch-number' },
-            { path: ROUTES.CONFIG_QUANTITY_TYPE, name: 'quantity-type' }
+            { path: ROUTES.CONFIG_QUANTITY_TYPE, name: 'quantity-type' },
+            { path: ROUTES.CONFIG_BATCH_SIZE, name: 'batch-size' }
         ];
 
         for (const route of configRoutes) {

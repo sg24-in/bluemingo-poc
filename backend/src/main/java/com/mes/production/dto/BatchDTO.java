@@ -291,4 +291,20 @@ public class BatchDTO {
         private String operationType;
         private String productSku;
     }
+
+    /**
+     * B16-B17: Validation result for quantity invariants.
+     * Used for split/merge invariant validation.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ValidationResult {
+        private boolean valid;
+        private String message;
+        private Long batchId;
+        private String batchNumber;
+        private java.util.Map<String, String> details;
+    }
 }

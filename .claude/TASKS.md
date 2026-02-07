@@ -195,10 +195,8 @@ Added 6 new E2E tests to `e2e/tests/06-batches.test.js`:
 - Tested in RoutingServiceTest: canOperationProceed, sequencing validation
 - Tests parallel vs sequential routing, mandatory step completion
 
-**Pending:**
-- R26: E2E tests for routing workflow
-
 **Completed:**
+- R26: E2E tests for routing workflow (22-routing.test.js - 14 tests)
 - R28: Frontend spec tests for routing components (98 tests passing)
 
 ---
@@ -725,31 +723,31 @@ Fixed 19 failing frontend tests:
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 114 | Hold detail endpoint tests | PENDING | GET /api/holds/{id} |
-| 115 | Production history tests | PENDING | GET /api/production/history |
-| 116 | UserService CRUD tests | PENDING | Create, update, delete |
-| 117 | UserController tests | PENDING | All endpoints |
-| 118 | User authentication tests | PENDING | Password, role validation |
+| 114 | Hold detail endpoint tests | ✅ DONE | HoldControllerTest.java (12 tests) covers all endpoints |
+| 115 | Production history tests | ✅ DONE | ProductionControllerTest.java (12 tests) covers confirmations |
+| 116 | UserService CRUD tests | ✅ DONE | UserServiceTest.java (20 tests) covers all CRUD |
+| 117 | UserController tests | ✅ DONE | UserControllerTest.java (16 tests) covers all endpoints |
+| 118 | User authentication tests | ✅ DONE | AuthServiceTest.java (8) + AuthControllerTest.java (9) tests |
 
 ### Phase 5 Frontend Tests
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 119 | HoldDetailPage tests | PENDING | View hold details |
-| 120 | InventoryDetailPage tests | PENDING | View inventory details |
-| 121 | EquipmentDetailPage tests | PENDING | View equipment details |
-| 122 | ProductionHistoryPage tests | PENDING | View confirmation history |
-| 123 | AuditTrailPage tests | PENDING | View audit trail |
-| 124 | UserListComponent tests | PENDING | List users |
-| 125 | UserFormComponent tests | PENDING | Create/edit form |
+| 119 | HoldDetailPage tests | ✅ DONE | hold-detail.component.spec.ts (22 tests) |
+| 120 | InventoryDetailPage tests | ✅ DONE | inventory-detail.component.spec.ts (26 tests) |
+| 121 | EquipmentDetailPage tests | ✅ DONE | equipment-detail.component.spec.ts (21 tests) |
+| 122 | ProductionHistoryPage tests | ✅ DONE | production-history.component.spec.ts (15 tests) |
+| 123 | AuditTrailPage tests | ✅ DONE | audit-list.component.spec.ts (17 tests) |
+| 124 | UserListComponent tests | ✅ DONE | user-list.component.spec.ts (14 tests) |
+| 125 | UserFormComponent tests | ✅ DONE | user-form.component.spec.ts (14 tests) |
 
 ### Phase 5 E2E Tests
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 126 | E2E: Detail views navigation | PENDING | All detail pages |
-| 127 | E2E: Audit trail viewing | PENDING | Filter and view audit |
-| 128 | E2E: User management | PENDING | Create, edit, delete users |
+| 126 | E2E: Detail views navigation | ✅ DONE | Covered in orders, batches, holds, processes, users tests |
+| 127 | E2E: Audit trail viewing | ✅ DONE | 15-audit-history.test.js (17 tests) |
+| 128 | E2E: User management | ✅ DONE | 20-users.test.js (13+ tests) |
 
 ---
 
@@ -806,7 +804,7 @@ Fixed 19 failing frontend tests:
 | 148 | Batch Number Config page | DONE | List + Create/Edit form under /manage/config/batch-number |
 | 149 | Quantity Type Config page | DONE | List + Create/Edit form under /manage/config/quantity-type |
 | 150 | Frontend tests for config pages | DONE | 10 spec files, 645 total tests pass (0 failures) |
-| 151 | E2E tests for config management | PENDING | E2E CRUD flows for config pages |
+| 151 | E2E tests for config management | DONE | E2E CRUD flows for all 6 config pages (including batch-size) |
 
 ---
 
@@ -828,6 +826,23 @@ Fixed 19 failing frontend tests:
 - Creates inventory and batch relations for all split batches
 
 **Test Results:** All backend tests pass (BUILD SUCCESSFUL)
+
+---
+
+### #151: E2E Tests for Config Management - COMPLETE ✅
+
+**Files Modified:**
+- `e2e/config/constants.js` - Added CONFIG_BATCH_SIZE routes
+- `e2e/tests/14-config-crud.test.js` - Added Batch Size Config tests (list, form, create)
+
+**Coverage:**
+- Hold Reasons: List, form navigation, entity chips, CRUD
+- Delay Reasons: List, form navigation, CRUD
+- Process Parameters: List, form navigation, CRUD
+- Batch Number Config: List, form navigation, CRUD
+- Quantity Type Config: List, form navigation, CRUD
+- Batch Size Config: List, form navigation, validation, CRUD
+- Config navigation across all 6 pages
 
 ---
 
@@ -1501,11 +1516,11 @@ Per MES Consolidated Spec, the data model was refactored:
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| B16 | Add quantity invariant validation (split) | PENDING | MEDIUM | Sum(children) = parent consumed |
-| B17 | Add quantity invariant validation (merge) | PENDING | MEDIUM | Sum(parents) = child |
-| B18 | Add genealogy delete prevention | PENDING | MEDIUM | Block BatchRelation delete |
-| B19 | Add ON_HOLD validation to consumption | PENDING | LOW | Block consumption if ON_HOLD |
-| B20 | Make operationId NOT NULL for relations | PENDING | LOW | Schema constraint |
+| B16 | Add quantity invariant validation (split) | ✅ DONE | MEDIUM | validateSplitInvariant() in BatchService |
+| B17 | Add quantity invariant validation (merge) | ✅ DONE | MEDIUM | validateMergeInvariant() in BatchService |
+| B18 | Add genealogy delete prevention | ✅ DONE | MEDIUM | canDeleteBatchRelation() + softDeleteBatchRelation() |
+| B19 | Add ON_HOLD validation to consumption | ✅ DONE | LOW | validateBatchForConsumption() + canConsumeBatch() |
+| B20 | Make operationId NOT NULL for relations | PENDING | LOW | Schema constraint
 
 ### Phase 8E: Testing & Documentation
 

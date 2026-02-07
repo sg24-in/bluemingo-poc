@@ -163,4 +163,136 @@ class ProductionControllerTest {
                         .content(objectMapper.writeValueAsString(testRequest)))
                 .andExpect(status().isBadRequest());
     }
+
+    // ==================== Production History Tests (#115) ====================
+
+    @Test
+    @DisplayName("Should get confirmation by ID")
+    @WithMockUser(username = "admin@mes.com")
+    void getConfirmation_ValidId_ReturnsConfirmation() throws Exception {
+        when(productionService.getConfirmationById(1L)).thenReturn(testResponse);
+
+        mockMvc.perform(get("/api/production/confirmations/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.confirmationId").value(1))
+                .andExpect(jsonPath("$.operationName").value("Melting"))
+                .andExpect(jsonPath("$.status").value("CONFIRMED"));
+
+        verify(productionService, times(1)).getConfirmationById(1L);
+    }
+
+    @Test
+    @DisplayName("Should get confirmations by status")
+    @WithMockUser(username = "admin@mes.com")
+    void getConfirmationsByStatus_ValidStatus_ReturnsConfirmations() throws Exception {
+        when(productionService.getConfirmationsByStatus("CONFIRMED"))
+                .thenReturn(List.of(testResponse));
+
+        mockMvc.perform(get("/api/production/confirmations/status/CONFIRMED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].confirmationId").value(1))
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"));
+
+        verify(productionService, times(1)).getConfirmationsByStatus("CONFIRMED");
+    }
+
+    @Test
+    @DisplayName("Should get confirmations by status - case insensitive")
+    @WithMockUser(username = "admin@mes.com")
+    void getConfirmationsByStatus_LowerCase_ReturnsConfirmations() throws Exception {
+        when(productionService.getConfirmationsByStatus("CONFIRMED"))
+                .thenReturn(List.of(testResponse));
+
+        mockMvc.perform(get("/api/production/confirmations/status/confirmed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"));
+
+        verify(productionService, times(1)).getConfirmationsByStatus("CONFIRMED");
+    }
+
+    @Test
+    @DisplayName("Should get rejected confirmations")
+    @WithMockUser(username = "admin@mes.com")
+    void getRejectedConfirmations_ReturnsRejected() throws Exception {
+        ProductionConfirmationDTO.Response rejectedResponse = ProductionConfirmationDTO.Response.builder()
+                .confirmationId(2L)
+                .operationId(2L)
+                .operationName("Casting")
+                .producedQty(new BigDecimal("50.00"))
+                .status("REJECTED")
+                .createdOn(LocalDateTime.now())
+                .build();
+
+        when(productionService.getConfirmationsByStatus("REJECTED"))
+                .thenReturn(List.of(rejectedResponse));
+
+        mockMvc.perform(get("/api/production/confirmations/rejected"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].confirmationId").value(2))
+                .andExpect(jsonPath("$[0].status").value("REJECTED"));
+
+        verify(productionService, times(1)).getConfirmationsByStatus("REJECTED");
+    }
+
+    @Test
+    @DisplayName("Should reject confirmation successfully")
+    @WithMockUser(username = "admin@mes.com")
+    void rejectConfirmation_ValidRequest_ReturnsSuccess() throws Exception {
+        ProductionConfirmationDTO.StatusUpdateResponse updateResponse =
+                ProductionConfirmationDTO.StatusUpdateResponse.builder()
+                        .confirmationId(1L)
+                        .previousStatus("PENDING")
+                        .newStatus("REJECTED")
+                        .message("Confirmation rejected successfully")
+                        .build();
+
+        when(productionService.rejectConfirmation(any(ProductionConfirmationDTO.RejectionRequest.class)))
+                .thenReturn(updateResponse);
+
+        String requestBody = "{\"reason\":\"Quality issue\",\"notes\":\"Material defect\"}";
+
+        mockMvc.perform(post("/api/production/confirmations/1/reject")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.confirmationId").value(1))
+                .andExpect(jsonPath("$.newStatus").value("REJECTED"));
+
+        verify(productionService, times(1)).rejectConfirmation(any());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no confirmations found")
+    @WithMockUser(username = "admin@mes.com")
+    void getConfirmationsByStatus_NoResults_ReturnsEmptyList() throws Exception {
+        when(productionService.getConfirmationsByStatus("PENDING"))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/production/confirmations/status/PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(productionService, times(1)).getConfirmationsByStatus("PENDING");
+    }
+
+    @Test
+    @DisplayName("Should handle confirmation not found")
+    @WithMockUser(username = "admin@mes.com")
+    void getConfirmation_NotFound_ReturnsError() throws Exception {
+        when(productionService.getConfirmationById(999L))
+                .thenThrow(new RuntimeException("Confirmation not found"));
+
+        mockMvc.perform(get("/api/production/confirmations/999"))
+                .andExpect(status().isBadRequest());
+
+        verify(productionService, times(1)).getConfirmationById(999L);
+    }
+
+    @Test
+    @DisplayName("Should return 401 for confirmations when not authenticated")
+    void getConfirmations_NotAuthenticated_Returns401() throws Exception {
+        mockMvc.perform(get("/api/production/confirmations/1"))
+                .andExpect(status().isUnauthorized());
+    }
 }
