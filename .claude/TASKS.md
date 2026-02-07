@@ -73,16 +73,25 @@
 
 ---
 
-## Pending Frontend Tasks - Process CRUD
+## Completed Frontend Tasks - Process Design-Time Refactor
 
 | Task | Description | Status |
 |------|-------------|--------|
-| PR-FE01 | Update `api.service.ts` - Add `activateProcess()`, `deactivateProcess()` methods | PENDING |
-| PR-FE02 | Add Activate/Deactivate buttons to process-list.component | PENDING |
-| PR-FE03 | Update process-detail.component with Activate/Deactivate buttons | PENDING |
-| PR-FE04 | Update shared/models - Remove usageDecision from Process interface | PENDING |
-| PR-FE05 | E2E tests for Process CRUD workflow | PENDING |
-| PR-FE06 | Update demo/data.sql with sample DRAFT/ACTIVE/INACTIVE processes | PENDING |
+| PR-FE01 | Update `api.service.ts` - Add `activateProcess()`, `deactivateProcess()` methods | DONE ✅ |
+| PR-FE02 | Update `process.model.ts` - Design-time statuses only, remove usageDecision | DONE ✅ |
+| PR-FE03 | Update `process-list.component` - Simpler table (ID, Name, Status, Created, Updated) | DONE ✅ |
+| PR-FE04 | Update `process-detail.component` - Remove decision display | DONE ✅ |
+| PR-FE05 | Update `quality-pending.component` - Redirect to Batch quality | DONE ✅ |
+| PR-FE06 | Update `dashboard.component` - Remove quality pending processes call | DONE ✅ |
+
+## Remaining Tasks
+
+| Task | Description | Status |
+|------|-------------|--------|
+| PR-FE07 | Add Activate/Deactivate buttons to process-list.component | PENDING |
+| PR-FE08 | Add Activate/Deactivate buttons to process-detail.component | PENDING |
+| PR-FE09 | E2E tests for Process CRUD workflow | PENDING |
+| PR-FE10 | Update demo/data.sql with sample DRAFT/ACTIVE/INACTIVE processes | PENDING |
 
 ---
 
