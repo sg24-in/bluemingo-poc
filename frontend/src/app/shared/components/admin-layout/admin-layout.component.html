@@ -6,15 +6,20 @@
       <h3>Administration</h3>
     </div>
     <nav class="sidebar-nav">
-      <div class="sidebar-group" *ngFor="let group of menuGroups">
-        <div class="group-title">{{ group.title }}</div>
-        <a *ngFor="let item of group.items"
-           [routerLink]="item.path"
-           routerLinkActive="active"
-           class="sidebar-link">
-          <i class="fas" [ngClass]="'fa-' + item.icon"></i>
-          <span class="link-text">{{ item.label }}</span>
-        </a>
+      <div class="sidebar-group" *ngFor="let group of menuGroups" [class.collapsed]="group.collapsed">
+        <div class="group-title" (click)="toggleGroup(group)">
+          <span>{{ group.title }}</span>
+          <i class="fas" [ngClass]="group.collapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+        </div>
+        <div class="group-items" *ngIf="!group.collapsed">
+          <a *ngFor="let item of group.items"
+             [routerLink]="item.path"
+             routerLinkActive="active"
+             class="sidebar-link">
+            <i class="fas" [ngClass]="'fa-' + item.icon"></i>
+            <span class="link-text">{{ item.label }}</span>
+          </a>
+        </div>
       </div>
     </nav>
     <div class="sidebar-footer">

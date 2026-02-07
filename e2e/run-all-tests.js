@@ -46,6 +46,7 @@ const { runOrderSelectionTests } = require('./tests/23-order-selection.test');
 const { runPartialConfirmationTests } = require('./tests/24-partial-confirmation.test');
 const { runDetailPageTests } = require('./tests/25-detail-pages.test');
 const { runProcessParameterTests } = require('./tests/26-process-parameters.test');
+const { runAdminSidebarTests } = require('./tests/27-admin-sidebar.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -156,6 +157,7 @@ async function runAllTests() {
         await runPartialConfirmationTests(page, screenshots, results, runTest, submitActions);
         await runDetailPageTests(page, screenshots, results, runTest, submitActions);
         await runProcessParameterTests(page, screenshots, results, runTest, submitActions);
+        await runAdminSidebarTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));

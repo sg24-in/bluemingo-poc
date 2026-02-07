@@ -444,7 +444,8 @@ const SCREENSHOT_PREFIX = {
     orderSelection: '23-order-selection',
     partialConfirmation: '24-partial-confirmation',
     detailPages: '25-detail-pages',
-    processParameters: '26-process-parameters'
+    processParameters: '26-process-parameters',
+    adminSidebar: '27-admin-sidebar'
 };
 
 module.exports = {

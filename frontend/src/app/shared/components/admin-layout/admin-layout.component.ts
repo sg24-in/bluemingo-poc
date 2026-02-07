@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 interface MenuItem {
   path: string;
@@ -9,6 +11,7 @@ interface MenuItem {
 interface MenuGroup {
   title: string;
   items: MenuItem[];
+  collapsed: boolean;
 }
 
 @Component({
@@ -16,10 +19,11 @@ interface MenuGroup {
   templateUrl: './admin-layout.component.html',
   styleUrls: ['./admin-layout.component.css']
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit {
   menuGroups: MenuGroup[] = [
     {
       title: 'Master Data',
+      collapsed: false,
       items: [
         { path: '/manage/customers', label: 'Customers', icon: 'users' },
         { path: '/manage/products', label: 'Products', icon: 'box' },
@@ -28,6 +32,7 @@ export class AdminLayoutComponent {
     },
     {
       title: 'Production',
+      collapsed: false,
       items: [
         { path: '/manage/processes', label: 'Processes', icon: 'diagram-project' },
         { path: '/manage/routing', label: 'Routing', icon: 'route' },
@@ -38,6 +43,7 @@ export class AdminLayoutComponent {
     },
     {
       title: 'Configuration',
+      collapsed: false,
       items: [
         { path: '/manage/config/hold-reasons', label: 'Hold Reasons', icon: 'ban' },
         { path: '/manage/config/delay-reasons', label: 'Delay Reasons', icon: 'hourglass-half' },
@@ -49,10 +55,37 @@ export class AdminLayoutComponent {
     },
     {
       title: 'System',
+      collapsed: false,
       items: [
         { path: '/manage/users', label: 'Users', icon: 'user-gear' },
         { path: '/manage/audit', label: 'Audit Trail', icon: 'clock-rotate-left' }
       ]
     }
   ];
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    // Expand the group containing the current route
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.expandActiveGroup();
+    });
+    this.expandActiveGroup();
+  }
+
+  toggleGroup(group: MenuGroup): void {
+    group.collapsed = !group.collapsed;
+  }
+
+  private expandActiveGroup(): void {
+    const currentPath = this.router.url;
+    for (const group of this.menuGroups) {
+      const hasActiveItem = group.items.some(item => currentPath.startsWith(item.path));
+      if (hasActiveItem) {
+        group.collapsed = false;
+      }
+    }
+  }
 }
