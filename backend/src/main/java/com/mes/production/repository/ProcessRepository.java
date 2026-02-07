@@ -1,6 +1,7 @@
 package com.mes.production.repository;
 
 import com.mes.production.entity.Process;
+import com.mes.production.entity.ProcessStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,12 +11,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository for Process entity (design-time process definition).
+ * Repository for Process entity (design-time process template).
  *
  * Per MES Consolidated Specification:
- * - Process is design-time entity (ProcessID, ProcessName, Status)
- * - Operations link to Process via ProcessID
- * - Runtime tracking happens at Operation level via OrderLineItem FK
+ * - Process is a design-time template (ProcessID, ProcessName, Status)
+ * - Runtime execution tracking happens at Operation level via OrderLineItem FK
  */
 @Repository
 public interface ProcessRepository extends JpaRepository<Process, Long> {
@@ -29,15 +29,9 @@ public interface ProcessRepository extends JpaRepository<Process, Long> {
     Optional<Process> findByIdWithOperations(@Param("processId") Long processId);
 
     /**
-     * Find processes by status
+     * Find processes by status (using enum)
      */
-    List<Process> findByStatus(String status);
-
-    /**
-     * Find processes with QUALITY_PENDING status
-     */
-    @Query("SELECT p FROM Process p WHERE p.status = 'QUALITY_PENDING'")
-    List<Process> findQualityPending();
+    List<Process> findByStatus(ProcessStatus status);
 
     /**
      * Find process by name
@@ -52,5 +46,5 @@ public interface ProcessRepository extends JpaRepository<Process, Long> {
     /**
      * Count processes by status
      */
-    long countByStatus(String status);
+    long countByStatus(ProcessStatus status);
 }

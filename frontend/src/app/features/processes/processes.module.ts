@@ -5,13 +5,15 @@ import { ProcessesRoutingModule } from './processes-routing.module';
 import { QualityPendingComponent } from './quality-pending/quality-pending.component';
 import { ProcessListComponent } from './process-list/process-list.component';
 import { ProcessDetailComponent } from './process-detail/process-detail.component';
+import { ProcessFormComponent } from './process-form/process-form.component';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
     QualityPendingComponent,
     ProcessListComponent,
-    ProcessDetailComponent
+    ProcessDetailComponent,
+    ProcessFormComponent
   ],
   imports: [
     CommonModule,

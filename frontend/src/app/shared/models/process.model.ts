@@ -1,35 +1,22 @@
 /**
- * Process Models - Design-time process per MES Consolidated Specification
+ * Process Models - Design-time process template per MES Consolidated Specification
  *
- * Process entity (per spec):
- * - ProcessID (PK)
- * - ProcessName
- * - Status (READY / IN_PROGRESS / QUALITY_PENDING / COMPLETED / REJECTED / ON_HOLD)
- *
- * Per MES Consolidated Specification:
- * - Process is a design-time entity (no OrderLineItem reference)
- * - Operations link to Process via ProcessID (design-time reference)
- * - Operations link to OrderLineItem via OrderLineID (runtime tracking)
- * - Relationship: Orders → OrderLineItems → Operations (via OrderLineID)
- *                 Process → Operations (via ProcessID - design-time)
+ * Process is a DESIGN-TIME entity only with statuses: DRAFT, ACTIVE, INACTIVE
+ * Runtime execution tracking happens at Operation level (linked to OrderLineItem)
  */
 
 import { OperationBrief } from './operation.model';
 
-// Process status types
-export type ProcessStatusType = 'READY' | 'IN_PROGRESS' | 'QUALITY_PENDING' | 'COMPLETED' | 'REJECTED' | 'ON_HOLD';
-export type ProcessDecisionType = 'PENDING' | 'ACCEPT' | 'REJECT';
+// Design-time status types for Process templates
+export type ProcessStatusType = 'DRAFT' | 'ACTIVE' | 'INACTIVE';
 
 /**
- * Process - Design-time process entity
- * Matches backend Process entity
+ * Process - Design-time process template
  */
 export interface Process {
   processId: number;
   processName: string;
   status: ProcessStatusType;
-  usageDecision?: ProcessDecisionType;
-  bomId?: number;
   createdOn?: string;
   createdBy?: string;
   updatedOn?: string;
@@ -38,37 +25,19 @@ export interface Process {
 }
 
 /**
- * Process status update request
+ * Process create request
  */
-export interface ProcessStatusUpdateRequest {
-  processId: number;
-  newStatus: string;
-  reason?: string;
-  notes?: string;
-}
-
-/**
- * Process quality decision request
- */
-export interface ProcessQualityDecisionRequest {
-  processId: number;
-  decision: ProcessDecisionType;
-  reason?: string;
-  notes?: string;
-}
-
-/**
- * Process status update response
- */
-export interface ProcessStatusUpdateResponse {
-  processId: number;
+export interface ProcessCreateRequest {
   processName: string;
-  previousStatus: string;
-  newStatus: string;
-  usageDecision?: string;
-  updatedBy: string;
-  updatedOn: string;
-  message: string;
+  status?: ProcessStatusType;  // Defaults to DRAFT
+}
+
+/**
+ * Process update request
+ */
+export interface ProcessUpdateRequest {
+  processName?: string;
+  status?: ProcessStatusType;
 }
 
 /**

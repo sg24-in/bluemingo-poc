@@ -1,0 +1,54 @@
+<div class="process-form-page">
+  <div class="page-header">
+    <h1>{{ isEditMode ? 'Edit Process' : 'New Process' }}</h1>
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading process...</div>
+
+  <div class="form-container" *ngIf="!loading">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+      <div class="form-section">
+        <h2>Process Information</h2>
+
+        <div class="form-group">
+          <label for="processName">Process Name *</label>
+          <input
+            type="text"
+            id="processName"
+            formControlName="processName"
+            [class.error]="hasError('processName')"
+            placeholder="e.g., Steel Melting, Heat Treatment"
+          />
+          <span class="error-text" *ngIf="hasError('processName')">
+            {{ getError('processName') }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" formControlName="status">
+            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="info-section" *ngIf="isEditMode">
+        <p class="help-text">
+          <strong>Note:</strong> Operations are managed separately. After creating a process,
+          you can add operations through the routing configuration or via order line items.
+        </p>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving || form.invalid">
+          {{ saving ? 'Saving...' : (isEditMode ? 'Update Process' : 'Create Process') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

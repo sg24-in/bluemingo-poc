@@ -8,17 +8,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Process - Design-time process entity per MES Consolidated Specification.
+ * Process - Design-time process template per MES Consolidated Specification.
  *
- * Fields per spec:
- * - ProcessID (PK)
- * - ProcessName
- * - Status (READY / IN_PROGRESS / QUALITY_PENDING / COMPLETED / REJECTED / ON_HOLD)
+ * This is a DESIGN-TIME entity only. Runtime execution tracking happens at Operation level.
+ * Operations link to OrderLineItem for runtime tracking (not Process).
  *
- * NOTE: This is a DESIGN-TIME entity. Runtime tracking happens at Operation level.
- * Operations link to Process via ProcessID FK.
- *
- * Relationship: Process → Operations (via Operations.processId)
+ * Relationship: Process → Operations (design-time template reference)
  */
 @Entity
 @Table(name = "processes")
@@ -28,19 +23,6 @@ import java.util.List;
 @AllArgsConstructor
 public class Process {
 
-    // Status constants per spec
-    public static final String STATUS_READY = "READY";
-    public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
-    public static final String STATUS_QUALITY_PENDING = "QUALITY_PENDING";
-    public static final String STATUS_COMPLETED = "COMPLETED";
-    public static final String STATUS_REJECTED = "REJECTED";
-    public static final String STATUS_ON_HOLD = "ON_HOLD";
-
-    // Usage decision constants
-    public static final String DECISION_PENDING = "PENDING";
-    public static final String DECISION_ACCEPT = "ACCEPT";
-    public static final String DECISION_REJECT = "REJECT";
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "process_id")
@@ -49,11 +31,9 @@ public class Process {
     @Column(name = "process_name", nullable = false, length = 100)
     private String processName;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
-
-    @Column(name = "usage_decision")
-    private String usageDecision;
+    private ProcessStatus status;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn;
@@ -76,8 +56,7 @@ public class Process {
     @PrePersist
     protected void onCreate() {
         createdOn = LocalDateTime.now();
-        if (status == null) status = STATUS_READY;
-        if (usageDecision == null) usageDecision = DECISION_PENDING;
+        if (status == null) status = ProcessStatus.DRAFT;
     }
 
     @PreUpdate

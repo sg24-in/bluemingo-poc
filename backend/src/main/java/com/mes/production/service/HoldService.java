@@ -188,7 +188,7 @@ public class HoldService {
                     .map(Operation::getStatus)
                     .orElseThrow(() -> new RuntimeException("Operation not found"));
             case "PROCESS" -> processRepository.findById(entityId)
-                    .map(p -> p.getStatus())
+                    .map(p -> p.getStatus().name())
                     .orElseThrow(() -> new RuntimeException("Process not found"));
             case "ORDER_LINE" -> orderLineItemRepository.findById(entityId)
                     .map(OrderLineItem::getStatus)
@@ -224,11 +224,9 @@ public class HoldService {
                 operationRepository.save(operation);
             }
             case "PROCESS" -> {
-                com.mes.production.entity.Process process = processRepository.findById(entityId)
-                        .orElseThrow(() -> new RuntimeException("Process not found"));
-                process.setStatus(newStatus);
-                process.setUpdatedBy(updatedBy);
-                processRepository.save(process);
+                // Process is design-time only (DRAFT/ACTIVE/INACTIVE)
+                // Holds don't change Process status - just recorded in HoldRecord
+                log.info("Hold applied to Process {} - design-time entity, status unchanged", entityId);
             }
             case "ORDER_LINE" -> {
                 OrderLineItem orderLine = orderLineItemRepository.findById(entityId)

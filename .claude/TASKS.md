@@ -1,11 +1,92 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Active - R15, P10-P13, P18-P19, B23 Completed
+**Session Status:** Active - Process CRUD UI, Design-Time Status Alignment
 
 ---
 
-## Latest Session Changes (2026-02-07 - Batch Behavior Validation, Partial Confirmation, E2E Tests)
+## Latest Session Changes (2026-02-07 - Process Design-Time Architecture Refactor)
+
+### PR-ARCH: Process Design-Time Architecture - COMPLETE ✅
+
+**Issue:** User correctly noted runtime statuses don't make sense for design-time Process templates.
+
+**Solution:** Complete architectural refactor per MES Consolidated Specification:
+- Process is now design-time only with `ProcessStatus` enum: `DRAFT`, `ACTIVE`, `INACTIVE`
+- Runtime execution tracking happens at Operation level (Operations link to OrderLineItem)
+- No ProcessInstance needed - Operations handle runtime state
+
+**Backend Changes:**
+
+| File | Changes |
+|------|---------|
+| `entity/ProcessStatus.java` | **NEW** - Design-time status enum |
+| `entity/Process.java` | Uses `ProcessStatus` enum, removed runtime status constants |
+| `service/ProcessService.java` | Simplified to CRUD + activate/deactivate only |
+| `controller/ProcessController.java` | Removed quality decision endpoints, added `/activate` `/deactivate` |
+| `dto/ProcessDTO.java` | Removed runtime DTOs (QualityDecisionRequest, StatusUpdateRequest, etc.) |
+| `repository/ProcessRepository.java` | Uses `ProcessStatus` enum for type safety |
+| `service/DashboardService.java` | Removed quality pending process count (not applicable) |
+| `service/HoldService.java` | Process holds don't change status (design-time entity) |
+| `service/ProductionService.java` | Removed runtime Process status tracking |
+
+**Frontend Changes:**
+
+| File | Changes |
+|------|---------|
+| `process-list.component.ts` | Statuses: `['DRAFT', 'ACTIVE', 'INACTIVE']` |
+| `process-list.component.html` | Summary cards: Draft/Active/Inactive |
+| `process-list.component.css` | Design-time status badge styles |
+| `process-form.component.ts` | Default status: `DRAFT` |
+
+**Key Architectural Decision:**
+- **No ProcessInstance** - Operations handle runtime tracking
+- **Process = Template** - Defines what a manufacturing stage is
+- **Operation = Runtime** - Linked to OrderLineItem, tracks execution status
+
+### PR04-PR08: Process Form Component - COMPLETE ✅
+
+**Files Created (previous session):**
+- `frontend/src/app/features/processes/process-form/process-form.component.ts`
+- `frontend/src/app/features/processes/process-form/process-form.component.html`
+- `frontend/src/app/features/processes/process-form/process-form.component.css`
+
+**Files Modified (previous session):**
+- `frontend/src/app/features/processes/processes.module.ts` - Added ProcessFormComponent
+- `frontend/src/app/features/processes/processes-routing.module.ts` - Added routes
+
+### PR08-PR13: Process List Buttons & Modal - COMPLETE ✅
+
+**Files Modified (previous session):**
+- `frontend/src/app/features/processes/process-list/process-list.component.ts`
+  - Added Router, delete modal state, navigation methods
+  - Added `createProcess()`, `viewProcess()`, `editProcess()`, `confirmDelete()`, `deleteProcess()`
+- `frontend/src/app/features/processes/process-list/process-list.component.html`
+  - Added "New Process" button in header
+  - Added Actions column with Edit/Delete buttons
+  - Added clickable rows
+  - Added delete confirmation modal
+- `frontend/src/app/features/processes/process-list/process-list.component.css`
+  - Added styling for page header, buttons, modal, clickable rows
+
+**Build Status:** Both frontend and backend compile successfully ✅
+
+---
+
+## Pending Frontend Tasks - Process CRUD
+
+| Task | Description | Status |
+|------|-------------|--------|
+| PR-FE01 | Update `api.service.ts` - Add `activateProcess()`, `deactivateProcess()` methods | PENDING |
+| PR-FE02 | Add Activate/Deactivate buttons to process-list.component | PENDING |
+| PR-FE03 | Update process-detail.component with Activate/Deactivate buttons | PENDING |
+| PR-FE04 | Update shared/models - Remove usageDecision from Process interface | PENDING |
+| PR-FE05 | E2E tests for Process CRUD workflow | PENDING |
+| PR-FE06 | Update demo/data.sql with sample DRAFT/ACTIVE/INACTIVE processes | PENDING |
+
+---
+
+## Previous Session Changes (2026-02-07 - Batch Behavior Validation, Partial Confirmation, E2E Tests)
 
 ### R15: Batch Behavior Validation - COMPLETE ✅
 

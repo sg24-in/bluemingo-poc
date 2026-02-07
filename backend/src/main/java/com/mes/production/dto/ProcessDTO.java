@@ -1,7 +1,6 @@
 package com.mes.production.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,12 +10,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * DTOs for Process operations.
+ * DTOs for Process template operations.
  *
  * Per MES Consolidated Specification:
- * - Process is design-time entity (ProcessID, ProcessName, Status)
- * - Operations link to Process via ProcessID
- * - Runtime tracking happens at Operation level via OrderLineItem FK
+ * - Process is a design-time template (DRAFT/ACTIVE/INACTIVE)
+ * - Runtime execution tracking happens at Operation level
  */
 public class ProcessDTO {
 
@@ -27,8 +25,7 @@ public class ProcessDTO {
     public static class Response {
         private Long processId;
         private String processName;
-        private String status;
-        private String usageDecision;
+        private String status;  // DRAFT, ACTIVE, INACTIVE
         private LocalDateTime createdOn;
         private String createdBy;
         private LocalDateTime updatedOn;
@@ -57,7 +54,7 @@ public class ProcessDTO {
         @NotBlank(message = "Process name is required")
         private String processName;
 
-        private String status;
+        private String status;  // Optional, defaults to DRAFT
     }
 
     @Data
@@ -66,51 +63,6 @@ public class ProcessDTO {
     @AllArgsConstructor
     public static class UpdateRequest {
         private String processName;
-        private String status;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class StatusUpdateRequest {
-        @NotNull(message = "Process ID is required")
-        private Long processId;
-
-        @NotBlank(message = "New status is required")
-        private String newStatus;
-
-        private String reason;
-        private String notes;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class QualityDecisionRequest {
-        @NotNull(message = "Process ID is required")
-        private Long processId;
-
-        @NotBlank(message = "Decision is required (ACCEPT/REJECT)")
-        private String decision;
-
-        private String reason;
-        private String notes;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class StatusUpdateResponse {
-        private Long processId;
-        private String processName;
-        private String previousStatus;
-        private String newStatus;
-        private String usageDecision;
-        private String updatedBy;
-        private LocalDateTime updatedOn;
-        private String message;
+        private String status;  // DRAFT, ACTIVE, INACTIVE
     }
 }

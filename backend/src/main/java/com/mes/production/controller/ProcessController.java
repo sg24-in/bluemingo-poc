@@ -9,15 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * REST controller for Process operations.
+ * REST controller for Process template operations.
  *
  * Per MES Consolidated Specification:
- * - Process is a design-time entity (ProcessID, ProcessName, Status)
- * - Operations link to Process via ProcessID
- * - Runtime tracking happens at Operation level via OrderLineItem FK
+ * - Process is a design-time template (DRAFT/ACTIVE/INACTIVE)
+ * - Runtime execution tracking happens at Operation level
  */
 @RestController
 @RequestMapping("/api/processes")
@@ -37,34 +35,12 @@ public class ProcessController {
     }
 
     /**
-     * Create a new process
+     * Get active processes only
      */
-    @PostMapping
-    public ResponseEntity<ProcessDTO.Response> createProcess(
-            @Valid @RequestBody ProcessDTO.CreateRequest request) {
-        log.info("POST /api/processes - name={}", request.getProcessName());
-        return ResponseEntity.ok(processService.createProcess(request));
-    }
-
-    /**
-     * Update a process
-     */
-    @PutMapping("/{processId}")
-    public ResponseEntity<ProcessDTO.Response> updateProcess(
-            @PathVariable Long processId,
-            @Valid @RequestBody ProcessDTO.UpdateRequest request) {
-        log.info("PUT /api/processes/{}", processId);
-        return ResponseEntity.ok(processService.updateProcess(processId, request));
-    }
-
-    /**
-     * Delete a process (soft delete - sets status to DELETED)
-     */
-    @DeleteMapping("/{processId}")
-    public ResponseEntity<Void> deleteProcess(@PathVariable Long processId) {
-        log.info("DELETE /api/processes/{}", processId);
-        processService.deleteProcess(processId);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/active")
+    public ResponseEntity<List<ProcessDTO.Response>> getActiveProcesses() {
+        log.info("GET /api/processes/active");
+        return ResponseEntity.ok(processService.getActiveProcesses());
     }
 
     /**
@@ -77,7 +53,7 @@ public class ProcessController {
     }
 
     /**
-     * Get processes by status
+     * Get processes by status (DRAFT, ACTIVE, INACTIVE)
      */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<ProcessDTO.Response>> getProcessesByStatus(@PathVariable String status) {
@@ -86,94 +62,51 @@ public class ProcessController {
     }
 
     /**
-     * Get processes pending quality inspection
+     * Create a new process template (defaults to DRAFT status)
      */
-    @GetMapping("/quality-pending")
-    public ResponseEntity<List<ProcessDTO.Response>> getQualityPendingProcesses() {
-        log.info("GET /api/processes/quality-pending");
-        return ResponseEntity.ok(processService.getQualityPendingProcesses());
+    @PostMapping
+    public ResponseEntity<ProcessDTO.Response> createProcess(
+            @Valid @RequestBody ProcessDTO.CreateRequest request) {
+        log.info("POST /api/processes - name={}", request.getProcessName());
+        return ResponseEntity.ok(processService.createProcess(request));
     }
 
     /**
-     * Transition process to quality pending status
+     * Update a process template
      */
-    @PostMapping("/{processId}/quality-pending")
-    public ResponseEntity<ProcessDTO.StatusUpdateResponse> transitionToQualityPending(
+    @PutMapping("/{processId}")
+    public ResponseEntity<ProcessDTO.Response> updateProcess(
             @PathVariable Long processId,
-            @RequestBody(required = false) Map<String, String> body) {
-        log.info("POST /api/processes/{}/quality-pending", processId);
-        String notes = body != null ? body.get("notes") : null;
-        return ResponseEntity.ok(processService.transitionToQualityPending(processId, notes));
+            @Valid @RequestBody ProcessDTO.UpdateRequest request) {
+        log.info("PUT /api/processes/{}", processId);
+        return ResponseEntity.ok(processService.updateProcess(processId, request));
     }
 
     /**
-     * Make quality decision (accept/reject)
+     * Delete a process template (soft delete - sets status to INACTIVE)
      */
-    @PostMapping("/quality-decision")
-    public ResponseEntity<ProcessDTO.StatusUpdateResponse> makeQualityDecision(
-            @Valid @RequestBody ProcessDTO.QualityDecisionRequest request) {
-        log.info("POST /api/processes/quality-decision - processId={}, decision={}",
-                request.getProcessId(), request.getDecision());
-        return ResponseEntity.ok(processService.makeQualityDecision(request));
+    @DeleteMapping("/{processId}")
+    public ResponseEntity<Void> deleteProcess(@PathVariable Long processId) {
+        log.info("DELETE /api/processes/{}", processId);
+        processService.deleteProcess(processId);
+        return ResponseEntity.noContent().build();
     }
 
     /**
-     * Accept process (shorthand for quality decision = ACCEPT)
+     * Activate a process template (DRAFT/INACTIVE -> ACTIVE)
      */
-    @PostMapping("/{processId}/accept")
-    public ResponseEntity<ProcessDTO.StatusUpdateResponse> acceptProcess(
-            @PathVariable Long processId,
-            @RequestBody(required = false) Map<String, String> body) {
-        log.info("POST /api/processes/{}/accept", processId);
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(processId)
-                .decision("ACCEPT")
-                .notes(body != null ? body.get("notes") : null)
-                .build();
-        return ResponseEntity.ok(processService.makeQualityDecision(request));
+    @PostMapping("/{processId}/activate")
+    public ResponseEntity<ProcessDTO.Response> activateProcess(@PathVariable Long processId) {
+        log.info("POST /api/processes/{}/activate", processId);
+        return ResponseEntity.ok(processService.activateProcess(processId));
     }
 
     /**
-     * Reject process (shorthand for quality decision = REJECT)
+     * Deactivate a process template (ACTIVE -> INACTIVE)
      */
-    @PostMapping("/{processId}/reject")
-    public ResponseEntity<ProcessDTO.StatusUpdateResponse> rejectProcess(
-            @PathVariable Long processId,
-            @RequestBody Map<String, String> body) {
-        log.info("POST /api/processes/{}/reject", processId);
-        ProcessDTO.QualityDecisionRequest request = ProcessDTO.QualityDecisionRequest.builder()
-                .processId(processId)
-                .decision("REJECT")
-                .reason(body.get("reason"))
-                .notes(body.get("notes"))
-                .build();
-        return ResponseEntity.ok(processService.makeQualityDecision(request));
+    @PostMapping("/{processId}/deactivate")
+    public ResponseEntity<ProcessDTO.Response> deactivateProcess(@PathVariable Long processId) {
+        log.info("POST /api/processes/{}/deactivate", processId);
+        return ResponseEntity.ok(processService.deactivateProcess(processId));
     }
-
-    /**
-     * Update process status (generic)
-     */
-    @PutMapping("/status")
-    public ResponseEntity<ProcessDTO.StatusUpdateResponse> updateStatus(
-            @Valid @RequestBody ProcessDTO.StatusUpdateRequest request) {
-        log.info("PUT /api/processes/status - processId={}, newStatus={}",
-                request.getProcessId(), request.getNewStatus());
-        return ResponseEntity.ok(processService.updateStatus(request));
-    }
-
-    /**
-     * Check if all operations are confirmed
-     */
-    @GetMapping("/{processId}/all-confirmed")
-    public ResponseEntity<Map<String, Object>> checkAllOperationsConfirmed(@PathVariable Long processId) {
-        log.info("GET /api/processes/{}/all-confirmed", processId);
-        boolean allConfirmed = processService.areAllOperationsConfirmed(processId);
-        return ResponseEntity.ok(Map.of(
-                "processId", processId,
-                "allOperationsConfirmed", allConfirmed
-        ));
-    }
-
-    // NOTE: Process is design-time only per MES Consolidated Specification.
-    // Runtime queries by Order/OrderLine should go through OperationController.
 }

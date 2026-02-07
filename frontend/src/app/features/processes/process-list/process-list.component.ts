@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Process } from '../../../shared/models';
 
@@ -16,9 +17,19 @@ export class ProcessListComponent implements OnInit {
   filterStatus = 'all';
   searchTerm = '';
 
-  statuses = ['READY', 'IN_PROGRESS', 'QUALITY_PENDING', 'COMPLETED', 'REJECTED', 'ON_HOLD'];
+  // Delete modal
+  showDeleteModal = false;
+  processToDelete: Process | null = null;
+  deleting = false;
 
-  constructor(private apiService: ApiService) {}
+  // Design-time statuses for process templates (per MES Consolidated Spec)
+  // Runtime execution statuses (READY, IN_PROGRESS, etc.) are for ProcessInstance tracking
+  statuses = ['DRAFT', 'ACTIVE', 'INACTIVE'];
+
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadProcesses();
@@ -100,5 +111,63 @@ export class ProcessListComponent implements OnInit {
 
   countByStatus(status: string): number {
     return this.allProcesses.filter(p => p.status === status).length;
+  }
+
+  // Navigation methods
+  createProcess(): void {
+    // Check if we're in admin context
+    if (this.router.url.includes('/manage/')) {
+      this.router.navigate(['/manage/processes/new']);
+    } else {
+      this.router.navigate(['/processes/new']);
+    }
+  }
+
+  viewProcess(process: Process): void {
+    if (this.router.url.includes('/manage/')) {
+      this.router.navigate(['/manage/processes', process.processId]);
+    } else {
+      this.router.navigate(['/processes', process.processId]);
+    }
+  }
+
+  editProcess(process: Process): void {
+    if (this.router.url.includes('/manage/')) {
+      this.router.navigate(['/manage/processes', process.processId, 'edit']);
+    } else {
+      this.router.navigate(['/processes', process.processId, 'edit']);
+    }
+  }
+
+  // Delete methods
+  confirmDelete(process: Process): void {
+    this.processToDelete = process;
+    this.showDeleteModal = true;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteModal = false;
+    this.processToDelete = null;
+  }
+
+  deleteProcess(): void {
+    if (!this.processToDelete) return;
+
+    this.deleting = true;
+    this.apiService.deleteProcess(this.processToDelete.processId!).subscribe({
+      next: () => {
+        this.deleting = false;
+        this.showDeleteModal = false;
+        this.processToDelete = null;
+        // Reload the list
+        this.loadProcesses();
+      },
+      error: (err) => {
+        this.deleting = false;
+        this.error = err.error?.message || 'Failed to delete process.';
+        this.showDeleteModal = false;
+        this.processToDelete = null;
+      }
+    });
   }
 }

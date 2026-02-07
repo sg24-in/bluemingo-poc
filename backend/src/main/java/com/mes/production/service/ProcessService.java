@@ -3,9 +3,7 @@ package com.mes.production.service;
 import com.mes.production.dto.ProcessDTO;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.Process;
-import com.mes.production.entity.Batch;
-import com.mes.production.repository.BatchRepository;
-import com.mes.production.repository.HoldRecordRepository;
+import com.mes.production.entity.ProcessStatus;
 import com.mes.production.repository.OperationRepository;
 import com.mes.production.repository.ProcessRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,16 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Service for managing Process entities.
+ * Service for managing Process templates (design-time entities).
  *
  * Per MES Consolidated Specification:
- * - Process is design-time entity (ProcessID, ProcessName, Status)
- * - Operations link to Process via ProcessID
- * - Runtime tracking happens at Operation level via OrderLineItem FK
+ * - Process is a design-time template (ProcessID, ProcessName, Status)
+ * - Runtime execution tracking happens at Operation level via OrderLineItem FK
+ * - Operations reference Process for template definition only
  */
 @Service
 @RequiredArgsConstructor
@@ -34,19 +31,7 @@ public class ProcessService {
 
     private final ProcessRepository processRepository;
     private final OperationRepository operationRepository;
-    private final HoldRecordRepository holdRecordRepository;
     private final AuditService auditService;
-    private final BatchRepository batchRepository;
-
-    // Valid status transitions
-    private static final Set<String> VALID_STATUSES = Set.of(
-            Process.STATUS_READY,
-            Process.STATUS_IN_PROGRESS,
-            Process.STATUS_QUALITY_PENDING,
-            Process.STATUS_COMPLETED,
-            Process.STATUS_REJECTED,
-            Process.STATUS_ON_HOLD
-    );
 
     /**
      * Get all processes
@@ -73,26 +58,42 @@ public class ProcessService {
      */
     @Transactional(readOnly = true)
     public List<ProcessDTO.Response> getProcessesByStatus(String status) {
-        return processRepository.findByStatus(status).stream()
+        ProcessStatus processStatus = ProcessStatus.valueOf(status.toUpperCase());
+        return processRepository.findByStatus(processStatus).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Create a new process
+     * Get active processes only
+     */
+    @Transactional(readOnly = true)
+    public List<ProcessDTO.Response> getActiveProcesses() {
+        return processRepository.findByStatus(ProcessStatus.ACTIVE).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Create a new process template
      */
     @Transactional
     public ProcessDTO.Response createProcess(ProcessDTO.CreateRequest request) {
         String currentUser = getCurrentUser();
 
+        ProcessStatus status = ProcessStatus.DRAFT;
+        if (request.getStatus() != null) {
+            status = ProcessStatus.valueOf(request.getStatus().toUpperCase());
+        }
+
         Process process = Process.builder()
                 .processName(request.getProcessName())
-                .status(request.getStatus() != null ? request.getStatus() : Process.STATUS_READY)
+                .status(status)
                 .createdBy(currentUser)
                 .build();
 
         Process saved = processRepository.save(process);
-        log.info("Created process: {} by {}", saved.getProcessId(), currentUser);
+        log.info("Created process template: {} by {}", saved.getProcessId(), currentUser);
 
         auditService.logCreate("PROCESS", saved.getProcessId(), saved.getProcessName());
 
@@ -100,7 +101,7 @@ public class ProcessService {
     }
 
     /**
-     * Update an existing process
+     * Update an existing process template
      */
     @Transactional
     public ProcessDTO.Response updateProcess(Long processId, ProcessDTO.UpdateRequest request) {
@@ -112,14 +113,15 @@ public class ProcessService {
             process.setProcessName(request.getProcessName());
         }
         if (request.getStatus() != null) {
-            process.setStatus(request.getStatus());
+            ProcessStatus newStatus = ProcessStatus.valueOf(request.getStatus().toUpperCase());
+            process.setStatus(newStatus);
         }
 
         process.setUpdatedBy(currentUser);
         process.setUpdatedOn(LocalDateTime.now());
 
         Process saved = processRepository.save(process);
-        log.info("Updated process: {} by {}", processId, currentUser);
+        log.info("Updated process template: {} by {}", processId, currentUser);
 
         auditService.logUpdate("PROCESS", processId, "processName", oldName, saved.getProcessName());
 
@@ -127,256 +129,79 @@ public class ProcessService {
     }
 
     /**
-     * Delete a process (soft delete - sets status to DELETED)
+     * Delete a process template (soft delete - sets status to INACTIVE)
      */
     @Transactional
     public void deleteProcess(Long processId) {
         Process process = getProcessEntity(processId);
         String currentUser = getCurrentUser();
 
-        // Check if process has operations
+        // Check if process has operations referencing it
         List<Operation> operations = operationRepository.findByProcessIdOrderBySequence(processId);
         if (!operations.isEmpty()) {
             throw new RuntimeException("Cannot delete process with existing operations. Found " + operations.size() + " operations.");
         }
 
-        process.setStatus("DELETED");
+        process.setStatus(ProcessStatus.INACTIVE);
         process.setUpdatedBy(currentUser);
         process.setUpdatedOn(LocalDateTime.now());
         processRepository.save(process);
 
-        log.info("Deleted (soft) process: {} by {}", processId, currentUser);
+        log.info("Deleted (soft) process template: {} by {}", processId, currentUser);
         auditService.logDelete("PROCESS", processId, process.getProcessName());
     }
 
     /**
-     * Transition process to QUALITY_PENDING status
+     * Activate a process template (DRAFT -> ACTIVE)
      */
     @Transactional
-    public ProcessDTO.StatusUpdateResponse transitionToQualityPending(Long processId, String notes) {
+    public ProcessDTO.Response activateProcess(Long processId) {
         Process process = getProcessEntity(processId);
         String currentUser = getCurrentUser();
-        String oldStatus = process.getStatus();
+        ProcessStatus oldStatus = process.getStatus();
 
-        // Validate current status
-        if (!Process.STATUS_IN_PROGRESS.equals(oldStatus) && !Process.STATUS_COMPLETED.equals(oldStatus)) {
-            throw new RuntimeException("Process must be IN_PROGRESS or COMPLETED to transition to QUALITY_PENDING. Current status: " + oldStatus);
+        if (oldStatus != ProcessStatus.DRAFT && oldStatus != ProcessStatus.INACTIVE) {
+            throw new RuntimeException("Process must be DRAFT or INACTIVE to activate. Current status: " + oldStatus);
         }
 
-        // Check if on hold
-        validateNotOnHold(processId);
-
-        // Update status
-        process.setStatus(Process.STATUS_QUALITY_PENDING);
-        process.setUsageDecision(Process.DECISION_PENDING);
+        process.setStatus(ProcessStatus.ACTIVE);
         process.setUpdatedBy(currentUser);
         process.setUpdatedOn(LocalDateTime.now());
         processRepository.save(process);
 
-        log.info("Process {} transitioned to QUALITY_PENDING by {}", processId, currentUser);
+        log.info("Activated process template: {} by {}", processId, currentUser);
+        auditService.logStatusChange("PROCESS", processId, oldStatus.name(), ProcessStatus.ACTIVE.name());
 
-        // Audit
-        auditService.logStatusChange("PROCESS", processId, oldStatus, Process.STATUS_QUALITY_PENDING);
-
-        return ProcessDTO.StatusUpdateResponse.builder()
-                .processId(processId)
-                .processName(process.getProcessName())
-                .previousStatus(oldStatus)
-                .newStatus(Process.STATUS_QUALITY_PENDING)
-                .usageDecision(Process.DECISION_PENDING)
-                .updatedBy(currentUser)
-                .updatedOn(process.getUpdatedOn())
-                .message("Process moved to quality pending status")
-                .build();
+        return toResponse(process);
     }
 
     /**
-     * Make quality decision on a process
+     * Deactivate a process template (ACTIVE -> INACTIVE)
      */
     @Transactional
-    public ProcessDTO.StatusUpdateResponse makeQualityDecision(ProcessDTO.QualityDecisionRequest request) {
-        Process process = getProcessEntity(request.getProcessId());
+    public ProcessDTO.Response deactivateProcess(Long processId) {
+        Process process = getProcessEntity(processId);
         String currentUser = getCurrentUser();
-        String oldStatus = process.getStatus();
+        ProcessStatus oldStatus = process.getStatus();
 
-        // Validate current status
-        if (!Process.STATUS_QUALITY_PENDING.equals(oldStatus)) {
-            throw new RuntimeException("Process must be in QUALITY_PENDING status to make quality decision. Current status: " + oldStatus);
+        if (oldStatus != ProcessStatus.ACTIVE) {
+            throw new RuntimeException("Process must be ACTIVE to deactivate. Current status: " + oldStatus);
         }
 
-        // Check if on hold
-        validateNotOnHold(request.getProcessId());
-
-        String newStatus;
-        String decision = request.getDecision().toUpperCase();
-
-        if (Process.DECISION_ACCEPT.equals(decision)) {
-            newStatus = Process.STATUS_COMPLETED;
-            process.setUsageDecision(Process.DECISION_ACCEPT);
-        } else if (Process.DECISION_REJECT.equals(decision)) {
-            newStatus = Process.STATUS_REJECTED;
-            process.setUsageDecision(Process.DECISION_REJECT);
-        } else {
-            throw new RuntimeException("Invalid decision: " + decision + ". Must be ACCEPT or REJECT");
-        }
-
-        // Update status
-        process.setStatus(newStatus);
+        process.setStatus(ProcessStatus.INACTIVE);
         process.setUpdatedBy(currentUser);
         process.setUpdatedOn(LocalDateTime.now());
         processRepository.save(process);
 
-        log.info("Process {} quality decision: {} -> {} by {}", request.getProcessId(), decision, newStatus, currentUser);
+        log.info("Deactivated process template: {} by {}", processId, currentUser);
+        auditService.logStatusChange("PROCESS", processId, oldStatus.name(), ProcessStatus.INACTIVE.name());
 
-        // Audit
-        auditService.logStatusChange("PROCESS", request.getProcessId(), oldStatus, newStatus);
-
-        // Propagate quality decision to batches generated in this process's operations
-        propagateQualityToBatches(process, decision, request.getReason(), currentUser);
-
-        String message = Process.DECISION_ACCEPT.equals(decision)
-                ? "Process accepted and marked as completed"
-                : "Process rejected. Reason: " + (request.getReason() != null ? request.getReason() : "Not specified");
-
-        return ProcessDTO.StatusUpdateResponse.builder()
-                .processId(request.getProcessId())
-                .processName(process.getProcessName())
-                .previousStatus(oldStatus)
-                .newStatus(newStatus)
-                .usageDecision(decision)
-                .updatedBy(currentUser)
-                .updatedOn(process.getUpdatedOn())
-                .message(message)
-                .build();
-    }
-
-    /**
-     * Propagate quality decision to all batches generated at operations in this process
-     */
-    private void propagateQualityToBatches(Process process, String decision, String reason, String currentUser) {
-        List<Operation> operations = operationRepository.findByProcessIdOrderBySequence(process.getProcessId());
-        LocalDateTime now = LocalDateTime.now();
-
-        for (Operation operation : operations) {
-            List<Batch> batches = batchRepository.findByGeneratedAtOperation(operation.getOperationId());
-            for (Batch batch : batches) {
-                String oldBatchStatus = batch.getStatus();
-                if (Process.DECISION_ACCEPT.equals(decision)) {
-                    batch.setStatus(Batch.STATUS_AVAILABLE);
-                    batch.setApprovedBy(currentUser);
-                    batch.setApprovedOn(now);
-                } else if (Process.DECISION_REJECT.equals(decision)) {
-                    batch.setStatus(Batch.STATUS_BLOCKED);
-                    batch.setRejectedBy(currentUser);
-                    batch.setRejectedOn(now);
-                    batch.setRejectionReason(reason != null ? reason : "Quality rejected");
-                }
-                batchRepository.save(batch);
-                log.info("Batch {} quality propagated: {} -> {} (decision: {})",
-                    batch.getBatchId(), oldBatchStatus, batch.getStatus(), decision);
-                auditService.logStatusChange("BATCH", batch.getBatchId(), oldBatchStatus, batch.getStatus());
-            }
-        }
-    }
-
-    /**
-     * Update process status (generic)
-     */
-    @Transactional
-    public ProcessDTO.StatusUpdateResponse updateStatus(ProcessDTO.StatusUpdateRequest request) {
-        Process process = getProcessEntity(request.getProcessId());
-        String currentUser = getCurrentUser();
-        String oldStatus = process.getStatus();
-        String newStatus = request.getNewStatus().toUpperCase();
-
-        // Validate new status
-        if (!VALID_STATUSES.contains(newStatus)) {
-            throw new RuntimeException("Invalid status: " + newStatus + ". Valid statuses: " + VALID_STATUSES);
-        }
-
-        // Validate transition
-        validateStatusTransition(oldStatus, newStatus);
-
-        // Check if on hold (unless transitioning to ON_HOLD)
-        if (!Process.STATUS_ON_HOLD.equals(newStatus)) {
-            validateNotOnHold(request.getProcessId());
-        }
-
-        // Update status
-        process.setStatus(newStatus);
-        process.setUpdatedBy(currentUser);
-        process.setUpdatedOn(LocalDateTime.now());
-        processRepository.save(process);
-
-        log.info("Process {} status updated: {} -> {} by {}", request.getProcessId(), oldStatus, newStatus, currentUser);
-
-        // Audit
-        auditService.logStatusChange("PROCESS", request.getProcessId(), oldStatus, newStatus);
-
-        return ProcessDTO.StatusUpdateResponse.builder()
-                .processId(request.getProcessId())
-                .processName(process.getProcessName())
-                .previousStatus(oldStatus)
-                .newStatus(newStatus)
-                .usageDecision(process.getUsageDecision())
-                .updatedBy(currentUser)
-                .updatedOn(process.getUpdatedOn())
-                .message("Process status updated successfully")
-                .build();
-    }
-
-    /**
-     * Check if all operations in a process are confirmed
-     */
-    @Transactional(readOnly = true)
-    public boolean areAllOperationsConfirmed(Long processId) {
-        Process process = processRepository.findByIdWithOperations(processId)
-                .orElseThrow(() -> new RuntimeException("Process not found: " + processId));
-
-        if (process.getOperations() == null || process.getOperations().isEmpty()) {
-            return false;
-        }
-
-        return process.getOperations().stream()
-                .allMatch(op -> "CONFIRMED".equals(op.getStatus()));
-    }
-
-    /**
-     * Get quality pending processes
-     */
-    @Transactional(readOnly = true)
-    public List<ProcessDTO.Response> getQualityPendingProcesses() {
-        return processRepository.findQualityPending().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return toResponse(process);
     }
 
     private Process getProcessEntity(Long processId) {
         return processRepository.findById(processId)
                 .orElseThrow(() -> new RuntimeException("Process not found: " + processId));
-    }
-
-    private void validateNotOnHold(Long processId) {
-        if (holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus("PROCESS", processId, "ACTIVE")) {
-            throw new RuntimeException("Process is on hold and cannot be updated");
-        }
-    }
-
-    private void validateStatusTransition(String fromStatus, String toStatus) {
-        // Define valid transitions
-        boolean validTransition = switch (fromStatus) {
-            case "READY" -> Set.of("IN_PROGRESS", "ON_HOLD").contains(toStatus);
-            case "IN_PROGRESS" -> Set.of("QUALITY_PENDING", "COMPLETED", "ON_HOLD").contains(toStatus);
-            case "QUALITY_PENDING" -> Set.of("COMPLETED", "REJECTED", "ON_HOLD").contains(toStatus);
-            case "COMPLETED" -> Set.of("QUALITY_PENDING").contains(toStatus); // Can revert if needed
-            case "REJECTED" -> Set.of("QUALITY_PENDING", "ON_HOLD").contains(toStatus); // Can retry
-            case "ON_HOLD" -> Set.of("READY", "IN_PROGRESS", "QUALITY_PENDING").contains(toStatus);
-            default -> false;
-        };
-
-        if (!validTransition) {
-            throw new RuntimeException("Invalid status transition from " + fromStatus + " to " + toStatus);
-        }
     }
 
     private ProcessDTO.Response toResponse(Process process) {
@@ -397,8 +222,7 @@ public class ProcessService {
         return ProcessDTO.Response.builder()
                 .processId(process.getProcessId())
                 .processName(process.getProcessName())
-                .status(process.getStatus())
-                .usageDecision(process.getUsageDecision())
+                .status(process.getStatus().name())
                 .createdOn(process.getCreatedOn())
                 .createdBy(process.getCreatedBy())
                 .updatedOn(process.getUpdatedOn())

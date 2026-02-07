@@ -505,14 +505,9 @@ public class ProductionService {
                     .build();
         } else {
             // All operations in this process are complete
-            String oldProcessStatus = process.getStatus();
-            process.setStatus("COMPLETED");
-            process.setUpdatedBy(currentUser);
-            processRepository.save(process);
-            log.info("Process completed: {}", process.getProcessName());
-
-            // Audit: Log process completion
-            auditService.logStatusChange("PROCESS", process.getProcessId(), oldProcessStatus, "COMPLETED");
+            // Process is design-time only - no runtime status to update
+            // Runtime completion is tracked at Operation level
+            log.info("All operations completed for process: {}", process.getProcessName());
 
             // Check if there's a next process
             // For POC, we'll return null - can be enhanced later

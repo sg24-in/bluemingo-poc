@@ -45,8 +45,9 @@ public class DashboardService {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         Long todayConfirmations = confirmationRepository.countByCreatedOnAfter(startOfDay);
 
-        // Get quality pending processes count
-        Long qualityPendingProcesses = (long) processRepository.findByStatus(Process.STATUS_QUALITY_PENDING).size();
+        // Quality pending is now tracked at Operation level, not Process level
+        // Process is design-time only (DRAFT/ACTIVE/INACTIVE)
+        Long qualityPendingProcesses = 0L;
 
         // Get batches pending approval (QUALITY_PENDING status)
         Long batchesPendingApproval = batchRepository.countByStatus(Batch.STATUS_QUALITY_PENDING);

@@ -1,6 +1,7 @@
 <div class="process-list-page">
   <div class="page-header">
     <h1>Processes</h1>
+    <button class="btn btn-primary" (click)="createProcess()">+ New Process</button>
   </div>
 
   <div class="card">
@@ -32,21 +33,17 @@
       <span class="count">{{ allProcesses.length }}</span>
       <span class="label">Total</span>
     </div>
-    <div class="summary-card ready">
-      <span class="count">{{ countByStatus('READY') }}</span>
-      <span class="label">Ready</span>
+    <div class="summary-card draft">
+      <span class="count">{{ countByStatus('DRAFT') }}</span>
+      <span class="label">Draft</span>
     </div>
-    <div class="summary-card in-progress">
-      <span class="count">{{ countByStatus('IN_PROGRESS') }}</span>
-      <span class="label">In Progress</span>
+    <div class="summary-card active">
+      <span class="count">{{ countByStatus('ACTIVE') }}</span>
+      <span class="label">Active</span>
     </div>
-    <div class="summary-card quality-pending">
-      <span class="count">{{ countByStatus('QUALITY_PENDING') }}</span>
-      <span class="label">Quality Pending</span>
-    </div>
-    <div class="summary-card completed">
-      <span class="count">{{ countByStatus('COMPLETED') }}</span>
-      <span class="label">Completed</span>
+    <div class="summary-card inactive">
+      <span class="count">{{ countByStatus('INACTIVE') }}</span>
+      <span class="label">Inactive</span>
     </div>
   </div>
 
@@ -60,10 +57,11 @@
           <th>Decision</th>
           <th>Operations</th>
           <th>Progress</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let process of processes">
+        <tr *ngFor="let process of processes" (click)="viewProcess(process)" class="clickable-row">
           <td>{{ process.processId }}</td>
           <td>{{ process.processName }}</td>
           <td>
@@ -84,6 +82,14 @@
             </ng-container>
             <span *ngIf="getOperationCount(process) === 0">-</span>
           </td>
+          <td class="actions-cell" (click)="$event.stopPropagation()">
+            <button class="btn-icon" title="Edit" (click)="editProcess(process)">
+              <span class="icon">&#9998;</span>
+            </button>
+            <button class="btn-icon btn-danger" title="Delete" (click)="confirmDelete(process)">
+              <span class="icon">&#128465;</span>
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -102,4 +108,23 @@
   <ng-template #loadingTpl>
     <div class="loading">Loading processes...</div>
   </ng-template>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="cancelDelete()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete Process</h2>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete process <strong>{{ processToDelete?.processName }}</strong>?</p>
+        <p class="warning-text">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="cancelDelete()" [disabled]="deleting">Cancel</button>
+        <button class="btn btn-danger" (click)="deleteProcess()" [disabled]="deleting">
+          {{ deleting ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
