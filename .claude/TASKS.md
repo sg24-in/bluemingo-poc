@@ -5,7 +5,24 @@
 
 ---
 
-## Latest Session Changes (2026-02-07 - Filter Highlighting & Tests)
+## Latest Session Changes (2026-02-07 - Filter Highlighting, Routing Specs)
+
+### R28: Routing Frontend Spec Tests - COMPLETE ✅
+
+**Files Created:**
+- `frontend/src/app/features/routing/routing-list/routing-list.component.spec.ts` (45 tests)
+- `frontend/src/app/features/routing/routing-form/routing-form.component.spec.ts` (53 tests)
+
+**Files Modified:**
+- `frontend/src/app/features/routing/routing-list/routing-list.component.html` - Added filter-active class bindings
+
+**Test Coverage:**
+- RoutingListComponent: Creation, loading, filtering, navigation, CRUD actions (activate, deactivate, hold, release, delete), error handling, utility functions, filter highlighting
+- RoutingFormComponent: Create/Edit modes, form validation, step management (add, edit, delete, reorder), API interactions, error handling
+
+**Result:** 98/98 tests passing
+
+---
 
 ### Filter Highlighting Across System - COMPLETE ✅
 
@@ -151,7 +168,9 @@ Added 6 new E2E tests to `e2e/tests/06-batches.test.js`:
 
 **Pending:**
 - R26: E2E tests for routing workflow
-- R28: Frontend spec tests for routing components
+
+**Completed:**
+- R28: Frontend spec tests for routing components (98 tests passing)
 
 ---
 
@@ -1540,7 +1559,7 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 | R25 | Integration tests for instantiation | DONE | HIGH | RoutingControllerTest: 14 tests, all passing |
 | R26 | E2E tests for routing workflow | PENDING | MEDIUM | Full flow |
 | R27 | Batch behavior validation tests | DONE | HIGH | Tested in RoutingServiceTest (canOperationProceed, sequencing) |
-| R28 | Routing frontend spec tests | PENDING | MEDIUM | routing-list.spec.ts, routing-form.spec.ts |
+| R28 | Routing frontend spec tests | DONE | MEDIUM | routing-list.spec.ts (45 tests), routing-form.spec.ts (53 tests) - All 98 passing |
 
 ---
 
