@@ -96,21 +96,28 @@ async function runOperatorsTests(page, screenshots, results, runTest, submitActi
         await page.goto(`${config.baseUrl}${ROUTES.OPERATOR_NEW}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(500);
 
-        // Try to submit empty form
+        // Check form validation state
         const submitButton = page.locator('button[type="submit"]');
         if (await submitButton.isVisible()) {
-            await submitButton.click();
-            await page.waitForTimeout(500);
+            const isDisabled = await submitButton.isDisabled();
 
             await screenshots.capture(page, 'operators-validation');
 
-            // Check for validation errors or disabled button
+            // Check for validation errors or disabled button (both indicate validation is working)
             const errorMessages = page.locator('.error, .error-message, .invalid-feedback');
             const hasErrors = await errorMessages.count() > 0;
-            const isDisabled = await submitButton.isDisabled();
 
-            if (!hasErrors && !isDisabled) {
-                console.log('  - Form submitted without validation (may be expected)');
+            // Form validation is working if button is disabled OR errors are shown
+            if (isDisabled) {
+                console.log('   Submit button correctly disabled for empty form');
+            } else if (hasErrors) {
+                console.log('   Validation errors shown for empty form');
+            } else {
+                // Only try to click if button is enabled - but shouldn't happen with proper validation
+                await submitButton.click({ timeout: 2000 }).catch(() => {
+                    console.log('   Button click skipped (disabled or not clickable)');
+                });
+                await page.waitForTimeout(500);
             }
         }
     }, page, results, screenshots);

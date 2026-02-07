@@ -43,13 +43,23 @@ async function runDashboardTests(page, screenshots, results, runTest) {
 
         await screenshots.capture(page, 'dashboard-before-orders-click');
 
-        // Try to find and click orders link
+        // Try to find and click orders link - check if visible first
         const ordersLink = page.locator('a[href*="orders"], button:has-text("Orders"), .nav-link:has-text("Orders")');
+        let navigated = false;
+
         if (await ordersLink.count() > 0) {
-            await ordersLink.first().click();
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(500);
-        } else {
+            const firstLink = ordersLink.first();
+            // Check if visible - if not, navigate directly
+            if (await firstLink.isVisible()) {
+                await firstLink.click();
+                await page.waitForLoadState('networkidle');
+                await page.waitForTimeout(500);
+                navigated = true;
+            }
+        }
+
+        // If link wasn't visible (e.g., in collapsed nav), navigate directly
+        if (!navigated) {
             await page.goto(`${config.baseUrl}${ROUTES.ORDERS}`, { waitUntil: 'networkidle' });
         }
 
@@ -63,11 +73,21 @@ async function runDashboardTests(page, screenshots, results, runTest) {
         await screenshots.capture(page, 'dashboard-before-holds-click');
 
         const holdsLink = page.locator('a[href*="holds"], button:has-text("Holds"), .nav-link:has-text("Holds")');
+        let navigated = false;
+
         if (await holdsLink.count() > 0) {
-            await holdsLink.first().click();
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(500);
-        } else {
+            const firstLink = holdsLink.first();
+            // Check if visible - if not, navigate directly
+            if (await firstLink.isVisible()) {
+                await firstLink.click();
+                await page.waitForLoadState('networkidle');
+                await page.waitForTimeout(500);
+                navigated = true;
+            }
+        }
+
+        // If link wasn't visible (e.g., in collapsed nav), navigate directly
+        if (!navigated) {
             await page.goto(`${config.baseUrl}${ROUTES.HOLDS}`, { waitUntil: 'networkidle' });
         }
 

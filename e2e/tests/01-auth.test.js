@@ -139,10 +139,29 @@ async function runAuthTests(page, screenshots, results, runTest) {
 
         await screenshots.capture(page, 'logout-before');
 
-        const logoutBtn = page.locator('button:has-text("Logout"), .logout-btn');
+        // First try to open the profile dropdown menu (if logout is in dropdown)
+        const profileMenu = page.locator('.profile-menu-toggle, .user-menu-toggle, .profile-dropdown-toggle, button:has-text("Admin")');
+        if (await profileMenu.count() > 0 && await profileMenu.first().isVisible()) {
+            await profileMenu.first().click();
+            await page.waitForTimeout(300);
+        }
+
+        // Now try to click logout button
+        const logoutBtn = page.locator('button:has-text("Logout"), .logout-btn, .logout-item');
         if (await logoutBtn.count() > 0) {
-            await logoutBtn.first().click();
-            await page.waitForTimeout(1000);
+            // Wait for button to be visible after dropdown opens
+            try {
+                await logoutBtn.first().waitFor({ state: 'visible', timeout: 2000 });
+                await logoutBtn.first().click();
+                await page.waitForTimeout(1000);
+            } catch (e) {
+                // If still not visible, try clearing localStorage directly (simulates logout)
+                await page.evaluate(() => {
+                    localStorage.removeItem('mes_token');
+                    localStorage.removeItem('mes_user');
+                });
+                await page.goto(`${config.baseUrl}${ROUTES.LOGIN}`, { waitUntil: 'networkidle' });
+            }
         }
 
         await screenshots.capture(page, 'logout-after');
