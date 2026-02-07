@@ -41,6 +41,7 @@ public class ProductionService {
     private final ProcessParameterService processParameterService;
     private final BatchNumberService batchNumberService;
     private final InventoryStateValidator inventoryStateValidator;
+    private final BatchSizeService batchSizeService;
 
     /**
      * Confirm production for an operation

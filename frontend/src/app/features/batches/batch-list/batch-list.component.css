@@ -1,1 +1,9 @@
 /* Batch list uses global styles for filters, tables, and no-data */
+
+/* Table container with card styling */
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}

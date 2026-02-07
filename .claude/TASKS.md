@@ -824,13 +824,22 @@ Fixed 19 failing frontend tests:
 | `frontend/src/app/features/equipment/equipment-list/equipment-list.component.css` | Fixed padding, consistent with other list pages |
 | `frontend/src/app/features/config/batch-size/batch-size-list.component.spec.ts` | Fixed TypeScript null vs undefined issue |
 | `frontend/src/app/features/equipment/equipment-list/equipment-list.component.html` | Changed table wrapper from `.card` to `.table-container` |
+| `frontend/src/app/features/orders/order-list/order-list.component.html` | Changed table wrapper from `.card` to `.table-container` |
+| `frontend/src/app/features/inventory/inventory-list/inventory-list.component.html` | Changed table wrapper from `.card` to `.table-container` |
+| `frontend/src/app/features/batches/batch-list/batch-list.component.html` | Changed table wrapper from `.card` to `.table-container` |
+| `frontend/src/app/features/orders/order-list/order-list.component.css` | Added `.table-container` styling |
+| `frontend/src/app/features/inventory/inventory-list/inventory-list.component.css` | Added `.table-container` styling |
+| `frontend/src/app/features/batches/batch-list/batch-list.component.css` | Added `.table-container` styling |
 | `frontend/src/app/shared/components/pagination/pagination.component.css` | Added horizontal padding (16px all sides) |
 
 **Issues Fixed:**
 1. User Management page - Buttons/padding not matching other pages (local CSS overriding global)
 2. Equipment Management page - Extra space between filter card and table (changed to table-container)
 3. Equipment Management page - Pagination panel missing horizontal margin (updated shared component)
-4. Batch size spec tests - Type errors with null values in mock data
+4. Orders page - Extra space between filter card and table (changed to table-container)
+5. Inventory page - Extra space between filter card and table (changed to table-container)
+6. Batches page - Extra space between filter card and table (changed to table-container)
+7. Batch size spec tests - Type errors with null values in mock data
 
 **Test Results:**
 - Frontend: 1168 pass, 6 fail (pre-existing user-form failures)

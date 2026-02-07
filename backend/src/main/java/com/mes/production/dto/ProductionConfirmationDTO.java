@@ -95,8 +95,15 @@ public class ProductionConfirmationDTO {
         private String rejectedBy;
         private LocalDateTime rejectedOn;
 
-        // Output batch info
+        // Output batch info (primary batch for backward compatibility)
         private BatchInfo outputBatch;
+
+        // All output batches (for multi-batch production)
+        private List<BatchInfo> outputBatches;
+
+        // Batch split info (if quantity was split into multiple batches)
+        private Integer batchCount;
+        private Boolean hasPartialBatch;
 
         // Next operation info
         private NextOperationInfo nextOperation;
