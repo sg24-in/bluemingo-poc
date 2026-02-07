@@ -1958,6 +1958,65 @@ Per MES Batch Allocation Specification, covers:
 
 ---
 
+## Phase 12: Process CRUD UI (NEW - 2026-02-07)
+
+**Issue:** Backend CRUD APIs exist but frontend UI is incomplete - no create/edit functionality visible.
+
+**Current State:**
+- Backend: Full CRUD endpoints exist (`POST`, `GET`, `PUT`, `DELETE /api/processes`)
+- Frontend: ProcessListComponent exists but NO "New Process" button
+- Frontend: ProcessDetailComponent exists but NO Edit/Delete buttons
+- Frontend: **ProcessFormComponent does NOT exist**
+- Frontend: No routes for `/new` or `/:id/edit`
+
+### Phase 12A: Backend Enhancement
+
+| # | Task | Status | Priority | Notes |
+|---|------|--------|----------|-------|
+| PR01 | Add `/api/processes/paged` endpoint | PENDING | MEDIUM | Paginated list with filters |
+| PR02 | Add pagination to ProcessRepository | PENDING | MEDIUM | findByFilters() query |
+| PR03 | Add pagination to ProcessService | PENDING | MEDIUM | getProcessesPaged() method |
+
+### Phase 12B: Frontend - Create ProcessFormComponent
+
+| # | Task | Status | Priority | Notes |
+|---|------|--------|----------|-------|
+| PR04 | Create ProcessFormComponent | PENDING | HIGH | Create/Edit form similar to CustomerForm |
+| PR05 | Add form fields | PENDING | HIGH | processName, status, description |
+| PR06 | Add validation | PENDING | HIGH | Required fields, name uniqueness |
+| PR07 | Add save/cancel buttons | PENDING | HIGH | Create/Update API calls |
+
+### Phase 12C: Frontend - Update List & Detail Components
+
+| # | Task | Status | Priority | Notes |
+|---|------|--------|----------|-------|
+| PR08 | Add "New Process" button to list | PENDING | HIGH | Navigate to /manage/processes/new |
+| PR09 | Add Edit button to list actions | PENDING | HIGH | Navigate to /manage/processes/:id/edit |
+| PR10 | Add Delete button to list actions | PENDING | HIGH | Confirm modal + soft delete |
+| PR11 | Add Edit button to detail page | PENDING | MEDIUM | Navigate to edit form |
+| PR12 | Add Delete button to detail page | PENDING | MEDIUM | Confirm modal + soft delete |
+| PR13 | Add pagination controls to list | PENDING | MEDIUM | Use PaginationComponent |
+
+### Phase 12D: Frontend - Routing
+
+| # | Task | Status | Priority | Notes |
+|---|------|--------|----------|-------|
+| PR14 | Add route for /manage/processes/new | PENDING | HIGH | ProcessFormComponent (create mode) |
+| PR15 | Add route for /manage/processes/:id/edit | PENDING | HIGH | ProcessFormComponent (edit mode) |
+| PR16 | Update processes-routing.module.ts | PENDING | HIGH | Add new routes |
+
+### Phase 12E: Testing
+
+| # | Task | Status | Priority | Notes |
+|---|------|--------|----------|-------|
+| PR17 | Add ProcessFormComponent spec tests | PENDING | MEDIUM | Create/Edit tests |
+| PR18 | Update ProcessListComponent spec tests | PENDING | MEDIUM | New button, actions tests |
+| PR19 | Add E2E tests for Process CRUD | PENDING | MEDIUM | Full workflow |
+
+**Estimated Effort:** ~8-10 hours
+
+---
+
 ## Implementation Priority Summary
 
 ### By Phase and Effort (Updated 2026-02-06)
@@ -1971,10 +2030,11 @@ Per MES Batch Allocation Specification, covers:
 | 8B-D | Batch Workflow & Config | 14 | ✅ COMPLETE | HIGH |
 | 8E | Batch Testing | 3 | ✅ COMPLETE | HIGH |
 | 9E-F | Routing Frontend & Testing | 8 | ✅ COMPLETE | MEDIUM |
+| **12** | **Process CRUD UI** | **19** | **PENDING** | **HIGH** |
 | 10B-C | UI Enhancements | 9 | PENDING | MEDIUM |
 | 10D-E | UI Optional & Testing | 7 | PENDING | LOW |
 
-**Completed: ~115h | Remaining: ~44h**
+**Completed: ~115h | Remaining: ~54h**
 
 ### Recommended Sprint Plan
 
