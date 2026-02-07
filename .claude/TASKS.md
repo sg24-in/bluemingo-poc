@@ -5,6 +5,35 @@
 
 ---
 
+## Latest Session Changes (2026-02-07 - Filter Highlighting, Routing Specs, Batch Size Config)
+
+### B14-B15: Batch Size Config CRUD & Frontend - IN PROGRESS
+
+**Started:** Session continuation
+**Files Created:**
+- `backend/src/main/java/com/mes/production/controller/BatchSizeConfigController.java` - REST endpoints
+- `frontend/src/app/features/config/batch-size/batch-size-list.component.ts` - List component
+- `frontend/src/app/features/config/batch-size/batch-size-list.component.html`
+- `frontend/src/app/features/config/batch-size/batch-size-list.component.css`
+- `frontend/src/app/features/config/batch-size/batch-size-form.component.ts` - Form component
+- `frontend/src/app/features/config/batch-size/batch-size-form.component.html`
+- `frontend/src/app/features/config/batch-size/batch-size-form.component.css`
+
+**Files Modified:**
+- `frontend/src/app/core/services/api.service.ts` - Added batch size config methods
+- `frontend/src/app/features/config/config.module.ts` - Added declarations
+- `frontend/src/app/features/config/config-routing.module.ts` - Added routes
+
+**Status:** Frontend build successful. Need to verify with running application.
+
+**User Issues Reported (Investigated):**
+1. **Dashboard operations showing zeros** - The dashboard calls `getAllOperations()` which returns runtime operations. If no orders have been created or operations instantiated, this will show zeros. This is expected behavior when starting with fresh data.
+2. **Process creation UI missing** - CONFIRMED. The current `/manage/processes` shows runtime process instances (linked to orders), not design-time process templates.
+   - **Note:** In this MES architecture, the **Routing** entity (at `/manage/routing`) defines the process flow template with routing steps. When orders are created, operations are instantiated from the routing.
+   - If a separate "Process Template" CRUD is needed, that would be a new feature.
+
+---
+
 ## Latest Session Changes (2026-02-07 - Filter Highlighting, Routing Specs)
 
 ### R28: Routing Frontend Spec Tests - COMPLETE ✅
@@ -1405,12 +1434,12 @@ Per MES Consolidated Spec, the data model was refactored:
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| B10 | Create `batch_size_config` table (patch) | PENDING | MEDIUM | SQL patch 024 |
-| B11 | Create `BatchSizeConfig` entity | PENDING | MEDIUM | JPA entity |
-| B12 | Create `BatchSizeService` | PENDING | MEDIUM | Calculation logic |
+| B10 | Create `batch_size_config` table (patch) | DONE | MEDIUM | SQL patch 026_batch_size_config.sql |
+| B11 | Create `BatchSizeConfig` entity | DONE | MEDIUM | BatchSizeConfig.java |
+| B12 | Create `BatchSizeService` | DONE | MEDIUM | BatchSizeService.java with calculateBatchSizes() |
 | B13 | Update ProductionService multi-batch | PENDING | MEDIUM | Create multiple batches |
-| B14 | Add BatchSizeConfig CRUD endpoints | PENDING | MEDIUM | REST API |
-| B15 | Add frontend config page | PENDING | MEDIUM | /manage/config/batch-size |
+| B14 | Add BatchSizeConfig CRUD endpoints | DONE | MEDIUM | BatchSizeConfigController.java |
+| B15 | Add frontend config page | DONE | MEDIUM | /manage/config/batch-size - list & form components |
 
 ### Phase 8D: Validation & Constraints
 
