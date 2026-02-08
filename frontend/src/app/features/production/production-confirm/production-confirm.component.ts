@@ -81,6 +81,18 @@ export class ProductionConfirmComponent implements OnInit {
   // P15: Apply Hold Modal
   showHoldModal = false;
 
+  // P17: Collapsible Sections
+  collapsedSections: { [key: string]: boolean } = {
+    operationDetails: false,
+    productionTime: false,
+    productionQuantities: false,
+    materialConsumption: false,
+    equipmentOperator: false,
+    delayTracking: false,
+    processParameters: false,
+    notes: false
+  };
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -654,5 +666,15 @@ export class ProductionConfirmComponent implements OnInit {
   get operationName(): string {
     if (!this.operation) return '';
     return `${this.operation.operationName} (${this.operation.operationCode})`;
+  }
+
+  // ========== P17: Collapsible Sections ==========
+
+  toggleSection(section: string): void {
+    this.collapsedSections[section] = !this.collapsedSections[section];
+  }
+
+  isCollapsed(section: string): boolean {
+    return this.collapsedSections[section] || false;
   }
 }

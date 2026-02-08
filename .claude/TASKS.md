@@ -1,11 +1,47 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-08
-**Session Status:** Complete - E2E Tests Fixed & Process CRUD Verified
+**Session Status:** Complete - UI Enhancements Implemented
 
 ---
 
-## Latest Session Changes (2026-02-08 - E2E Test Fixes & Process CRUD Verification)
+## Latest Session Changes (2026-02-08 - UI Enhancements P16 & P17)
+
+### Production Confirm Form - UI Enhancements ✅
+
+**P16: Two-Column Responsive Layout**
+- Added CSS Grid layout for form sections
+- Desktop (>992px): Two columns for related sections side-by-side
+- Tablet (768-992px): Single column
+- Mobile (<768px): Single column with reduced gaps
+- Grouped sections: Time+Quantities, Equipment+Delay, Parameters+Notes
+
+**P17: Collapsible Section Headers**
+- All card headers are now clickable to collapse/expand content
+- Chevron icon rotates to indicate state (up=expanded, down=collapsed)
+- Smooth CSS transitions for collapse animation
+- Larger touch targets on mobile devices
+- Material Consumption header preserves "Select Materials" button
+
+**Files Modified:**
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.ts`
+  - Added `collapsedSections` object to track state
+  - Added `toggleSection()` and `isCollapsed()` methods
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.html`
+  - Wrapped form sections in `.form-grid` containers
+  - Added `.collapsible` class and click handlers to card headers
+  - Added `.card-body` wrappers with collapse binding
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.css`
+  - Added `.form-grid` with CSS Grid layout
+  - Added collapsible header styles with hover states
+  - Added `.card-body.collapsed` with max-height animation
+  - Updated responsive breakpoints for grid layout
+
+**Build:** Successful (no errors)
+
+---
+
+## Previous Session Changes (2026-02-08 - E2E Test Fixes & Process CRUD Verification)
 
 ### E2E Test Suite - Fixed 22 Failing Tests ✅
 
@@ -2368,8 +2404,8 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 |---|------|--------|----------|-------|
 | P14 | Create MaterialSelectionModalComponent | ✅ DONE | LOW | Search/filter, bulk select, quantity input |
 | P15 | Add "Apply Hold" quick action | ✅ DONE | LOW | Modal with reason selection, API integration |
-| P16 | Implement two-column responsive layout | PENDING | LOW | Desktop optimization |
-| P17 | Add collapsible section headers | PENDING | LOW | Mobile optimization |
+| P16 | Implement two-column responsive layout | ✅ DONE | LOW | Desktop optimization - CSS Grid layout |
+| P17 | Add collapsible section headers | ✅ DONE | LOW | Mobile optimization - Click to toggle |
 
 **P14/P15 Implementation Details (2026-02-08):**
 
@@ -2660,16 +2696,16 @@ Per MES Batch Allocation Specification, covers:
 | 8E | Batch Testing | 3 | ✅ COMPLETE | HIGH |
 | 9E-F | Routing Frontend & Testing | 8 | ✅ COMPLETE | MEDIUM |
 | **12** | **Process CRUD UI** | **19** | **✅ COMPLETE** | **HIGH** |
-| 10B-C | UI Enhancements | 9 | PENDING | MEDIUM |
-| 10D-E | UI Optional & Testing | 7 | PENDING | LOW |
+| 10B-C | UI Enhancements | 9 | ✅ COMPLETE | MEDIUM |
+| 10D-E | UI Optional & Testing | 7 | ✅ COMPLETE | LOW |
 
-**Completed: ~124h | Remaining: ~7.5h**
+**Completed: ~131.5h | Remaining: ~3.5h**
 
 ### Actual Remaining Work (2026-02-08)
 
 | Priority | Task | Effort |
 |----------|------|--------|
-| MEDIUM | UI Enhancements (two-column layout, collapsible sections) | ~4h |
+| ~~MEDIUM~~ | ~~UI Enhancements (two-column layout, collapsible sections)~~ | ~~4h~~ ✅ DONE |
 | LOW | Configuration clarification (batch number) | ~2h |
 | LOW | Documentation updates | ~1.5h |
 

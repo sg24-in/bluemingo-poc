@@ -63,440 +63,488 @@
   <div *ngIf="!loading && !success && operation">
     <!-- Operation Info -->
     <div class="card">
-      <div class="card-header">Operation Details</div>
-      <div class="operation-info-grid">
-        <div class="info-item">
-          <span class="info-label">Operation</span>
-          <span class="info-value">{{ operation.operationName }} ({{ operation.operationCode }})</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Type</span>
-          <span class="info-value">{{ operation.operationType }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Status</span>
-          <app-status-badge [status]="operation.status"></app-status-badge>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Product</span>
-          <span class="info-value">{{ operation.order?.productName }} ({{ operation.order?.productSku }})</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Order Quantity</span>
-          <span class="info-value">{{ operation.order?.quantity }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Stage</span>
-          <span class="info-value">{{ operation.process?.processName }}</span>
-        </div>
+      <div class="card-header collapsible" (click)="toggleSection('operationDetails')">
+        <span>Operation Details</span>
+        <i class="fas" [ngClass]="isCollapsed('operationDetails') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
       </div>
-      <!-- P07-P08: Batch Number Preview -->
-      <div class="batch-preview" *ngIf="previewBatchNumber || loadingBatchPreview">
-        <div class="info-item">
-          <span class="info-label">Output Batch Number (Preview)</span>
-          <span class="info-value batch-number-preview" *ngIf="!loadingBatchPreview">
-            {{ previewBatchNumber }}
-          </span>
-          <span class="info-value loading-text" *ngIf="loadingBatchPreview">
-            Loading...
-          </span>
+      <div class="card-body" [class.collapsed]="isCollapsed('operationDetails')">
+        <div class="operation-info-grid">
+          <div class="info-item">
+            <span class="info-label">Operation</span>
+            <span class="info-value">{{ operation.operationName }} ({{ operation.operationCode }})</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Type</span>
+            <span class="info-value">{{ operation.operationType }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Status</span>
+            <app-status-badge [status]="operation.status"></app-status-badge>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Product</span>
+            <span class="info-value">{{ operation.order?.productName }} ({{ operation.order?.productSku }})</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Order Quantity</span>
+            <span class="info-value">{{ operation.order?.quantity }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Stage</span>
+            <span class="info-value">{{ operation.process?.processName }}</span>
+          </div>
         </div>
-        <p class="preview-note">This batch number will be assigned upon confirmation</p>
+        <!-- P07-P08: Batch Number Preview -->
+        <div class="batch-preview" *ngIf="previewBatchNumber || loadingBatchPreview">
+          <div class="info-item">
+            <span class="info-label">Output Batch Number (Preview)</span>
+            <span class="info-value batch-number-preview" *ngIf="!loadingBatchPreview">
+              {{ previewBatchNumber }}
+            </span>
+            <span class="info-value loading-text" *ngIf="loadingBatchPreview">
+              Loading...
+            </span>
+          </div>
+          <p class="preview-note">This batch number will be assigned upon confirmation</p>
+        </div>
       </div>
     </div>
 
     <form [formGroup]="confirmForm" (ngSubmit)="onSubmit()">
-      <!-- Start/End Time -->
-      <div class="card">
-        <div class="card-header">Production Time</div>
-        <div class="row">
-          <div class="col-6">
-            <div class="form-group">
-              <label for="startTime">Start Time *</label>
-              <input
-                type="datetime-local"
-                id="startTime"
-                formControlName="startTime"
-                class="form-control"
-              />
-              <div class="field-error" *ngIf="confirmForm.get('startTime')?.errors?.['futureStartTime']">
-                Start time cannot be in the future
+      <!-- P16: Two-column responsive layout -->
+      <div class="form-grid">
+        <!-- Production Time -->
+        <div class="card grid-item">
+          <div class="card-header collapsible" (click)="toggleSection('productionTime')">
+            <span>Production Time</span>
+            <i class="fas" [ngClass]="isCollapsed('productionTime') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+          </div>
+          <div class="card-body" [class.collapsed]="isCollapsed('productionTime')">
+            <div class="row">
+              <div class="col-6">
+                <div class="form-group">
+                  <label for="startTime">Start Time *</label>
+                  <input
+                    type="datetime-local"
+                    id="startTime"
+                    formControlName="startTime"
+                    class="form-control"
+                  />
+                  <div class="field-error" *ngIf="confirmForm.get('startTime')?.errors?.['futureStartTime']">
+                    Start time cannot be in the future
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-group">
+                  <label for="endTime">End Time *</label>
+                  <input
+                    type="datetime-local"
+                    id="endTime"
+                    formControlName="endTime"
+                    class="form-control"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <div class="col-6">
-            <div class="form-group">
-              <label for="endTime">End Time *</label>
-              <input
-                type="datetime-local"
-                id="endTime"
-                formControlName="endTime"
-                class="form-control"
-              />
+            <div class="field-error" *ngIf="confirmForm.errors?.['invalidTimeRange']">
+              End time must be after start time
+            </div>
+            <!-- P09: Duration Display -->
+            <div class="duration-display" *ngIf="durationMinutes !== null && durationMinutes > 0">
+              <span class="duration-label">Duration:</span>
+              <span class="duration-value">{{ durationFormatted }}</span>
+              <span class="duration-detail">({{ durationMinutes }} minutes)</span>
             </div>
           </div>
         </div>
-        <div class="field-error" *ngIf="confirmForm.errors?.['invalidTimeRange']">
-          End time must be after start time
-        </div>
-        <!-- P09: Duration Display -->
-        <div class="duration-display" *ngIf="durationMinutes !== null && durationMinutes > 0">
-          <span class="duration-label">Duration:</span>
-          <span class="duration-value">{{ durationFormatted }}</span>
-          <span class="duration-detail">({{ durationMinutes }} minutes)</span>
-        </div>
-      </div>
 
-      <!-- Production Quantities -->
-      <div class="card">
-        <div class="card-header">Production Quantities</div>
-        <div class="row">
-          <div class="col-6">
-            <div class="form-group">
-              <label for="quantityProduced">Quantity Produced *</label>
-              <input
-                type="number"
-                id="quantityProduced"
-                formControlName="quantityProduced"
-                class="form-control"
-                min="0"
-              />
-            </div>
+        <!-- Production Quantities -->
+        <div class="card grid-item">
+          <div class="card-header collapsible" (click)="toggleSection('productionQuantities')">
+            <span>Production Quantities</span>
+            <i class="fas" [ngClass]="isCollapsed('productionQuantities') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
           </div>
-          <div class="col-6">
-            <div class="form-group">
-              <label for="quantityScrapped">Quantity Scrapped</label>
-              <input
-                type="number"
-                id="quantityScrapped"
-                formControlName="quantityScrapped"
-                class="form-control"
-                min="0"
-              />
-            </div>
-          </div>
-        </div>
-        <!-- P05-P06: Yield Calculation Display -->
-        <div class="yield-display" *ngIf="totalProduction > 0">
-          <div class="yield-stats">
-            <div class="yield-stat">
-              <span class="stat-label">Total Production:</span>
-              <span class="stat-value">{{ totalProduction }}</span>
-            </div>
-            <div class="yield-stat">
-              <span class="stat-label">Yield:</span>
-              <span class="yield-percentage" [ngClass]="yieldClass">
-                {{ yieldPercentage }}%
-              </span>
-            </div>
-          </div>
-          <div class="yield-bar">
-            <div class="yield-fill" [ngClass]="yieldClass" [style.width.%]="yieldPercentage"></div>
-          </div>
-          <div class="yield-legend">
-            <span class="legend-item"><span class="legend-dot good"></span> Good (≥95%)</span>
-            <span class="legend-item"><span class="legend-dot warning"></span> Warning (80-95%)</span>
-            <span class="legend-item"><span class="legend-dot critical"></span> Critical (&lt;80%)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Material Consumption -->
-      <div class="card">
-        <div class="card-header-with-action">
-          <span class="card-header">Material Consumption</span>
-          <!-- P14: Open Material Selection Modal -->
-          <button type="button" class="btn btn-primary btn-sm" (click)="openMaterialModal()">
-            <i class="fas fa-plus"></i> Select Materials
-          </button>
-        </div>
-
-        <!-- BOM Suggested Consumption -->
-        <div class="suggested-consumption" *ngIf="showSuggestions && suggestedConsumption">
-          <div class="suggestion-header">
-            <h4>BOM Suggested Consumption</h4>
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              (click)="applySuggestedConsumption()"
-              [disabled]="!hasSufficientStock()"
-            >
-              Apply Suggestions
-            </button>
-          </div>
-          <div class="suggestion-info">
-            <span class="suggestion-label">Target Quantity:</span>
-            <span class="suggestion-value">{{ suggestedConsumption.targetQuantity }} T</span>
-            <span class="suggestion-label">Total Required:</span>
-            <span class="suggestion-value">{{ suggestedConsumption.totalRequiredQuantity }} T</span>
-          </div>
-          <table class="table suggestion-table">
-            <thead>
-              <tr>
-                <th>Material</th>
-                <th>Required Qty</th>
-                <th>Available</th>
-                <th>Yield Ratio</th>
-                <th>Stock Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let mat of suggestedConsumption.suggestedMaterials"
-                  [class.insufficient]="!mat.sufficientStock">
-                <td>{{ mat.materialName }} ({{ mat.materialId }})</td>
-                <td>{{ mat.requiredQuantity }} {{ mat.unit }}</td>
-                <td>{{ mat.availableQuantity }} {{ mat.unit }}</td>
-                <td>{{ mat.yieldLossRatio }}</td>
-                <td>
-                  <span class="stock-status" [class.ok]="mat.sufficientStock" [class.low]="!mat.sufficientStock">
-                    {{ mat.sufficientStock ? 'Sufficient' : 'Insufficient' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="alert alert-warning" *ngIf="!hasSufficientStock()">
-            <strong>Warning:</strong> Insufficient stock for some materials. Please review before proceeding.
-          </div>
-        </div>
-
-        <div class="available-materials">
-          <h4>Available Inventory</h4>
-          <table class="table" *ngIf="availableInventory.length > 0">
-            <thead>
-              <tr>
-                <th>Batch #</th>
-                <th>Material ID</th>
-                <th>Available Qty</th>
-                <th>State</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let inv of availableInventory">
-                <td>{{ inv.batchNumber }}</td>
-                <td>{{ inv.materialId }}</td>
-                <td>{{ inv.quantity }} {{ inv.unit }}</td>
-                <td><app-status-badge [status]="inv.state"></app-status-badge></td>
-                <td>
-                  <button type="button" class="btn btn-primary btn-sm" (click)="addMaterial(inv)">
-                    Add
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <p *ngIf="availableInventory.length === 0" class="no-data">No available inventory</p>
-        </div>
-
-        <div class="selected-materials" *ngIf="selectedMaterials.length > 0">
-          <h4>Selected Materials</h4>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Batch #</th>
-                <th>Material ID</th>
-                <th>Available</th>
-                <th>Qty to Consume</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let mat of selectedMaterials; let i = index">
-                <td>{{ mat.batchNumber }}</td>
-                <td>{{ mat.materialId }}</td>
-                <td>{{ mat.availableQuantity }}</td>
-                <td>
+          <div class="card-body" [class.collapsed]="isCollapsed('productionQuantities')">
+            <div class="row">
+              <div class="col-6">
+                <div class="form-group">
+                  <label for="quantityProduced">Quantity Produced *</label>
                   <input
                     type="number"
-                    class="form-control consume-qty"
-                    [value]="mat.quantityToConsume"
-                    (change)="updateMaterialQuantity(i, $any($event.target).valueAsNumber)"
-                    [min]="0"
-                    [max]="mat.availableQuantity"
+                    id="quantityProduced"
+                    formControlName="quantityProduced"
+                    class="form-control"
+                    min="0"
                   />
-                </td>
-                <td>
-                  <button type="button" class="btn btn-danger btn-sm" (click)="removeMaterial(i)">
-                    Remove
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- BOM Requirements -->
-        <div class="bom-requirements" *ngIf="bomRequirements.length > 0">
-          <h4>BOM Requirements</h4>
-          <table class="table bom-table">
-            <thead>
-              <tr>
-                <th>Material</th>
-                <th>Required Qty</th>
-                <th>Selected Qty</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let req of bomRequirements" [ngClass]="'bom-' + getRequirementStatus(req)">
-                <td>{{ req.materialName }} ({{ req.materialId }})</td>
-                <td>{{ req.quantityRequired }} {{ req.unit }}</td>
-                <td>{{ getTotalSelectedByMaterial(req.materialId) }} {{ req.unit }}</td>
-                <td>
-                  <span class="bom-status" [ngClass]="getRequirementStatus(req)">
-                    {{ getRequirementStatus(req) | uppercase }}
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-group">
+                  <label for="quantityScrapped">Quantity Scrapped</label>
+                  <input
+                    type="number"
+                    id="quantityScrapped"
+                    formControlName="quantityScrapped"
+                    class="form-control"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+            <!-- P05-P06: Yield Calculation Display -->
+            <div class="yield-display" *ngIf="totalProduction > 0">
+              <div class="yield-stats">
+                <div class="yield-stat">
+                  <span class="stat-label">Total Production:</span>
+                  <span class="stat-value">{{ totalProduction }}</span>
+                </div>
+                <div class="yield-stat">
+                  <span class="stat-label">Yield:</span>
+                  <span class="yield-percentage" [ngClass]="yieldClass">
+                    {{ yieldPercentage }}%
                   </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- BOM Validation Warnings -->
-        <div class="bom-validation" *ngIf="bomValidationResult">
-          <div class="alert alert-warning" *ngIf="bomValidationResult.warnings?.length > 0">
-            <strong>Warnings:</strong>
-            <ul>
-              <li *ngFor="let warning of bomValidationResult.warnings">{{ warning }}</li>
-            </ul>
-          </div>
-          <div class="alert alert-error" *ngIf="bomValidationResult.errors?.length > 0">
-            <strong>Errors:</strong>
-            <ul>
-              <li *ngFor="let err of bomValidationResult.errors">{{ err }}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Equipment & Operator -->
-      <div class="card">
-        <div class="card-header">Equipment & Operator</div>
-        <div class="row">
-          <div class="col-6">
-            <div class="form-group">
-              <label>Equipment * <span class="selection-count">({{ getSelectedEquipmentCount() }} selected)</span></label>
-              <div class="checkbox-group">
-                <div *ngFor="let eq of availableEquipment; let i = index" class="checkbox-item">
-                  <label class="checkbox-label">
-                    <input
-                      type="checkbox"
-                      [checked]="eq.selected"
-                      (change)="toggleEquipment(i)"
-                    />
-                    <span class="checkbox-text">{{ eq.equipmentName }} ({{ eq.equipmentCode }})</span>
-                  </label>
                 </div>
-                <p *ngIf="availableEquipment.length === 0" class="no-data-small">No equipment available</p>
+              </div>
+              <div class="yield-bar">
+                <div class="yield-fill" [ngClass]="yieldClass" [style.width.%]="yieldPercentage"></div>
+              </div>
+              <div class="yield-legend">
+                <span class="legend-item"><span class="legend-dot good"></span> Good (&gt;=95%)</span>
+                <span class="legend-item"><span class="legend-dot warning"></span> Warning (80-95%)</span>
+                <span class="legend-item"><span class="legend-dot critical"></span> Critical (&lt;80%)</span>
               </div>
             </div>
           </div>
-          <div class="col-6">
-            <div class="form-group">
-              <label>Operator * <span class="selection-count">({{ getSelectedOperatorCount() }} selected)</span></label>
-              <div class="checkbox-group">
-                <div *ngFor="let op of activeOperators; let i = index" class="checkbox-item">
-                  <label class="checkbox-label">
+        </div>
+      </div>
+
+      <!-- Material Consumption (full width) -->
+      <div class="card">
+        <div class="card-header-with-action collapsible" (click)="toggleSection('materialConsumption')">
+          <span class="card-header">Material Consumption</span>
+          <div class="header-actions">
+            <!-- P14: Open Material Selection Modal -->
+            <button type="button" class="btn btn-primary btn-sm" (click)="openMaterialModal(); $event.stopPropagation()">
+              <i class="fas fa-plus"></i> Select Materials
+            </button>
+            <i class="fas collapse-icon" [ngClass]="isCollapsed('materialConsumption') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+          </div>
+        </div>
+        <div class="card-body" [class.collapsed]="isCollapsed('materialConsumption')">
+          <!-- BOM Suggested Consumption -->
+          <div class="suggested-consumption" *ngIf="showSuggestions && suggestedConsumption">
+            <div class="suggestion-header">
+              <h4>BOM Suggested Consumption</h4>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                (click)="applySuggestedConsumption()"
+                [disabled]="!hasSufficientStock()"
+              >
+                Apply Suggestions
+              </button>
+            </div>
+            <div class="suggestion-info">
+              <span class="suggestion-label">Target Quantity:</span>
+              <span class="suggestion-value">{{ suggestedConsumption.targetQuantity }} T</span>
+              <span class="suggestion-label">Total Required:</span>
+              <span class="suggestion-value">{{ suggestedConsumption.totalRequiredQuantity }} T</span>
+            </div>
+            <table class="table suggestion-table">
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Required Qty</th>
+                  <th>Available</th>
+                  <th>Yield Ratio</th>
+                  <th>Stock Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let mat of suggestedConsumption.suggestedMaterials"
+                    [class.insufficient]="!mat.sufficientStock">
+                  <td>{{ mat.materialName }} ({{ mat.materialId }})</td>
+                  <td>{{ mat.requiredQuantity }} {{ mat.unit }}</td>
+                  <td>{{ mat.availableQuantity }} {{ mat.unit }}</td>
+                  <td>{{ mat.yieldLossRatio }}</td>
+                  <td>
+                    <span class="stock-status" [class.ok]="mat.sufficientStock" [class.low]="!mat.sufficientStock">
+                      {{ mat.sufficientStock ? 'Sufficient' : 'Insufficient' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="alert alert-warning" *ngIf="!hasSufficientStock()">
+              <strong>Warning:</strong> Insufficient stock for some materials. Please review before proceeding.
+            </div>
+          </div>
+
+          <div class="available-materials">
+            <h4>Available Inventory</h4>
+            <table class="table" *ngIf="availableInventory.length > 0">
+              <thead>
+                <tr>
+                  <th>Batch #</th>
+                  <th>Material ID</th>
+                  <th>Available Qty</th>
+                  <th>State</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inv of availableInventory">
+                  <td>{{ inv.batchNumber }}</td>
+                  <td>{{ inv.materialId }}</td>
+                  <td>{{ inv.quantity }} {{ inv.unit }}</td>
+                  <td><app-status-badge [status]="inv.state"></app-status-badge></td>
+                  <td>
+                    <button type="button" class="btn btn-primary btn-sm" (click)="addMaterial(inv)">
+                      Add
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p *ngIf="availableInventory.length === 0" class="no-data">No available inventory</p>
+          </div>
+
+          <div class="selected-materials" *ngIf="selectedMaterials.length > 0">
+            <h4>Selected Materials</h4>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Batch #</th>
+                  <th>Material ID</th>
+                  <th>Available</th>
+                  <th>Qty to Consume</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let mat of selectedMaterials; let i = index">
+                  <td>{{ mat.batchNumber }}</td>
+                  <td>{{ mat.materialId }}</td>
+                  <td>{{ mat.availableQuantity }}</td>
+                  <td>
                     <input
-                      type="checkbox"
-                      [checked]="op.selected"
-                      (change)="toggleOperator(i)"
+                      type="number"
+                      class="form-control consume-qty"
+                      [value]="mat.quantityToConsume"
+                      (change)="updateMaterialQuantity(i, $any($event.target).valueAsNumber)"
+                      [min]="0"
+                      [max]="mat.availableQuantity"
                     />
-                    <span class="checkbox-text">{{ op.operatorName }} ({{ op.operatorCode }})</span>
-                  </label>
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-danger btn-sm" (click)="removeMaterial(i)">
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- BOM Requirements -->
+          <div class="bom-requirements" *ngIf="bomRequirements.length > 0">
+            <h4>BOM Requirements</h4>
+            <table class="table bom-table">
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Required Qty</th>
+                  <th>Selected Qty</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let req of bomRequirements" [ngClass]="'bom-' + getRequirementStatus(req)">
+                  <td>{{ req.materialName }} ({{ req.materialId }})</td>
+                  <td>{{ req.quantityRequired }} {{ req.unit }}</td>
+                  <td>{{ getTotalSelectedByMaterial(req.materialId) }} {{ req.unit }}</td>
+                  <td>
+                    <span class="bom-status" [ngClass]="getRequirementStatus(req)">
+                      {{ getRequirementStatus(req) | uppercase }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- BOM Validation Warnings -->
+          <div class="bom-validation" *ngIf="bomValidationResult">
+            <div class="alert alert-warning" *ngIf="bomValidationResult.warnings?.length > 0">
+              <strong>Warnings:</strong>
+              <ul>
+                <li *ngFor="let warning of bomValidationResult.warnings">{{ warning }}</li>
+              </ul>
+            </div>
+            <div class="alert alert-error" *ngIf="bomValidationResult.errors?.length > 0">
+              <strong>Errors:</strong>
+              <ul>
+                <li *ngFor="let err of bomValidationResult.errors">{{ err }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- P16: Two-column layout for Equipment & Delay -->
+      <div class="form-grid">
+        <!-- Equipment & Operator -->
+        <div class="card grid-item">
+          <div class="card-header collapsible" (click)="toggleSection('equipmentOperator')">
+            <span>Equipment & Operator</span>
+            <i class="fas" [ngClass]="isCollapsed('equipmentOperator') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+          </div>
+          <div class="card-body" [class.collapsed]="isCollapsed('equipmentOperator')">
+            <div class="row">
+              <div class="col-6">
+                <div class="form-group">
+                  <label>Equipment * <span class="selection-count">({{ getSelectedEquipmentCount() }} selected)</span></label>
+                  <div class="checkbox-group">
+                    <div *ngFor="let eq of availableEquipment; let i = index" class="checkbox-item">
+                      <label class="checkbox-label">
+                        <input
+                          type="checkbox"
+                          [checked]="eq.selected"
+                          (change)="toggleEquipment(i)"
+                        />
+                        <span class="checkbox-text">{{ eq.equipmentName }} ({{ eq.equipmentCode }})</span>
+                      </label>
+                    </div>
+                    <p *ngIf="availableEquipment.length === 0" class="no-data-small">No equipment available</p>
+                  </div>
                 </div>
-                <p *ngIf="activeOperators.length === 0" class="no-data-small">No operators available</p>
+              </div>
+              <div class="col-6">
+                <div class="form-group">
+                  <label>Operator * <span class="selection-count">({{ getSelectedOperatorCount() }} selected)</span></label>
+                  <div class="checkbox-group">
+                    <div *ngFor="let op of activeOperators; let i = index" class="checkbox-item">
+                      <label class="checkbox-label">
+                        <input
+                          type="checkbox"
+                          [checked]="op.selected"
+                          (change)="toggleOperator(i)"
+                        />
+                        <span class="checkbox-text">{{ op.operatorName }} ({{ op.operatorCode }})</span>
+                      </label>
+                    </div>
+                    <p *ngIf="activeOperators.length === 0" class="no-data-small">No operators available</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delay Tracking -->
+        <div class="card grid-item">
+          <div class="card-header collapsible" (click)="toggleSection('delayTracking')">
+            <span>Delay Tracking</span>
+            <i class="fas" [ngClass]="isCollapsed('delayTracking') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+          </div>
+          <div class="card-body" [class.collapsed]="isCollapsed('delayTracking')">
+            <div class="row">
+              <div class="col-6">
+                <div class="form-group">
+                  <label for="delayMinutes">Delay Duration (minutes)</label>
+                  <input
+                    type="number"
+                    id="delayMinutes"
+                    formControlName="delayMinutes"
+                    class="form-control"
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-group">
+                  <label for="delayReason">
+                    Delay Reason
+                    <span *ngIf="isDelayReasonRequired()" class="required">*</span>
+                  </label>
+                  <select id="delayReason" formControlName="delayReason" class="form-control">
+                    <option value="">-- Select Reason --</option>
+                    <option *ngFor="let reason of delayReasons" [value]="reason.reason_code">
+                      {{ reason.reason_description }}
+                    </option>
+                  </select>
+                  <div class="field-error" *ngIf="isDelayReasonRequired() && !confirmForm.get('delayReason')?.value">
+                    Delay reason is required when delay duration is entered
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Delay Tracking -->
-      <div class="card">
-        <div class="card-header">Delay Tracking</div>
-        <div class="row">
-          <div class="col-6">
+      <!-- P16: Two-column layout for Parameters & Notes -->
+      <div class="form-grid">
+        <!-- Process Parameters -->
+        <div class="card grid-item" *ngIf="processParameters.length > 0">
+          <div class="card-header collapsible" (click)="toggleSection('processParameters')">
+            <span>Process Parameters</span>
+            <i class="fas" [ngClass]="isCollapsed('processParameters') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+          </div>
+          <div class="card-body" [class.collapsed]="isCollapsed('processParameters')">
+            <div formArrayName="processParameters">
+              <div *ngFor="let param of processParameters; let i = index" class="form-group">
+                <div [formGroupName]="i">
+                  <label>{{ param.parameter_name }}
+                    <span *ngIf="param.is_required" class="required">*</span>
+                    <span class="param-hint" *ngIf="param.unit">({{ param.unit }})</span>
+                    <span class="param-hint" *ngIf="param.min_value !== null || param.max_value !== null">
+                      [{{ param.min_value || '...' }} - {{ param.max_value || '...' }}]
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    formControlName="parameterValue"
+                    class="form-control"
+                    [placeholder]="param.default_value || ''"
+                    [attr.min]="param.min_value"
+                    [attr.max]="param.max_value"
+                    step="any"
+                  />
+                  <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['required'] && processParamsFormArray.at(i).get('parameterValue')?.touched">
+                    {{ param.parameter_name }} is required
+                  </div>
+                  <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['min']">
+                    {{ param.parameter_name }} must be at least {{ param.min_value }} {{ param.unit || '' }}
+                  </div>
+                  <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['max']">
+                    {{ param.parameter_name }} must not exceed {{ param.max_value }} {{ param.unit || '' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card grid-item" [class.grid-full]="processParameters.length === 0">
+          <div class="card-header collapsible" (click)="toggleSection('notes')">
+            <span>Notes</span>
+            <i class="fas" [ngClass]="isCollapsed('notes') ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+          </div>
+          <div class="card-body" [class.collapsed]="isCollapsed('notes')">
             <div class="form-group">
-              <label for="delayMinutes">Delay Duration (minutes)</label>
-              <input
-                type="number"
-                id="delayMinutes"
-                formControlName="delayMinutes"
+              <textarea
+                id="notes"
+                formControlName="notes"
                 class="form-control"
-                min="0"
-                placeholder="0"
-              />
+                rows="3"
+                placeholder="Add any notes about this production confirmation..."
+              ></textarea>
             </div>
           </div>
-          <div class="col-6">
-            <div class="form-group">
-              <label for="delayReason">
-                Delay Reason
-                <span *ngIf="isDelayReasonRequired()" class="required">*</span>
-              </label>
-              <select id="delayReason" formControlName="delayReason" class="form-control">
-                <option value="">-- Select Reason --</option>
-                <option *ngFor="let reason of delayReasons" [value]="reason.reason_code">
-                  {{ reason.reason_description }}
-                </option>
-              </select>
-              <div class="field-error" *ngIf="isDelayReasonRequired() && !confirmForm.get('delayReason')?.value">
-                Delay reason is required when delay duration is entered
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Process Parameters -->
-      <div class="card" *ngIf="processParameters.length > 0">
-        <div class="card-header">Process Parameters</div>
-        <div formArrayName="processParameters">
-          <div *ngFor="let param of processParameters; let i = index" class="form-group">
-            <div [formGroupName]="i">
-              <label>{{ param.parameter_name }}
-                <span *ngIf="param.is_required" class="required">*</span>
-                <span class="param-hint" *ngIf="param.unit">({{ param.unit }})</span>
-                <span class="param-hint" *ngIf="param.min_value !== null || param.max_value !== null">
-                  [{{ param.min_value || '...' }} - {{ param.max_value || '...' }}]
-                </span>
-              </label>
-              <input
-                type="number"
-                formControlName="parameterValue"
-                class="form-control"
-                [placeholder]="param.default_value || ''"
-                [attr.min]="param.min_value"
-                [attr.max]="param.max_value"
-                step="any"
-              />
-              <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['required'] && processParamsFormArray.at(i).get('parameterValue')?.touched">
-                {{ param.parameter_name }} is required
-              </div>
-              <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['min']">
-                {{ param.parameter_name }} must be at least {{ param.min_value }} {{ param.unit || '' }}
-              </div>
-              <div class="field-error" *ngIf="processParamsFormArray.at(i).get('parameterValue')?.errors?.['max']">
-                {{ param.parameter_name }} must not exceed {{ param.max_value }} {{ param.unit || '' }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notes -->
-      <div class="card">
-        <div class="card-header">Notes</div>
-        <div class="form-group">
-          <textarea
-            id="notes"
-            formControlName="notes"
-            class="form-control"
-            rows="3"
-            placeholder="Add any notes about this production confirmation..."
-          ></textarea>
         </div>
       </div>
 
