@@ -91,7 +91,13 @@ const ROUTES = {
     USER_NEW: '/#/manage/users/new',
     USER_EDIT: (id) => `/#/manage/users/${id}/edit`,
     // Production Landing
-    PRODUCTION_LANDING: '/#/production'
+    PRODUCTION_LANDING: '/#/production',
+    // Receive Material
+    RECEIVE_MATERIAL: '/#/inventory/receive',
+    // Operation Templates
+    OPERATION_TEMPLATES: '/#/manage/operation-templates',
+    OPERATION_TEMPLATE_NEW: '/#/manage/operation-templates/new',
+    OPERATION_TEMPLATE_EDIT: (id) => `/#/manage/operation-templates/${id}/edit`
 };
 
 // CSS Selectors
@@ -208,7 +214,115 @@ const SELECTORS = {
         userName: '#name',
         userEmail: '#email',
         userPassword: '#password',
-        userRole: '#role'
+        userRole: '#role',
+        // Order form
+        orderNumber: '#orderNumber',
+        orderCustomer: '#customerId',
+        orderDate: '#orderDate',
+        deliveryDate: '#deliveryDate',
+        orderStatus: '#status',
+        orderNotes: '#notes',
+        // Order line item
+        lineProductSku: '#productSku',
+        lineQuantity: '#quantity',
+        lineUnit: '#unit',
+        addLineItemBtn: 'button:has-text("Add Line Item")',
+        removeLineItemBtn: 'button:has-text("Remove")',
+        // Routing form
+        routingName: '#routingName',
+        routingProcessId: '#processId',
+        routingType: '#routingType',
+        addStepBtn: 'button:has-text("Add Step")',
+        // Routing step form
+        stepOperationTemplateId: '#operationTemplateId',
+        stepOperationName: '#operationName',
+        stepOperationType: '#operationType',
+        stepSequenceNumber: '#sequenceNumber',
+        stepMandatory: '#mandatoryFlag',
+        stepParallel: '#isParallel',
+        stepProducesOutput: '#producesOutputBatch',
+        stepAllowsSplit: '#allowsSplit',
+        stepAllowsMerge: '#allowsMerge',
+        stepDuration: '#estimatedDurationMinutes',
+        // Operation template form
+        templateName: '#operationName',
+        templateCode: '#operationCode',
+        templateType: '#operationType',
+        templateQuantityType: '#quantityType',
+        templateEquipmentType: '#defaultEquipmentType',
+        templateDuration: '#estimatedDurationMinutes',
+        // Receive material form
+        receiveMaterialId: '#materialId',
+        receiveQuantity: '#quantity',
+        receiveUnit: '#unit',
+        receiveSupplier: '#supplier',
+        receiveLotNumber: '#lotNumber',
+        receiveLocation: '#location'
+    },
+
+    // Production form elements
+    production: {
+        orderSelect: '#order, select[formControlName="orderId"]',
+        operationSelect: '#operation, select[formControlName="operationId"]',
+        startTime: '#startTime, input[formControlName="startTime"]',
+        endTime: '#endTime, input[formControlName="endTime"]',
+        producedQty: '#producedQuantity, input[formControlName="producedQuantity"]',
+        scrapQty: '#scrapQuantity, input[formControlName="scrapQuantity"]',
+        delayMinutes: '#delayMinutes, input[formControlName="delayMinutes"]',
+        delayReason: '#delayReason, select[formControlName="delayReason"]',
+        notes: '#notes, textarea[formControlName="notes"]',
+        equipmentCheckboxes: '.equipment-list input[type="checkbox"]',
+        operatorCheckboxes: '.operator-list input[type="checkbox"]',
+        submitBtn: 'button:has-text("Confirm"), button:has-text("Submit")',
+        applyHoldBtn: 'button:has-text("Apply Hold")',
+        addMaterialsBtn: 'button:has-text("Add Materials"), button:has-text("Select Materials")',
+        applySuggestionsBtn: 'button:has-text("Apply Suggestions")'
+    },
+
+    // Material Selection Modal
+    materialModal: {
+        container: '.material-selection-modal, .modal:has-text("Select Materials")',
+        searchInput: '.material-selection-modal input[type="text"], .modal input[placeholder*="Search"]',
+        typeFilter: '.material-selection-modal select, .modal select',
+        selectAllBtn: 'button:has-text("Select All")',
+        clearAllBtn: 'button:has-text("Clear All")',
+        itemCheckbox: '.material-item input[type="checkbox"]',
+        quantityInput: '.material-item input[type="number"]',
+        confirmBtn: 'button:has-text("Confirm Selection"), button:has-text("Confirm")',
+        cancelBtn: '.material-selection-modal button:has-text("Cancel")'
+    },
+
+    // Apply Hold Modal
+    holdModal: {
+        container: '.apply-hold-modal, .modal:has-text("Apply Hold")',
+        reasonSelect: '#reason, select[formControlName="reason"]',
+        commentsInput: '#comments, textarea[formControlName="comments"]',
+        submitBtn: '.apply-hold-modal button:has-text("Apply Hold")',
+        cancelBtn: '.apply-hold-modal button:has-text("Cancel")'
+    },
+
+    // Batch operations
+    batch: {
+        splitBtn: 'button:has-text("Split")',
+        mergeBtn: 'button:has-text("Merge")',
+        allocateBtn: 'button:has-text("Allocate")',
+        adjustBtn: 'button:has-text("Adjust Quantity")',
+        approveBtn: 'button:has-text("Approve")',
+        rejectBtn: 'button:has-text("Reject")',
+        // Split modal
+        splitPortionQty: '.split-portion input[type="number"]',
+        splitAddPortionBtn: 'button:has-text("Add Portion")',
+        splitReasonInput: '#splitReason, textarea[formControlName="reason"]',
+        splitConfirmBtn: '.split-modal button:has-text("Split"), .modal button:has-text("Confirm Split")',
+        // Merge modal
+        mergeBatchCheckbox: '.merge-batch-item input[type="checkbox"]',
+        mergeReasonInput: '#mergeReason, textarea[formControlName="reason"]',
+        mergeConfirmBtn: '.merge-modal button:has-text("Merge"), .modal button:has-text("Confirm Merge")',
+        // Adjust modal
+        adjustQuantity: '#newQuantity, input[formControlName="newQuantity"]',
+        adjustReasonType: '#adjustmentType, select[formControlName="adjustmentType"]',
+        adjustReason: '#adjustmentReason, textarea[formControlName="reason"]',
+        adjustConfirmBtn: '.adjust-modal button:has-text("Adjust"), .modal button:has-text("Confirm")'
     },
 
     // Header/Navigation
@@ -413,6 +527,47 @@ const TEST_DATA = {
             description: 'Test process created by E2E tests',
             updatedName: 'E2E Test Process Updated',
             updatedDescription: 'Updated description by E2E tests'
+        },
+        order: {
+            orderNumber: 'E2E-ORD-001',
+            customerId: '1',
+            orderDate: '2026-02-08',
+            deliveryDate: '2026-02-15',
+            notes: 'E2E Test Order',
+            lineItem: {
+                productSku: 'STEEL-COIL-001',
+                quantity: '1000',
+                unit: 'KG'
+            }
+        },
+        routing: {
+            name: 'E2E Test Routing',
+            processId: '1',
+            type: 'SEQUENTIAL',
+            updatedName: 'E2E Test Routing Updated',
+            step: {
+                operationName: 'E2E Melt Step',
+                operationType: 'MELTING',
+                sequenceNumber: '1',
+                duration: '60'
+            }
+        },
+        operationTemplate: {
+            name: 'E2E Test Operation',
+            code: 'E2E-OP-001',
+            type: 'MELTING',
+            quantityType: 'BATCH',
+            equipmentType: 'FURNACE',
+            duration: '120',
+            updatedName: 'E2E Test Operation Updated'
+        },
+        receiveMaterial: {
+            materialId: '1',
+            quantity: '5000',
+            unit: 'KG',
+            supplier: 'E2E Test Supplier',
+            lotNumber: 'E2E-LOT-001',
+            location: 'Warehouse A'
         }
     }
 };
@@ -445,7 +600,16 @@ const SCREENSHOT_PREFIX = {
     partialConfirmation: '24-partial-confirmation',
     detailPages: '25-detail-pages',
     processParameters: '26-process-parameters',
-    adminSidebar: '27-admin-sidebar'
+    adminSidebar: '27-admin-sidebar',
+    orderCrud: '28-order-crud',
+    productionComplete: '29-production-complete',
+    receiveMaterial: '30-receive-material',
+    batchOperations: '31-batch-operations',
+    routingCrud: '32-routing-crud',
+    operationTemplates: '33-operation-templates',
+    materialSelectionModal: '34-material-selection-modal',
+    dashboardFeatures: '35-dashboard-features',
+    formValidations: '36-form-validations'
 };
 
 module.exports = {

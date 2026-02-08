@@ -47,6 +47,16 @@ const { runPartialConfirmationTests } = require('./tests/24-partial-confirmation
 const { runDetailPageTests } = require('./tests/25-detail-pages.test');
 const { runProcessParameterTests } = require('./tests/26-process-parameters.test');
 const { runAdminSidebarTests } = require('./tests/27-admin-sidebar.test');
+const { runOrderCrudTests } = require('./tests/32-order-crud.test');
+const { runProductionCompleteTests } = require('./tests/33-production-complete.test');
+const { runReceiveMaterialTests } = require('./tests/34-receive-material.test');
+const { runBatchOperationsTests } = require('./tests/35-batch-operations.test');
+const { runRoutingCrudTests } = require('./tests/36-routing-crud.test');
+const { runOperationTemplatesTests } = require('./tests/37-operation-templates.test');
+const { runDashboardFeaturesTests } = require('./tests/38-dashboard-features.test');
+const { runFormValidationsTests } = require('./tests/39-form-validations.test');
+const { runWorkflowVerificationTests } = require('./tests/40-e2e-workflow-verification.test');
+const { runProductionFlowE2ETests } = require('./tests/41-production-flow-e2e.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -158,6 +168,16 @@ async function runAllTests() {
         await runDetailPageTests(page, screenshots, results, runTest, submitActions);
         await runProcessParameterTests(page, screenshots, results, runTest, submitActions);
         await runAdminSidebarTests(page, screenshots, results, runTest, submitActions);
+        await runOrderCrudTests(page, screenshots, results, runTest, submitActions);
+        await runProductionCompleteTests(page, screenshots, results, runTest, submitActions);
+        await runReceiveMaterialTests(page, screenshots, results, runTest, submitActions);
+        await runBatchOperationsTests(page, screenshots, results, runTest, submitActions);
+        await runRoutingCrudTests(page, screenshots, results, runTest, submitActions);
+        await runOperationTemplatesTests(page, screenshots, results, runTest, submitActions);
+        await runDashboardFeaturesTests(page, screenshots, results, runTest, submitActions);
+        await runFormValidationsTests(page, screenshots, results, runTest, submitActions);
+        await runWorkflowVerificationTests(page, screenshots, results, runTest, submitActions);
+        await runProductionFlowE2ETests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
