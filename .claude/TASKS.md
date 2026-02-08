@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
-**Last Updated:** 2026-02-07
-**Session Status:** In Progress - Template/Runtime Separation
+**Last Updated:** 2026-02-08
+**Session Status:** In Progress - Template/Runtime Separation (Frontend module complete)
 
 ---
 
@@ -90,8 +90,8 @@
 - [x] Fix compilation errors - DONE
 - [x] Frontend API service updates - DONE
 - [ ] Run backend with test profile to apply patch 040
-- [ ] Create frontend OperationTemplate admin module (`/manage/operation-templates`)
-- [ ] Add Operation Templates to admin sidebar navigation
+- [x] Create frontend OperationTemplate admin module (`/manage/operation-templates`) - DONE
+- [x] Add Operation Templates to admin sidebar navigation - DONE
 - [ ] Update routing step form to use OperationTemplate dropdown
 
 ---

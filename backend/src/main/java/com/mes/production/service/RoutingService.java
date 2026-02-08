@@ -2,10 +2,12 @@ package com.mes.production.service;
 
 import com.mes.production.dto.RoutingDTO;
 import com.mes.production.entity.Operation;
+import com.mes.production.entity.OperationTemplate;
 import com.mes.production.entity.Process;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
 import com.mes.production.repository.OperationRepository;
+import com.mes.production.repository.OperationTemplateRepository;
 import com.mes.production.repository.ProcessRepository;
 import com.mes.production.repository.RoutingRepository;
 import com.mes.production.repository.RoutingStepRepository;
@@ -36,6 +38,7 @@ public class RoutingService {
     private final RoutingStepRepository routingStepRepository;
     private final ProcessRepository processRepository;
     private final OperationRepository operationRepository;
+    private final OperationTemplateRepository operationTemplateRepository;
 
     /**
      * Get routing by ID with steps
@@ -470,6 +473,8 @@ public class RoutingService {
 
     /**
      * Create a routing step.
+     * If operationTemplateId is provided, operation details are taken from the template.
+     * Otherwise, operationName and operationType are required.
      */
     @Transactional
     public RoutingStep createRoutingStep(Long routingId, RoutingDTO.CreateRoutingStepRequest request, String createdBy) {
@@ -486,31 +491,67 @@ public class RoutingService {
             throw new IllegalArgumentException("Sequence number must be a positive integer");
         }
 
-        RoutingStep step = RoutingStep.builder()
+        // Resolve OperationTemplate if provided
+        OperationTemplate template = null;
+        if (request.getOperationTemplateId() != null) {
+            template = operationTemplateRepository.findById(request.getOperationTemplateId())
+                    .orElseThrow(() -> new IllegalArgumentException("OperationTemplate not found: " + request.getOperationTemplateId()));
+            if (!OperationTemplate.STATUS_ACTIVE.equals(template.getStatus())) {
+                throw new IllegalArgumentException("OperationTemplate is not active: " + request.getOperationTemplateId());
+            }
+        } else {
+            // Without template, operationName and operationType are required
+            if (request.getOperationName() == null || request.getOperationName().isBlank()) {
+                throw new IllegalArgumentException("operationName is required when operationTemplateId is not provided");
+            }
+            if (request.getOperationType() == null || request.getOperationType().isBlank()) {
+                throw new IllegalArgumentException("operationType is required when operationTemplateId is not provided");
+            }
+        }
+
+        // Build step - use template values as defaults, allow overrides
+        RoutingStep.RoutingStepBuilder builder = RoutingStep.builder()
                 .routing(routing)
-                .operationName(request.getOperationName())
-                .operationType(request.getOperationType())
-                .operationCode(request.getOperationCode())
+                .operationTemplate(template)
                 .sequenceNumber(request.getSequenceNumber())
                 .isParallel(request.getIsParallel() != null ? request.getIsParallel() : false)
                 .mandatoryFlag(request.getMandatoryFlag() != null ? request.getMandatoryFlag() : true)
                 .targetQty(request.getTargetQty())
                 .description(request.getDescription())
-                .estimatedDurationMinutes(request.getEstimatedDurationMinutes())
                 .producesOutputBatch(request.getProducesOutputBatch() != null ? request.getProducesOutputBatch() : false)
                 .allowsSplit(request.getAllowsSplit() != null ? request.getAllowsSplit() : false)
                 .allowsMerge(request.getAllowsMerge() != null ? request.getAllowsMerge() : false)
-                .status(RoutingStep.STATUS_ACTIVE) // Template status
-                .createdBy(createdBy)
-                .build();
+                .status(RoutingStep.STATUS_ACTIVE)
+                .createdBy(createdBy);
 
+        // Set operation fields - from template or request (allow override)
+        if (template != null) {
+            // Use template values, but allow name override
+            builder.operationName(request.getOperationName() != null ? request.getOperationName() : template.getOperationName());
+            builder.operationType(template.getOperationType());
+            builder.operationCode(request.getOperationCode() != null ? request.getOperationCode() : template.getOperationCode());
+            // Duration from request overrides template
+            builder.estimatedDurationMinutes(request.getEstimatedDurationMinutes() != null
+                    ? request.getEstimatedDurationMinutes()
+                    : template.getEstimatedDurationMinutes());
+        } else {
+            builder.operationName(request.getOperationName());
+            builder.operationType(request.getOperationType());
+            builder.operationCode(request.getOperationCode());
+            builder.estimatedDurationMinutes(request.getEstimatedDurationMinutes());
+        }
+
+        RoutingStep step = builder.build();
         step = routingStepRepository.save(step);
-        log.info("Created routing step {} for routing {}", step.getRoutingStepId(), routingId);
+        log.info("Created routing step {} for routing {} (template: {})",
+                step.getRoutingStepId(), routingId,
+                template != null ? template.getOperationTemplateId() : "none");
         return step;
     }
 
     /**
      * Update a routing step.
+     * If operationTemplateId is provided, the template reference is updated.
      */
     @Transactional
     public RoutingStep updateRoutingStep(Long stepId, RoutingDTO.UpdateRoutingStepRequest request, String updatedBy) {
@@ -522,11 +563,33 @@ public class RoutingService {
             throw new IllegalStateException("Cannot update steps of a routing that has started execution");
         }
 
-        // Update fields
+        // Handle OperationTemplate change
+        if (request.getOperationTemplateId() != null) {
+            OperationTemplate template = operationTemplateRepository.findById(request.getOperationTemplateId())
+                    .orElseThrow(() -> new IllegalArgumentException("OperationTemplate not found: " + request.getOperationTemplateId()));
+            if (!OperationTemplate.STATUS_ACTIVE.equals(template.getStatus())) {
+                throw new IllegalArgumentException("OperationTemplate is not active: " + request.getOperationTemplateId());
+            }
+            step.setOperationTemplate(template);
+            // Update operation fields from template (unless explicitly overridden)
+            if (request.getOperationName() == null) {
+                step.setOperationName(template.getOperationName());
+            }
+            step.setOperationType(template.getOperationType());
+            if (request.getOperationCode() == null) {
+                step.setOperationCode(template.getOperationCode());
+            }
+            if (request.getEstimatedDurationMinutes() == null && template.getEstimatedDurationMinutes() != null) {
+                step.setEstimatedDurationMinutes(template.getEstimatedDurationMinutes());
+            }
+        }
+
+        // Update fields (allow overrides even when using template)
         if (request.getOperationName() != null) {
             step.setOperationName(request.getOperationName());
         }
-        if (request.getOperationType() != null) {
+        if (request.getOperationType() != null && request.getOperationTemplateId() == null) {
+            // Only update type if not using a template (template sets the type)
             step.setOperationType(request.getOperationType());
         }
         if (request.getOperationCode() != null) {
@@ -565,7 +628,8 @@ public class RoutingService {
 
         step.setUpdatedBy(updatedBy);
         step = routingStepRepository.save(step);
-        log.info("Updated routing step {}", stepId);
+        log.info("Updated routing step {} (template: {})", stepId,
+                step.getOperationTemplate() != null ? step.getOperationTemplate().getOperationTemplateId() : "none");
         return step;
     }
 

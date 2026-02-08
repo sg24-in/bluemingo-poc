@@ -112,44 +112,49 @@ public class RoutingDTO {
     }
 
     /**
-     * Request to create a routing step
+     * Request to create a routing step.
+     * If operationTemplateId is provided, operation details are taken from the template.
+     * Otherwise, operationName and operationType are required.
      */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CreateRoutingStepRequest {
-        private String operationName;
-        private String operationType;
-        private String operationCode;
+        private Long operationTemplateId;  // Optional: reference to OperationTemplate
+        private String operationName;      // Required if no template; override if template provided
+        private String operationType;      // Required if no template; ignored if template provided
+        private String operationCode;      // Optional override
         private Integer sequenceNumber;
         private Boolean isParallel;
         private Boolean mandatoryFlag;
         private java.math.BigDecimal targetQty;
         private String description;
-        private Integer estimatedDurationMinutes;
+        private Integer estimatedDurationMinutes;  // Override template duration if provided
         private Boolean producesOutputBatch;
         private Boolean allowsSplit;
         private Boolean allowsMerge;
     }
 
     /**
-     * Request to update a routing step
+     * Request to update a routing step.
+     * If operationTemplateId is provided, operation details are taken from the template.
      */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class UpdateRoutingStepRequest {
-        private String operationName;
-        private String operationType;
-        private String operationCode;
+        private Long operationTemplateId;  // Optional: change template reference
+        private String operationName;      // Override if provided
+        private String operationType;      // Ignored if template provided
+        private String operationCode;      // Override if provided
         private Integer sequenceNumber;
         private Boolean isParallel;
         private Boolean mandatoryFlag;
         private java.math.BigDecimal targetQty;
         private String description;
-        private Integer estimatedDurationMinutes;
+        private Integer estimatedDurationMinutes;  // Override template duration if provided
         private Boolean producesOutputBatch;
         private Boolean allowsSplit;
         private Boolean allowsMerge;

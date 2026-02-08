@@ -49,6 +49,7 @@
         <thead>
           <tr>
             <th>Seq</th>
+            <th>Template</th>
             <th>Operation Name</th>
             <th>Type</th>
             <th>Parallel</th>
@@ -60,6 +61,12 @@
         <tbody>
           <tr *ngFor="let step of steps; let i = index">
             <td>{{ step.sequenceNumber }}</td>
+            <td>
+              <span *ngIf="step.operationTemplateId" class="template-ref" title="Uses template">
+                {{ getTemplateName(step.operationTemplateId) }}
+              </span>
+              <span *ngIf="!step.operationTemplateId" class="manual-entry">Manual</span>
+            </td>
             <td>{{ step.operationName }}</td>
             <td>{{ step.operationType }}</td>
             <td>
@@ -121,20 +128,33 @@
 
     <div class="modal-body">
       <form [formGroup]="stepForm">
+        <!-- Operation Template Selection -->
+        <div class="form-group template-select">
+          <label for="operationTemplateId">Operation Template</label>
+          <select id="operationTemplateId" formControlName="operationTemplateId"
+                  (change)="onTemplateChange($event)">
+            <option [ngValue]="null">-- No Template (Manual Entry) --</option>
+            <option *ngFor="let template of operationTemplates" [ngValue]="template.operationTemplateId">
+              {{ template.operationName }} ({{ template.operationType }})
+            </option>
+          </select>
+          <div class="hint">Select a template to auto-populate operation details, or enter manually below.</div>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label for="operationName">Operation Name *</label>
+            <label for="operationName">Operation Name {{ stepForm.get('operationTemplateId')?.value ? '' : '*' }}</label>
             <input type="text" id="operationName" formControlName="operationName" placeholder="e.g., Melting">
-            <div *ngIf="hasStepError('operationName')" class="field-error">Required</div>
+            <div *ngIf="hasStepError('operationName')" class="field-error">Required when no template selected</div>
           </div>
 
           <div class="form-group">
-            <label for="operationType">Operation Type *</label>
+            <label for="operationType">Operation Type {{ stepForm.get('operationTemplateId')?.value ? '' : '*' }}</label>
             <select id="operationType" formControlName="operationType">
               <option value="">Select type</option>
               <option *ngFor="let type of operationTypes" [value]="type">{{ type }}</option>
             </select>
-            <div *ngIf="hasStepError('operationType')" class="field-error">Required</div>
+            <div *ngIf="hasStepError('operationType')" class="field-error">Required when no template selected</div>
           </div>
         </div>
 

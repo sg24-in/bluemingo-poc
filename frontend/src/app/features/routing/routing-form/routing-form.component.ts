@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { OperationTemplateSummary } from '../../../shared/models/operation-template.model';
 
 interface Process {
   processId: number;
@@ -11,6 +12,7 @@ interface Process {
 
 interface RoutingStep {
   routingStepId?: number;
+  operationTemplateId?: number;  // Reference to OperationTemplate
   operationName: string;
   operationType: string;
   operationCode?: string;
@@ -41,6 +43,7 @@ export class RoutingFormComponent implements OnInit {
 
   processes: Process[] = [];
   steps: RoutingStep[] = [];
+  operationTemplates: OperationTemplateSummary[] = [];
 
   // Step editing
   showStepModal = false;
@@ -52,6 +55,7 @@ export class RoutingFormComponent implements OnInit {
     { value: 'PARALLEL', label: 'Parallel' }
   ];
 
+  // Legacy operation types (used when no template selected)
   operationTypes = [
     'MELTING', 'CASTING', 'ROLLING', 'CUTTING', 'INSPECTION', 'PACKAGING', 'OTHER'
   ];
@@ -66,6 +70,7 @@ export class RoutingFormComponent implements OnInit {
   ngOnInit(): void {
     this.initForms();
     this.loadProcesses();
+    this.loadOperationTemplates();
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -83,8 +88,9 @@ export class RoutingFormComponent implements OnInit {
     });
 
     this.stepForm = this.fb.group({
-      operationName: ['', [Validators.required, Validators.maxLength(100)]],
-      operationType: ['', Validators.required],
+      operationTemplateId: [null],  // Optional template reference
+      operationName: ['', [Validators.maxLength(100)]],  // Required if no template
+      operationType: [''],  // Required if no template
       operationCode: ['', Validators.maxLength(50)],
       sequenceNumber: [1, [Validators.required, Validators.min(1)]],
       isParallel: [false],
@@ -108,6 +114,52 @@ export class RoutingFormComponent implements OnInit {
     });
   }
 
+  loadOperationTemplates(): void {
+    this.apiService.getActiveOperationTemplates().subscribe({
+      next: (data) => {
+        this.operationTemplates = data;
+      },
+      error: (err) => {
+        console.error('Failed to load operation templates', err);
+      }
+    });
+  }
+
+  onTemplateChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const templateId = select.value ? +select.value : null;
+
+    if (templateId) {
+      const template = this.operationTemplates.find(t => t.operationTemplateId === templateId);
+      if (template) {
+        // Auto-populate fields from template
+        this.stepForm.patchValue({
+          operationName: template.operationName,
+          operationType: template.operationType,
+          operationCode: template.operationCode || ''
+        });
+        // Fetch full template to get duration
+        this.apiService.getOperationTemplateById(templateId).subscribe({
+          next: (fullTemplate) => {
+            if (fullTemplate.estimatedDurationMinutes) {
+              this.stepForm.patchValue({
+                estimatedDurationMinutes: fullTemplate.estimatedDurationMinutes
+              });
+            }
+          }
+        });
+      }
+    } else {
+      // Clear fields when "No Template" is selected
+      this.stepForm.patchValue({
+        operationName: '',
+        operationType: '',
+        operationCode: '',
+        estimatedDurationMinutes: null
+      });
+    }
+  }
+
   loadRouting(id: number): void {
     this.loading = true;
     this.apiService.getRoutingById(id).subscribe({
@@ -119,6 +171,7 @@ export class RoutingFormComponent implements OnInit {
         });
         this.steps = (routing.steps || []).map((s: any) => ({
           routingStepId: s.routingStepId,
+          operationTemplateId: s.operationTemplateId || null,
           operationName: s.operationName || '',
           operationType: s.operationType || '',
           operationCode: s.operationCode || '',
@@ -223,12 +276,18 @@ export class RoutingFormComponent implements OnInit {
     this.editingStep = null;
     this.editingStepIndex = null;
     this.stepForm.reset({
+      operationTemplateId: null,
+      operationName: '',
+      operationType: '',
+      operationCode: '',
       sequenceNumber: this.steps.length + 1,
       isParallel: false,
       mandatoryFlag: true,
       producesOutputBatch: false,
       allowsSplit: false,
-      allowsMerge: false
+      allowsMerge: false,
+      estimatedDurationMinutes: null,
+      description: ''
     });
     this.showStepModal = true;
   }
@@ -236,7 +295,20 @@ export class RoutingFormComponent implements OnInit {
   openEditStep(step: RoutingStep, index: number): void {
     this.editingStep = step;
     this.editingStepIndex = index;
-    this.stepForm.patchValue(step);
+    this.stepForm.patchValue({
+      operationTemplateId: step.operationTemplateId || null,
+      operationName: step.operationName,
+      operationType: step.operationType,
+      operationCode: step.operationCode || '',
+      sequenceNumber: step.sequenceNumber,
+      isParallel: step.isParallel,
+      mandatoryFlag: step.mandatoryFlag,
+      producesOutputBatch: step.producesOutputBatch || false,
+      allowsSplit: step.allowsSplit || false,
+      allowsMerge: step.allowsMerge || false,
+      estimatedDurationMinutes: step.estimatedDurationMinutes || null,
+      description: step.description || ''
+    });
     this.showStepModal = true;
   }
 
@@ -247,6 +319,20 @@ export class RoutingFormComponent implements OnInit {
   }
 
   saveStep(): void {
+    const formValue = this.stepForm.value;
+
+    // Validate: either template or manual entry required
+    if (!formValue.operationTemplateId && !formValue.operationName) {
+      this.stepForm.get('operationName')?.setErrors({ required: true });
+      this.stepForm.get('operationName')?.markAsTouched();
+      return;
+    }
+    if (!formValue.operationTemplateId && !formValue.operationType) {
+      this.stepForm.get('operationType')?.setErrors({ required: true });
+      this.stepForm.get('operationType')?.markAsTouched();
+      return;
+    }
+
     if (this.stepForm.invalid) {
       Object.keys(this.stepForm.controls).forEach(key => {
         this.stepForm.get(key)?.markAsTouched();
@@ -255,7 +341,8 @@ export class RoutingFormComponent implements OnInit {
     }
 
     const stepData: RoutingStep = {
-      ...this.stepForm.value,
+      ...formValue,
+      operationTemplateId: formValue.operationTemplateId ? +formValue.operationTemplateId : undefined,
       routingStepId: this.editingStep?.routingStepId
     };
 
@@ -358,5 +445,11 @@ export class RoutingFormComponent implements OnInit {
 
   get title(): string {
     return this.isEditMode ? 'Edit Routing' : 'Create Routing';
+  }
+
+  getTemplateName(templateId: number | undefined): string {
+    if (!templateId) return '-';
+    const template = this.operationTemplates.find(t => t.operationTemplateId === templateId);
+    return template ? template.operationName : `Template #${templateId}`;
   }
 }
