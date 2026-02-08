@@ -1,10 +1,15 @@
 package com.mes.production.service;
 
 import com.mes.production.dto.BomDTO;
+import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.entity.BillOfMaterial;
 import com.mes.production.repository.BomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -120,6 +125,36 @@ public class BomService {
         return productSkus.stream()
                 .map(this::getProductSummary)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * TASK-P3: Get paginated products with BOMs.
+     * Supports search by productSku.
+     */
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<BomDTO.BomProductSummary> getBomProductsPaged(PageRequestDTO pageRequest) {
+        log.info("Getting paginated BOM products - page={}, size={}, search={}",
+                pageRequest.getPage(), pageRequest.getSize(), pageRequest.getSearch());
+
+        Pageable pageable = pageRequest.toPageable("productSku");
+        String searchPattern = pageRequest.getSearchPattern();
+
+        // Get paginated product SKUs
+        Page<String> productSkuPage = bomRepository.findDistinctProductSkusPaged(searchPattern, pageable);
+
+        // Convert to summaries
+        List<BomDTO.BomProductSummary> summaries = productSkuPage.getContent().stream()
+                .map(this::getProductSummary)
+                .collect(Collectors.toList());
+
+        // Create page of summaries
+        Page<BomDTO.BomProductSummary> summaryPage = new PageImpl<>(
+                summaries,
+                pageable,
+                productSkuPage.getTotalElements()
+        );
+
+        return PagedResponseDTO.fromPage(summaryPage, pageRequest.getSortBy(), pageRequest.getSortDirection(), pageRequest.getSearch());
     }
 
     /**

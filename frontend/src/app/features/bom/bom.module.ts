@@ -7,6 +7,7 @@ import { BomRoutingModule } from './bom-routing.module';
 import { BomListComponent } from './bom-list/bom-list.component';
 import { BomTreeComponent } from './bom-tree/bom-tree.component';
 import { BomNodeFormComponent } from './bom-node-form/bom-node-form.component';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { BomNodeFormComponent } from './bom-node-form/bom-node-form.component';
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
-    BomRoutingModule
+    BomRoutingModule,
+    SharedModule
   ]
 })
 export class BomModule { }

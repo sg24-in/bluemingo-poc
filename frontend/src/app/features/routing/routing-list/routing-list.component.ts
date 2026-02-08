@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { PageRequest, PagedResponse, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 interface Routing {
   routingId: number;
@@ -36,25 +37,25 @@ interface RoutingStep {
 })
 export class RoutingListComponent implements OnInit {
   routings: Routing[] = [];
-  filteredRoutings: Routing[] = [];
   loading = true;
   error = '';
 
+  // TASK-P2: Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
   // Filters
-  statusFilter = '';
+  filterStatus = '';
+  filterType = '';
   searchTerm = '';
 
   // Status options
-  statuses = ['', 'DRAFT', 'ACTIVE', 'INACTIVE', 'ON_HOLD'];
-
-  // Summary counts
-  summary = {
-    total: 0,
-    draft: 0,
-    active: 0,
-    inactive: 0,
-    onHold: 0
-  };
+  statuses = ['DRAFT', 'ACTIVE', 'INACTIVE', 'ON_HOLD'];
+  routingTypes = ['SEQUENTIAL', 'PARALLEL'];
 
   constructor(
     private apiService: ApiService,
@@ -65,15 +66,30 @@ export class RoutingListComponent implements OnInit {
     this.loadRoutings();
   }
 
+  // TASK-P2: Server-side paginated loading
   loadRoutings(): void {
     this.loading = true;
     this.error = '';
 
-    this.apiService.getAllRoutings().subscribe({
-      next: (data) => {
-        this.routings = data;
-        this.calculateSummary();
-        this.applyFilters();
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'routingName',
+      sortDirection: 'ASC',
+      status: this.filterStatus || undefined,
+      type: this.filterType || undefined,
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getRoutingsPaged(request).subscribe({
+      next: (response: PagedResponse<Routing>) => {
+        this.routings = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
@@ -83,47 +99,42 @@ export class RoutingListComponent implements OnInit {
     });
   }
 
-  calculateSummary(): void {
-    this.summary = {
-      total: this.routings.length,
-      draft: this.routings.filter(r => r.status === 'DRAFT').length,
-      active: this.routings.filter(r => r.status === 'ACTIVE').length,
-      inactive: this.routings.filter(r => r.status === 'INACTIVE').length,
-      onHold: this.routings.filter(r => r.status === 'ON_HOLD').length
-    };
+  // TASK-P2: Pagination handlers
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadRoutings();
   }
 
-  applyFilters(): void {
-    let result = [...this.routings];
-
-    if (this.statusFilter) {
-      result = result.filter(r => r.status === this.statusFilter);
-    }
-
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      result = result.filter(r =>
-        r.routingName.toLowerCase().includes(term) ||
-        r.processName?.toLowerCase().includes(term) ||
-        r.routingType.toLowerCase().includes(term)
-      );
-    }
-
-    this.filteredRoutings = result;
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadRoutings();
   }
 
-  onStatusChange(): void {
-    this.applyFilters();
+  onFilterStatusChange(status: string): void {
+    this.filterStatus = status === 'all' ? '' : status;
+    this.page = 0;
+    this.loadRoutings();
   }
 
-  onSearch(): void {
-    this.applyFilters();
+  onFilterTypeChange(type: string): void {
+    this.filterType = type === 'all' ? '' : type;
+    this.page = 0;
+    this.loadRoutings();
+  }
+
+  onSearchChange(term: string): void {
+    this.searchTerm = term;
+    this.page = 0;
+    this.loadRoutings();
   }
 
   clearFilters(): void {
-    this.statusFilter = '';
+    this.filterStatus = '';
+    this.filterType = '';
     this.searchTerm = '';
-    this.applyFilters();
+    this.page = 0;
+    this.loadRoutings();
   }
 
   createRouting(): void {

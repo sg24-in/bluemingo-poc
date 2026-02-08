@@ -1,6 +1,8 @@
 package com.mes.production.repository;
 
 import com.mes.production.entity.BillOfMaterial;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -86,4 +88,32 @@ public interface BomRepository extends JpaRepository<BillOfMaterial, Long> {
      */
     @Query("SELECT COUNT(b) > 0 FROM BillOfMaterial b WHERE b.productSku = :productSku AND b.materialId = :materialId AND b.status = 'ACTIVE'")
     boolean existsByProductSkuAndMaterialId(@Param("productSku") String productSku, @Param("materialId") String materialId);
+
+    // =====================================================
+    // TASK-P3: Pagination Queries
+    // =====================================================
+
+    /**
+     * Get distinct product SKUs with filters for pagination.
+     * Supports search by productSku.
+     */
+    @Query("SELECT DISTINCT b.productSku FROM BillOfMaterial b " +
+           "WHERE b.status = 'ACTIVE' " +
+           "AND (:search IS NULL OR LOWER(b.productSku) LIKE :search) " +
+           "ORDER BY b.productSku")
+    Page<String> findDistinctProductSkusPaged(@Param("search") String search, Pageable pageable);
+
+    /**
+     * Count distinct products with active BOMs
+     */
+    @Query("SELECT COUNT(DISTINCT b.productSku) FROM BillOfMaterial b WHERE b.status = 'ACTIVE'")
+    long countDistinctActiveProducts();
+
+    /**
+     * Count distinct products matching search
+     */
+    @Query("SELECT COUNT(DISTINCT b.productSku) FROM BillOfMaterial b " +
+           "WHERE b.status = 'ACTIVE' " +
+           "AND (:search IS NULL OR LOWER(b.productSku) LIKE :search)")
+    long countDistinctProductsBySearch(@Param("search") String search);
 }

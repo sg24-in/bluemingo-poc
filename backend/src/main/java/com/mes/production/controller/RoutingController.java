@@ -1,5 +1,7 @@
 package com.mes.production.controller;
 
+import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.RoutingDTO;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
@@ -134,6 +136,37 @@ public class RoutingController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(routingInfos);
+    }
+
+    /**
+     * TASK-P2: Get paginated routings with filters.
+     * Supports: page, size, sortBy, sortDirection, status, type (routingType), search
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<RoutingDTO.RoutingInfo>> getRoutingsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String search) {
+
+        log.info("GET /api/routing/paged - page={}, size={}, status={}, type={}, search={}",
+                page, size, status, type, search);
+
+        PageRequestDTO pageRequest = PageRequestDTO.builder()
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .status(status)
+                .type(type)
+                .search(search)
+                .build();
+
+        PagedResponseDTO<RoutingDTO.RoutingInfo> response = routingService.getRoutingsPaged(pageRequest);
+        return ResponseEntity.ok(response);
     }
 
     // ============ CRUD Endpoints ============
@@ -314,11 +347,15 @@ public class RoutingController {
         return RoutingDTO.RoutingInfo.builder()
                 .routingId(routing.getRoutingId())
                 .processId(routing.getProcess() != null ? routing.getProcess().getProcessId() : null)
+                .processName(routing.getProcess() != null ? routing.getProcess().getProcessName() : null)
                 .routingName(routing.getRoutingName())
                 .routingType(routing.getRoutingType())
                 .status(routing.getStatus())
                 .steps(stepInfos)
                 .createdOn(routing.getCreatedOn())
+                .createdBy(routing.getCreatedBy())
+                .updatedOn(routing.getUpdatedOn())
+                .updatedBy(routing.getUpdatedBy())
                 .build();
     }
 

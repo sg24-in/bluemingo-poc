@@ -20,7 +20,7 @@
 | Customers | 9 | `/api/customers` |
 | Materials | 9 | `/api/materials` |
 | Products | 9 | `/api/products` |
-| BOM | 17 | `/api/bom` |
+| BOM | 18 | `/api/bom` |
 | Dashboard | 2 | `/api/dashboard` |
 | Audit | 9 | `/api/audit` |
 | Operators | 7 | `/api/operators` |
@@ -28,7 +28,7 @@
 | Processes | 10 | `/api/processes` |
 | Users | 13 | `/api/users` |
 | Configuration | 28 | `/api/config` |
-| Routing | 18 | `/api/routing` |
+| Routing | 19 | `/api/routing` |
 | Batch Size | 6 | `/api/batch-size-config` |
 | Inventory Movement | 8 | `/api/inventory-movements` |
 | Batch Allocation | 6 | `/api/batch-allocations` |
@@ -190,6 +190,7 @@
 | GET | `/{productSku}/list` | Flat BOM list |
 | GET | `/node/{bomId}` | Single node |
 | GET | `/products` | Products with BOMs |
+| GET | `/products/paged` | Paginated products with BOMs |
 | GET | `/{productSku}/versions` | Available versions |
 | POST | `/node` | Create node |
 | POST | `/tree` | Create tree |
@@ -307,6 +308,7 @@
 | Method | Endpoint | Purpose | Query Params |
 |--------|----------|---------|--------------|
 | GET | `/` | List all routings | status |
+| GET | `/paged` | Paginated routings | page, size, sortBy, sortDirection, status, type, search |
 | GET | `/{routingId}` | Get by ID | - |
 | GET | `/process/{processId}` | For process (runtime) | - |
 | GET | `/template/{templateId}` | For template (design-time) | - |

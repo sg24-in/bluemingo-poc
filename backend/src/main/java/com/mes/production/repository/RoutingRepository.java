@@ -1,6 +1,8 @@
 package com.mes.production.repository;
 
 import com.mes.production.entity.Routing;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -55,4 +57,20 @@ public interface RoutingRepository extends JpaRepository<Routing, Long> {
      * Count routings by status
      */
     long countByStatus(String status);
+
+    /**
+     * TASK-P2: Find routings with filters and pagination.
+     * Supports: status, routingType, and search (by routing name or process name)
+     */
+    @Query("SELECT r FROM Routing r " +
+           "LEFT JOIN r.process p " +
+           "WHERE (:status IS NULL OR r.status = :status) " +
+           "AND (:routingType IS NULL OR r.routingType = :routingType) " +
+           "AND (:search IS NULL OR " +
+           "     LOWER(r.routingName) LIKE :search OR " +
+           "     LOWER(p.processName) LIKE :search)")
+    Page<Routing> findByFilters(@Param("status") String status,
+                                 @Param("routingType") String routingType,
+                                 @Param("search") String search,
+                                 Pageable pageable);
 }

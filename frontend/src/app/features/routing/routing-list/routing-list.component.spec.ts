@@ -8,6 +8,7 @@ import { of, throwError } from 'rxjs';
 import { RoutingListComponent } from './routing-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { PagedResponse } from '../../../shared/models/pagination.model';
 
 describe('RoutingListComponent', () => {
   let component: RoutingListComponent;
@@ -15,7 +16,7 @@ describe('RoutingListComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
   let router: Router;
 
-  const mockRoutings = [
+  const mockRoutings: any[] = [
     {
       routingId: 1,
       processId: 1,
@@ -64,9 +65,22 @@ describe('RoutingListComponent', () => {
     }
   ];
 
+  // TASK-P2: Mock paged response
+  const mockPagedResponse: PagedResponse<any> = {
+    content: mockRoutings,
+    page: 0,
+    size: 20,
+    totalElements: 4,
+    totalPages: 1,
+    first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false
+  };
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
-      'getAllRoutings',
+      'getRoutingsPaged',
       'activateRouting',
       'deactivateRouting',
       'putRoutingOnHold',
@@ -92,7 +106,7 @@ describe('RoutingListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getAllRoutings.and.returnValue(of(mockRoutings));
+    apiServiceSpy.getRoutingsPaged.and.returnValue(of(mockPagedResponse));
 
     fixture = TestBed.createComponent(RoutingListComponent);
     component = fixture.componentInstance;
@@ -103,99 +117,117 @@ describe('RoutingListComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load routings on init', () => {
-    expect(apiServiceSpy.getAllRoutings).toHaveBeenCalled();
-    expect(component.routings.length).toBe(4);
-    expect(component.loading).toBeFalse();
-  });
+  // TASK-P2: Pagination tests
+  describe('Pagination', () => {
+    it('should load routings on init', () => {
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalled();
+      expect(component.routings.length).toBe(4);
+      expect(component.loading).toBeFalse();
+    });
 
-  it('should display all routings by default', () => {
-    expect(component.filteredRoutings.length).toBe(4);
-  });
+    it('should set pagination state from response', () => {
+      expect(component.page).toBe(0);
+      expect(component.totalElements).toBe(4);
+      expect(component.totalPages).toBe(1);
+      expect(component.hasNext).toBeFalse();
+      expect(component.hasPrevious).toBeFalse();
+    });
 
-  describe('Summary Calculation', () => {
-    it('should calculate summary counts correctly', () => {
-      expect(component.summary.total).toBe(4);
-      expect(component.summary.active).toBe(1);
-      expect(component.summary.draft).toBe(1);
-      expect(component.summary.inactive).toBe(1);
-      expect(component.summary.onHold).toBe(1);
+    it('should change page', () => {
+      const page1Response: PagedResponse<any> = {
+        ...mockPagedResponse,
+        page: 1,
+        hasPrevious: true
+      };
+      apiServiceSpy.getRoutingsPaged.and.returnValue(of(page1Response));
+
+      component.onPageChange(1);
+
+      expect(component.page).toBe(1);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalledTimes(2);
+    });
+
+    it('should reset to first page when changing page size', () => {
+      const size50Response: PagedResponse<any> = {
+        ...mockPagedResponse,
+        size: 50,
+        page: 0
+      };
+      apiServiceSpy.getRoutingsPaged.and.returnValue(of(size50Response));
+
+      component.page = 2;
+      component.onSizeChange(50);
+
+      expect(component.page).toBe(0);
+      expect(component.size).toBe(50);
     });
   });
 
   describe('Filtering', () => {
+    beforeEach(() => {
+      apiServiceSpy.getRoutingsPaged.calls.reset();
+    });
+
     it('should filter by status', () => {
-      component.statusFilter = 'ACTIVE';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(1);
-      expect(component.filteredRoutings[0].routingName).toBe('Standard Melting');
+      component.onFilterStatusChange('ACTIVE');
+
+      expect(component.filterStatus).toBe('ACTIVE');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalled();
     });
 
-    it('should filter by DRAFT status', () => {
-      component.statusFilter = 'DRAFT';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(1);
-      expect(component.filteredRoutings[0].routingName).toBe('Fast Casting');
+    it('should clear status filter when "all" is selected', () => {
+      component.filterStatus = 'ACTIVE';
+      component.onFilterStatusChange('all');
+
+      expect(component.filterStatus).toBe('');
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalled();
     });
 
-    it('should filter by search term on routing name', () => {
-      component.searchTerm = 'Standard';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(1);
-      expect(component.filteredRoutings[0].routingName).toBe('Standard Melting');
+    it('should filter by type', () => {
+      component.onFilterTypeChange('SEQUENTIAL');
+
+      expect(component.filterType).toBe('SEQUENTIAL');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalled();
     });
 
-    it('should filter by search term on process name', () => {
-      component.searchTerm = 'Rolling';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(1);
-      expect(component.filteredRoutings[0].processName).toBe('Rolling Process');
+    it('should filter by search term', () => {
+      component.onSearchChange('Melting');
+
+      expect(component.searchTerm).toBe('Melting');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalled();
     });
 
-    it('should filter by search term on routing type', () => {
-      component.searchTerm = 'parallel';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(1);
-      expect(component.filteredRoutings[0].routingType).toBe('PARALLEL');
-    });
-
-    it('should combine status and search filters', () => {
-      component.statusFilter = 'ACTIVE';
-      component.searchTerm = 'Melting';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(1);
-      expect(component.filteredRoutings[0].routingName).toBe('Standard Melting');
-    });
-
-    it('should show all when filter is cleared', () => {
-      component.statusFilter = 'DRAFT';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(1);
-
-      component.statusFilter = '';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(4);
-    });
-
-    it('should clear filters', () => {
-      component.statusFilter = 'ACTIVE';
+    it('should include filters in API request', () => {
+      component.filterStatus = 'ACTIVE';
+      component.filterType = 'SEQUENTIAL';
       component.searchTerm = 'test';
+      component.loadRoutings();
+
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          status: 'ACTIVE',
+          type: 'SEQUENTIAL',
+          search: 'test'
+        })
+      );
+    });
+
+    it('should clear all filters', () => {
+      component.filterStatus = 'ACTIVE';
+      component.filterType = 'PARALLEL';
+      component.searchTerm = 'test';
+      component.page = 2;
+
       component.clearFilters();
-      expect(component.statusFilter).toBe('');
+
+      expect(component.filterStatus).toBe('');
+      expect(component.filterType).toBe('');
       expect(component.searchTerm).toBe('');
-      expect(component.filteredRoutings.length).toBe(4);
-    });
-
-    it('should call applyFilters on status change', () => {
-      spyOn(component, 'applyFilters');
-      component.onStatusChange();
-      expect(component.applyFilters).toHaveBeenCalled();
-    });
-
-    it('should call applyFilters on search', () => {
-      spyOn(component, 'applyFilters');
-      component.onSearch();
-      expect(component.applyFilters).toHaveBeenCalled();
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalled();
     });
   });
 
@@ -227,7 +259,7 @@ describe('RoutingListComponent', () => {
       component.activateRouting(mockRoutings[1]);
 
       expect(apiServiceSpy.activateRouting).toHaveBeenCalledWith(2, true);
-      expect(apiServiceSpy.getAllRoutings).toHaveBeenCalledTimes(2); // Once on init, once after activate
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalledTimes(2);
     });
 
     it('should not activate routing when not confirmed', () => {
@@ -257,7 +289,7 @@ describe('RoutingListComponent', () => {
       component.deactivateRouting(mockRoutings[0]);
 
       expect(apiServiceSpy.deactivateRouting).toHaveBeenCalledWith(1);
-      expect(apiServiceSpy.getAllRoutings).toHaveBeenCalledTimes(2);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalledTimes(2);
     });
 
     it('should not deactivate routing when not confirmed', () => {
@@ -287,7 +319,7 @@ describe('RoutingListComponent', () => {
       component.putOnHold(mockRoutings[0]);
 
       expect(apiServiceSpy.putRoutingOnHold).toHaveBeenCalledWith(1, 'Equipment issue');
-      expect(apiServiceSpy.getAllRoutings).toHaveBeenCalledTimes(2);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalledTimes(2);
     });
 
     it('should put routing on hold with empty reason', () => {
@@ -326,7 +358,7 @@ describe('RoutingListComponent', () => {
       component.releaseFromHold(mockRoutings[3]);
 
       expect(apiServiceSpy.releaseRoutingFromHold).toHaveBeenCalledWith(4);
-      expect(apiServiceSpy.getAllRoutings).toHaveBeenCalledTimes(2);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalledTimes(2);
     });
 
     it('should not release from hold when not confirmed', () => {
@@ -356,7 +388,7 @@ describe('RoutingListComponent', () => {
       component.deleteRouting(mockRoutings[1]); // DRAFT routing
 
       expect(apiServiceSpy.deleteRouting).toHaveBeenCalledWith(2);
-      expect(apiServiceSpy.getAllRoutings).toHaveBeenCalledTimes(2);
+      expect(apiServiceSpy.getRoutingsPaged).toHaveBeenCalledTimes(2);
     });
 
     it('should not delete routing when not confirmed', () => {
@@ -380,7 +412,7 @@ describe('RoutingListComponent', () => {
 
   describe('Error Handling', () => {
     it('should handle load error', () => {
-      apiServiceSpy.getAllRoutings.and.returnValue(throwError(() => ({ error: { message: 'Load failed' } })));
+      apiServiceSpy.getRoutingsPaged.and.returnValue(throwError(() => ({ error: { message: 'Load failed' } })));
 
       component.loadRoutings();
 
@@ -389,7 +421,7 @@ describe('RoutingListComponent', () => {
     });
 
     it('should show default error message when none provided', () => {
-      apiServiceSpy.getAllRoutings.and.returnValue(throwError(() => ({})));
+      apiServiceSpy.getRoutingsPaged.and.returnValue(throwError(() => ({})));
 
       component.loadRoutings();
 
@@ -427,31 +459,11 @@ describe('RoutingListComponent', () => {
     });
   });
 
-  describe('Empty State', () => {
-    it('should show empty state when no routings match', () => {
-      component.statusFilter = 'UNKNOWN_STATUS';
-      component.applyFilters();
-      expect(component.filteredRoutings.length).toBe(0);
-    });
-  });
-
-  describe('Filter Highlighting', () => {
-    it('should apply filter-active class when status filter is set', () => {
-      component.statusFilter = 'ACTIVE';
-      component.applyFilters();
-      fixture.detectChanges();
-
-      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
-      expect(filterGroup.classList.contains('filter-active')).toBeTrue();
-    });
-
-    it('should not apply filter-active class when status filter is empty', () => {
-      component.statusFilter = '';
-      component.applyFilters();
-      fixture.detectChanges();
-
-      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
-      expect(filterGroup.classList.contains('filter-active')).toBeFalse();
+  describe('Routing Types', () => {
+    it('should have routing type options', () => {
+      expect(component.routingTypes.length).toBe(2);
+      expect(component.routingTypes).toContain('SEQUENTIAL');
+      expect(component.routingTypes).toContain('PARALLEL');
     });
   });
 });

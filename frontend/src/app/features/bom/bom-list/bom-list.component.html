@@ -6,6 +6,18 @@
     </button>
   </div>
 
+  <!-- TASK-P3: Search Filter -->
+  <div class="card">
+    <div class="filters">
+      <div class="filter-group search-group">
+        <label for="search">Search:</label>
+        <input type="text" id="search" [value]="searchTerm" (input)="onSearchChange($any($event.target).value)"
+               placeholder="Search by product SKU...">
+      </div>
+      <button class="btn btn-secondary" (click)="clearSearch()" *ngIf="searchTerm">Clear</button>
+    </div>
+  </div>
+
   <div *ngIf="loading" class="loading">
     Loading BOM products...
   </div>
@@ -16,7 +28,7 @@
   </div>
 
   <div *ngIf="!loading && !error && products.length === 0" class="empty-state">
-    <p>No BOMs defined yet.</p>
+    <p>No BOMs found.</p>
     <button class="btn btn-primary" (click)="createNewBom()">+ Create First BOM</button>
   </div>
 
@@ -54,4 +66,17 @@
       </div>
     </div>
   </div>
+
+  <!-- TASK-P3: Pagination -->
+  <app-pagination
+    *ngIf="!loading && !error && products.length > 0"
+    [page]="page"
+    [size]="size"
+    [totalElements]="totalElements"
+    [totalPages]="totalPages"
+    [hasNext]="hasNext"
+    [hasPrevious]="hasPrevious"
+    (pageChange)="onPageChange($event)"
+    (sizeChange)="onSizeChange($event)"
+  ></app-pagination>
 </div>

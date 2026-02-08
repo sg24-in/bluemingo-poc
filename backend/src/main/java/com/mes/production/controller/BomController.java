@@ -1,6 +1,8 @@
 package com.mes.production.controller;
 
 import com.mes.production.dto.BomDTO;
+import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.service.BomService;
 import com.mes.production.service.BomValidationService;
 import lombok.RequiredArgsConstructor;
@@ -110,6 +112,32 @@ public class BomController {
     public ResponseEntity<List<BomDTO.BomProductSummary>> getAllProducts() {
         log.info("GET /api/bom/products");
         return ResponseEntity.ok(bomService.getAllProducts());
+    }
+
+    /**
+     * TASK-P3: Get paginated products with BOMs.
+     * Supports: page, size, sortBy, sortDirection, search
+     */
+    @GetMapping("/products/paged")
+    public ResponseEntity<PagedResponseDTO<BomDTO.BomProductSummary>> getBomProductsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false) String search) {
+
+        log.info("GET /api/bom/products/paged - page={}, size={}, search={}", page, size, search);
+
+        PageRequestDTO pageRequest = PageRequestDTO.builder()
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .search(search)
+                .build();
+
+        PagedResponseDTO<BomDTO.BomProductSummary> response = bomService.getBomProductsPaged(pageRequest);
+        return ResponseEntity.ok(response);
     }
 
     /**

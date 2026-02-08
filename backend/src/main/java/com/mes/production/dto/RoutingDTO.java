@@ -17,11 +17,15 @@ public class RoutingDTO {
     public static class RoutingInfo {
         private Long routingId;
         private Long processId;  // Per MES Spec: Routing links to Process
+        private String processName;  // TASK-P2: Process name for display
         private String routingName;
         private String routingType;
         private String status;
         private List<RoutingStepInfo> steps;
         private LocalDateTime createdOn;
+        private String createdBy;
+        private LocalDateTime updatedOn;
+        private String updatedBy;
     }
 
     /**

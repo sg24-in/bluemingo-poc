@@ -6,44 +6,35 @@
     </button>
   </div>
 
-  <!-- Summary Cards -->
-  <div class="summary-cards">
-    <div class="summary-card">
-      <div class="card-value">{{ summary.total }}</div>
-      <div class="card-label">Total</div>
-    </div>
-    <div class="summary-card draft">
-      <div class="card-value">{{ summary.draft }}</div>
-      <div class="card-label">Draft</div>
-    </div>
-    <div class="summary-card active">
-      <div class="card-value">{{ summary.active }}</div>
-      <div class="card-label">Active</div>
-    </div>
-    <div class="summary-card inactive">
-      <div class="card-value">{{ summary.inactive }}</div>
-      <div class="card-label">Inactive</div>
-    </div>
-    <div class="summary-card on-hold">
-      <div class="card-value">{{ summary.onHold }}</div>
-      <div class="card-label">On Hold</div>
-    </div>
-  </div>
+  <div class="card">
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group" [class.filter-active]="filterStatus">
+        <label for="status">Status:</label>
+        <select id="status" [value]="filterStatus || 'all'" (change)="onFilterStatusChange($any($event.target).value)"
+                [class.filter-active]="filterStatus">
+          <option value="all">All Statuses</option>
+          <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+        </select>
+      </div>
 
-  <!-- Filters -->
-  <div class="filters">
-    <div class="filter-group" [class.filter-active]="statusFilter">
-      <label for="status">Status:</label>
-      <select id="status" [(ngModel)]="statusFilter" (change)="onStatusChange()" [class.filter-active]="statusFilter">
-        <option value="">All Statuses</option>
-        <option *ngFor="let status of statuses.slice(1)" [value]="status">{{ status }}</option>
-      </select>
+      <div class="filter-group" [class.filter-active]="filterType">
+        <label for="type">Type:</label>
+        <select id="type" [value]="filterType || 'all'" (change)="onFilterTypeChange($any($event.target).value)"
+                [class.filter-active]="filterType">
+          <option value="all">All Types</option>
+          <option *ngFor="let t of routingTypes" [value]="t">{{ getTypeLabel(t) }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-group">
+        <label for="search">Search:</label>
+        <input type="text" id="search" [value]="searchTerm" (input)="onSearchChange($any($event.target).value)"
+               placeholder="Search by name or process...">
+      </div>
+
+      <button class="btn btn-secondary" (click)="clearFilters()">Clear</button>
     </div>
-    <div class="filter-group">
-      <label for="search">Search:</label>
-      <input type="text" id="search" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search routing name...">
-    </div>
-    <button class="btn btn-secondary" (click)="clearFilters()">Clear</button>
   </div>
 
   <!-- Loading -->
@@ -54,7 +45,7 @@
 
   <!-- Table -->
   <div *ngIf="!loading && !error" class="table-container">
-    <table class="data-table">
+    <table class="data-table" *ngIf="routings.length > 0; else emptyTpl">
       <thead>
         <tr>
           <th>ID</th>
@@ -68,7 +59,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let routing of filteredRoutings">
+        <tr *ngFor="let routing of routings">
           <td>{{ routing.routingId }}</td>
           <td>{{ routing.routingName }}</td>
           <td>{{ routing.processName || 'N/A' }}</td>
@@ -106,10 +97,26 @@
             </button>
           </td>
         </tr>
-        <tr *ngIf="filteredRoutings.length === 0">
-          <td colspan="8" class="no-data">No routings found</td>
-        </tr>
       </tbody>
     </table>
+
+    <ng-template #emptyTpl>
+      <div class="empty-state">
+        <p>No routings found.</p>
+      </div>
+    </ng-template>
+
+    <!-- TASK-P2: Pagination -->
+    <app-pagination
+      *ngIf="routings.length > 0"
+      [page]="page"
+      [size]="size"
+      [totalElements]="totalElements"
+      [totalPages]="totalPages"
+      [hasNext]="hasNext"
+      [hasPrevious]="hasPrevious"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-pagination>
   </div>
 </div>

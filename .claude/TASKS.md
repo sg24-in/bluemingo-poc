@@ -5,7 +5,34 @@
 
 ---
 
-## Latest Session Changes (2026-02-08 - TASK-M4 Material/Product Fields)
+## Latest Session Changes (2026-02-08 - TASK-P3 BOM Pagination)
+
+### TASK-P3: BOM List Server-Side Pagination ✅
+
+**Purpose:** Add server-side pagination to the BOM products list with search functionality
+
+**Backend Changes:**
+- `BomRepository.java` - Added `findDistinctProductSkusPaged()` query for distinct product SKUs with pagination
+- `BomService.java` - Added `getBomProductsPaged()` method that aggregates BOM data per product
+- `BomController.java` - Added `/api/bom/products/paged` endpoint
+
+**Frontend Changes:**
+- `api.service.ts` - Added `getBomProductsPaged()` method
+- `bom-list.component.ts` - Rewrote to use server-side pagination with PageRequest/PagedResponse
+- `bom-list.component.html` - Added search filter and pagination component
+- `bom.module.ts` - Added SharedModule import for PaginationComponent
+- `bom-list.component.spec.ts` - Complete rewrite with 36 tests for pagination, search, navigation
+
+**API Endpoint:**
+```
+GET /api/bom/products/paged?page=0&size=20&sortBy=productSku&sortDirection=ASC&search=STEEL
+```
+
+**Test Results:** 36 unit tests passing
+
+---
+
+## Previous Session Changes (2026-02-08 - TASK-M4 Material/Product Fields)
 
 ### TASK-M4: Material/Product Extended Fields Implementation ✅
 
@@ -226,17 +253,24 @@
 - Frontend: Add type filter dropdown ✅
 - Frontend: Update unit tests (24 tests passing) ✅
 
-#### TASK-P2: Add Server-Side Pagination to Routing List [PENDING]
-- Backend: Add `findByFilters()` method to RoutingRepository
-- Backend: Add `getRoutingsPaged()` to RoutingService
-- Backend: Add `/api/routing/paged` endpoint to RoutingController
-- Frontend: Update routing-list.component.ts to use paged API
+#### TASK-P2: Add Server-Side Pagination to Routing List [DONE]
+- Backend: Add `findByFilters()` method to RoutingRepository ✅
+- Backend: Add `getRoutingsPaged()` to RoutingService ✅
+- Backend: Add `/api/routing/paged` endpoint to RoutingController ✅
+- Frontend: Update routing-list.component.ts to use paged API ✅
+- Frontend: Add type (SEQUENTIAL/PARALLEL) filter dropdown ✅
+- Frontend: Update unit tests (40 tests passing) ✅
+- Updated RoutingDTO.RoutingInfo with processName, createdBy, updatedOn, updatedBy fields ✅
 
-#### TASK-P3: Add Server-Side Pagination to BOM List [PENDING]
-- Backend: Add `findByFilters()` method to BomRepository
-- Backend: Add `getBomProductsPaged()` to BomService
-- Backend: Add `/api/bom/products/paged` endpoint
-- Frontend: Update bom-list.component.ts to use paged API
+#### TASK-P3: Add Server-Side Pagination to BOM List [DONE] ✅
+- Backend: Add `findDistinctProductSkusPaged()` method to BomRepository ✅
+- Backend: Add `getBomProductsPaged()` to BomService ✅
+- Backend: Add `/api/bom/products/paged` endpoint ✅
+- Frontend: Add `getBomProductsPaged()` to ApiService ✅
+- Frontend: Update bom-list.component.ts to use paged API ✅
+- Frontend: Add search filter to bom-list.component.html ✅
+- Frontend: Add SharedModule import to BomModule for PaginationComponent ✅
+- Frontend: Update unit tests (36 tests passing) ✅
 
 ---
 

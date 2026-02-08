@@ -1,5 +1,7 @@
 package com.mes.production.service;
 
+import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.RoutingDTO;
 import com.mes.production.entity.Operation;
 import com.mes.production.entity.OperationTemplate;
@@ -13,6 +15,8 @@ import com.mes.production.repository.RoutingRepository;
 import com.mes.production.repository.RoutingStepRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -228,6 +232,70 @@ public class RoutingService {
         return routingRepository.findAll().stream()
                 .filter(r -> status.equals(r.getStatus()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * TASK-P2: Get paginated routings with filters.
+     */
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<RoutingDTO.RoutingInfo> getRoutingsPaged(PageRequestDTO pageRequest) {
+        Pageable pageable = pageRequest.toPageable("routingName");
+
+        Page<Routing> page;
+        if (pageRequest.hasFilters()) {
+            page = routingRepository.findByFilters(
+                    pageRequest.getStatus(),
+                    pageRequest.getType(),
+                    pageRequest.getSearchPattern(),
+                    pageable);
+        } else {
+            page = routingRepository.findAll(pageable);
+        }
+
+        Page<RoutingDTO.RoutingInfo> dtoPage = page.map(this::convertToRoutingInfo);
+        return PagedResponseDTO.fromPage(dtoPage, pageRequest.getSortBy(), pageRequest.getSortDirection(), pageRequest.getSearch());
+    }
+
+    /**
+     * Convert Routing entity to RoutingInfo DTO.
+     */
+    private RoutingDTO.RoutingInfo convertToRoutingInfo(Routing routing) {
+        List<RoutingDTO.RoutingStepInfo> stepInfos = routing.getRoutingSteps().stream()
+                .map(this::convertToStepInfo)
+                .collect(Collectors.toList());
+
+        return RoutingDTO.RoutingInfo.builder()
+                .routingId(routing.getRoutingId())
+                .processId(routing.getProcess() != null ? routing.getProcess().getProcessId() : null)
+                .processName(routing.getProcess() != null ? routing.getProcess().getProcessName() : null)
+                .routingName(routing.getRoutingName())
+                .routingType(routing.getRoutingType())
+                .status(routing.getStatus())
+                .steps(stepInfos)
+                .createdOn(routing.getCreatedOn())
+                .createdBy(routing.getCreatedBy())
+                .updatedOn(routing.getUpdatedOn())
+                .updatedBy(routing.getUpdatedBy())
+                .build();
+    }
+
+    /**
+     * Convert RoutingStep entity to RoutingStepInfo DTO.
+     */
+    private RoutingDTO.RoutingStepInfo convertToStepInfo(RoutingStep step) {
+        return RoutingDTO.RoutingStepInfo.builder()
+                .routingStepId(step.getRoutingStepId())
+                .routingId(step.getRouting() != null ? step.getRouting().getRoutingId() : null)
+                .operationTemplateId(step.getOperationTemplate() != null ?
+                        step.getOperationTemplate().getOperationTemplateId() : null)
+                .operationName(step.getEffectiveOperationName())
+                .operationType(step.getEffectiveOperationType())
+                .operationCode(step.getEffectiveOperationCode())
+                .sequenceNumber(step.getSequenceNumber())
+                .isParallel(step.getIsParallel())
+                .mandatoryFlag(step.getMandatoryFlag())
+                .status(step.getStatus())
+                .build();
     }
 
     /**

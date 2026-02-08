@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { BomProductSummary } from '../../../shared/models';
+import { PageRequest, PagedResponse, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-bom-list',
@@ -13,6 +14,17 @@ export class BomListComponent implements OnInit {
   loading = true;
   error: string | null = null;
 
+  // TASK-P3: Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  searchTerm = '';
+
   constructor(
     private apiService: ApiService,
     private router: Router
@@ -22,21 +34,60 @@ export class BomListComponent implements OnInit {
     this.loadProducts();
   }
 
+  // TASK-P3: Server-side paginated loading
   loadProducts(): void {
     this.loading = true;
     this.error = null;
 
-    this.apiService.getBomProducts().subscribe({
-      next: (products) => {
-        this.products = products;
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'productSku',
+      sortDirection: 'ASC',
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getBomProductsPaged(request).subscribe({
+      next: (response: PagedResponse<BomProductSummary>) => {
+        this.products = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load BOM products';
+        this.error = err.error?.message || 'Failed to load BOM products';
         this.loading = false;
         console.error('Error loading BOM products:', err);
       }
     });
+  }
+
+  // TASK-P3: Pagination handlers
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadProducts();
+  }
+
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadProducts();
+  }
+
+  onSearchChange(term: string): void {
+    this.searchTerm = term;
+    this.page = 0;
+    this.loadProducts();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.page = 0;
+    this.loadProducts();
   }
 
   viewTree(productSku: string): void {
