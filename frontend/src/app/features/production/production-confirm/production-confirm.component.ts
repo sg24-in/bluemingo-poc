@@ -4,7 +4,6 @@ import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl, Validat
 import { ApiService } from '../../../core/services/api.service';
 import { SuggestedConsumptionResponse, SuggestedMaterial, AvailableBatch } from '../../../shared/models';
 import { MaterialSelection, InventoryItem } from '../../../shared/components/material-selection-modal/material-selection-modal.component';
-import { EntityType } from '../../../shared/components/apply-hold-modal/apply-hold-modal.component';
 
 interface MaterialConsumption {
   inventoryId: number;
@@ -77,9 +76,6 @@ export class ProductionConfirmComponent implements OnInit {
 
   // P14: Material Selection Modal
   showMaterialModal = false;
-
-  // P15: Apply Hold Modal
-  showHoldModal = false;
 
   // P17: Collapsible Sections
   collapsedSections: { [key: string]: boolean } = {
@@ -650,26 +646,6 @@ export class ProductionConfirmComponent implements OnInit {
       state: inv.state,
       location: inv.location
     }));
-  }
-
-  // ========== P15: Apply Hold Modal ==========
-
-  openHoldModal(): void {
-    this.showHoldModal = true;
-  }
-
-  closeHoldModal(): void {
-    this.showHoldModal = false;
-  }
-
-  onHoldApplied(hold: any): void {
-    // Reload operation to get updated status
-    this.loadData();
-  }
-
-  get operationName(): string {
-    if (!this.operation) return '';
-    return `${this.operation.operationName} (${this.operation.operationCode})`;
   }
 
   // ========== P17: Collapsible Sections ==========

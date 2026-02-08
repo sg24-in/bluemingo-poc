@@ -2,18 +2,6 @@
   <div class="page-header">
     <button class="btn btn-secondary" (click)="goBack()"><i class="fas fa-arrow-left"></i> Back to Order</button>
     <h1 class="page-title">Production Confirmation</h1>
-    <!-- P15: Apply Hold Quick Action -->
-    <button
-      *ngIf="operation && operation.status !== 'ON_HOLD'"
-      class="btn btn-warning btn-hold"
-      (click)="openHoldModal()"
-      title="Apply hold to this operation"
-    >
-      <i class="fas fa-pause-circle"></i> Apply Hold
-    </button>
-    <span *ngIf="operation?.status === 'ON_HOLD'" class="hold-badge">
-      <i class="fas fa-pause-circle"></i> Operation On Hold
-    </span>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -690,13 +678,3 @@
   (close)="closeMaterialModal()"
   (selectionChange)="onMaterialSelectionChange($event)"
 ></app-material-selection-modal>
-
-<!-- P15: Apply Hold Modal -->
-<app-apply-hold-modal
-  [isOpen]="showHoldModal"
-  [entityType]="'OPERATION'"
-  [entityId]="operationId"
-  [entityName]="operationName"
-  (close)="closeHoldModal()"
-  (holdApplied)="onHoldApplied($event)"
-></app-apply-hold-modal>

@@ -1,6 +1,6 @@
 # =====================================================
-# MES Production Confirmation - Test Profile
-# Uses PostgreSQL mes_test database
+# MES Production Confirmation POC - Test Profile
+# Uses PostgreSQL mes_poc_test database
 # Schema is dropped and recreated on each test run
 # Run with: ./gradlew test -Dspring.profiles.active=test
 # =====================================================
@@ -10,10 +10,10 @@ server:
 
 spring:
   application:
-    name: mes-production-confirmation-test
+    name: mes-poc-test
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/mes_test
+    url: jdbc:postgresql://localhost:5432/mes_poc_test
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver

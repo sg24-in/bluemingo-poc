@@ -11,7 +11,6 @@ export class HeaderComponent implements OnInit {
   currentUser: User | null = null;
   profileMenuOpen = false;
   mobileMenuOpen = false;
-  expandedDropdown: string | null = null;
 
   constructor(
     private authService: AuthService,
@@ -38,7 +37,6 @@ export class HeaderComponent implements OnInit {
   onEscapeKey(): void {
     this.profileMenuOpen = false;
     this.mobileMenuOpen = false;
-    this.expandedDropdown = null;
   }
 
   // Close mobile menu on window resize (when switching to desktop)
@@ -46,7 +44,6 @@ export class HeaderComponent implements OnInit {
   onResize(): void {
     if (window.innerWidth > 992) {
       this.mobileMenuOpen = false;
-      this.expandedDropdown = null;
     }
   }
 
@@ -60,23 +57,10 @@ export class HeaderComponent implements OnInit {
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen = !this.mobileMenuOpen;
-    if (!this.mobileMenuOpen) {
-      this.expandedDropdown = null;
-    }
-  }
-
-  toggleDropdown(dropdown: string, event: Event): void {
-    // Only toggle on mobile
-    if (window.innerWidth <= 992) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.expandedDropdown = this.expandedDropdown === dropdown ? null : dropdown;
-    }
   }
 
   closeMobileMenu(): void {
     this.mobileMenuOpen = false;
-    this.expandedDropdown = null;
   }
 
   getUserInitials(): string {
@@ -97,29 +81,5 @@ export class HeaderComponent implements OnInit {
   logout(): void {
     this.profileMenuOpen = false;
     this.authService.logout();
-  }
-
-  // Check if Orders dropdown should be highlighted
-  isOrdersActive(): boolean {
-    const url = this.router.url;
-    return url.startsWith('/orders') || url.startsWith('/production');
-  }
-
-  // Check if Manufacturing dropdown should be highlighted
-  isManufacturingActive(): boolean {
-    const url = this.router.url;
-    return url.startsWith('/operations') || url.startsWith('/equipment');
-  }
-
-  // Check if Inventory dropdown should be highlighted
-  isInventoryActive(): boolean {
-    const url = this.router.url;
-    return url.startsWith('/inventory') || url.startsWith('/batches');
-  }
-
-  // Check if Quality dropdown should be highlighted
-  isQualityActive(): boolean {
-    const url = this.router.url;
-    return url.startsWith('/holds');
   }
 }
