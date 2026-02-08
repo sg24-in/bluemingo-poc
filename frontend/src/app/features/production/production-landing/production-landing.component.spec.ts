@@ -31,21 +31,16 @@ describe('ProductionLandingComponent', () => {
           unit: 'KG',
           deliveryDate: '2026-02-15',
           status: 'IN_PROGRESS',
-          processes: [
+          // Operations are directly on lineItem (backend DTO structure)
+          operations: [
             {
-              processId: 1,
+              operationId: 101,
+              operationName: 'Scrap Charging',
+              operationCode: 'MELT-10',
+              operationType: 'FURNACE',
               processName: 'Melting',
-              status: 'ACTIVE', // Process is design-time only, uses DRAFT/ACTIVE/INACTIVE
-              operations: [
-                {
-                  operationId: 101,
-                  operationName: 'Scrap Charging',
-                  operationCode: 'MELT-10',
-                  operationType: 'FURNACE',
-                  sequenceNumber: 1,
-                  status: 'READY'
-                }
-              ]
+              sequenceNumber: 1,
+              status: 'READY'
             }
           ]
         }
