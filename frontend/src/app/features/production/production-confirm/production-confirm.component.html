@@ -2,6 +2,18 @@
   <div class="page-header">
     <button class="btn btn-secondary" (click)="goBack()"><i class="fas fa-arrow-left"></i> Back to Order</button>
     <h1 class="page-title">Production Confirmation</h1>
+    <!-- P15: Apply Hold Quick Action -->
+    <button
+      *ngIf="operation && operation.status !== 'ON_HOLD'"
+      class="btn btn-warning btn-hold"
+      (click)="openHoldModal()"
+      title="Apply hold to this operation"
+    >
+      <i class="fas fa-pause-circle"></i> Apply Hold
+    </button>
+    <span *ngIf="operation?.status === 'ON_HOLD'" class="hold-badge">
+      <i class="fas fa-pause-circle"></i> Operation On Hold
+    </span>
   </div>
 
   <div *ngIf="loading" class="text-center">
@@ -191,7 +203,13 @@
 
       <!-- Material Consumption -->
       <div class="card">
-        <div class="card-header">Material Consumption</div>
+        <div class="card-header-with-action">
+          <span class="card-header">Material Consumption</span>
+          <!-- P14: Open Material Selection Modal -->
+          <button type="button" class="btn btn-primary btn-sm" (click)="openMaterialModal()">
+            <i class="fas fa-plus"></i> Select Materials
+          </button>
+        </div>
 
         <!-- BOM Suggested Consumption -->
         <div class="suggested-consumption" *ngIf="showSuggestions && suggestedConsumption">
@@ -506,3 +524,22 @@
     <p class="no-data">{{ error || 'Operation not found' }}</p>
   </div>
 </div>
+
+<!-- P14: Material Selection Modal -->
+<app-material-selection-modal
+  [isOpen]="showMaterialModal"
+  [availableInventory]="inventoryForModal"
+  [selectedMaterials]="selectedMaterials"
+  (close)="closeMaterialModal()"
+  (selectionChange)="onMaterialSelectionChange($event)"
+></app-material-selection-modal>
+
+<!-- P15: Apply Hold Modal -->
+<app-apply-hold-modal
+  [isOpen]="showHoldModal"
+  [entityType]="'OPERATION'"
+  [entityId]="operationId"
+  [entityName]="operationName"
+  (close)="closeHoldModal()"
+  (holdApplied)="onHoldApplied($event)"
+></app-apply-hold-modal>

@@ -1,0 +1,116 @@
+<div class="modal-backdrop" *ngIf="isOpen" (click)="onBackdropClick($event)">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h2>Select Materials for Consumption</h2>
+      <button class="close-btn" (click)="onCancel()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search and Filters -->
+      <div class="filters-row">
+        <div class="search-group">
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Search by batch # or material ID..."
+            [(ngModel)]="searchTerm"
+          />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="filter-group">
+          <select class="form-control" [(ngModel)]="filterMaterialType">
+            <option value="">All Material Types</option>
+            <option *ngFor="let type of materialTypes" [value]="type">{{ type }}</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="clearFilters()" *ngIf="searchTerm || filterMaterialType">
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Bulk Actions -->
+      <div class="bulk-actions">
+        <button class="btn btn-secondary btn-sm" (click)="selectAll()">
+          <i class="fas fa-check-double"></i> Select All Visible
+        </button>
+        <button class="btn btn-secondary btn-sm" (click)="clearAll()" *ngIf="selectedCount > 0">
+          <i class="fas fa-times"></i> Clear Selection
+        </button>
+        <span class="selection-summary" *ngIf="selectedCount > 0">
+          {{ selectedCount }} item(s) selected
+        </span>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="table-container">
+        <table class="table" *ngIf="filteredInventory.length > 0">
+          <thead>
+            <tr>
+              <th class="col-checkbox"></th>
+              <th>Batch #</th>
+              <th>Material ID</th>
+              <th>Available Qty</th>
+              <th>Unit</th>
+              <th>State</th>
+              <th>Qty to Consume</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredInventory"
+                [class.selected]="isSelected(item.inventoryId)">
+              <td class="col-checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(item.inventoryId)"
+                  (change)="toggleSelection(item)"
+                />
+              </td>
+              <td>{{ item.batchNumber }}</td>
+              <td>{{ item.materialId }}</td>
+              <td class="text-right">{{ item.quantity }}</td>
+              <td>{{ item.unit }}</td>
+              <td>
+                <app-status-badge [status]="item.state"></app-status-badge>
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control consume-qty"
+                  [disabled]="!isSelected(item.inventoryId)"
+                  [value]="getSelectedQuantity(item.inventoryId)"
+                  (input)="updateQuantity(item.inventoryId, $any($event.target).valueAsNumber)"
+                  [min]="0"
+                  [max]="item.quantity"
+                  placeholder="0"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="no-data" *ngIf="filteredInventory.length === 0">
+          <i class="fas fa-inbox"></i>
+          <p>No inventory items found</p>
+          <p class="text-muted" *ngIf="searchTerm || filterMaterialType">
+            Try adjusting your search or filter criteria
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="footer-summary">
+        <span *ngIf="selectedCount > 0">
+          <strong>{{ selectedCount }}</strong> materials selected,
+          <strong>{{ totalSelectedQuantity }}</strong> total quantity to consume
+        </span>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" (click)="onCancel()">Cancel</button>
+        <button class="btn btn-primary" (click)="onConfirm()">
+          <i class="fas fa-check"></i> Confirm Selection
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -3,6 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { SuggestedConsumptionResponse, SuggestedMaterial, AvailableBatch } from '../../../shared/models';
+import { MaterialSelection, InventoryItem } from '../../../shared/components/material-selection-modal/material-selection-modal.component';
+import { EntityType } from '../../../shared/components/apply-hold-modal/apply-hold-modal.component';
 
 interface MaterialConsumption {
   inventoryId: number;
@@ -72,6 +74,12 @@ export class ProductionConfirmComponent implements OnInit {
   // P07-P08: Batch number preview
   previewBatchNumber: string = '';
   loadingBatchPreview = false;
+
+  // P14: Material Selection Modal
+  showMaterialModal = false;
+
+  // P15: Apply Hold Modal
+  showHoldModal = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -588,5 +596,63 @@ export class ProductionConfirmComponent implements OnInit {
     const produced = this.confirmForm.get('quantityProduced')?.value || 0;
     const scrapped = this.confirmForm.get('quantityScrapped')?.value || 0;
     return produced + scrapped;
+  }
+
+  // ========== P14: Material Selection Modal ==========
+
+  openMaterialModal(): void {
+    this.showMaterialModal = true;
+  }
+
+  closeMaterialModal(): void {
+    this.showMaterialModal = false;
+  }
+
+  onMaterialSelectionChange(selections: MaterialSelection[]): void {
+    // Convert MaterialSelection to MaterialConsumption
+    this.selectedMaterials = selections.map(sel => ({
+      inventoryId: sel.inventoryId,
+      batchId: sel.batchId,
+      batchNumber: sel.batchNumber,
+      materialId: sel.materialId,
+      availableQuantity: sel.availableQuantity,
+      quantityToConsume: sel.quantityToConsume
+    }));
+    this.validateBom();
+  }
+
+  // Convert available inventory to InventoryItem format for modal
+  get inventoryForModal(): InventoryItem[] {
+    return this.availableInventory.map(inv => ({
+      inventoryId: inv.inventoryId,
+      batchId: inv.batchId,
+      batchNumber: inv.batchNumber,
+      materialId: inv.materialId,
+      materialName: inv.materialName,
+      quantity: inv.quantity,
+      unit: inv.unit || 'T',
+      state: inv.state,
+      location: inv.location
+    }));
+  }
+
+  // ========== P15: Apply Hold Modal ==========
+
+  openHoldModal(): void {
+    this.showHoldModal = true;
+  }
+
+  closeHoldModal(): void {
+    this.showHoldModal = false;
+  }
+
+  onHoldApplied(hold: any): void {
+    // Reload operation to get updated status
+    this.loadData();
+  }
+
+  get operationName(): string {
+    if (!this.operation) return '';
+    return `${this.operation.operationName} (${this.operation.operationCode})`;
   }
 }

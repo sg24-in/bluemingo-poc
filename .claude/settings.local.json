@@ -158,7 +158,9 @@
       "Bash(__NEW_LINE_f3f22130a2a937c1__ echo \"=== 1. Check Reset Status ===\")",
       "Bash(psql:*)",
       "Bash(tasklist:*)",
-      "Bash(PGPASSWORD=postgres psql:*)"
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(tee:*)",
+      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat -p D:/repositories/bluemingo-poc/backend bootRun --args=\"--spring.profiles.active=reset\")"
     ]
   }
 }

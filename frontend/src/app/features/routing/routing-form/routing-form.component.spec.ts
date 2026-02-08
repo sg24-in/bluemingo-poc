@@ -63,6 +63,12 @@ describe('RoutingFormComponent', () => {
     ]
   };
 
+  const mockOperationTemplates: any[] = [
+    { operationTemplateId: 1, operationName: 'Melting', operationType: 'MELTING', status: 'ACTIVE' },
+    { operationTemplateId: 2, operationName: 'Casting', operationType: 'CASTING', status: 'ACTIVE' },
+    { operationTemplateId: 3, operationName: 'Rolling', operationType: 'ROLLING', status: 'ACTIVE' }
+  ];
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getAllProcesses',
@@ -72,7 +78,8 @@ describe('RoutingFormComponent', () => {
       'createRoutingStep',
       'updateRoutingStep',
       'deleteRoutingStep',
-      'reorderRoutingSteps'
+      'reorderRoutingSteps',
+      'getActiveOperationTemplates'
     ]);
 
     activatedRoute = {
@@ -103,6 +110,7 @@ describe('RoutingFormComponent', () => {
   describe('Create Mode', () => {
     beforeEach(() => {
       apiServiceSpy.getAllProcesses.and.returnValue(of(mockProcesses));
+      apiServiceSpy.getActiveOperationTemplates.and.returnValue(of(mockOperationTemplates));
       fixture = TestBed.createComponent(RoutingFormComponent);
       component = fixture.componentInstance;
       fixture.detectChanges();
@@ -566,6 +574,11 @@ describe('RoutingFormComponent Edit Mode', () => {
     { processId: 2, processName: 'Casting Process', status: 'ACTIVE' }
   ];
 
+  const mockOperationTemplates: any[] = [
+    { operationTemplateId: 1, operationName: 'Melting', operationType: 'MELTING', status: 'ACTIVE' },
+    { operationTemplateId: 2, operationName: 'Casting', operationType: 'CASTING', status: 'ACTIVE' }
+  ];
+
   const mockRouting = {
     routingId: 1,
     processId: 1,
@@ -608,7 +621,8 @@ describe('RoutingFormComponent Edit Mode', () => {
       'createRoutingStep',
       'updateRoutingStep',
       'deleteRoutingStep',
-      'reorderRoutingSteps'
+      'reorderRoutingSteps',
+      'getActiveOperationTemplates'
     ]);
 
     await TestBed.configureTestingModule({
@@ -640,6 +654,7 @@ describe('RoutingFormComponent Edit Mode', () => {
   beforeEach(() => {
     apiServiceSpy.getAllProcesses.and.returnValue(of(mockProcesses));
     apiServiceSpy.getRoutingById.and.returnValue(of(mockRouting));
+    apiServiceSpy.getActiveOperationTemplates.and.returnValue(of(mockOperationTemplates));
 
     fixture = TestBed.createComponent(RoutingFormComponent);
     component = fixture.componentInstance;

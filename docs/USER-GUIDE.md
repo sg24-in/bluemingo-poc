@@ -145,6 +145,30 @@ Enter the start and end times for the production run.
 
 Check the equipment and operators used for this production run.
 
+### Step 5b: Select Input Materials (Material Selection Modal)
+
+For operations that consume input materials, use the Material Selection Modal:
+
+1. Click **Select Materials** button in the Material Consumption card
+2. The modal displays all available inventory items
+3. **Search:** Find materials by batch number, material ID, or material name
+4. **Filter:** Use the type dropdown to filter by material type (RM, IM, FG, WIP)
+5. **Select:** Click checkboxes to select items, or use **Select All Visible** for bulk selection
+6. **Quantity:** Enter the quantity to consume for each selected item (max = available)
+7. **Review:** The summary shows selected count and total quantity
+8. Click **Confirm Selection** to apply, or **Cancel** to close without changes
+
+### Step 5c: Apply Hold (Quick Action)
+
+If an issue is discovered during production confirmation, you can apply a hold directly:
+
+1. Click **Apply Hold** button in the page header
+2. The modal shows the entity type (Operation) and name
+3. Select a **Hold Reason** from the dropdown (required)
+4. Optionally add **Comments** for context
+5. Click **Apply Hold** to apply
+6. The modal closes automatically on success
+
 ### Step 6: Submit Confirmation
 
 Click **Confirm Production** to submit. This will:
@@ -331,6 +355,7 @@ Navigate to **Holds** to see all active holds.
 
 ### Applying a Hold
 
+**From the Holds Page:**
 1. Click **Apply Hold** or **New Hold**
 2. Select the entity type (Order, Batch, Inventory, Equipment)
 3. Select the specific item to hold
@@ -339,6 +364,13 @@ Navigate to **Holds** to see all active holds.
 6. Click **Apply**
 
 ![Apply Hold Modal](../e2e/output/screenshots/user-journey/019-holds-apply-modal.png)
+
+**Quick Hold from Production Confirmation:**
+You can also apply holds directly from the Production Confirmation page:
+1. While in the production confirmation form, click **Apply Hold** in the header
+2. The hold is automatically associated with the current operation
+3. Select reason and add comments
+4. Click **Apply Hold** - the modal closes automatically on success
 
 ### Releasing a Hold
 

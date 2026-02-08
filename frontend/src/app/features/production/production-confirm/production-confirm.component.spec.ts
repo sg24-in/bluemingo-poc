@@ -68,6 +68,11 @@ describe('ProductionConfirmComponent', () => {
     levels: [1]
   };
 
+  const mockHoldReasons = [
+    { reasonCode: 'QUALITY', description: 'Quality Issue' },
+    { reasonCode: 'EQUIPMENT', description: 'Equipment Problem' }
+  ];
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getOperationDetails',
@@ -78,7 +83,9 @@ describe('ProductionConfirmComponent', () => {
       'getBomRequirements',
       'validateBomConsumption',
       'confirmProduction',
-      'getDelayReasons'
+      'getDelayReasons',
+      'getHoldReasons',
+      'applyHold'
     ]);
 
     await TestBed.configureTestingModule({
@@ -117,6 +124,8 @@ describe('ProductionConfirmComponent', () => {
     apiServiceSpy.getBomRequirements.and.returnValue(of(mockBomRequirements as any));
     apiServiceSpy.validateBomConsumption.and.returnValue(of({ isValid: true, warnings: [], errors: [] } as any));
     apiServiceSpy.getDelayReasons.and.returnValue(of(mockDelayReasons as any));
+    apiServiceSpy.getHoldReasons.and.returnValue(of(mockHoldReasons as any));
+    apiServiceSpy.applyHold.and.returnValue(of({ holdId: 1, status: 'ACTIVE' } as any));
 
     fixture = TestBed.createComponent(ProductionConfirmComponent);
     component = fixture.componentInstance;

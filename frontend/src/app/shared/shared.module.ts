@@ -10,6 +10,8 @@ import { MainLayoutComponent } from './components/main-layout/main-layout.compon
 import { AdminLayoutComponent } from './components/admin-layout/admin-layout.component';
 import { ManageLandingComponent } from './components/manage-landing/manage-landing.component';
 import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
+import { MaterialSelectionModalComponent } from './components/material-selection-modal/material-selection-modal.component';
+import { ApplyHoldModalComponent } from './components/apply-hold-modal/apply-hold-modal.component';
 
 @NgModule({
   declarations: [
@@ -20,7 +22,9 @@ import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.componen
     MainLayoutComponent,
     AdminLayoutComponent,
     ManageLandingComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    MaterialSelectionModalComponent,
+    ApplyHoldModalComponent
   ],
   imports: [
     CommonModule,
@@ -40,7 +44,9 @@ import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.componen
     MainLayoutComponent,
     AdminLayoutComponent,
     ManageLandingComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    MaterialSelectionModalComponent,
+    ApplyHoldModalComponent
   ]
 })
 export class SharedModule { }

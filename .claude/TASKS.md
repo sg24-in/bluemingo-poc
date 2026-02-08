@@ -1,13 +1,69 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-08
-**Session Status:** In Progress - Template/Runtime Separation (Frontend module complete)
+**Session Status:** Complete - P14/P15 Modal Components Implementation
 
 ---
 
-## Latest Session Changes (2026-02-07 - Template/Runtime Separation)
+## Latest Session Changes (2026-02-08 - P14/P15 Implementation)
 
-### ARCH-FIX: Template/Runtime Separation - IN PROGRESS
+### P14: MaterialSelectionModalComponent - COMPLETE ✅
+
+**New Files Created:**
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.ts`
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.html`
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.css`
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.spec.ts`
+- `e2e/tests/25-material-selection-modal.test.js`
+
+**Features:**
+- Search by batch number or material ID
+- Filter by material type (RM/IM/FG/WIP)
+- Select All / Clear All / Clear Filters buttons
+- Quantity to consume input with validation (max = available, min = 0)
+- Selection summary with total quantity
+- Modal backdrop click to close
+- Integration with production confirm component
+
+### P15: ApplyHoldModalComponent - COMPLETE ✅
+
+**New Files Created:**
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.ts`
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.html`
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.css`
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.spec.ts`
+- `e2e/tests/26-apply-hold-modal.test.js`
+
+**Features:**
+- Load hold reasons from API on modal open
+- Display entity info (type, name)
+- Warning message about hold impact
+- Required reason selection, optional comments
+- Success state with auto-close
+- Error handling with user-friendly messages
+- Integration with production confirm component
+
+### Test Fixes - COMPLETE ✅
+
+**Fixed Files:**
+- `frontend/src/app/features/processes/process-list/process-list.component.spec.ts`
+  - Updated to use server-side pagination pattern
+  - Fixed references: `allProcesses` → `processes`, removed `applyFilters()`
+  - Added `getProcessesPaged` mock with `PagedResponse`
+  - Added pagination tests (page change, size change)
+
+### Integration Updates
+
+**Modified Files:**
+- `frontend/src/app/shared/shared.module.ts` - Added MaterialSelectionModalComponent and ApplyHoldModalComponent to declarations/exports
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.ts` - Added modal state variables and methods
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.html` - Added modal trigger buttons and components
+
+---
+
+## Previous Session Changes (2026-02-07 - Template/Runtime Separation)
+
+### ARCH-FIX: Template/Runtime Separation - COMPLETE ✅
 
 **Task:** Correct the MES data model to properly separate TEMPLATE (design-time) and RUNTIME (execution-time) entities.
 
@@ -92,7 +148,7 @@
 - [ ] Run backend with test profile to apply patch 040
 - [x] Create frontend OperationTemplate admin module (`/manage/operation-templates`) - DONE
 - [x] Add Operation Templates to admin sidebar navigation - DONE
-- [ ] Update routing step form to use OperationTemplate dropdown
+- [x] Update routing step form to use OperationTemplate dropdown - DONE
 
 ---
 
@@ -2212,10 +2268,28 @@ See `documents/MES-Batch-Management-Gap-Analysis.md` for full SQL.
 
 | # | Task | Status | Priority | Notes |
 |---|------|--------|----------|-------|
-| P14 | Create MaterialSelectionModalComponent | PENDING | LOW | Better UX for selection |
-| P15 | Add "Apply Hold" quick action | PENDING | LOW | From confirmation form |
+| P14 | Create MaterialSelectionModalComponent | ✅ DONE | LOW | Search/filter, bulk select, quantity input |
+| P15 | Add "Apply Hold" quick action | ✅ DONE | LOW | Modal with reason selection, API integration |
 | P16 | Implement two-column responsive layout | PENDING | LOW | Desktop optimization |
 | P17 | Add collapsible section headers | PENDING | LOW | Mobile optimization |
+
+**P14/P15 Implementation Details (2026-02-08):**
+
+**MaterialSelectionModalComponent:**
+- Location: `frontend/src/app/shared/components/material-selection-modal/`
+- Features: Search by batch/material, filter by type, select all/clear, quantity input with validation
+- Unit tests: `material-selection-modal.component.spec.ts` - 19 tests
+- E2E tests: `e2e/tests/25-material-selection-modal.test.js` - 11 tests
+
+**ApplyHoldModalComponent:**
+- Location: `frontend/src/app/shared/components/apply-hold-modal/`
+- Features: Load hold reasons from API, apply hold to entity, success/error states
+- Unit tests: `apply-hold-modal.component.spec.ts` - 16 tests
+- E2E tests: `e2e/tests/26-apply-hold-modal.test.js` - 14 tests
+
+**Integration:**
+- Both modals added to SharedModule exports
+- Production confirm component updated with modal triggers
 
 ### Phase 10E: Testing
 

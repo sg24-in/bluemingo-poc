@@ -15,7 +15,8 @@ This guide covers everything you need to set up, develop, test, and deploy the M
 7. [API Reference](#api-reference)
 8. [Database](#database)
 9. [Demo Video & Voiceover](#demo-video--voiceover) - **Create demo videos with automated voiceover**
-10. [Troubleshooting](#troubleshooting)
+10. [Shared Modal Components](#shared-modal-components) - **Reusable UI modals**
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -964,6 +965,131 @@ await googleTTS.getAudioBase64(text, {
 - Check ffprobe-static is installed
 
 For more details, see [DEMO-GUIDE.md](DEMO-GUIDE.md).
+
+---
+
+## Shared Modal Components
+
+The application includes reusable modal components in `frontend/src/app/shared/components/`.
+
+### MaterialSelectionModalComponent
+
+**Purpose:** Select inventory items (materials) for production confirmation.
+
+**Location:** `frontend/src/app/shared/components/material-selection-modal/`
+
+**Interfaces:**
+```typescript
+export interface InventoryItem {
+  inventoryId: number;
+  batchId: number;
+  batchNumber: string;
+  materialId: string;
+  materialName?: string;
+  quantity: number;
+  unit: string;
+  state: string;
+  location?: string;
+}
+
+export interface MaterialSelection {
+  inventoryId: number;
+  batchId: number;
+  batchNumber: string;
+  materialId: string;
+  availableQuantity: number;
+  quantityToConsume: number;
+}
+```
+
+**Inputs:**
+| Property | Type | Description |
+|----------|------|-------------|
+| `isOpen` | `boolean` | Controls modal visibility |
+| `availableInventory` | `InventoryItem[]` | Items to display |
+| `selectedMaterials` | `MaterialSelection[]` | Pre-selected items |
+
+**Outputs:**
+| Event | Type | Description |
+|-------|------|-------------|
+| `close` | `void` | User dismissed modal |
+| `selectionChange` | `MaterialSelection[]` | User confirmed selection |
+
+**Features:**
+- Search by batch number, material ID, or name
+- Filter by material type (RM/IM/FG/WIP)
+- Bulk select/clear operations
+- Quantity validation (0 to available)
+
+**Usage:**
+```html
+<app-material-selection-modal
+  [isOpen]="materialModalOpen"
+  [availableInventory]="inventoryList"
+  [selectedMaterials]="selectedMaterials"
+  (close)="materialModalOpen = false"
+  (selectionChange)="onMaterialsSelected($event)">
+</app-material-selection-modal>
+```
+
+### ApplyHoldModalComponent
+
+**Purpose:** Quick-action modal for applying holds to entities.
+
+**Location:** `frontend/src/app/shared/components/apply-hold-modal/`
+
+**Types:**
+```typescript
+export type EntityType = 'ORDER' | 'OPERATION' | 'BATCH' | 'INVENTORY' | 'EQUIPMENT';
+```
+
+**Inputs:**
+| Property | Type | Description |
+|----------|------|-------------|
+| `isOpen` | `boolean` | Controls modal visibility |
+| `entityType` | `EntityType` | Type of entity to hold |
+| `entityId` | `number` | Entity primary key |
+| `entityName` | `string` | Display name |
+
+**Outputs:**
+| Event | Type | Description |
+|-------|------|-------------|
+| `close` | `void` | User dismissed modal |
+| `holdApplied` | `any` | Hold successfully applied |
+
+**Features:**
+- Dynamic hold reason loading from API
+- Required reason selection
+- Optional comments field
+- Auto-close on success (1.5s)
+
+**API Calls:**
+- `GET /api/config/hold-reasons` - Loads available reasons
+- `POST /api/holds` - Applies the hold
+
+**Usage:**
+```html
+<app-apply-hold-modal
+  [isOpen]="holdModalOpen"
+  entityType="OPERATION"
+  [entityId]="operationId"
+  [entityName]="operationName"
+  (close)="holdModalOpen = false"
+  (holdApplied)="onHoldApplied($event)">
+</app-apply-hold-modal>
+```
+
+### Testing Modal Components
+
+**Unit Tests:**
+```bash
+npm test -- --testNamePattern="MaterialSelectionModal"
+npm test -- --testNamePattern="ApplyHoldModal"
+```
+
+**E2E Tests:**
+- `e2e/tests/25-material-selection-modal.test.js`
+- `e2e/tests/26-apply-hold-modal.test.js`
 
 ---
 

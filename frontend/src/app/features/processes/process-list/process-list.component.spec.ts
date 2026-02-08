@@ -7,6 +7,8 @@ import { of, throwError } from 'rxjs';
 import { ProcessListComponent } from './process-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { PagedResponse } from '../../../shared/models/pagination.model';
+import { Process } from '../../../shared/models';
 
 describe('ProcessListComponent', () => {
   let component: ProcessListComponent;
@@ -14,32 +16,45 @@ describe('ProcessListComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
   // Process is now design-time only with DRAFT/ACTIVE/INACTIVE statuses
-  const mockProcesses: any[] = [
+  const mockProcesses: Process[] = [
     {
       processId: 1,
       processName: 'Melting Process',
       status: 'DRAFT',
       createdOn: '2024-01-01T00:00:00',
       createdBy: 'admin'
-    },
+    } as Process,
     {
       processId: 2,
       processName: 'Casting Process',
       status: 'ACTIVE',
       createdOn: '2024-01-02T00:00:00',
       createdBy: 'admin'
-    },
+    } as Process,
     {
       processId: 3,
       processName: 'Rolling Process',
       status: 'INACTIVE',
       createdOn: '2024-01-03T00:00:00',
       createdBy: 'admin'
-    }
+    } as Process
   ];
+
+  const mockPagedResponse: PagedResponse<Process> = {
+    content: mockProcesses,
+    page: 0,
+    size: 10,
+    totalElements: 3,
+    totalPages: 1,
+    first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false
+  };
 
   beforeEach(async () => {
     const apiSpy = jasmine.createSpyObj('ApiService', [
+      'getProcessesPaged',
       'getProcessesByStatus',
       'activateProcess',
       'deactivateProcess',
@@ -63,6 +78,9 @@ describe('ProcessListComponent', () => {
   });
 
   beforeEach(() => {
+    // Set up paged response
+    apiServiceSpy.getProcessesPaged.and.returnValue(of(mockPagedResponse));
+
     // Each status call returns a subset of mock processes
     apiServiceSpy.getProcessesByStatus.and.callFake((status: string) => {
       const filtered = mockProcesses.filter(p => p.status === status);
@@ -79,8 +97,8 @@ describe('ProcessListComponent', () => {
   });
 
   it('should load processes on init', () => {
-    expect(apiServiceSpy.getProcessesByStatus).toHaveBeenCalled();
-    expect(component.allProcesses.length).toBe(3);
+    expect(apiServiceSpy.getProcessesPaged).toHaveBeenCalled();
+    expect(component.processes.length).toBe(3);
     expect(component.loading).toBeFalse();
   });
 
@@ -92,41 +110,45 @@ describe('ProcessListComponent', () => {
     });
   });
 
-  it('should sort processes by processId descending', () => {
-    expect(component.allProcesses[0].processId).toBe(3);
-    expect(component.allProcesses[1].processId).toBe(2);
-    expect(component.allProcesses[2].processId).toBe(1);
+  it('should load processes in paged response', () => {
+    expect(component.processes[0].processId).toBe(1);
+    expect(component.processes[1].processId).toBe(2);
+    expect(component.processes[2].processId).toBe(3);
   });
 
   it('should apply status filter', () => {
+    // Set up filtered response
+    const filteredResponse: PagedResponse<Process> = {
+      ...mockPagedResponse,
+      content: mockProcesses.filter(p => p.status === 'DRAFT'),
+      totalElements: 1
+    };
+    apiServiceSpy.getProcessesPaged.and.returnValue(of(filteredResponse));
+
     component.onFilterStatusChange('DRAFT');
-    expect(component.processes.length).toBe(1);
-    expect(component.processes[0].processName).toBe('Melting Process');
+
+    expect(component.filterStatus).toBe('DRAFT');
+    expect(apiServiceSpy.getProcessesPaged).toHaveBeenCalled();
   });
 
   it('should apply search filter', () => {
+    const filteredResponse: PagedResponse<Process> = {
+      ...mockPagedResponse,
+      content: mockProcesses.filter(p => p.processName.includes('Casting')),
+      totalElements: 1
+    };
+    apiServiceSpy.getProcessesPaged.and.returnValue(of(filteredResponse));
+
     component.onSearchChange('Casting');
-    expect(component.processes.length).toBe(1);
-    expect(component.processes[0].processName).toBe('Casting Process');
+
+    expect(component.searchTerm).toBe('Casting');
+    expect(apiServiceSpy.getProcessesPaged).toHaveBeenCalled();
   });
 
-  it('should search by process ID', () => {
-    component.onSearchChange('3');
-    expect(component.processes.length).toBe(1);
-    expect(component.processes[0].processId).toBe(3);
-  });
-
-  it('should combine status and search filters', () => {
-    component.filterStatus = 'ACTIVE';
-    component.searchTerm = 'Cast';
-    component.applyFilters();
-    expect(component.processes.length).toBe(1);
-    expect(component.processes[0].processName).toBe('Casting Process');
-  });
-
-  it('should show all when filter is all', () => {
+  it('should reset filter when all is selected', () => {
+    component.filterStatus = 'DRAFT';
     component.onFilterStatusChange('all');
-    expect(component.processes.length).toBe(3);
+    expect(component.filterStatus).toBe('');
   });
 
   it('should return correct status class', () => {
@@ -142,22 +164,46 @@ describe('ProcessListComponent', () => {
   });
 
   it('should handle API errors gracefully', () => {
-    apiServiceSpy.getProcessesByStatus.and.returnValue(throwError(() => new Error('API error')));
+    apiServiceSpy.getProcessesPaged.and.returnValue(throwError(() => new Error('API error')));
     component.loadProcesses();
 
-    // After all status calls error, should still finish loading
     expect(component.loading).toBeFalse();
+    expect(component.error).toBe('Failed to load processes.');
   });
 
-  it('should show empty state when no processes match filter', () => {
-    component.onFilterStatusChange('NONEXISTENT');
-    expect(component.processes.length).toBe(0);
+  it('should handle page change', () => {
+    // Set up a new response for the page change
+    const page2Response: PagedResponse<Process> = {
+      ...mockPagedResponse,
+      page: 2
+    };
+    apiServiceSpy.getProcessesPaged.and.returnValue(of(page2Response));
+
+    component.onPageChange(2);
+
+    expect(apiServiceSpy.getProcessesPaged).toHaveBeenCalled();
+    expect(component.page).toBe(2);
+  });
+
+  it('should handle size change', () => {
+    // Set up a new response with different size
+    const size20Response: PagedResponse<Process> = {
+      ...mockPagedResponse,
+      size: 20,
+      page: 0
+    };
+    apiServiceSpy.getProcessesPaged.and.returnValue(of(size20Response));
+
+    component.onSizeChange(20);
+
+    expect(apiServiceSpy.getProcessesPaged).toHaveBeenCalled();
+    expect(component.size).toBe(20);
+    expect(component.page).toBe(0);
   });
 
   describe('activate/deactivate', () => {
     it('should activate a process', () => {
-      apiServiceSpy.activateProcess.and.returnValue(of({ processId: 1, status: 'ACTIVE' } as any));
-      apiServiceSpy.getProcessesByStatus.and.returnValue(of([]));
+      apiServiceSpy.activateProcess.and.returnValue(of({ processId: 1, status: 'ACTIVE' } as Process));
 
       component.activateProcess(mockProcesses[0]);
 
@@ -176,8 +222,7 @@ describe('ProcessListComponent', () => {
     });
 
     it('should deactivate a process', () => {
-      apiServiceSpy.deactivateProcess.and.returnValue(of({ processId: 2, status: 'INACTIVE' } as any));
-      apiServiceSpy.getProcessesByStatus.and.returnValue(of([]));
+      apiServiceSpy.deactivateProcess.and.returnValue(of({ processId: 2, status: 'INACTIVE' } as Process));
 
       component.deactivateProcess(mockProcesses[1]);
 
@@ -212,7 +257,6 @@ describe('ProcessListComponent', () => {
 
     it('should delete a process', () => {
       apiServiceSpy.deleteProcess.and.returnValue(of(void 0));
-      apiServiceSpy.getProcessesByStatus.and.returnValue(of([]));
 
       component.processToDelete = mockProcesses[0];
       component.deleteProcess();

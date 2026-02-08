@@ -1,0 +1,93 @@
+<div class="modal-backdrop" *ngIf="isOpen" (click)="onBackdropClick($event)">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h2>
+        <i class="fas fa-pause-circle"></i>
+        Apply Hold
+      </h2>
+      <button class="close-btn" (click)="onCancel()">&times;</button>
+    </div>
+
+    <!-- Success State -->
+    <div class="modal-body success-state" *ngIf="success">
+      <div class="success-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h3>Hold Applied Successfully!</h3>
+      <p>The {{ entityTypeDisplay }} has been placed on hold.</p>
+    </div>
+
+    <!-- Form State -->
+    <div class="modal-body" *ngIf="!success">
+      <div class="entity-info">
+        <div class="info-item">
+          <span class="info-label">Entity Type:</span>
+          <span class="info-value">{{ entityTypeDisplay }}</span>
+        </div>
+        <div class="info-item" *ngIf="entityName">
+          <span class="info-label">Name:</span>
+          <span class="info-value">{{ entityName }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">ID:</span>
+          <span class="info-value">{{ entityId }}</span>
+        </div>
+      </div>
+
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        Applying a hold will block this {{ entityTypeDisplay.toLowerCase() }} from being used in production
+        until the hold is released.
+      </div>
+
+      <form [formGroup]="holdForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label for="reason">Hold Reason <span class="required">*</span></label>
+          <select id="reason" formControlName="reason" class="form-control">
+            <option value="">-- Select a reason --</option>
+            <option *ngFor="let reason of holdReasons" [value]="reason.reasonCode">
+              {{ reason.reasonDescription }}
+            </option>
+          </select>
+          <div class="field-error" *ngIf="holdForm.get('reason')?.invalid && holdForm.get('reason')?.touched">
+            Please select a hold reason
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="comments">Comments</label>
+          <textarea
+            id="comments"
+            formControlName="comments"
+            class="form-control"
+            rows="3"
+            placeholder="Add any additional details about why this hold is being applied..."
+          ></textarea>
+        </div>
+
+        <div class="alert alert-error" *ngIf="error">
+          <i class="fas fa-times-circle"></i>
+          {{ error }}
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer" *ngIf="!success">
+      <button class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting">
+        Cancel
+      </button>
+      <button
+        class="btn btn-warning"
+        (click)="onSubmit()"
+        [disabled]="holdForm.invalid || submitting"
+      >
+        <span *ngIf="!submitting">
+          <i class="fas fa-pause"></i> Apply Hold
+        </span>
+        <span *ngIf="submitting">
+          <span class="spinner"></span> Applying...
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

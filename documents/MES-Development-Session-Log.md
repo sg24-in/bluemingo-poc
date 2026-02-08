@@ -11,10 +11,126 @@
 
 | Date | Focus Areas | Key Outcomes |
 |------|-------------|--------------|
+| 2026-02-08 | P14/P15 Modal Components, Test Fixes | MaterialSelectionModal, ApplyHoldModal, 30+ tests |
 | 2026-02-07 | Phase 8A-8E (Batch Management), Phase 9F (Routing Tests) | Batch immutability complete, 65+ batch tests, 6 new E2E tests |
 | 2026-02-06 | MES Data Model Gap Analysis, Dashboard Charts, Config Entities | 5 new patches, 11 new entities, Chart race condition fixed |
 | 2026-02-05 | BOM CRUD Backend, E2E CRUD Tests | Full BOM tree API, 22 E2E tests |
 | 2026-02-04 | Architecture Refactoring, Routing Module | Hash routing, admin layout, routing CRUD |
+
+---
+
+## Session: 2026-02-08
+
+### Session Overview
+**Primary Focus:** P14/P15 Modal Components Implementation
+**Key Accomplishments:**
+- Completed P14 (MaterialSelectionModalComponent) with full feature set
+- Completed P15 (ApplyHoldModalComponent) with API integration
+- Created unit tests (35 total) and E2E tests (25 total)
+- Fixed pre-existing process-list.component.spec.ts errors
+
+### P14: MaterialSelectionModalComponent - COMPLETE
+
+**New Files Created:**
+```
+frontend/src/app/shared/components/material-selection-modal/
+├── material-selection-modal.component.ts
+├── material-selection-modal.component.html
+├── material-selection-modal.component.css
+└── material-selection-modal.component.spec.ts (19 tests)
+e2e/tests/25-material-selection-modal.test.js (11 tests)
+```
+
+**Component Features:**
+- `@Input()` props: isOpen, availableInventory, selectedMaterials
+- `@Output()` events: close, selectionChange
+- Search filtering by batch number and material ID
+- Type filtering (RM/IM/FG/WIP dropdown)
+- Bulk selection: selectAll(), clearAll()
+- Quantity validation: max = available, min = 0
+- Selection summary with total quantity calculation
+
+**Test Coverage:**
+- Initialization and input binding
+- Search and type filtering
+- Toggle selection on/off
+- Select all visible items
+- Clear all selections
+- Quantity updates with bounds checking
+- Cancel resets to original selections
+- Confirm emits selections
+
+### P15: ApplyHoldModalComponent - COMPLETE
+
+**New Files Created:**
+```
+frontend/src/app/shared/components/apply-hold-modal/
+├── apply-hold-modal.component.ts
+├── apply-hold-modal.component.html
+├── apply-hold-modal.component.css
+└── apply-hold-modal.component.spec.ts (16 tests)
+e2e/tests/26-apply-hold-modal.test.js (14 tests)
+```
+
+**Component Features:**
+- `@Input()` props: isOpen, entityType, entityId, entityName
+- `@Output()` events: close, holdApplied
+- Loads hold reasons from API on open
+- Reactive form with required reason validation
+- Optional comments field
+- Success state with auto-close after 1.5s
+- Error handling with fallback messages
+
+**API Integration:**
+- `getHoldReasons()` - Load available reasons
+- `applyHold(request)` - Submit hold request
+
+**Test Coverage:**
+- Form initialization and validation
+- Hold reasons loading and mapping
+- Form submission with correct payload
+- Success state emission
+- Error handling and fallback messages
+- Modal cancel and reset behavior
+- Backdrop click handling
+
+### Integration Updates
+
+**Modified Files:**
+- `frontend/src/app/shared/shared.module.ts` - Added both modals to declarations/exports
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.ts`:
+  - Added state: showMaterialModal, showHoldModal
+  - Added methods: openMaterialModal(), closeMaterialModal(), onMaterialSelectionChange()
+  - Added methods: openHoldModal(), closeHoldModal(), onHoldApplied()
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.html`:
+  - Added "Apply Hold" button in page header
+  - Added "Select Materials" button in Material Consumption card
+  - Added modal component instances at end of template
+
+### Test Fixes
+
+**Fixed: process-list.component.spec.ts**
+- Issue: Outdated references to `allProcesses` property and `applyFilters()` method
+- Solution: Updated to match current pagination-based implementation
+  - Changed `allProcesses` → `processes`
+  - Added mock for `getProcessesPaged()` returning `PagedResponse<Process>`
+  - Removed `applyFilters()` test, added pagination tests (page/size change)
+  - Added proper typed mock data
+
+### Test Status Summary
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| MaterialSelectionModal (unit) | 19 | ✅ PASS |
+| ApplyHoldModal (unit) | 16 | ✅ PASS |
+| MaterialSelectionModal (E2E) | 11 | ✅ PASS |
+| ApplyHoldModal (E2E) | 14 | ✅ PASS |
+| ProcessList (unit) | 21 | ✅ PASS |
+
+### Documentation Updates
+
+- `.claude/TASKS.md` - Updated P14/P15 status to DONE with implementation details
+- `documents/MES-Development-Session-Log.md` - This entry
 
 ---
 

@@ -147,7 +147,11 @@ bluemingo-poc/
 ├── frontend/
 │   └── src/app/
 │       ├── core/            # Services, Guards, Interceptors
-│       ├── shared/          # Shared components, layouts (Header, MainLayout, AdminLayout)
+│       ├── shared/          # Shared components, layouts, models
+│       │   ├── components/  # Header, MainLayout, AdminLayout, Pagination, Modals
+│       │   │   ├── material-selection-modal/  # Material picker for production
+│       │   │   └── apply-hold-modal/          # Quick hold action modal
+│       │   └── models/      # TypeScript interfaces
 │       └── features/        # Feature modules
 │           ├── auth/
 │           ├── dashboard/
@@ -718,6 +722,40 @@ fieldChangeAuditService.auditProductionConfirmationChanges(
 
 **Final Output Example:**
 - `e2e/output/comprehensive-demo/2026-02-04T13-54-41/MES-Demo-Synced-2026-02-04T14-05-59.mp4` (3.1 MB)
+
+### P14: MaterialSelectionModalComponent (Completed)
+**Files Created:**
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.ts`
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.html`
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.css`
+- `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.spec.ts`
+- `e2e/tests/25-material-selection-modal.test.js`
+
+**Features:**
+- Search by batch number or material ID
+- Filter by material type (RM/IM/FG/WIP)
+- Bulk selection (Select All/Clear All)
+- Quantity input with validation (max = available, min = 0)
+- Selection summary with total quantity
+- Modal backdrop click to close
+- Integration with production confirm component
+
+### P15: ApplyHoldModalComponent (Completed)
+**Files Created:**
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.ts`
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.html`
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.css`
+- `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.spec.ts`
+- `e2e/tests/26-apply-hold-modal.test.js`
+
+**Features:**
+- Load hold reasons from API on modal open
+- Display entity info (type, name)
+- Warning message about hold impact
+- Required reason selection, optional comments
+- Success state with auto-close (1.5s delay)
+- Error handling with user-friendly messages
+- Supports entity types: OPERATION, BATCH, INVENTORY, ORDER, EQUIPMENT
 
 ---
 
