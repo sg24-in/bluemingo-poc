@@ -25,6 +25,7 @@
     "playwright": "^1.58.1"
   },
   "devDependencies": {
-    "ffprobe-static": "^3.1.0"
+    "ffprobe-static": "^3.1.0",
+    "md-to-pdf": "^5.2.5"
   }
 }
