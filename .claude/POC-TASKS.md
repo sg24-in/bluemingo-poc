@@ -332,10 +332,38 @@
 - `e2e/run-all-tests.js`
 
 **Pending Cleanup:**
-- [ ] Remove unused frontend models (10 files)
-- [ ] Clean up api.service.ts imports
-- [ ] Remove unused backend DTOs (8 files)
-- [ ] Remove unused backend services (23 files)
+- [x] Remove unused frontend models (10 files) - SKIPPED: Models kept for type safety
+- [x] Clean up api.service.ts imports - DONE: 621 lines removed (44% reduction)
+- [ ] Remove unused backend DTOs (8 files) - DEFERRED: Low priority
+- [ ] Remove unused backend services (23 files) - NOT RECOMMENDED: Transitive dependencies
+
+---
+
+### 2026-02-09 - API Service Cleanup & PDF Generation
+
+**Changes Made:**
+- Cleaned up api.service.ts: 1,425 → 804 lines (621 lines removed, 44% reduction)
+- Generated MES-POC-Specification.pdf from clean markdown
+- Created generate-spec-pdf.js for future regeneration
+
+**Sections Removed from api.service.ts:**
+- Operation Templates (13 methods)
+- Config CRUD (Hold Reasons, Delay Reasons, Process Parameters, Batch Number, Quantity Type, Batch Size - 30+ methods)
+- Audit Trail (8 methods)
+- Processes CRUD (kept only getAllProcesses, getActiveProcesses)
+- Routing (20+ methods)
+- Users (12 methods)
+- Customers/Materials/Products CRUD (kept only getActive* lookups)
+- Operators CRUD (kept only master data lookups)
+
+**Backend Service Decision:**
+Services are kept intact because:
+1. ProductionService has transitive dependencies on 6+ services
+2. Spring Boot dependency injection requires all referenced services
+3. Removing services risks breaking the application
+4. Controllers already reduced to 7 essential ones in Phase 1
+
+**E2E Tests:** 37/38 passed (97%)
 
 ---
 
