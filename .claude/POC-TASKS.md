@@ -1,5 +1,10 @@
 # MES POC Branch - Tasks & Progress
 
+> ⚠️ **CRITICAL: NEVER MERGE THIS BRANCH TO MAIN**
+>
+> This branch has 58,000+ lines of code removed. Merging to `main` would destroy the full codebase.
+> This branch is for **client delivery only**.
+
 **Branch:** poc
 **Created:** 2026-02-08
 **Purpose:** Minimal POC codebase for client delivery
