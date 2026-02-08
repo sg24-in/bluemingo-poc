@@ -135,6 +135,11 @@ INSERT INTO materials (material_code, material_name, description, material_type,
 ('IM-ANNEALED',   'Annealed CR Strip',       'Batch-annealed cold rolled strip',           'IM', 'T',  'Strip',     780.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
 ('IM-ROLLED-BAR', 'Rolled Bar',              'Hot-rolled reinforcement bar',               'IM', 'T',  'Long',      540.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
 ('IM-WIRE-ROD',   'Wire Rod',                'Hot-rolled wire rod coil',                   'IM', 'T',  'Long',      560.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
+-- Work In Progress (4) - Material actively being processed
+('WIP-MELT',      'Molten Steel (Processing)','Liquid steel in ladle - active refining',   'WIP', 'T',  'Steel',     380.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
+('WIP-CAST',      'Steel Being Cast',        'Steel in continuous caster - active',        'WIP', 'T',  'Steel',     420.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
+('WIP-ROLL',      'Strip on Rolling Mill',   'Hot strip on rolling mill - active',         'WIP', 'T',  'Coil',      550.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
+('WIP-PICKLE',    'Strip in Pickling Line',  'Strip in acid pickling - active',            'WIP', 'T',  'Strip',     600.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
 -- Finished Goods (3)
 ('FG-HR-2MM',     'HR Coil 2mm',             'Hot rolled coil, 2mm thickness',             'FG', 'T',  'Coil',      700.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
 ('FG-CR-1MM',     'CR Sheet 1mm',            'Cold rolled sheet, 1mm thickness',           'FG', 'T',  'Sheet',     850.00, 'USD', NULL, NULL, NULL, 'ACTIVE', 'SYSTEM'),
@@ -440,8 +445,68 @@ INSERT INTO bill_of_material (bom_id, product_sku, bom_version, material_id, mat
 (35, 'REBAR-10MM', 'V1', 'RM-SCRAP-A',     'Steel Scrap Grade A',      0.8000, 'T',  0.94,   5, 33,   'ACTIVE', 'SYSTEM'),
 (36, 'REBAR-10MM', 'V1', 'RM-SCRAP-B',     'Steel Scrap Grade B',      0.1800, 'T',  0.92,   5, 33,   'ACTIVE', 'SYSTEM'),
 (37, 'REBAR-10MM', 'V1', 'RM-FEMN',        'Ferroalloy FeMn',          0.0080, 'KG', 1.00,   5, 33,   'ACTIVE', 'SYSTEM'),
-(38, 'REBAR-10MM', 'V1', 'RM-COAL',        'Coal / Coke',              0.0900, 'T',  1.00,   5, 33,   'ACTIVE', 'SYSTEM');
-ALTER TABLE bill_of_material ALTER COLUMN bom_id RESTART WITH 39;
+(38, 'REBAR-10MM', 'V1', 'RM-COAL',        'Coal / Coke',              0.0900, 'T',  1.00,   5, 33,   'ACTIVE', 'SYSTEM'),
+
+-- BOM 4: HR-COIL-3MM — 5-level tree (similar to HR-COIL-2MM)
+(39, 'HR-COIL-3MM', 'V1', 'FG-HR-2MM',    'Finished HR Coil 3mm',     1.0000, 'T',  0.98,   1, NULL, 'ACTIVE', 'SYSTEM'),
+(40, 'HR-COIL-3MM', 'V1', 'IM-HR-ROUGH',  'Hot Rolled Strip',         1.0600, 'T',  0.94,   2, 39,   'ACTIVE', 'SYSTEM'),
+(41, 'HR-COIL-3MM', 'V1', 'RM-COATING',   'Surface Coating Oil',      0.0180, 'L',  1.00,   2, 39,   'ACTIVE', 'SYSTEM'),
+(42, 'HR-COIL-3MM', 'V1', 'IM-SLAB',      'Steel Slab 200mm',         1.1400, 'T',  0.92,   3, 40,   'ACTIVE', 'SYSTEM'),
+(43, 'HR-COIL-3MM', 'V1', 'RM-ROLL-LUB',  'Rolling Lubricant',        0.0120, 'L',  1.00,   3, 40,   'ACTIVE', 'SYSTEM'),
+(44, 'HR-COIL-3MM', 'V1', 'IM-LIQUID',    'Liquid Steel',             1.2000, 'T',  0.87,   4, 42,   'ACTIVE', 'SYSTEM'),
+(45, 'HR-COIL-3MM', 'V1', 'RM-MOLD-PWD',  'Mold Powder',              0.0055, 'KG', 1.00,   4, 42,   'ACTIVE', 'SYSTEM'),
+(46, 'HR-COIL-3MM', 'V1', 'RM-SCRAP-A',   'Steel Scrap Grade A',      0.7200, 'T',  0.95,   5, 44,   'ACTIVE', 'SYSTEM'),
+(47, 'HR-COIL-3MM', 'V1', 'RM-SCRAP-B',   'Steel Scrap Grade B',      0.1800, 'T',  0.92,   5, 44,   'ACTIVE', 'SYSTEM'),
+(48, 'HR-COIL-3MM', 'V1', 'RM-IRON-ORE',  'Iron Ore Pellets',         0.1600, 'T',  0.97,   5, 44,   'ACTIVE', 'SYSTEM'),
+(49, 'HR-COIL-3MM', 'V1', 'RM-COAL',      'Coal / Coke',              0.1100, 'T',  1.00,   5, 44,   'ACTIVE', 'SYSTEM'),
+
+-- BOM 5: HR-COIL-4MM — 5-level tree (similar to HR-COIL-2MM)
+(50, 'HR-COIL-4MM', 'V1', 'FG-HR-2MM',    'Finished HR Coil 4mm',     1.0000, 'T',  0.98,   1, NULL, 'ACTIVE', 'SYSTEM'),
+(51, 'HR-COIL-4MM', 'V1', 'IM-HR-ROUGH',  'Hot Rolled Strip',         1.0700, 'T',  0.93,   2, 50,   'ACTIVE', 'SYSTEM'),
+(52, 'HR-COIL-4MM', 'V1', 'RM-COATING',   'Surface Coating Oil',      0.0160, 'L',  1.00,   2, 50,   'ACTIVE', 'SYSTEM'),
+(53, 'HR-COIL-4MM', 'V1', 'IM-SLAB',      'Steel Slab 200mm',         1.1600, 'T',  0.91,   3, 51,   'ACTIVE', 'SYSTEM'),
+(54, 'HR-COIL-4MM', 'V1', 'RM-ROLL-LUB',  'Rolling Lubricant',        0.0140, 'L',  1.00,   3, 51,   'ACTIVE', 'SYSTEM'),
+(55, 'HR-COIL-4MM', 'V1', 'IM-LIQUID',    'Liquid Steel',             1.2200, 'T',  0.86,   4, 53,   'ACTIVE', 'SYSTEM'),
+(56, 'HR-COIL-4MM', 'V1', 'RM-SCRAP-A',   'Steel Scrap Grade A',      0.7500, 'T',  0.94,   5, 55,   'ACTIVE', 'SYSTEM'),
+(57, 'HR-COIL-4MM', 'V1', 'RM-SCRAP-B',   'Steel Scrap Grade B',      0.1500, 'T',  0.92,   5, 55,   'ACTIVE', 'SYSTEM'),
+(58, 'HR-COIL-4MM', 'V1', 'RM-IRON-ORE',  'Iron Ore Pellets',         0.1700, 'T',  0.97,   5, 55,   'ACTIVE', 'SYSTEM'),
+(59, 'HR-COIL-4MM', 'V1', 'RM-COAL',      'Coal / Coke',              0.1200, 'T',  1.00,   5, 55,   'ACTIVE', 'SYSTEM'),
+
+-- BOM 6: CR-SHEET-2MM — 6-level tree (similar to CR-SHEET-1MM)
+(60, 'CR-SHEET-2MM', 'V1', 'FG-CR-1MM',    'Finished CR Sheet 2mm',    1.0000, 'T',  0.97,   1, NULL, 'ACTIVE', 'SYSTEM'),
+(61, 'CR-SHEET-2MM', 'V1', 'IM-ANNEALED',  'Annealed CR Strip',        1.0400, 'T',  0.96,   2, 60,   'ACTIVE', 'SYSTEM'),
+(62, 'CR-SHEET-2MM', 'V1', 'RM-COATING',   'Surface Coating Oil',      0.0140, 'L',  1.00,   2, 60,   'ACTIVE', 'SYSTEM'),
+(63, 'CR-SHEET-2MM', 'V1', 'IM-CR-STRIP',  'Cold Rolled Strip',        1.0900, 'T',  0.93,   3, 61,   'ACTIVE', 'SYSTEM'),
+(64, 'CR-SHEET-2MM', 'V1', 'IM-PICKLED',   'Pickled HR Strip',         1.1300, 'T',  0.95,   4, 63,   'ACTIVE', 'SYSTEM'),
+(65, 'CR-SHEET-2MM', 'V1', 'RM-ROLL-LUB',  'CR Rolling Lubricant',     0.0180, 'L',  1.00,   4, 63,   'ACTIVE', 'SYSTEM'),
+(66, 'CR-SHEET-2MM', 'V1', 'IM-HR-ROUGH',  'HR Coil Base',             1.1600, 'T',  0.92,   5, 64,   'ACTIVE', 'SYSTEM'),
+(67, 'CR-SHEET-2MM', 'V1', 'RM-HCL',       'Hydrochloric Acid',        0.0450, 'L',  1.00,   5, 64,   'ACTIVE', 'SYSTEM'),
+(68, 'CR-SHEET-2MM', 'V1', 'RM-SCRAP-A',   'Steel Scrap Grade A',      0.7800, 'T',  0.95,   6, 66,   'ACTIVE', 'SYSTEM'),
+(69, 'CR-SHEET-2MM', 'V1', 'RM-IRON-ORE',  'Iron Ore Pellets',         0.1800, 'T',  0.97,   6, 66,   'ACTIVE', 'SYSTEM'),
+(70, 'CR-SHEET-2MM', 'V1', 'RM-COAL',      'Coal / Coke',              0.0900, 'T',  1.00,   6, 66,   'ACTIVE', 'SYSTEM'),
+
+-- BOM 7: REBAR-12MM — 5-level tree (similar to REBAR-10MM)
+(71, 'REBAR-12MM', 'V1', 'FG-REBAR-10',    'Finished Rebar 12mm',      1.0000, 'T',  0.99,   1, NULL, 'ACTIVE', 'SYSTEM'),
+(72, 'REBAR-12MM', 'V1', 'IM-ROLLED-BAR',  'Rolled Bar',               1.0500, 'T',  0.95,   2, 71,   'ACTIVE', 'SYSTEM'),
+(73, 'REBAR-12MM', 'V1', 'IM-BILLET',      'Steel Billet 100mm',       1.1100, 'T',  0.92,   3, 72,   'ACTIVE', 'SYSTEM'),
+(74, 'REBAR-12MM', 'V1', 'RM-ROLL-LUB',    'Bar Rolling Lubricant',    0.0060, 'L',  1.00,   3, 72,   'ACTIVE', 'SYSTEM'),
+(75, 'REBAR-12MM', 'V1', 'IM-LIQUID',      'Liquid Steel',             1.1600, 'T',  0.89,   4, 73,   'ACTIVE', 'SYSTEM'),
+(76, 'REBAR-12MM', 'V1', 'RM-LIMESTONE',   'Limestone',                0.0450, 'T',  1.00,   4, 73,   'ACTIVE', 'SYSTEM'),
+(77, 'REBAR-12MM', 'V1', 'RM-SCRAP-A',     'Steel Scrap Grade A',      0.8200, 'T',  0.94,   5, 75,   'ACTIVE', 'SYSTEM'),
+(78, 'REBAR-12MM', 'V1', 'RM-SCRAP-B',     'Steel Scrap Grade B',      0.1600, 'T',  0.92,   5, 75,   'ACTIVE', 'SYSTEM'),
+(79, 'REBAR-12MM', 'V1', 'RM-FEMN',        'Ferroalloy FeMn',          0.0090, 'KG', 1.00,   5, 75,   'ACTIVE', 'SYSTEM'),
+(80, 'REBAR-12MM', 'V1', 'RM-COAL',        'Coal / Coke',              0.0950, 'T',  1.00,   5, 75,   'ACTIVE', 'SYSTEM'),
+
+-- BOM 8: STEEL-BILLET-100 — 3-level tree (simpler semi-finished product)
+(81, 'STEEL-BILLET-100', 'V1', 'IM-BILLET',    'Steel Billet 100mm',       1.0000, 'T',  0.98,   1, NULL, 'ACTIVE', 'SYSTEM'),
+(82, 'STEEL-BILLET-100', 'V1', 'IM-LIQUID',    'Liquid Steel',             1.0800, 'T',  0.92,   2, 81,   'ACTIVE', 'SYSTEM'),
+(83, 'STEEL-BILLET-100', 'V1', 'RM-MOLD-PWD',  'Mold Powder',              0.0040, 'KG', 1.00,   2, 81,   'ACTIVE', 'SYSTEM'),
+(84, 'STEEL-BILLET-100', 'V1', 'RM-SCRAP-A',   'Steel Scrap Grade A',      0.7000, 'T',  0.95,   3, 82,   'ACTIVE', 'SYSTEM'),
+(85, 'STEEL-BILLET-100', 'V1', 'RM-SCRAP-B',   'Steel Scrap Grade B',      0.2500, 'T',  0.93,   3, 82,   'ACTIVE', 'SYSTEM'),
+(86, 'STEEL-BILLET-100', 'V1', 'RM-IRON-ORE',  'Iron Ore Pellets',         0.1200, 'T',  0.97,   3, 82,   'ACTIVE', 'SYSTEM'),
+(87, 'STEEL-BILLET-100', 'V1', 'RM-LIMESTONE', 'Limestone',                0.0500, 'T',  1.00,   3, 82,   'ACTIVE', 'SYSTEM'),
+(88, 'STEEL-BILLET-100', 'V1', 'RM-COAL',      'Coal / Coke',              0.0800, 'T',  1.00,   3, 82,   'ACTIVE', 'SYSTEM');
+ALTER TABLE bill_of_material ALTER COLUMN bom_id RESTART WITH 89;
 
 -- =====================================================
 -- STEP 13: Process Parameters Config
@@ -730,8 +795,15 @@ INSERT INTO batches (batch_id, batch_number, material_id, material_name, quantit
 (47, 'B-RM-022', 'RM-SCRAP-B',   'Steel Scrap Grade B',  150, 'T',  'AVAILABLE', 'SYSTEM'),
 (48, 'B-IM-019', 'IM-HR-ROUGH',  'HR Coil Rough',         95, 'T',  'AVAILABLE', 'SYSTEM'),
 (49, 'B-IM-020', 'IM-LIQUID',    'Liquid Steel',         100, 'T',  'AVAILABLE', 'SYSTEM'),
-(50, 'B-FG-008', 'FG-REBAR-10',  'Rebar 10mm',           150, 'T',  'AVAILABLE', 'SYSTEM');
-ALTER TABLE batches ALTER COLUMN batch_id RESTART WITH 51;
+(50, 'B-FG-008', 'FG-REBAR-10',  'Rebar 10mm',           150, 'T',  'AVAILABLE', 'SYSTEM'),
+-- Work In Progress batches (material actively being processed)
+(51, 'B-WIP-001', 'WIP-MELT',    'Molten Steel EAF #1',   85, 'T',  'AVAILABLE', 'SYSTEM'),
+(52, 'B-WIP-002', 'WIP-MELT',    'Molten Steel EAF #2',   92, 'T',  'AVAILABLE', 'SYSTEM'),
+(53, 'B-WIP-003', 'WIP-CAST',    'Steel Being Cast',      78, 'T',  'AVAILABLE', 'SYSTEM'),
+(54, 'B-WIP-004', 'WIP-ROLL',    'Strip on Hot Mill',     65, 'T',  'AVAILABLE', 'SYSTEM'),
+(55, 'B-WIP-005', 'WIP-PICKLE',  'Strip in Pickle Line',  45, 'T',  'AVAILABLE', 'SYSTEM'),
+(56, 'B-WIP-006', 'WIP-ROLL',    'Strip on Cold Mill',    55, 'T',  'AVAILABLE', 'SYSTEM');
+ALTER TABLE batches ALTER COLUMN batch_id RESTART WITH 57;
 
 -- Audit trail for batches
 INSERT INTO audit_trail (entity_type, entity_id, action, new_value, changed_by, timestamp) VALUES
@@ -786,6 +858,13 @@ INSERT INTO inventory (inventory_id, material_id, material_name, inventory_type,
 (27, 'IM-SLAB',      'Steel Slab 200mm',     'IM', 'PRODUCED',  125,  'T',  34, 'Slab Yard',       'SYSTEM'),
 (28, 'IM-HR-ROUGH',  'HR Coil Rough',        'IM', 'AVAILABLE', 95,   'T',  48, 'Hot Mill',        'SYSTEM'),
 (29, 'IM-LIQUID',    'Liquid Steel',         'IM', 'AVAILABLE', 100,  'T',  49, 'Ladle',           'SYSTEM'),
+-- Work In Progress inventory (material actively being processed)
+(51, 'WIP-MELT',     'Molten Steel (Active)', 'WIP', 'AVAILABLE', 85,  'T',  51, 'EAF #1',          'SYSTEM'),
+(52, 'WIP-MELT',     'Molten Steel (Active)', 'WIP', 'AVAILABLE', 92,  'T',  52, 'EAF #2',          'SYSTEM'),
+(53, 'WIP-CAST',     'Steel Being Cast',      'WIP', 'AVAILABLE', 78,  'T',  53, 'Caster #1',       'SYSTEM'),
+(54, 'WIP-ROLL',     'Strip on Mill',         'WIP', 'AVAILABLE', 65,  'T',  54, 'Hot Mill #1',     'SYSTEM'),
+(55, 'WIP-PICKLE',   'Strip in Pickle Line',  'WIP', 'AVAILABLE', 45,  'T',  55, 'Pickle Line #1',  'SYSTEM'),
+(56, 'WIP-ROLL',     'Strip on Mill',         'WIP', 'AVAILABLE', 55,  'T',  56, 'Cold Mill #1',    'SYSTEM'),
 -- Finished goods inventory
 (30, 'FG-HR-2MM',    'HR Coil 2mm',          'FG', 'AVAILABLE', 75,   'T',  35, 'FG Warehouse 1',  'SYSTEM'),
 (31, 'FG-CR-1MM',    'CR Sheet 1mm',         'FG', 'AVAILABLE', 70,   'T',  36, 'FG Warehouse 2',  'SYSTEM'),
@@ -1215,20 +1294,20 @@ INSERT INTO inventory_movement (operation_id, inventory_id, movement_type, quant
 -- =====================================================
 -- Summary:
 --   Customers:              12
---   Materials:              28 (15 RM, 10 IM, 3 FG)
+--   Materials:              32 (15 RM, 10 IM, 4 WIP, 3 FG)
 --   Products:                8
 --   Operation Templates:    18
 --   Processes:               6 (4 ACTIVE, 1 DRAFT, 1 INACTIVE)
 --   Routing:                 4
 --   Routing Steps:          22
---   BOM Nodes:              38 (3 trees)
+--   BOM Nodes:              88 (8 trees - all products covered)
 --   Equipment:              16
 --   Operators:              12
 --   Orders:                 15 (all statuses represented)
 --   Order Line Items:       25
 --   Operations:             60 (all statuses represented)
---   Batches:                50 (all statuses represented)
---   Inventory:              50 (all states represented)
+--   Batches:                56 (all statuses + WIP represented)
+--   Inventory:              56 (all states + WIP represented)
 --   Production Confirmations: 35
 --   Batch Relations:        40
 --   Hold Records:           12 (8 active, 4 released)

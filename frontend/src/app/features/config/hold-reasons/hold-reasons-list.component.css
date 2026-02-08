@@ -1,5 +1,5 @@
 .config-list-page { padding: 20px; }
-.table-container { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+.table-container { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; padding: 16px; }
 .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: uppercase; }
 .status-badge.active { background: #d4edda; color: #155724; }
 .status-badge.inactive { background: #f8d7da; color: #721c24; }
