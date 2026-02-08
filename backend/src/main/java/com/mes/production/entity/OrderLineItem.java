@@ -66,6 +66,10 @@ public class OrderLineItem {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    // Process ID cached from product's default process at order creation
+    @Column(name = "process_id")
+    private Long processId;
+
     @OneToMany(mappedBy = "orderLineItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @Exclude

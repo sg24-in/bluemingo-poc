@@ -322,12 +322,19 @@ public class RoutingController {
                 .build();
     }
 
+    /**
+     * Convert RoutingStep entity to DTO.
+     * Uses OperationTemplate (template) data, not runtime Operation data.
+     */
     private RoutingDTO.RoutingStepInfo convertToStepInfo(RoutingStep step) {
         return RoutingDTO.RoutingStepInfo.builder()
                 .routingStepId(step.getRoutingStepId())
                 .routingId(step.getRouting() != null ? step.getRouting().getRoutingId() : null)
-                .operationId(step.getOperation() != null ? step.getOperation().getOperationId() : null)
-                .operationName(step.getOperation() != null ? step.getOperation().getOperationName() : null)
+                .operationTemplateId(step.getOperationTemplate() != null ?
+                        step.getOperationTemplate().getOperationTemplateId() : null)
+                .operationName(step.getEffectiveOperationName())
+                .operationType(step.getEffectiveOperationType())
+                .operationCode(step.getEffectiveOperationCode())
                 .sequenceNumber(step.getSequenceNumber())
                 .isParallel(step.getIsParallel())
                 .mandatoryFlag(step.getMandatoryFlag())

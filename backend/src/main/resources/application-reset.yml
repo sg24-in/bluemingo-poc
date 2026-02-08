@@ -1,0 +1,25 @@
+# =====================================================
+# MES Production Confirmation - Reset Profile
+# =====================================================
+# DANGER: This profile enables database reset endpoints!
+# Use only for development, testing, and demo preparation.
+# NEVER enable in production environments.
+# =====================================================
+# Run with: ./gradlew bootRun --args='--spring.profiles.active=reset'
+# =====================================================
+
+spring:
+  application:
+    name: mes-production-confirmation-reset
+
+# Application specific configuration
+app:
+  database:
+    reset:
+      enabled: true  # DANGER: This enables database reset endpoints!
+
+# Enhanced logging for reset operations
+logging:
+  level:
+    com.mes.production.service.DatabaseResetService: DEBUG
+    com.mes.production.controller.DatabaseResetController: DEBUG

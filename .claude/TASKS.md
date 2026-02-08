@@ -1,11 +1,166 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-07
-**Session Status:** Completed - Comprehensive Functional Document Generated
+**Session Status:** In Progress - Template/Runtime Separation
 
 ---
 
-## Latest Session Changes (2026-02-07 - Comprehensive Functional Document)
+## Latest Session Changes (2026-02-07 - Template/Runtime Separation)
+
+### ARCH-FIX: Template/Runtime Separation - IN PROGRESS
+
+**Task:** Correct the MES data model to properly separate TEMPLATE (design-time) and RUNTIME (execution-time) entities.
+
+**Problem Fixed:**
+- RoutingStep (template) was incorrectly referencing Operation (runtime)
+- Templates should NEVER reference runtime instances
+- Status values in RoutingStep were runtime-oriented instead of template-oriented
+
+**Solution Implemented:**
+
+**1. New Entity: OperationTemplate (Design-Time)**
+```
+- operationTemplateId (PK)
+- operationName, operationCode, operationType
+- quantityType (DISCRETE/BATCH/CONTINUOUS)
+- defaultEquipmentType
+- estimatedDurationMinutes
+- status (ACTIVE/INACTIVE)
+```
+
+**2. RoutingStep Changes:**
+- Removed: `operation_id` FK to Operation
+- Added: `operation_template_id` FK to OperationTemplate
+- Changed: status from READY/IN_PROGRESS/COMPLETED to ACTIVE/INACTIVE
+
+**3. Operation Changes:**
+- Added: `operation_template_id` for genealogy tracking
+- Added: `start_time`, `end_time` fields
+
+**Files Created:**
+1. **SQL Patch:**
+   - `patches/040_operation_template_separation.sql` - Migration script
+
+2. **Backend Java:**
+   - `entity/OperationTemplate.java` - New design-time entity
+   - `repository/OperationTemplateRepository.java` - Repository
+   - `dto/OperationTemplateDTO.java` - Request/Response DTOs
+   - `service/OperationTemplateService.java` - CRUD operations
+   - `controller/OperationTemplateController.java` - REST endpoints
+
+3. **Modified:**
+   - `entity/RoutingStep.java` - Removed Operation ref, added OperationTemplate ref
+   - `entity/Operation.java` - Added operationTemplateId field
+
+4. **Documentation:**
+   - `documents/TEMPLATE-RUNTIME-SEPARATION.md` - Implementation guide
+
+5. **Reference Documents Updated:**
+   - `documents/reference/MES-Entity-Reference.md` - Added OperationTemplate
+   - `documents/reference/MES-API-Reference.md` - Added API endpoints
+   - `documents/reference/MES-Database-Schema.md` - Added table schema
+
+**API Endpoints Added:**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/operation-templates` | List all |
+| GET | `/api/operation-templates/active` | Active only |
+| GET | `/api/operation-templates/{id}` | By ID |
+| GET | `/api/operation-templates/paged` | Paginated |
+| POST | `/api/operation-templates` | Create |
+| PUT | `/api/operation-templates/{id}` | Update |
+| DELETE | `/api/operation-templates/{id}` | Soft delete |
+
+**Compilation Fixes Completed:**
+- RoutingController.java - Updated `convertToStepInfo()` to use OperationTemplate instead of Operation
+- RoutingDTO.java - Updated RoutingStepInfo to use `operationTemplateId` instead of `operationId`
+- OperationTemplateService.java - Fixed audit logging calls (logUpdate → logStatusChange)
+- RoutingService.java - Added `isRoutingComplete(Long routingId)` for template-level completion check
+
+**Frontend Updates Completed:**
+- api.service.ts - Added properly typed OperationTemplate CRUD methods
+- operation-template.model.ts - TypeScript interfaces already existed
+- Removed duplicate `any`-typed methods, replaced with proper types
+
+**Build Status:**
+- Backend: ✅ Compiles successfully
+- Frontend: ✅ Builds successfully
+
+**Remaining Tasks:**
+- [x] Fix compilation errors - DONE
+- [x] Frontend API service updates - DONE
+- [ ] Run backend with test profile to apply patch 040
+- [ ] Create frontend OperationTemplate admin module (`/manage/operation-templates`)
+- [ ] Add Operation Templates to admin sidebar navigation
+- [ ] Update routing step form to use OperationTemplate dropdown
+
+---
+
+## Previous Session Changes (2026-02-07 - Database Reset & Demo Seeding)
+
+### DB-RESET: MES Database Reset & Demo Seeding System - COMPLETE ✅
+
+**Task:** Implement comprehensive database reset and demo seeding system with proper MES architecture.
+
+**Architecture Rules Enforced:**
+- Process = TEMPLATE (design-time only) - NO execution linking
+- Operation = RUNTIME (execution-time only) - Links to OrderLineItem
+- Operations auto-generated from Routing via `OperationInstantiationService`
+
+**Files Created:**
+1. **SQL Patches:**
+   - `patches/033_database_reset_support.sql` - Reset stored procedures
+   - `patches/034_demo_seed_master_data.sql` - Customers, Materials, Products, Equipment, Operators
+   - `patches/035_demo_seed_templates.sql` - Processes, Routings, RoutingSteps, BOMs
+   - `patches/036_demo_seed_transactions.sql` - Batches, Inventory, Orders, OrderLineItems
+   - `patches/037_product_process_mapping.sql` - Product-to-Process default mapping
+
+2. **Backend Java:**
+   - `DatabaseResetService.java` - Reset and seeding service with operation generation
+   - `DatabaseResetController.java` - REST API endpoints for reset operations
+
+3. **Configuration:**
+   - `application.yml` - Added `app.database.reset.enabled` config
+   - `application-reset.yml` - Reset profile enabling endpoints
+
+4. **Documentation:**
+   - `docs/DATABASE-RESET.md` - Comprehensive reset instructions
+
+**Entity Updates:**
+- `OrderLineItem.java` - Added `process_id` field (cached from Product)
+- `Product.java` - Added `default_process_id` field
+
+**API Endpoints:**
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/admin/reset/status` | GET | Check if reset is allowed |
+| `/api/admin/reset/verify` | GET | Verify database state (row counts) |
+| `/api/admin/reset/transactional` | POST | Reset transactional data only |
+| `/api/admin/reset/full` | POST | Reset ALL data |
+| `/api/admin/reset/demo` | POST | **Full demo reset + reseed + generate operations** |
+| `/api/admin/reset/generate-operations` | POST | Generate operations for existing orders |
+| `/api/admin/reset/seed` | POST | Seed demo data |
+| `/api/admin/reset/history` | GET | Get reset history log |
+
+**Demo Data Volumes:**
+- 10 Customers
+- 55 Materials (25 RM, 15 IM, 15 FG)
+- 25 Products
+- 10 Process templates
+- 10 Routing templates
+- ~35 Routing steps
+- 15 Equipment
+- 12 Operators
+- 45 Orders
+- 60+ Order Line Items
+- 25+ Batches
+- 25+ Inventory records
+
+**Build Status:** ✅ Backend compiles successfully
+
+---
+
+## Previous Session Changes (2026-02-07 - Comprehensive Functional Document)
 
 ### DOC-GEN: Complete MES Functional Document - COMPLETE ✅
 

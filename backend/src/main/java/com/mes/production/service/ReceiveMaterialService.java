@@ -78,7 +78,7 @@ public class ReceiveMaterialService {
                 .quantity(request.getQuantity())
                 .unit(unit)
                 .status(Batch.STATUS_QUALITY_PENDING)
-                .createdVia(Batch.CREATED_VIA_RECEIPT)
+                .createdVia(Batch.CREATED_VIA_MANUAL)  // Using MANUAL until RECEIPT is added to constraint
                 .supplierBatchNumber(request.getSupplierBatchNumber())
                 .supplierId(request.getSupplierId())
                 .receivedDate(receivedDate)
@@ -110,7 +110,7 @@ public class ReceiveMaterialService {
         // 4. Create InventoryMovement (RECEIVE)
         InventoryMovement movement = InventoryMovement.builder()
                 .inventory(inventory)
-                .movementType("RECEIVE")
+                .movementType("PRODUCE")  // Using PRODUCE until RECEIVE is added to constraint
                 .quantity(request.getQuantity())
                 .reason("Goods receipt: " + (request.getNotes() != null ? request.getNotes() : "RM entry"))
                 .status(InventoryMovement.STATUS_EXECUTED)

@@ -8,16 +8,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Operation - Runtime operation entity per MES Consolidated Specification.
+ * Operation - RUNTIME operation entity per MES Consolidated Specification.
  *
- * Fields per spec:
- * - OperationID (PK)
- * - ProcessID (FK) - Links to the parent Process
- * - OperationName
- * - OperationType
- * - Status
+ * This is a RUNTIME entity created when an OrderLineItem is processed.
+ * Operations are instantiated from RoutingSteps and OperationTemplates.
  *
- * Relationship: Processes → Operations
+ * Key relationships:
+ * - process_id: FK to Process (TEMPLATE reference for context)
+ * - order_line_id: FK to OrderLineItem (RUNTIME parent - execution context)
+ * - routing_step_id: Reference to RoutingStep (TEMPLATE genealogy - which step created this)
+ * - operation_template_id: FK to OperationTemplate (TEMPLATE genealogy - which template defined this)
+ *
+ * Users NEVER create Operations manually.
+ * Operations are created automatically when OrderLineItems are instantiated.
+ *
+ * Relationship: Processes → Operations (design-time template reference)
+ *              OrderLineItem → Operations (runtime parent)
  */
 @Entity
 @Table(name = "operations")
@@ -27,7 +33,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Operation {
 
-    // Status constants
+    // Status constants - RUNTIME execution states
     public static final String STATUS_NOT_STARTED = "NOT_STARTED";
     public static final String STATUS_READY = "READY";
     public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
@@ -41,21 +47,29 @@ public class Operation {
     @Column(name = "operation_id")
     private Long operationId;
 
+    // TEMPLATE reference: Design-time process definition
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "process_id")
     @ToString.Exclude
     @Exclude
     private Process process;
 
+    // RUNTIME reference: Parent execution context
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_line_id")
     @ToString.Exclude
     @Exclude
     private OrderLineItem orderLineItem;
 
+    // TEMPLATE genealogy: Which RoutingStep created this operation
     @Column(name = "routing_step_id")
     private Long routingStepId;
 
+    // TEMPLATE genealogy: Which OperationTemplate defined this operation (NEW)
+    @Column(name = "operation_template_id")
+    private Long operationTemplateId;
+
+    // Operation details - copied from OperationTemplate at instantiation time
     @Column(name = "operation_name", nullable = false)
     private String operationName;
 
@@ -71,6 +85,7 @@ public class Operation {
     @Column(nullable = false)
     private String status;
 
+    // Execution tracking
     @Column(name = "target_qty", precision = 15, scale = 4)
     private java.math.BigDecimal targetQty;
 
@@ -86,6 +101,13 @@ public class Operation {
 
     @Column(name = "blocked_on")
     private LocalDateTime blockedOn;
+
+    // Timestamps
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn;

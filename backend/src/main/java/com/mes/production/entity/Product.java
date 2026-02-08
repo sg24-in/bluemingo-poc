@@ -67,6 +67,10 @@ public class Product {
     @Column(name = "material_id")
     private Long materialId;
 
+    // Default process for this product (used for operation instantiation)
+    @Column(name = "default_process_id")
+    private Long defaultProcessId;
+
     @Column(nullable = false, length = 20)
     private String status;
 

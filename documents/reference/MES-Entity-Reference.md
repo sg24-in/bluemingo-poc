@@ -79,29 +79,34 @@ The MES system contains **43 JPA entities** organized into the following domains
 
 ## PRODUCTION EXECUTION
 
-### Operation
+### Operation (RUNTIME Entity)
 **Table:** `operations`
-**Purpose:** Runtime execution of individual production steps within a process
+**Purpose:** Runtime execution instance of a production step (created from RoutingStep + OperationTemplate)
 
 | Field | Type | Annotations | Purpose |
 |-------|------|-------------|---------|
 | operationId | Long | @Id, @GeneratedValue(IDENTITY) | Primary Key |
-| process | Process | @ManyToOne(LAZY) | FK to Process template |
-| orderLineItem | OrderLineItem | @ManyToOne(LAZY) | FK to OrderLineItem (runtime tracking) |
-| routingStepId | Long | | Reference to RoutingStep |
-| operationName | String | @Column(nullable=false) | Operation description |
-| operationCode | String | | Operation identifier |
+| process | Process | @ManyToOne(LAZY) | TEMPLATE: FK to Process |
+| orderLineItem | OrderLineItem | @ManyToOne(LAZY) | RUNTIME: FK to OrderLineItem |
+| routingStepId | Long | | TEMPLATE GENEALOGY: Which step created this |
+| operationTemplateId | Long | | TEMPLATE GENEALOGY: Which template defined this (NEW) |
+| operationName | String | @Column(nullable=false) | Copied from OperationTemplate |
+| operationCode | String | | Copied from OperationTemplate |
 | operationType | String | | Type of operation (FURNACE, CASTER, ROLLING, etc.) |
 | sequenceNumber | Integer | @Column(nullable=false) | Execution order (default: 1) |
 | status | String | @Column(nullable=false) | Operation status (default: NOT_STARTED) |
 | targetQty | BigDecimal | @Column(precision=15,scale=4) | Target output quantity |
 | confirmedQty | BigDecimal | @Column(precision=15,scale=4) | Confirmed quantity |
+| startTime | LocalDateTime | | Execution start (NEW) |
+| endTime | LocalDateTime | | Execution end (NEW) |
 | blockReason | String | @Column(length=500) | Reason for blocking |
 | blockedBy | String | | User who blocked |
 | blockedOn | LocalDateTime | | Block timestamp |
 | confirmations | List<ProductionConfirmation> | @OneToMany(mappedBy=operation, CASCADE) | Production confirmations |
 
 **Status Values:** NOT_STARTED, READY, IN_PROGRESS, CONFIRMED, PARTIALLY_CONFIRMED, ON_HOLD, BLOCKED
+
+**Important:** Operations are automatically created when OrderLineItems are processed. Users cannot manually create/edit/delete operations.
 
 ### ProductionConfirmation
 **Table:** `production_confirmation`
@@ -161,27 +166,49 @@ The MES system contains **43 JPA entities** organized into the following domains
 
 **Status Values:** DRAFT, ACTIVE, INACTIVE, ON_HOLD
 
+### OperationTemplate (NEW - Design-Time)
+**Table:** `operation_templates`
+**Purpose:** Reusable operation definition for use in routing steps
+
+| Field | Type | Annotations | Purpose |
+|-------|------|-------------|---------|
+| operationTemplateId | Long | @Id, @GeneratedValue(IDENTITY) | Primary Key |
+| operationName | String | @Column(nullable=false, length=100) | Operation description |
+| operationCode | String | @Column(length=50) | Unique operation code |
+| operationType | String | @Column(nullable=false, length=50) | Type (FURNACE, CASTER, ROLLING, etc.) |
+| quantityType | String | @Column(length=20) | DISCRETE, BATCH, CONTINUOUS |
+| defaultEquipmentType | String | @Column(length=50) | Suggested equipment type |
+| description | String | @Column(length=500) | Detailed description |
+| estimatedDurationMinutes | Integer | | Expected execution time |
+| status | String | @Column(nullable=false) | Template status (default: ACTIVE) |
+
+**Status Values:** ACTIVE, INACTIVE
+
+**Usage:** Referenced by RoutingSteps, used to instantiate Operations.
+
 ### RoutingStep
 **Table:** `routing_steps`
-**Purpose:** Individual step within a routing sequence
+**Purpose:** Individual step within a routing sequence (DESIGN-TIME ONLY)
 
 | Field | Type | Annotations | Purpose |
 |-------|------|-------------|---------|
 | routingStepId | Long | @Id, @GeneratedValue(IDENTITY) | Primary Key |
 | routing | Routing | @ManyToOne(LAZY), @JoinColumn(nullable=false) | FK to parent Routing |
-| operation | Operation | @ManyToOne(LAZY) | Reference to Operation |
+| operationTemplate | OperationTemplate | @ManyToOne(LAZY) | FK to OperationTemplate (NEW) |
 | sequenceNumber | Integer | @Column(nullable=false) | Execution order |
 | isParallel | Boolean | | Can run in parallel (default: false) |
 | mandatoryFlag | Boolean | | Must be executed (default: true) |
-| status | String | @Column(nullable=false) | Step status (default: READY) |
+| status | String | @Column(nullable=false) | Template status (default: ACTIVE) |
 | producesOutputBatch | Boolean | | Generates output batch (default: true) |
 | allowsSplit | Boolean | | Split operation allowed (default: false) |
 | allowsMerge | Boolean | | Merge operation allowed (default: false) |
-| operationName | String | @Column(length=100) | Template operation name |
-| operationType | String | @Column(length=50) | Template operation type |
+| operationName | String | @Column(length=100) | Legacy: Template operation name |
+| operationType | String | @Column(length=50) | Legacy: Template operation type |
 | estimatedDurationMinutes | Integer | | Expected execution time |
 
-**Status Values:** READY, IN_PROGRESS, COMPLETED, ON_HOLD
+**Status Values:** ACTIVE, INACTIVE (template lifecycle, NOT runtime execution)
+
+**Important:** RoutingStep does NOT reference runtime Operations. Operations reference RoutingStep for genealogy tracking (one-way relationship).
 
 ---
 

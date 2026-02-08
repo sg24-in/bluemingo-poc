@@ -1,13 +1,14 @@
 # MES Database Schema Reference
 
 **Generated:** February 2026
-**Source:** SQL Patch Analysis (32 patches)
+**Source:** SQL Patch Analysis (40 patches)
+**Last Updated:** 2026-02-07 (Patch 040 - Template/Runtime Separation)
 
 ---
 
 ## Overview
 
-The MES PostgreSQL database consists of **54 tables** organized across the following domains:
+The MES PostgreSQL database consists of **55 tables** organized across the following domains:
 
 | Category | Count |
 |----------|-------|
@@ -16,8 +17,8 @@ The MES PostgreSQL database consists of **54 tables** organized across the follo
 | Lookup/Master Tables | 9 |
 | Attribute Tables | 7 |
 | Production Tracking | 3 |
-| Routing Tables | 3 |
-| **Total** | **54** |
+| Routing Tables | 4 |
+| **Total** | **55** |
 
 ---
 
@@ -572,6 +573,29 @@ CREATE TABLE unit_conversion (
 
 ## Routing Tables
 
+### operation_templates (NEW - Design-Time)
+```sql
+-- Patch 040: Template/Runtime Separation
+CREATE TABLE operation_templates (
+    operation_template_id BIGSERIAL PRIMARY KEY,
+    operation_name VARCHAR(100) NOT NULL,
+    operation_code VARCHAR(50),
+    operation_type VARCHAR(50) NOT NULL,
+    quantity_type VARCHAR(20) DEFAULT 'DISCRETE',
+    default_equipment_type VARCHAR(50),
+    description VARCHAR(500),
+    estimated_duration_minutes INTEGER,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_on TIMESTAMP,
+    updated_by VARCHAR(100)
+);
+-- Status: ACTIVE, INACTIVE
+-- Quantity Type: DISCRETE, BATCH, CONTINUOUS
+-- Purpose: Reusable operation definitions used by RoutingSteps
+```
+
 ### routing
 ```sql
 CREATE TABLE routing (
@@ -585,24 +609,26 @@ CREATE TABLE routing (
 -- Status: DRAFT, ACTIVE, INACTIVE, ON_HOLD
 ```
 
-### routing_steps
+### routing_steps (Updated in Patch 040)
 ```sql
 CREATE TABLE routing_steps (
     routing_step_id BIGSERIAL PRIMARY KEY,
     routing_id BIGINT NOT NULL REFERENCES routing(routing_id),
-    operation_id BIGINT REFERENCES operations(operation_id),
+    operation_template_id BIGINT REFERENCES operation_templates(operation_template_id), -- NEW FK
     sequence_number INTEGER NOT NULL,
     is_parallel BOOLEAN DEFAULT FALSE,
     mandatory_flag BOOLEAN DEFAULT TRUE,
-    status VARCHAR(20) NOT NULL DEFAULT 'READY',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- Changed from READY to ACTIVE
     produces_output_batch BOOLEAN DEFAULT true,
     allows_split BOOLEAN DEFAULT false,
     allows_merge BOOLEAN DEFAULT false,
-    operation_name VARCHAR(100),
-    operation_type VARCHAR(50),
+    operation_name VARCHAR(100),  -- Legacy field
+    operation_type VARCHAR(50),   -- Legacy field
     target_qty DECIMAL(15,4),
     estimated_duration_minutes INTEGER
 );
+-- Status: ACTIVE, INACTIVE (template lifecycle, NOT runtime execution)
+-- NOTE: operation_id column removed (template should NOT reference runtime Operation)
 ```
 
 ---

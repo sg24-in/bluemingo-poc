@@ -27,6 +27,10 @@ spring:
 
 # Application specific configuration
 app:
+  database:
+    reset:
+      enabled: false  # Set to true to enable reset endpoints (DANGER!)
+
   jwt:
     # Base64 encoded secret for JJWT compatibility
     secret: TUVTX1Byb2R1Y3Rpb25fQ29uZmlybWF0aW9uX0pXVF9TZWNyZXRfS2V5XzIwMjZfMjU2X0JpdHMh

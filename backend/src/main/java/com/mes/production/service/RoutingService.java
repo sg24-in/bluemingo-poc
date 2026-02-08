@@ -5,6 +5,7 @@ import com.mes.production.entity.Operation;
 import com.mes.production.entity.Process;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
+import com.mes.production.repository.OperationRepository;
 import com.mes.production.repository.ProcessRepository;
 import com.mes.production.repository.RoutingRepository;
 import com.mes.production.repository.RoutingStepRepository;
@@ -18,11 +19,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Service for managing Routing entities.
+ * Service for managing Routing entities (TEMPLATE - Design-Time).
  *
  * Per MES Consolidated Specification:
  * - Routing has ProcessID (FK → Processes)
- * - Operation sequence is derived from Routing
+ * - RoutingStep is TEMPLATE (status: ACTIVE/INACTIVE)
+ * - Operation is RUNTIME (tracks execution status)
+ * - Routing "completion" is checked by examining Operations, not RoutingSteps
  */
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,7 @@ public class RoutingService {
     private final RoutingRepository routingRepository;
     private final RoutingStepRepository routingStepRepository;
     private final ProcessRepository processRepository;
+    private final OperationRepository operationRepository;
 
     /**
      * Get routing by ID with steps
@@ -83,56 +87,94 @@ public class RoutingService {
     }
 
     /**
-     * Check if routing is complete (all mandatory steps done)
+     * Check if routing template is complete (design-time).
+     *
+     * A routing is considered complete if:
+     * - It has at least one active step
+     * - All mandatory steps are active
+     *
+     * NOTE: This is a TEMPLATE check, not runtime execution check.
+     * For runtime execution completion, use isRoutingCompleteForOrderLine().
      */
     @Transactional(readOnly = true)
     public boolean isRoutingComplete(Long routingId) {
-        List<RoutingStep> incompleteSteps = routingStepRepository.findIncompleteMandatorySteps(routingId);
-        return incompleteSteps.isEmpty();
+        List<RoutingStep> activeSteps = routingStepRepository.findActiveSteps(routingId);
+        if (activeSteps.isEmpty()) {
+            return false;  // No active steps defined
+        }
+        // Check if routing exists and is active
+        return routingRepository.findById(routingId)
+                .map(routing -> Routing.STATUS_ACTIVE.equals(routing.getStatus()))
+                .orElse(false);
     }
 
     /**
-     * Get next operation to be made READY based on routing
+     * Check if routing is complete for an order line.
+     *
+     * NOTE: Routing completion is determined by checking Operations (RUNTIME),
+     * not RoutingSteps (TEMPLATE). RoutingSteps don't track execution status.
      */
     @Transactional(readOnly = true)
-    public Optional<Operation> getNextOperationToReady(Long routingId, Integer currentSequence) {
-        List<RoutingStep> nextSteps = routingStepRepository.findNextSteps(routingId, currentSequence);
-        if (!nextSteps.isEmpty()) {
-            RoutingStep nextStep = nextSteps.get(0);
-            return Optional.ofNullable(nextStep.getOperation());
+    public boolean isRoutingCompleteForOrderLine(Long orderLineId) {
+        List<Operation> operations = operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(orderLineId);
+        if (operations.isEmpty()) {
+            return false;
         }
-        return Optional.empty();
+        // All operations must be CONFIRMED
+        return operations.stream()
+                .allMatch(op -> Operation.STATUS_CONFIRMED.equals(op.getStatus()));
     }
 
     /**
-     * Update routing step status
+     * Get next operation to be made READY for an order line.
      */
-    @Transactional
-    public RoutingStep updateStepStatus(Long routingStepId, String newStatus, String updatedBy) {
-        RoutingStep step = routingStepRepository.findById(routingStepId)
-                .orElseThrow(() -> new RuntimeException("Routing step not found: " + routingStepId));
-
-        step.setStatus(newStatus);
-        step.setUpdatedBy(updatedBy);
-        return routingStepRepository.save(step);
+    @Transactional(readOnly = true)
+    public Optional<Operation> getNextOperationToReady(Long orderLineId) {
+        List<Operation> operations = operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(orderLineId);
+        return operations.stream()
+                .filter(op -> Operation.STATUS_NOT_STARTED.equals(op.getStatus()))
+                .findFirst();
     }
 
     /**
-     * Get routing step for an operation
+     * Get routing step for an operation via routingStepId.
+     *
+     * NOTE: Operations reference RoutingSteps via routingStepId (one-way relationship).
+     * RoutingSteps do NOT reference Operations.
      */
     @Transactional(readOnly = true)
     public Optional<RoutingStep> getStepForOperation(Long operationId) {
-        return routingStepRepository.findByOperation_OperationId(operationId);
+        Operation operation = operationRepository.findById(operationId).orElse(null);
+        if (operation == null || operation.getRoutingStepId() == null) {
+            return Optional.empty();
+        }
+        return routingStepRepository.findById(operation.getRoutingStepId());
     }
 
     /**
-     * Check if operation can proceed based on routing rules
+     * Check if operation can proceed based on routing rules.
+     *
+     * NOTE: This checks Operation status (RUNTIME), not RoutingStep status.
      */
     @Transactional(readOnly = true)
     public boolean canOperationProceed(Long operationId) {
-        Optional<RoutingStep> stepOpt = routingStepRepository.findByOperation_OperationId(operationId);
+        Operation operation = operationRepository.findById(operationId).orElse(null);
+        if (operation == null) {
+            return false;
+        }
+
+        // Operation must be READY to proceed
+        if (!Operation.STATUS_READY.equals(operation.getStatus())) {
+            return false;
+        }
+
+        // Get the routing step to check routing type
+        if (operation.getRoutingStepId() == null) {
+            return true; // No routing step means no restrictions
+        }
+
+        Optional<RoutingStep> stepOpt = routingStepRepository.findById(operation.getRoutingStepId());
         if (stepOpt.isEmpty()) {
-            // No routing step means no restrictions
             return true;
         }
 
@@ -140,21 +182,25 @@ public class RoutingService {
         Routing routing = step.getRouting();
 
         if (Routing.TYPE_PARALLEL.equals(routing.getRoutingType())) {
-            // Parallel routing - can proceed if step is ready
-            return RoutingStep.STATUS_READY.equals(step.getStatus());
+            // Parallel routing - can proceed if operation is READY
+            return true;
         }
 
-        // Sequential routing - check if previous steps are complete
-        if (step.getSequenceNumber() == 1) {
-            return true; // First step can always proceed
+        // Sequential routing - check if previous operations are complete
+        if (operation.getSequenceNumber() <= 1) {
+            return true; // First operation can always proceed
         }
 
-        // Check if all previous mandatory steps are complete
-        List<RoutingStep> allSteps = routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(routing.getRoutingId());
-        for (RoutingStep prevStep : allSteps) {
-            if (prevStep.getSequenceNumber() < step.getSequenceNumber()
-                && prevStep.getMandatoryFlag()
-                && !RoutingStep.STATUS_COMPLETED.equals(prevStep.getStatus())) {
+        // Check if all previous operations for this order line are confirmed
+        Long orderLineId = operation.getOrderLineItem() != null ? operation.getOrderLineItem().getOrderLineId() : null;
+        if (orderLineId == null) {
+            return true;
+        }
+
+        List<Operation> allOperations = operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(orderLineId);
+        for (Operation prevOp : allOperations) {
+            if (prevOp.getSequenceNumber() < operation.getSequenceNumber()
+                && !Operation.STATUS_CONFIRMED.equals(prevOp.getStatus())) {
                 return false;
             }
         }
@@ -221,7 +267,7 @@ public class RoutingService {
         Routing routing = routingRepository.findById(routingId)
                 .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
 
-        // Check if routing is locked (has executed steps)
+        // Check if routing is locked (has executed operations)
         if (isRoutingLocked(routingId)) {
             throw new IllegalStateException("Cannot update routing after execution has started: " + routingId);
         }
@@ -357,14 +403,22 @@ public class RoutingService {
 
     /**
      * Check if routing is locked (has started execution).
+     *
+     * NOTE: This checks if any Operations referencing this routing's steps
+     * have been executed (IN_PROGRESS or CONFIRMED).
      */
     @Transactional(readOnly = true)
     public boolean isRoutingLocked(Long routingId) {
         List<RoutingStep> steps = routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(routingId);
         for (RoutingStep step : steps) {
-            if (RoutingStep.STATUS_IN_PROGRESS.equals(step.getStatus()) ||
-                RoutingStep.STATUS_COMPLETED.equals(step.getStatus())) {
-                return true;
+            // Check if any operations reference this routing step
+            List<Operation> ops = operationRepository.findByRoutingStepId(step.getRoutingStepId());
+            for (Operation op : ops) {
+                if (Operation.STATUS_IN_PROGRESS.equals(op.getStatus()) ||
+                    Operation.STATUS_CONFIRMED.equals(op.getStatus()) ||
+                    Operation.STATUS_PARTIALLY_CONFIRMED.equals(op.getStatus())) {
+                    return true;
+                }
             }
         }
         return false;
@@ -372,6 +426,9 @@ public class RoutingService {
 
     /**
      * Get routing status summary.
+     *
+     * NOTE: Step counts are based on RoutingStep templates.
+     * Execution status is derived from Operations.
      */
     @Transactional(readOnly = true)
     public RoutingDTO.RoutingStatus getRoutingStatus(Long routingId) {
@@ -379,22 +436,18 @@ public class RoutingService {
                 .orElseThrow(() -> new IllegalArgumentException("Routing not found: " + routingId));
 
         List<RoutingStep> steps = routing.getRoutingSteps();
-
         int totalSteps = steps.size();
-        int completedSteps = (int) steps.stream()
-                .filter(s -> RoutingStep.STATUS_COMPLETED.equals(s.getStatus()))
-                .count();
-        int inProgressSteps = (int) steps.stream()
-                .filter(s -> RoutingStep.STATUS_IN_PROGRESS.equals(s.getStatus()))
+        int activeSteps = (int) steps.stream()
+                .filter(s -> RoutingStep.STATUS_ACTIVE.equals(s.getStatus()))
                 .count();
 
         return RoutingDTO.RoutingStatus.builder()
                 .routingId(routingId)
                 .status(routing.getStatus())
                 .totalSteps(totalSteps)
-                .completedSteps(completedSteps)
-                .inProgressSteps(inProgressSteps)
-                .isComplete(completedSteps == totalSteps && totalSteps > 0)
+                .completedSteps(0) // Steps don't track completion - use Operations
+                .inProgressSteps(0) // Steps don't track progress - use Operations
+                .isComplete(false) // Completion is per order line, not routing
                 .isLocked(isRoutingLocked(routingId))
                 .build();
     }
@@ -447,7 +500,7 @@ public class RoutingService {
                 .producesOutputBatch(request.getProducesOutputBatch() != null ? request.getProducesOutputBatch() : false)
                 .allowsSplit(request.getAllowsSplit() != null ? request.getAllowsSplit() : false)
                 .allowsMerge(request.getAllowsMerge() != null ? request.getAllowsMerge() : false)
-                .status(RoutingStep.STATUS_READY)
+                .status(RoutingStep.STATUS_ACTIVE) // Template status
                 .createdBy(createdBy)
                 .build();
 

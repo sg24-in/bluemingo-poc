@@ -24,6 +24,10 @@ public class RoutingDTO {
         private LocalDateTime createdOn;
     }
 
+    /**
+     * Routing step info for API responses.
+     * References OperationTemplate (design-time), NOT Operation (runtime).
+     */
     @Data
     @Builder
     @NoArgsConstructor
@@ -31,12 +35,14 @@ public class RoutingDTO {
     public static class RoutingStepInfo {
         private Long routingStepId;
         private Long routingId;
-        private Long operationId;
-        private String operationName;
+        private Long operationTemplateId;  // References template, not runtime operation
+        private String operationName;      // From OperationTemplate or step override
+        private String operationType;      // From OperationTemplate
+        private String operationCode;      // From OperationTemplate or step override
         private Integer sequenceNumber;
         private Boolean isParallel;
         private Boolean mandatoryFlag;
-        private String status;
+        private String status;             // ACTIVE/INACTIVE (template lifecycle)
     }
 
     /**

@@ -150,7 +150,14 @@
       "Bash(while read name)",
       "Bash(\"/d/repositories/bluemingo-poc/backend/gradlew.bat\" test -Dspring.profiles.active=test)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(\"C:/Program Files/PostgreSQL/18/bin/psql\":*)",
+      "Bash(PGPASSWORD=postgres \"C:/Program Files/PostgreSQL/18/bin/psql\":*)",
+      "Bash(PGPASSWORD=postgres \"C:/Program Files/PostgreSQL/18/bin/psql\" -U postgres -d mes_production -c:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBtZXMuY29tIiwiaWF0IjoxNzcwNDYzMjEyLCJleHAiOjE3NzA1NDk2MTJ9.4ij8gHExHEMzeplh1qbsYD7oTdinMxGpKP0a8Z-IAlQ\")",
+      "Bash(__NEW_LINE_f3f22130a2a937c1__ echo \"=== 1. Check Reset Status ===\")",
+      "Bash(psql:*)",
+      "Bash(tasklist:*)"
     ]
   }
 }

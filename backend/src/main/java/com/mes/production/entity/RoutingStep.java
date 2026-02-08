@@ -8,6 +8,21 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * RoutingStep - Design-time routing step definition per MES Consolidated Specification.
+ *
+ * This is a DESIGN-TIME entity only. It defines:
+ * - The sequence of operations in a Routing
+ * - Which OperationTemplate to use at each step
+ * - Batch behavior flags (split/merge allowed)
+ *
+ * IMPORTANT: RoutingSteps do NOT reference runtime Operations.
+ * Operations reference RoutingSteps (for genealogy) - this is a one-way relationship.
+ *
+ * Relationship:
+ * - Routing → RoutingSteps (parent template)
+ * - RoutingStep → OperationTemplate (design-time operation definition)
+ */
 @Entity
 @Table(name = "routing_steps")
 @Data
@@ -15,6 +30,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoutingStep {
+
+    // Status constants - TEMPLATE lifecycle, not runtime execution
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_INACTIVE = "INACTIVE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,9 +44,10 @@ public class RoutingStep {
     @JoinColumn(name = "routing_id", nullable = false)
     private Routing routing;
 
+    // Design-time reference to OperationTemplate (NEW)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "operation_id")
-    private Operation operation;
+    @JoinColumn(name = "operation_template_id")
+    private OperationTemplate operationTemplate;
 
     @Column(name = "sequence_number", nullable = false)
     private Integer sequenceNumber;
@@ -38,6 +58,7 @@ public class RoutingStep {
     @Column(name = "mandatory_flag")
     private Boolean mandatoryFlag;
 
+    // Status is now template-appropriate: ACTIVE/INACTIVE
     @Column(nullable = false, length = 20)
     private String status;
 
@@ -52,8 +73,8 @@ public class RoutingStep {
     @Column(name = "allows_merge")
     private Boolean allowsMerge;
 
-    // Operation template fields (R03)
-    // These define the operation that will be created when routing is instantiated
+    // Legacy operation template fields - kept for backward compatibility
+    // Prefer using OperationTemplate reference for new data
     @Column(name = "operation_name", length = 100)
     private String operationName;
 
@@ -84,16 +105,10 @@ public class RoutingStep {
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    // Status constants
-    public static final String STATUS_READY = "READY";
-    public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
-    public static final String STATUS_COMPLETED = "COMPLETED";
-    public static final String STATUS_ON_HOLD = "ON_HOLD";
-
     @PrePersist
     protected void onCreate() {
         createdOn = LocalDateTime.now();
-        if (status == null) status = STATUS_READY;
+        if (status == null) status = STATUS_ACTIVE;
         if (isParallel == null) isParallel = false;
         if (mandatoryFlag == null) mandatoryFlag = true;
         // Batch behavior defaults
@@ -105,5 +120,38 @@ public class RoutingStep {
     @PreUpdate
     protected void onUpdate() {
         updatedOn = LocalDateTime.now();
+    }
+
+    /**
+     * Get the effective operation name - from OperationTemplate if available,
+     * otherwise from legacy fields.
+     */
+    public String getEffectiveOperationName() {
+        if (operationTemplate != null) {
+            return operationTemplate.getOperationName();
+        }
+        return operationName;
+    }
+
+    /**
+     * Get the effective operation type - from OperationTemplate if available,
+     * otherwise from legacy fields.
+     */
+    public String getEffectiveOperationType() {
+        if (operationTemplate != null) {
+            return operationTemplate.getOperationType();
+        }
+        return operationType;
+    }
+
+    /**
+     * Get the effective operation code - from OperationTemplate if available,
+     * otherwise from legacy fields.
+     */
+    public String getEffectiveOperationCode() {
+        if (operationTemplate != null) {
+            return operationTemplate.getOperationCode();
+        }
+        return operationCode;
     }
 }

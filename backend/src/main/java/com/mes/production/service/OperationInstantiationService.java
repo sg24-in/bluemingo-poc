@@ -1,6 +1,7 @@
 package com.mes.production.service;
 
 import com.mes.production.entity.Operation;
+import com.mes.production.entity.OperationTemplate;
 import com.mes.production.entity.OrderLineItem;
 import com.mes.production.entity.Process;
 import com.mes.production.entity.ProcessStatus;
@@ -24,9 +25,16 @@ import java.util.Optional;
  * Service for instantiating operations from routing/process definitions at runtime.
  *
  * Per MES Consolidated Specification:
- * - Process is design-time entity (ProcessID, ProcessName, Status)
- * - Operations link to Process via ProcessID (design-time reference)
- * - Operations link to OrderLineItem via OrderLineID (runtime tracking)
+ * - Process is TEMPLATE entity (design-time only)
+ * - RoutingStep is TEMPLATE entity (design-time only)
+ * - OperationTemplate is TEMPLATE entity (reusable operation definition)
+ * - Operations are RUNTIME instances linked to OrderLineItem
+ *
+ * Key relationships:
+ * - Operation.process → Process (template reference)
+ * - Operation.orderLineItem → OrderLineItem (runtime parent)
+ * - Operation.routingStepId → RoutingStep (template genealogy)
+ * - Operation.operationTemplateId → OperationTemplate (template genealogy)
  */
 @Service
 @RequiredArgsConstructor
@@ -67,7 +75,7 @@ public class OperationInstantiationService {
         log.info("Instantiating operations for order line item {} with process {}",
                 orderLineItem.getOrderLineId(), processId);
 
-        // Get the process definition
+        // Get the process definition (TEMPLATE)
         Process process = processRepository.findById(processId)
                 .orElseThrow(() -> new IllegalArgumentException("Process not found: " + processId));
 
@@ -78,7 +86,7 @@ public class OperationInstantiationService {
                     " status is " + process.getStatus() + ", must be ACTIVE");
         }
 
-        // Get routing for this process
+        // Get routing for this process (TEMPLATE)
         List<Routing> routings = routingRepository.findByProcess_ProcessId(processId);
         if (routings.isEmpty()) {
             log.warn("No routing found for process: {}", processId);
@@ -90,20 +98,23 @@ public class OperationInstantiationService {
                 .findFirst()
                 .orElse(routings.get(0));
 
-        // Get routing steps
+        // Get routing steps (TEMPLATE)
         List<RoutingStep> routingSteps = routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(routing.getRoutingId());
         if (routingSteps.isEmpty()) {
             log.warn("No routing steps defined for routing: {}", routing.getRoutingId());
             throw new IllegalStateException("No routing steps defined for routing: " + routing.getRoutingId());
         }
 
-        // Create Operations linked to OrderLineItem and Process
+        // Create Operations (RUNTIME) linked to OrderLineItem and Process
         List<Operation> operations = new ArrayList<>();
 
         for (RoutingStep step : routingSteps) {
-            Operation operation = createOperationFromStep(
-                    process, orderLineItem, step, targetQuantity, createdBy);
-            operations.add(operation);
+            // Only instantiate ACTIVE routing steps
+            if (RoutingStep.STATUS_ACTIVE.equals(step.getStatus())) {
+                Operation operation = createOperationFromStep(
+                        process, orderLineItem, step, targetQuantity, createdBy);
+                operations.add(operation);
+            }
         }
 
         // Set first operation to READY status
@@ -119,22 +130,26 @@ public class OperationInstantiationService {
 
     /**
      * Check if operations can still be modified (routing not locked).
-     * A routing becomes locked once any operation has been executed.
+     * A routing becomes locked once any operation has been executed for any order.
+     *
+     * NOTE: This checks if the routing has been used, not if RoutingSteps have status changes.
+     * RoutingStep is TEMPLATE and doesn't track execution status.
      */
     @Transactional(readOnly = true)
     public boolean isRoutingLocked(Long routingId) {
-        Optional<Routing> routingOpt = routingRepository.findByIdWithSteps(routingId);
-        if (routingOpt.isEmpty()) {
-            return false;
-        }
+        // Check if any operations exist for this routing's steps
+        List<RoutingStep> steps = routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(routingId);
 
-        Routing routing = routingOpt.get();
-
-        // Check if any step has been executed (IN_PROGRESS or COMPLETED)
-        for (RoutingStep step : routing.getRoutingSteps()) {
-            if (RoutingStep.STATUS_IN_PROGRESS.equals(step.getStatus()) ||
-                RoutingStep.STATUS_COMPLETED.equals(step.getStatus())) {
-                return true;
+        for (RoutingStep step : steps) {
+            // Check if any operations reference this routing step
+            List<Operation> ops = operationRepository.findByRoutingStepId(step.getRoutingStepId());
+            for (Operation op : ops) {
+                // If any operation has been started, the routing is locked
+                if (Operation.STATUS_IN_PROGRESS.equals(op.getStatus()) ||
+                    Operation.STATUS_CONFIRMED.equals(op.getStatus()) ||
+                    Operation.STATUS_PARTIALLY_CONFIRMED.equals(op.getStatus())) {
+                    return true;
+                }
             }
         }
 
@@ -142,17 +157,15 @@ public class OperationInstantiationService {
     }
 
     /**
-     * Get the next operation to execute in a routing.
+     * Get the next operation to execute for an order line item.
      */
     @Transactional(readOnly = true)
-    public Optional<Operation> getNextOperationToExecute(Long routingId) {
-        List<RoutingStep> steps = routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(routingId);
+    public Optional<Operation> getNextOperationToExecute(Long orderLineId) {
+        List<Operation> operations = operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(orderLineId);
 
-        for (RoutingStep step : steps) {
-            if (step.getOperation() != null &&
-                (RoutingStep.STATUS_READY.equals(step.getStatus()) ||
-                 Operation.STATUS_READY.equals(step.getOperation().getStatus()))) {
-                return Optional.of(step.getOperation());
+        for (Operation op : operations) {
+            if (Operation.STATUS_READY.equals(op.getStatus())) {
+                return Optional.of(op);
             }
         }
 
@@ -161,81 +174,86 @@ public class OperationInstantiationService {
 
     /**
      * Progress to the next operation after completing one.
+     *
+     * NOTE: This only updates Operation status (RUNTIME).
+     * RoutingStep is TEMPLATE and is never modified during execution.
      */
     @Transactional
     public void progressToNextOperation(Long completedOperationId, String updatedBy) {
         log.info("Progressing from operation {} to next", completedOperationId);
 
-        // Find the routing step for this operation
-        Optional<RoutingStep> currentStepOpt = routingStepRepository.findByOperation_OperationId(completedOperationId);
-        if (currentStepOpt.isEmpty()) {
-            log.warn("No routing step found for operation: {}", completedOperationId);
+        // Find the completed operation
+        Operation completedOp = operationRepository.findById(completedOperationId)
+                .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + completedOperationId));
+
+        // Get the order line item to find sibling operations
+        OrderLineItem orderLineItem = completedOp.getOrderLineItem();
+        if (orderLineItem == null) {
+            log.warn("No order line item linked to operation: {}", completedOperationId);
             return;
         }
 
-        RoutingStep currentStep = currentStepOpt.get();
-        Routing routing = currentStep.getRouting();
+        // Find next operation by sequence number
+        List<Operation> allOperations = operationRepository
+                .findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(orderLineItem.getOrderLineId());
 
-        // Mark current step as completed
-        currentStep.setStatus(RoutingStep.STATUS_COMPLETED);
-        currentStep.setUpdatedBy(updatedBy);
-        routingStepRepository.save(currentStep);
-
-        // Find next steps
-        List<RoutingStep> nextSteps = routingStepRepository.findNextSteps(
-                routing.getRoutingId(), currentStep.getSequenceNumber());
-
-        // Handle based on routing type
-        if (Routing.TYPE_PARALLEL.equals(routing.getRoutingType())) {
-            // For parallel routing, all next steps at same level become READY
-            for (RoutingStep nextStep : nextSteps) {
-                if (nextStep.getSequenceNumber().equals(currentStep.getSequenceNumber() + 1)) {
-                    activateStep(nextStep, updatedBy);
-                }
+        // Find next NOT_STARTED operation after the completed one
+        boolean foundCompleted = false;
+        for (Operation op : allOperations) {
+            if (op.getOperationId().equals(completedOperationId)) {
+                foundCompleted = true;
+                continue;
             }
-        } else {
-            // For sequential routing, only the immediate next step becomes READY
-            if (!nextSteps.isEmpty()) {
-                activateStep(nextSteps.get(0), updatedBy);
+
+            if (foundCompleted && Operation.STATUS_NOT_STARTED.equals(op.getStatus())) {
+                // Set next operation to READY
+                op.setStatus(Operation.STATUS_READY);
+                op.setUpdatedBy(updatedBy);
+                operationRepository.save(op);
+                log.info("Set operation {} to READY", op.getOperationId());
+                break;
             }
         }
     }
 
     // ============ Helper Methods ============
 
+    /**
+     * Create a runtime Operation from a template RoutingStep.
+     *
+     * Operation details are copied from either:
+     * 1. OperationTemplate (if RoutingStep has operationTemplate reference)
+     * 2. RoutingStep legacy fields (for backward compatibility)
+     */
     private Operation createOperationFromStep(
             Process process, OrderLineItem orderLineItem, RoutingStep step,
             BigDecimal targetQuantity, String createdBy) {
+
+        // Get operation details from OperationTemplate or legacy fields
+        String opName = step.getEffectiveOperationName();
+        String opType = step.getEffectiveOperationType();
+        String opCode = step.getEffectiveOperationCode();
+
+        // Get operationTemplateId if OperationTemplate is set
+        Long operationTemplateId = null;
+        if (step.getOperationTemplate() != null) {
+            operationTemplateId = step.getOperationTemplate().getOperationTemplateId();
+        }
 
         Operation operation = Operation.builder()
                 .process(process)
                 .orderLineItem(orderLineItem)
                 .routingStepId(step.getRoutingStepId())
-                .operationName(step.getOperationName())
-                .operationType(step.getOperationType())
-                .operationCode(step.getOperationCode())
+                .operationTemplateId(operationTemplateId)
+                .operationName(opName != null ? opName : "Step " + step.getSequenceNumber())
+                .operationType(opType)
+                .operationCode(opCode)
                 .status(Operation.STATUS_NOT_STARTED)
                 .sequenceNumber(step.getSequenceNumber())
-                .targetQty(targetQuantity)
+                .targetQty(step.getTargetQty() != null ? step.getTargetQty() : targetQuantity)
                 .createdBy(createdBy)
                 .build();
 
         return operationRepository.save(operation);
-    }
-
-    private void activateStep(RoutingStep step, String updatedBy) {
-        step.setStatus(RoutingStep.STATUS_READY);
-        step.setUpdatedBy(updatedBy);
-        routingStepRepository.save(step);
-
-        if (step.getOperation() != null) {
-            Operation op = step.getOperation();
-            op.setStatus(Operation.STATUS_READY);
-            op.setUpdatedBy(updatedBy);
-            operationRepository.save(op);
-        }
-
-        log.info("Activated routing step {} and operation {}", step.getRoutingStepId(),
-                step.getOperation() != null ? step.getOperation().getOperationId() : "N/A");
     }
 }

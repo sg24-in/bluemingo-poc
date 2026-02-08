@@ -89,7 +89,12 @@ import {
   // Audit
   AuditEntry,
   AuditHistory,
-  AuditSummary
+  AuditSummary,
+  // Operation Templates
+  OperationTemplate,
+  CreateOperationTemplateRequest,
+  UpdateOperationTemplateRequest,
+  OperationTemplateSummary
 } from '../../shared/models';
 
 /**
@@ -905,6 +910,56 @@ export class ApiService {
 
   activateProduct(productId: number): Observable<Product> {
     return this.http.post<Product>(`${environment.apiUrl}/products/${productId}/activate`, {});
+  }
+
+  // ============================================================
+  // Operation Templates (Design-Time)
+  // Template entities used to configure routing steps
+  // ============================================================
+
+  getOperationTemplates(): Observable<OperationTemplate[]> {
+    return this.http.get<OperationTemplate[]>(`${environment.apiUrl}/operation-templates`);
+  }
+
+  getActiveOperationTemplates(): Observable<OperationTemplateSummary[]> {
+    return this.http.get<OperationTemplateSummary[]>(`${environment.apiUrl}/operation-templates/active`);
+  }
+
+  getOperationTemplatesPaged(request: PageRequest = {}): Observable<PagedResponse<OperationTemplate>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<OperationTemplate>>(`${environment.apiUrl}/operation-templates/paged`, { params });
+  }
+
+  getOperationTemplateById(id: number): Observable<OperationTemplate> {
+    return this.http.get<OperationTemplate>(`${environment.apiUrl}/operation-templates/${id}`);
+  }
+
+  createOperationTemplate(request: CreateOperationTemplateRequest): Observable<OperationTemplate> {
+    return this.http.post<OperationTemplate>(`${environment.apiUrl}/operation-templates`, request);
+  }
+
+  updateOperationTemplate(id: number, request: UpdateOperationTemplateRequest): Observable<OperationTemplate> {
+    return this.http.put<OperationTemplate>(`${environment.apiUrl}/operation-templates/${id}`, request);
+  }
+
+  deleteOperationTemplate(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/operation-templates/${id}`);
+  }
+
+  activateOperationTemplate(id: number): Observable<OperationTemplate> {
+    return this.http.post<OperationTemplate>(`${environment.apiUrl}/operation-templates/${id}/activate`, {});
+  }
+
+  deactivateOperationTemplate(id: number): Observable<OperationTemplate> {
+    return this.http.post<OperationTemplate>(`${environment.apiUrl}/operation-templates/${id}/deactivate`, {});
+  }
+
+  getOperationTemplatesByType(type: string): Observable<OperationTemplate[]> {
+    return this.http.get<OperationTemplate[]>(`${environment.apiUrl}/operation-templates/by-type/${type}`);
+  }
+
+  getOperationTypes(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/operation-templates/types`);
   }
 
   // ============================================================

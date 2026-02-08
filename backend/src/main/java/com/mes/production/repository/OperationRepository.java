@@ -72,4 +72,19 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
      * Count operations by status
      */
     Long countByStatus(String status);
+
+    /**
+     * Find operations by order line item ID ordered by sequence number
+     */
+    List<Operation> findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(Long orderLineId);
+
+    /**
+     * Find operations by routing step ID (for checking if routing is locked)
+     */
+    List<Operation> findByRoutingStepId(Long routingStepId);
+
+    /**
+     * Find operations by operation template ID
+     */
+    List<Operation> findByOperationTemplateId(Long operationTemplateId);
 }

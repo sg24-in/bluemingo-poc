@@ -298,6 +298,28 @@
 
 ---
 
+## Operation Template Domain (NEW)
+**Base Path:** `/api/operation-templates`
+
+| Method | Endpoint | Purpose | Query Params |
+|--------|----------|---------|--------------|
+| GET | `/` | List all templates | - |
+| GET | `/active` | List active only | - |
+| GET | `/paged` | Paginated list | page, size, sortBy, sortDirection, status, type, search |
+| GET | `/{id}` | Get by ID | - |
+| GET | `/by-type/{type}` | By operation type | - |
+| GET | `/summaries` | Summaries for dropdowns | - |
+| GET | `/types` | Distinct operation types | - |
+| POST | `/` | Create template | - |
+| PUT | `/{id}` | Update template | - |
+| POST | `/{id}/activate` | Activate | - |
+| POST | `/{id}/deactivate` | Deactivate | - |
+| DELETE | `/{id}` | Soft delete (to INACTIVE) | - |
+
+**Purpose:** Design-time operation definitions used by RoutingSteps and instantiated into runtime Operations.
+
+---
+
 ## Configuration Domain
 **Base Path:** `/api/config`
 
