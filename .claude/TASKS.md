@@ -157,12 +157,12 @@ GET /api/bom/products/paged?page=0&size=20&sortBy=productSku&sortDirection=ASC&s
 | Hold Reasons Config | `getHoldReasonsPaged()` | ✓ |
 | Process Parameters Config | `getProcessParamsPaged()` | ✓ |
 
-**Pages WITHOUT Server-Side Pagination (Need Implementation):**
-| Page | Current API | Priority |
-|------|------------|----------|
-| Operations | `getAllOperations()` | HIGH |
-| BOM | `getBomProducts()` | MEDIUM |
-| Routing | `getAllRoutings()` | HIGH |
+**Pages WITHOUT Server-Side Pagination:** ✅ ALL COMPLETE
+| Page | Paginated API | Status |
+|------|--------------|--------|
+| Operations | `getOperationsPaged()` | ✅ TASK-P1 |
+| Routing | `getRoutingsPaged()` | ✅ TASK-P2 |
+| BOM | `getBomProductsPaged()` | ✅ TASK-P3 |
 
 ---
 

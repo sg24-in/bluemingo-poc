@@ -1093,6 +1093,126 @@ INSERT INTO audit_trail (entity_type, entity_id, action, new_value, changed_by, 
 ('EQUIPMENT', 8, 'STATUS_CHANGE', 'HSM-001 status check - operational', 'OP-008', '2026-02-08 07:00:00');
 
 -- =====================================================
+-- STEP 23: Unit of Measure Configuration
+-- =====================================================
+INSERT INTO unit_of_measure (unit_code, unit_name, unit_type, decimal_precision, is_base_unit, is_active) VALUES
+('T',    'Metric Ton',      'WEIGHT',  2, TRUE,  TRUE),
+('KG',   'Kilogram',        'WEIGHT',  2, FALSE, TRUE),
+('LB',   'Pound',           'WEIGHT',  2, FALSE, TRUE),
+('G',    'Gram',            'WEIGHT',  3, FALSE, TRUE),
+('L',    'Liter',           'VOLUME',  2, TRUE,  TRUE),
+('ML',   'Milliliter',      'VOLUME',  0, FALSE, TRUE),
+('GAL',  'Gallon',          'VOLUME',  2, FALSE, TRUE),
+('M',    'Meter',           'LENGTH',  2, TRUE,  TRUE),
+('MM',   'Millimeter',      'LENGTH',  0, FALSE, TRUE),
+('CM',   'Centimeter',      'LENGTH',  1, FALSE, TRUE),
+('EA',   'Each',            'COUNT',   0, TRUE,  TRUE),
+('PC',   'Piece',           'COUNT',   0, FALSE, TRUE),
+('HR',   'Hour',            'TIME',    2, TRUE,  TRUE),
+('MIN',  'Minute',          'TIME',    0, FALSE, TRUE);
+
+-- =====================================================
+-- STEP 24: Unit Conversion Configuration
+-- =====================================================
+INSERT INTO unit_conversion (from_unit_code, to_unit_code, conversion_factor, is_active) VALUES
+('T',   'KG',  1000.0,         TRUE),
+('KG',  'T',   0.001,          TRUE),
+('KG',  'LB',  2.20462,        TRUE),
+('LB',  'KG',  0.453592,       TRUE),
+('KG',  'G',   1000.0,         TRUE),
+('G',   'KG',  0.001,          TRUE),
+('L',   'ML',  1000.0,         TRUE),
+('ML',  'L',   0.001,          TRUE),
+('L',   'GAL', 0.264172,       TRUE),
+('GAL', 'L',   3.78541,        TRUE),
+('M',   'MM',  1000.0,         TRUE),
+('MM',  'M',   0.001,          TRUE),
+('M',   'CM',  100.0,          TRUE),
+('CM',  'M',   0.01,           TRUE),
+('HR',  'MIN', 60.0,           TRUE),
+('MIN', 'HR',  0.0166667,      TRUE);
+
+-- =====================================================
+-- STEP 25: Equipment Type Configuration
+-- =====================================================
+INSERT INTO equipment_type_config (equipment_type, display_name, description, min_capacity, max_capacity, default_capacity_unit, min_temperature, max_temperature, maintenance_interval_hours, max_continuous_operation_hours, requires_operator, requires_calibration, allows_parallel_operation, is_active) VALUES
+('BATCH',      'Batch Equipment',      'Equipment that processes discrete batches',            1,    500,  'T',    NULL,   NULL,   500,  24,  TRUE,  FALSE, FALSE, TRUE),
+('CONTINUOUS', 'Continuous Equipment', 'Equipment with continuous flow processing',            1,    100,  'T/hr', NULL,   NULL,   720,  168, TRUE,  FALSE, TRUE,  TRUE),
+('MELTING',    'Melting Furnace',      'Electric arc or induction furnaces for melting',      50,   200,  'T',    1500,   1700,   200,  12,  TRUE,  TRUE,  FALSE, TRUE),
+('REFINING',   'Refining Equipment',   'Ladle furnaces for secondary metallurgy',             50,   150,  'T',    1550,   1650,   300,  8,   TRUE,  TRUE,  FALSE, TRUE),
+('CASTING',    'Casting Machine',      'Continuous casters for slab/billet production',       20,   80,   'T/hr', 1500,   1550,   500,  168, TRUE,  TRUE,  FALSE, TRUE),
+('HOT_ROLLING','Hot Rolling Mill',     'Mills for hot rolling slabs to coils/strips',         10,   50,   'T/hr', 900,    1250,   400,  168, TRUE,  TRUE,  TRUE,  TRUE),
+('COLD_ROLLING','Cold Rolling Mill',   'Mills for cold reduction of strips',                  5,    30,   'T/hr', NULL,   NULL,   600,  168, TRUE,  TRUE,  TRUE,  TRUE),
+('HEAT_TREATMENT','Heat Treatment',    'Furnaces for annealing, normalizing, tempering',      20,   100,  'T',    600,    900,    400,  48,  TRUE,  TRUE,  FALSE, TRUE),
+('PICKLING',   'Pickling Line',        'Acid pickling for scale removal',                     10,   40,   'T/hr', 60,     90,     300,  168, TRUE,  FALSE, TRUE,  TRUE),
+('COATING',    'Coating Line',         'Hot-dip galvanizing or other coating',                10,   50,   'T/hr', 450,    480,    400,  168, TRUE,  FALSE, TRUE,  TRUE),
+('BAR_ROLLING','Bar Rolling Mill',     'Mills for rolling billets to bars/rebars',            20,   60,   'T/hr', 1000,   1150,   400,  168, TRUE,  TRUE,  TRUE,  TRUE),
+('WIRE_DRAWING','Wire Drawing',        'Machines for drawing wire from rod',                  2,    20,   'T/hr', NULL,   NULL,   500,  168, TRUE,  FALSE, TRUE,  TRUE),
+('PACKAGING',  'Packaging Line',       'Equipment for strapping, labeling, packaging',        10,   100,  'T',    NULL,   NULL,   1000, 168, TRUE,  FALSE, TRUE,  TRUE);
+
+-- =====================================================
+-- STEP 26: Inventory Form Configuration
+-- =====================================================
+INSERT INTO inventory_form_config (form_code, form_name, description, tracks_temperature, tracks_moisture, tracks_density, default_weight_unit, default_volume_unit, requires_temperature_control, min_storage_temp, max_storage_temp, requires_humidity_control, max_humidity_percent, requires_special_handling, shelf_life_days, is_active) VALUES
+('SOLID',   'Solid',           'Solid materials (steel, scrap, slabs)',       FALSE, FALSE, TRUE,  'T',   NULL,  FALSE, NULL,  NULL,  FALSE, NULL, FALSE, NULL, TRUE),
+('LIQUID',  'Liquid/Molten',   'Molten metals and liquid materials',          TRUE,  FALSE, TRUE,  'T',   NULL,  TRUE,  1500,  1700,  FALSE, NULL, TRUE,  NULL, TRUE),
+('POWDER',  'Powder/Granular', 'Powders, fluxes, and granular materials',     FALSE, TRUE,  TRUE,  'KG',  NULL,  FALSE, NULL,  NULL,  TRUE,  60,   TRUE,  365,  TRUE),
+('COIL',    'Coil/Strip',      'Coiled sheet or strip products',              FALSE, FALSE, FALSE, 'T',   NULL,  FALSE, NULL,  NULL,  TRUE,  70,   FALSE, NULL, TRUE),
+('SHEET',   'Sheet/Plate',     'Flat sheet or plate products',                FALSE, FALSE, FALSE, 'T',   NULL,  FALSE, NULL,  NULL,  TRUE,  70,   FALSE, NULL, TRUE),
+('BAR',     'Bar/Rod',         'Long products - bars, rods, rebars',          FALSE, FALSE, FALSE, 'T',   NULL,  FALSE, NULL,  NULL,  FALSE, NULL, FALSE, NULL, TRUE),
+('BILLET',  'Billet/Bloom',    'Semi-finished steel billets or blooms',       FALSE, FALSE, FALSE, 'T',   NULL,  FALSE, NULL,  NULL,  FALSE, NULL, FALSE, NULL, TRUE),
+('CHEMICAL','Chemical/Acid',   'Chemicals, acids, and process fluids',        TRUE,  FALSE, TRUE,  'KG',  'L',   TRUE,  10,    35,    FALSE, NULL, TRUE,  180,  TRUE),
+('GAS',     'Gas',             'Industrial gases (argon, nitrogen, oxygen)',  TRUE,  FALSE, FALSE, 'KG',  'L',   TRUE,  -200,  50,    FALSE, NULL, TRUE,  NULL, TRUE);
+
+-- =====================================================
+-- STEP 27: Batch Number Configuration
+-- =====================================================
+INSERT INTO batch_number_config (config_name, operation_type, product_sku, prefix, include_operation_code, operation_code_length, separator, date_format, include_date, sequence_length, sequence_reset, priority, status, created_by) VALUES
+('Default',          NULL,        NULL,            'B',      TRUE,  2, '-', 'yyyyMMdd', TRUE,  4, 'DAILY',   100, 'ACTIVE', 'SYSTEM'),
+('Melting',          'MELTING',   NULL,            'MELT',   TRUE,  2, '-', 'yyyyMMdd', TRUE,  3, 'DAILY',   10,  'ACTIVE', 'SYSTEM'),
+('Casting Slab',     'CASTING',   NULL,            'SLB',    TRUE,  2, '-', 'yyyyMMdd', TRUE,  3, 'DAILY',   10,  'ACTIVE', 'SYSTEM'),
+('Casting Billet',   'CASTING',   'STEEL-BILLET-100','BLT',  FALSE, 0, '-', 'yyyyMMdd', TRUE,  3, 'DAILY',   5,   'ACTIVE', 'SYSTEM'),
+('Hot Rolling',      'HOT_ROLLING',NULL,           'HR',     TRUE,  2, '-', 'yyyyMMdd', TRUE,  3, 'DAILY',   10,  'ACTIVE', 'SYSTEM'),
+('Cold Rolling',     'COLD_ROLLING',NULL,          'CR',     TRUE,  2, '-', 'yyyyMMdd', TRUE,  3, 'DAILY',   10,  'ACTIVE', 'SYSTEM'),
+('Bar Rolling',      'BAR_ROLLING',NULL,           'BAR',    TRUE,  2, '-', 'yyyyMMdd', TRUE,  3, 'DAILY',   10,  'ACTIVE', 'SYSTEM'),
+('Rebar 10mm',       NULL,        'REBAR-10MM',    'RB10',   FALSE, 0, '-', 'yyyyMMdd', TRUE,  4, 'DAILY',   5,   'ACTIVE', 'SYSTEM'),
+('Rebar 12mm',       NULL,        'REBAR-12MM',    'RB12',   FALSE, 0, '-', 'yyyyMMdd', TRUE,  4, 'DAILY',   5,   'ACTIVE', 'SYSTEM'),
+('HR Coil 2mm',      NULL,        'HR-COIL-2MM',   'HRC2',   FALSE, 0, '-', 'yyyyMMdd', TRUE,  4, 'DAILY',   5,   'ACTIVE', 'SYSTEM'),
+('CR Sheet 1mm',     NULL,        'CR-SHEET-1MM',  'CRS1',   FALSE, 0, '-', 'yyyyMMdd', TRUE,  4, 'DAILY',   5,   'ACTIVE', 'SYSTEM');
+
+-- =====================================================
+-- STEP 28: Operation Equipment Usage (sample records)
+-- =====================================================
+INSERT INTO operation_equipment_usage (operation_id, equipment_id, start_time, end_time, operator_id, status, created_by) VALUES
+(1,  1,  '2026-01-15 06:00:00', '2026-01-15 10:00:00', 1, 'LOGGED', 'SYSTEM'),
+(2,  1,  '2026-01-15 10:30:00', '2026-01-15 16:00:00', 1, 'LOGGED', 'SYSTEM'),
+(3,  4,  '2026-01-15 16:30:00', '2026-01-15 19:00:00', 1, 'LOGGED', 'SYSTEM'),
+(4,  6,  '2026-01-16 06:00:00', '2026-01-16 12:00:00', 3, 'LOGGED', 'SYSTEM'),
+(5,  8,  '2026-01-17 06:00:00', '2026-01-17 09:00:00', 4, 'LOGGED', 'SYSTEM'),
+(12, 2,  '2026-01-19 06:00:00', '2026-01-19 10:00:00', 1, 'LOGGED', 'SYSTEM'),
+(13, 2,  '2026-01-19 10:30:00', '2026-01-19 17:00:00', 1, 'LOGGED', 'SYSTEM'),
+(14, 4,  '2026-01-20 06:00:00', '2026-01-20 09:00:00', 1, 'LOGGED', 'SYSTEM'),
+(15, 7,  '2026-01-20 10:00:00', '2026-01-20 18:00:00', 3, 'LOGGED', 'SYSTEM'),
+(29, 13, '2026-02-08 06:00:00', NULL,                  5, 'ACTIVE', 'SYSTEM');
+
+-- =====================================================
+-- STEP 29: Inventory Movement (sample records)
+-- =====================================================
+INSERT INTO inventory_movement (operation_id, inventory_id, movement_type, quantity, timestamp, reason, status, created_by) VALUES
+(2,  1,  'CONSUME',  105, '2026-01-15 10:30:00', 'Consumed for EAF melting', 'EXECUTED', 'OP-001'),
+(2,  3,  'CONSUME',  30,  '2026-01-15 10:30:00', 'Consumed for EAF melting', 'EXECUTED', 'OP-001'),
+(2,  4,  'CONSUME',  22,  '2026-01-15 10:30:00', 'Consumed for EAF melting', 'EXECUTED', 'OP-001'),
+(2,  8,  'CONSUME',  15,  '2026-01-15 10:30:00', 'Consumed for EAF melting', 'EXECUTED', 'OP-001'),
+(2,  19, 'PRODUCE',  165, '2026-01-15 16:00:00', 'Produced liquid steel',    'EXECUTED', 'OP-001'),
+(4,  19, 'CONSUME',  155, '2026-01-16 06:00:00', 'Consumed for slab casting','EXECUTED', 'OP-003'),
+(4,  20, 'PRODUCE',  148, '2026-01-16 12:00:00', 'Produced steel slab',      'EXECUTED', 'OP-003'),
+(13, 2,  'CONSUME',  160, '2026-01-19 10:30:00', 'Consumed for rebar melt',  'EXECUTED', 'OP-001'),
+(13, 22, 'PRODUCE',  205, '2026-01-19 17:00:00', 'Produced liquid steel',    'EXECUTED', 'OP-001'),
+(15, 22, 'CONSUME',  200, '2026-01-20 10:00:00', 'Consumed for billet cast', 'EXECUTED', 'OP-003'),
+(15, 23, 'PRODUCE',  195, '2026-01-20 18:00:00', 'Produced steel billet',    'EXECUTED', 'OP-003'),
+(29, 22, 'CONSUME',  85,  '2026-02-08 06:00:00', 'Consumed for pickling',    'EXECUTED', 'OP-005');
+
+-- =====================================================
 -- Summary:
 --   Customers:              12
 --   Materials:              28 (15 RM, 10 IM, 3 FG)
@@ -1114,4 +1234,11 @@ INSERT INTO audit_trail (entity_type, entity_id, action, new_value, changed_by, 
 --   Hold Records:           12 (8 active, 4 released)
 --   Audit Trail:           ~200 entries
 --   Process Params Config:  29
+--   Unit of Measure:        14
+--   Unit Conversion:        16
+--   Equipment Type Config:  13
+--   Inventory Form Config:   9
+--   Batch Number Config:    11
+--   Operation Equipment Usage: 10
+--   Inventory Movement:     12
 -- =====================================================
