@@ -24,7 +24,7 @@
 | Dashboard | 2 | `/api/dashboard` |
 | Audit | 9 | `/api/audit` |
 | Operators | 7 | `/api/operators` |
-| Operations | 6 | `/api/operations` |
+| Operations | 7 | `/api/operations` |
 | Processes | 10 | `/api/processes` |
 | Users | 13 | `/api/users` |
 | Configuration | 28 | `/api/config` |
@@ -283,6 +283,21 @@
   "hasPrevious": false
 }
 ```
+
+---
+
+## Operations Domain
+**Base Path:** `/api/operations`
+
+| Method | Endpoint | Purpose | Query Params |
+|--------|----------|---------|--------------|
+| GET | `/` | List all operations | - |
+| GET | `/paged` | Paginated operations | page, size, sortBy, sortDirection, status, type, search |
+| GET | `/{id}` | Get by ID | - |
+| GET | `/status/{status}` | By status | - |
+| GET | `/blocked` | Blocked operations | - |
+| POST | `/{id}/block` | Block operation | reason (body) |
+| POST | `/{id}/unblock` | Unblock operation | - |
 
 ---
 
