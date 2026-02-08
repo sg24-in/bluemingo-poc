@@ -1,99 +1,348 @@
+/* ==================== Page Layout ==================== */
+.order-detail-page {
+  padding: 24px;
+}
+
+.order-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ==================== Page Header (Dashboard Style) ==================== */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.order-info {
+.page-header-left {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.order-info h2 {
-  font-size: 24px;
-  font-weight: 500;
+.back-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.page-title-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
   margin: 0;
 }
 
-.order-meta {
-  display: flex;
-  gap: 24px;
-  color: #666;
+.page-subtitle {
   font-size: 14px;
-}
-
-.line-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 16px;
-}
-
-.line-item-header h3 {
-  font-size: 18px;
-  font-weight: 500;
-  margin: 0 0 4px 0;
-}
-
-.product-sku {
-  color: #888;
-  font-size: 13px;
-  margin: 0;
-}
-
-.quantity-info {
-  text-align: right;
-}
-
-.quantity-info .quantity {
-  display: block;
-  font-size: 20px;
-  font-weight: 500;
-  color: #1976d2;
-}
-
-.quantity-info .delivery-date {
-  display: block;
-  font-size: 13px;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 4px;
 }
 
+.page-subtitle i {
+  color: #999;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ==================== Section Title (Dashboard Style) ==================== */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title i {
+  color: #1976d2;
+}
+
+/* ==================== Metrics Section (Dashboard Style) ==================== */
+.metrics-section {
+  margin-bottom: 24px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.metric-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: #e3f2fd;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.1;
+}
+
+.metric-footer {
+  margin-top: 8px;
+}
+
+.metric-sublabel {
+  font-size: 12px;
+  color: #888;
+}
+
+/* ==================== Progress Section ==================== */
+.progress-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.progress-bar-container {
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+.progress-legend {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.legend-item.completed i { color: #22c55e; }
+.legend-item.in-progress i { color: #3b82f6; }
+.legend-item.ready i { color: #f59e0b; }
+.legend-item.pending i { color: #94a3b8; }
+
+/* ==================== Cards (Dashboard Style) ==================== */
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.card-header.clickable {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.card-header.clickable:hover {
+  background: #f8f9fa;
+}
+
+.card-header i {
+  margin-right: 8px;
+  color: #1976d2;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.collapse-btn:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-body.collapsed {
+  display: none;
+}
+
+/* ==================== Process Flow Chart ==================== */
+.process-flow-container {
+  width: 100%;
+  height: 280px;
+  min-height: 280px;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+/* ==================== Line Items Section ==================== */
+.line-items-section {
+  margin-top: 24px;
+}
+
+.line-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+.product-sku {
+  font-size: 13px;
+  color: #888;
+}
+
+.line-item-qty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.quantity {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.delivery-date {
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.delivery-date i {
+  color: #999;
+}
+
+/* ==================== Process Section ==================== */
 .process-section {
-  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+.process-section:last-child {
+  margin-bottom: 0;
 }
 
 .process-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
+.process-header i {
+  color: #1976d2;
+  font-size: 16px;
 }
 
 .process-header h4 {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   margin: 0;
+  color: #1976d2;
 }
 
+/* ==================== Operations List ==================== */
 .operations-list {
-  margin-left: 12px;
+  margin-left: 8px;
 }
 
 .operation-item {
   display: flex;
   gap: 16px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .operation-step {
@@ -103,16 +352,16 @@
 }
 
 .step-number {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  font-weight: 500;
   background: #e0e0e0;
   color: #666;
+  flex-shrink: 0;
 }
 
 .step-line {
@@ -122,36 +371,90 @@
   background: #e0e0e0;
 }
 
+/* Status-based step styles */
 .step-completed .step-number {
-  background: #4caf50;
+  background: #22c55e;
   color: white;
 }
 
 .step-completed .step-line {
-  background: #4caf50;
+  background: #22c55e;
 }
 
 .step-active .step-number {
-  background: #1976d2;
+  background: #3b82f6;
   color: white;
 }
 
-.operation-content {
-  flex: 1;
-  padding: 8px 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  margin-bottom: 8px;
+.step-active .step-line {
+  background: #3b82f6;
 }
 
-.step-active .operation-content {
-  background: #e3f2fd;
-  border: 1px solid #90caf9;
+.step-ready .step-number {
+  background: #f59e0b;
+  color: white;
+}
+
+.step-ready .step-line {
+  background: #f59e0b;
+}
+
+.step-on-hold .step-number {
+  background: #f97316;
+  color: white;
+}
+
+.step-on-hold .step-line {
+  background: #f97316;
+}
+
+.step-blocked .step-number {
+  background: #ef4444;
+  color: white;
+}
+
+.step-blocked .step-line {
+  background: #ef4444;
+}
+
+.step-pending .step-number {
+  background: #94a3b8;
+  color: white;
+}
+
+/* ==================== Operation Content ==================== */
+.operation-content {
+  flex: 1;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid #e0e0e0;
 }
 
 .step-completed .operation-content {
-  background: #e8f5e9;
-  border: 1px solid #a5d6a7;
+  background: #f0fdf4;
+  border-left-color: #22c55e;
+}
+
+.step-active .operation-content {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.step-ready .operation-content {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+}
+
+.step-on-hold .operation-content {
+  background: #fff7ed;
+  border-left-color: #f97316;
+}
+
+.step-blocked .operation-content {
+  background: #fef2f2;
+  border-left-color: #ef4444;
 }
 
 .operation-info {
@@ -159,10 +462,13 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .operation-name {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
 }
 
 .operation-code {
@@ -175,32 +481,145 @@
   gap: 16px;
   font-size: 13px;
   color: #666;
-  margin-bottom: 8px;
+}
+
+.operation-details span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.operation-details i {
+  color: #999;
+  font-size: 12px;
 }
 
 .operation-actions {
   margin-top: 12px;
 }
 
+/* ==================== Buttons ==================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-primary {
+  background: #1976d2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1565c0;
+}
+
+.btn-success {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #16a34a;
+}
+
 .btn-sm {
-  padding: 6px 12px;
+  padding: 8px 14px;
   font-size: 13px;
 }
 
-/* Process Flow Chart */
-.card-header {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.process-flow-container {
-  width: 100%;
-  height: 400px;
-}
-
-.no-data {
-  text-align: center;
+/* ==================== Empty State ==================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
   color: #888;
-  padding: 40px;
+  text-align: center;
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #ddd;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.empty-state p {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+}
+
+/* ==================== Not Found Card ==================== */
+.not-found-card {
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .order-detail-page {
+    padding: 16px;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .line-item-qty {
+    align-items: flex-start;
+  }
+
+  .progress-legend {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .operation-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .operation-details {
+    flex-direction: column;
+    gap: 6px;
+  }
 }

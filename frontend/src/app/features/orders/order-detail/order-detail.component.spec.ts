@@ -15,6 +15,7 @@ describe('OrderDetailComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
   let router: Router;
 
+  // Mock order with operations directly on lineItem (matches backend DTO)
   const mockOrder = {
     orderId: 1,
     orderNumber: 'ORD-001',
@@ -25,15 +26,25 @@ describe('OrderDetailComponent', () => {
       productSku: 'STEEL-001',
       productName: 'Steel Rod',
       quantity: 100,
-      processes: [{
+      unit: 'T',
+      operations: [{
+        operationId: 1,
+        operationName: 'Melt Iron',
+        operationCode: 'MELT-001',
+        operationType: 'MELTING',
+        sequenceNumber: 1,
+        status: 'READY',
         processId: 1,
-        processName: 'Melting',
-        status: 'IN_PROGRESS',
-        operations: [{
-          operationId: 1,
-          operationName: 'Melt Iron',
-          status: 'PENDING'
-        }]
+        processName: 'Melting'
+      }, {
+        operationId: 2,
+        operationName: 'Cast Steel',
+        operationCode: 'CAST-001',
+        operationType: 'CASTING',
+        sequenceNumber: 2,
+        status: 'NOT_STARTED',
+        processId: 1,
+        processName: 'Melting'
       }]
     }]
   };
@@ -103,8 +114,8 @@ describe('OrderDetailComponent', () => {
   });
 
   describe('canStartOperation', () => {
-    it('should return true for PENDING status', () => {
-      expect(component.canStartOperation({ status: 'PENDING' })).toBeTrue();
+    it('should return true for READY status', () => {
+      expect(component.canStartOperation({ status: 'READY' })).toBeTrue();
     });
 
     it('should return true for IN_PROGRESS status', () => {
@@ -114,6 +125,18 @@ describe('OrderDetailComponent', () => {
     it('should return false for COMPLETED status', () => {
       expect(component.canStartOperation({ status: 'COMPLETED' })).toBeFalse();
     });
+
+    it('should return false for CONFIRMED status', () => {
+      expect(component.canStartOperation({ status: 'CONFIRMED' })).toBeFalse();
+    });
+
+    it('should return false for ON_HOLD status', () => {
+      expect(component.canStartOperation({ status: 'ON_HOLD' })).toBeFalse();
+    });
+
+    it('should return false for BLOCKED status', () => {
+      expect(component.canStartOperation({ status: 'BLOCKED' })).toBeFalse();
+    });
   });
 
   describe('getOperationStatusClass', () => {
@@ -121,13 +144,56 @@ describe('OrderDetailComponent', () => {
       expect(component.getOperationStatusClass('COMPLETED')).toBe('step-completed');
     });
 
+    it('should return step-completed for CONFIRMED', () => {
+      expect(component.getOperationStatusClass('CONFIRMED')).toBe('step-completed');
+    });
+
     it('should return step-active for IN_PROGRESS', () => {
       expect(component.getOperationStatusClass('IN_PROGRESS')).toBe('step-active');
     });
 
-    it('should return step-pending for other statuses', () => {
-      expect(component.getOperationStatusClass('PENDING')).toBe('step-pending');
+    it('should return step-active for PARTIALLY_CONFIRMED', () => {
+      expect(component.getOperationStatusClass('PARTIALLY_CONFIRMED')).toBe('step-active');
+    });
+
+    it('should return step-ready for READY', () => {
+      expect(component.getOperationStatusClass('READY')).toBe('step-ready');
+    });
+
+    it('should return step-on-hold for ON_HOLD', () => {
+      expect(component.getOperationStatusClass('ON_HOLD')).toBe('step-on-hold');
+    });
+
+    it('should return step-blocked for BLOCKED', () => {
+      expect(component.getOperationStatusClass('BLOCKED')).toBe('step-blocked');
+    });
+
+    it('should return step-pending for NOT_STARTED', () => {
       expect(component.getOperationStatusClass('NOT_STARTED')).toBe('step-pending');
+    });
+
+    it('should return step-pending for unknown statuses', () => {
+      expect(component.getOperationStatusClass('UNKNOWN')).toBe('step-pending');
+    });
+  });
+
+  describe('getProcessesForLineItem', () => {
+    it('should group operations by processId', () => {
+      const processes = component.getProcessesForLineItem(mockOrder.lineItems[0]);
+      expect(processes.length).toBe(1);
+      expect(processes[0].processName).toBe('Melting');
+      expect(processes[0].operations.length).toBe(2);
+    });
+
+    it('should sort operations by sequence number', () => {
+      const processes = component.getProcessesForLineItem(mockOrder.lineItems[0]);
+      expect(processes[0].operations[0].sequenceNumber).toBe(1);
+      expect(processes[0].operations[1].sequenceNumber).toBe(2);
+    });
+
+    it('should return empty array for unknown line item', () => {
+      const processes = component.getProcessesForLineItem({ orderLineId: 999 });
+      expect(processes).toEqual([]);
     });
   });
 

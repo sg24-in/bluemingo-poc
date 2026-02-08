@@ -562,6 +562,7 @@ npm install fluent-ffmpeg          # FFmpeg wrapper
 - `documents/MES-Implementation-Analysis.md` - Implementation vs requirements comparison
 - `documents/MES-Requirements-Gaps-Analysis.md` - **Gaps analysis from Teams meeting requirements**
 - `documents/Process-Status-Validation-Report.md` - **Process status behavior validation report**
+- `documents/Production-Confirmation-Architecture-Validation.md` - **Production confirmation flow validation (Operation-level)**
 
 ---
 

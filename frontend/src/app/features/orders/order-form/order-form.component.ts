@@ -116,8 +116,8 @@ export class OrderFormComponent implements OnInit {
   }
 
   onCustomerChange(event: Event): void {
-    const customerId = (event.target as HTMLSelectElement).value;
-    const customer = this.customers.find(c => c.customerId.toString() === customerId);
+    const customerCode = (event.target as HTMLSelectElement).value;
+    const customer = this.customers.find(c => c.customerCode === customerCode);
     if (customer) {
       this.form.patchValue({ customerName: customer.customerName });
     }

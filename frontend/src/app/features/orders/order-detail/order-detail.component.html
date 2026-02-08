@@ -1,87 +1,172 @@
-<div class="container">
+<div class="order-detail-page">
+  <!-- Page Header -->
   <div class="page-header">
-    <button class="btn btn-secondary" (click)="goBack()"><i class="fas fa-arrow-left"></i> Back to Orders</button>
-    <button class="btn btn-primary" (click)="editOrder()" *ngIf="order">Edit Order</button>
+    <div class="page-header-left">
+      <button class="back-btn" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="page-title-section">
+        <h1 class="page-title">{{ order?.orderNumber || 'Order Details' }}</h1>
+        <span class="page-subtitle" *ngIf="order?.customerName">
+          <i class="fas fa-building"></i> {{ order.customerName }}
+        </span>
+      </div>
+    </div>
+    <div class="page-header-actions" *ngIf="order">
+      <app-status-badge [status]="order.status"></app-status-badge>
+      <button class="btn btn-primary" (click)="editOrder()">
+        <i class="fas fa-edit"></i> Edit Order
+      </button>
+    </div>
   </div>
 
   <div *ngIf="loading" class="text-center">
     <app-loading-spinner message="Loading order details..."></app-loading-spinner>
   </div>
 
-  <div *ngIf="!loading && order">
-    <!-- Order Header -->
-    <div class="card">
-      <div class="order-header">
-        <div class="order-info">
-          <h2>Order: {{ order.orderNumber || 'ORD-' + order.orderId }}</h2>
-          <app-status-badge [status]="order.status"></app-status-badge>
+  <div *ngIf="!loading && order" class="order-content">
+    <!-- Key Metrics Row -->
+    <div class="metrics-section">
+      <h2 class="section-title"><i class="fas fa-chart-simple"></i> Order Summary</h2>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Order Date</span>
+          </div>
+          <div class="metric-value">{{ order.orderDate | date:'mediumDate' }}</div>
         </div>
-        <div class="order-meta">
-          <span *ngIf="order.customerName">Customer: <strong>{{ order.customerName }}</strong></span>
-          <span *ngIf="order.orderDate">Order Date: <strong>{{ order.orderDate | date:'mediumDate' }}</strong></span>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Line Items</span>
+          </div>
+          <div class="metric-value">{{ order.lineItems?.length || 0 }}</div>
         </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Total Operations</span>
+          </div>
+          <div class="metric-value">{{ getTotalOperations() }}</div>
+          <div class="metric-footer">
+            <span class="metric-sublabel">{{ getReadyOperations() }} ready to start</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Progress</span>
+            <span class="metric-badge">{{ getCompletionPercentage() }}%</span>
+          </div>
+          <div class="metric-value">{{ getCompletedOperations() }}/{{ getTotalOperations() }}</div>
+          <div class="metric-footer">
+            <span class="metric-sublabel">operations completed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Bar Section -->
+    <div class="progress-section">
+      <div class="progress-bar-container">
+        <div class="progress-bar" [style.width.%]="getCompletionPercentage()"></div>
+      </div>
+      <div class="progress-legend">
+        <span class="legend-item completed"><i class="fas fa-check-circle"></i> {{ getCompletedOperations() }} Completed</span>
+        <span class="legend-item in-progress"><i class="fas fa-spinner"></i> {{ getInProgressOperations() }} In Progress</span>
+        <span class="legend-item ready"><i class="fas fa-play-circle"></i> {{ getReadyOperations() }} Ready</span>
+        <span class="legend-item pending"><i class="fas fa-clock"></i> {{ getPendingOperations() }} Pending</span>
       </div>
     </div>
 
     <!-- Process Flow Visualization -->
     <div class="card" *ngIf="order.lineItems?.length > 0">
-      <div class="card-header">Process Flow</div>
-      <div #processFlowChart class="process-flow-container"></div>
+      <div class="card-header clickable" (click)="toggleFlowChart()">
+        <span><i class="fas fa-project-diagram"></i> Process Flow Visualization</span>
+        <button class="collapse-btn">
+          <i class="fas" [class.fa-chevron-down]="!flowChartCollapsed" [class.fa-chevron-right]="flowChartCollapsed"></i>
+        </button>
+      </div>
+      <div class="card-body" [class.collapsed]="flowChartCollapsed">
+        <div #processFlowChart class="process-flow-container"></div>
+      </div>
     </div>
 
-    <!-- Line Items -->
-    <div class="card" *ngFor="let lineItem of order.lineItems">
-      <div class="line-item-header">
-        <div>
-          <h3>{{ lineItem.productName }}</h3>
-          <p class="product-sku">SKU: {{ lineItem.productSku }}</p>
-        </div>
-        <div class="quantity-info">
-          <span class="quantity">{{ lineItem.quantity }} {{ lineItem.unit }}</span>
-          <span class="delivery-date" *ngIf="lineItem.deliveryDate">Delivery: {{ lineItem.deliveryDate | date:'mediumDate' }}</span>
-        </div>
-      </div>
+    <!-- Line Items Section -->
+    <div class="line-items-section">
+      <h2 class="section-title"><i class="fas fa-boxes-stacked"></i> Line Items</h2>
 
-      <!-- Processes -->
-      <div *ngFor="let process of lineItem.processes" class="process-section">
-        <div class="process-header">
-          <h4>{{ process.processName }}</h4>
-          <app-status-badge [status]="process.status"></app-status-badge>
+      <div class="card" *ngFor="let lineItem of order.lineItems">
+        <div class="card-header">
+          <div class="line-item-info">
+            <span class="product-name">{{ lineItem.productName }}</span>
+            <span class="product-sku">SKU: {{ lineItem.productSku }}</span>
+          </div>
+          <div class="line-item-qty">
+            <span class="quantity">{{ lineItem.quantity }} {{ lineItem.unit }}</span>
+            <span class="delivery-date" *ngIf="lineItem.deliveryDate">
+              <i class="fas fa-truck"></i> {{ lineItem.deliveryDate | date:'mediumDate' }}
+            </span>
+          </div>
         </div>
 
-        <!-- Operations -->
-        <div class="operations-list">
-          <div *ngFor="let operation of process.operations; let i = index"
-               class="operation-item"
-               [class]="getOperationStatusClass(operation.status)">
-            <div class="operation-step">
-              <div class="step-number">{{ i + 1 }}</div>
-              <div class="step-line" *ngIf="i < process.operations.length - 1"></div>
+        <div class="card-body">
+          <!-- Processes (grouped from operations) -->
+          <div *ngFor="let process of getProcessesForLineItem(lineItem)" class="process-section">
+            <div class="process-header">
+              <i class="fas fa-cog"></i>
+              <h4>{{ process.processName }}</h4>
             </div>
-            <div class="operation-content">
-              <div class="operation-info">
-                <span class="operation-name">{{ operation.operationName }}</span>
-                <span class="operation-code">({{ operation.operationCode }})</span>
-                <app-status-badge [status]="operation.status"></app-status-badge>
-              </div>
-              <div class="operation-details">
-                <span>Type: {{ operation.operationType }}</span>
-                <span *ngIf="operation.plannedQuantity">Planned: {{ operation.plannedQuantity }}</span>
-                <span *ngIf="operation.completedQuantity">Completed: {{ operation.completedQuantity }}</span>
-              </div>
-              <div class="operation-actions" *ngIf="canStartOperation(operation)">
-                <button class="btn btn-success btn-sm" (click)="startProduction(operation.operationId)">
-                  {{ operation.status === 'IN_PROGRESS' ? 'Continue Production' : 'Start Production' }}
-                </button>
+
+            <!-- Operations -->
+            <div class="operations-list">
+              <div *ngFor="let operation of process.operations; let i = index"
+                   class="operation-item"
+                   [class]="getOperationStatusClass(operation.status)">
+                <div class="operation-step">
+                  <div class="step-number">
+                    <i class="fas" [ngClass]="getOperationIcon(operation.status)"></i>
+                  </div>
+                  <div class="step-line" *ngIf="i < process.operations.length - 1"></div>
+                </div>
+                <div class="operation-content">
+                  <div class="operation-info">
+                    <span class="operation-name">{{ operation.operationName }}</span>
+                    <span class="operation-code">({{ operation.operationCode }})</span>
+                    <app-status-badge [status]="operation.status"></app-status-badge>
+                  </div>
+                  <div class="operation-details">
+                    <span *ngIf="operation.operationType"><i class="fas fa-tag"></i> {{ operation.operationType }}</span>
+                    <span *ngIf="operation.sequenceNumber"><i class="fas fa-list-ol"></i> Step {{ operation.sequenceNumber }}</span>
+                  </div>
+                  <div class="operation-actions" *ngIf="canStartOperation(operation)">
+                    <button class="btn btn-success btn-sm" (click)="startProduction(operation.operationId)">
+                      <i class="fas fa-play"></i>
+                      {{ operation.status === 'IN_PROGRESS' ? 'Continue Production' : 'Start Production' }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+
+          <!-- Show message if no operations -->
+          <div *ngIf="getProcessesForLineItem(lineItem).length === 0" class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>No operations defined for this line item.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="!loading && !order" class="card">
-    <p class="no-data">Order not found</p>
+  <!-- Not Found State -->
+  <div *ngIf="!loading && !order" class="card not-found-card">
+    <div class="empty-state">
+      <i class="fas fa-search"></i>
+      <h3>Order Not Found</h3>
+      <p>The requested order could not be found.</p>
+      <button class="btn btn-primary" (click)="goBack()">Return to Orders</button>
+    </div>
   </div>
 </div>
