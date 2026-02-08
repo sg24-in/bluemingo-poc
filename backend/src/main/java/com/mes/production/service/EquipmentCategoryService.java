@@ -11,42 +11,45 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * GAP-002: Equipment Type Configuration Service
- * Provides equipment type validation rules and parameters.
+ * GAP-002: Equipment Category Configuration Service
+ * Provides equipment category validation rules and parameters.
+ *
+ * Equipment Category = functional classification (MELTING, CASTING, ROLLING, etc.)
+ * Equipment Type = processing mode (BATCH, CONTINUOUS)
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EquipmentTypeService {
+public class EquipmentCategoryService {
 
     private final JdbcTemplate jdbcTemplate;
 
     /**
-     * Get all equipment type configurations
+     * Get all equipment category configurations
      */
-    public List<Map<String, Object>> getAllEquipmentTypes() {
-        String sql = "SELECT * FROM equipment_type_config WHERE is_active = true ORDER BY display_name";
+    public List<Map<String, Object>> getAllEquipmentCategories() {
+        String sql = "SELECT * FROM equipment_category_config WHERE is_active = true ORDER BY display_name";
         return jdbcTemplate.queryForList(sql);
     }
 
     /**
-     * Get configuration for a specific equipment type
+     * Get configuration for a specific equipment category
      */
-    public Optional<Map<String, Object>> getEquipmentTypeConfig(String equipmentType) {
-        String sql = "SELECT * FROM equipment_type_config WHERE equipment_type = ? AND is_active = true";
-        List<Map<String, Object>> results = jdbcTemplate.queryForList(sql, equipmentType);
+    public Optional<Map<String, Object>> getEquipmentCategoryConfig(String equipmentCategory) {
+        String sql = "SELECT * FROM equipment_category_config WHERE equipment_category = ? AND is_active = true";
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(sql, equipmentCategory);
         return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     /**
-     * Validate equipment capacity against type limits
+     * Validate equipment capacity against category limits
      */
-    public ValidationResult validateCapacity(String equipmentType, BigDecimal capacity) {
+    public ValidationResult validateCapacity(String equipmentCategory, BigDecimal capacity) {
         ValidationResult result = new ValidationResult();
 
-        Optional<Map<String, Object>> config = getEquipmentTypeConfig(equipmentType);
+        Optional<Map<String, Object>> config = getEquipmentCategoryConfig(equipmentCategory);
         if (config.isEmpty()) {
-            result.addWarning("No configuration found for equipment type: " + equipmentType);
+            result.addWarning("No configuration found for equipment category: " + equipmentCategory);
             return result;
         }
 
@@ -56,24 +59,24 @@ public class EquipmentTypeService {
 
         if (minCapacity != null && capacity.compareTo(minCapacity) < 0) {
             result.addError(String.format("Capacity %.2f is below minimum %.2f for %s",
-                    capacity, minCapacity, equipmentType));
+                    capacity, minCapacity, equipmentCategory));
         }
 
         if (maxCapacity != null && capacity.compareTo(maxCapacity) > 0) {
             result.addError(String.format("Capacity %.2f exceeds maximum %.2f for %s",
-                    capacity, maxCapacity, equipmentType));
+                    capacity, maxCapacity, equipmentCategory));
         }
 
         return result;
     }
 
     /**
-     * Validate operating temperature against type limits
+     * Validate operating temperature against category limits
      */
-    public ValidationResult validateTemperature(String equipmentType, BigDecimal temperature) {
+    public ValidationResult validateTemperature(String equipmentCategory, BigDecimal temperature) {
         ValidationResult result = new ValidationResult();
 
-        Optional<Map<String, Object>> config = getEquipmentTypeConfig(equipmentType);
+        Optional<Map<String, Object>> config = getEquipmentCategoryConfig(equipmentCategory);
         if (config.isEmpty()) {
             return result;
         }
@@ -84,12 +87,12 @@ public class EquipmentTypeService {
 
         if (minTemp != null && temperature.compareTo(minTemp) < 0) {
             result.addError(String.format("Temperature %.1f°C is below minimum %.1f°C for %s",
-                    temperature, minTemp, equipmentType));
+                    temperature, minTemp, equipmentCategory));
         }
 
         if (maxTemp != null && temperature.compareTo(maxTemp) > 0) {
             result.addError(String.format("Temperature %.1f°C exceeds maximum %.1f°C for %s",
-                    temperature, maxTemp, equipmentType));
+                    temperature, maxTemp, equipmentCategory));
         }
 
         // Add warning if close to limits (within 5%)
@@ -109,10 +112,10 @@ public class EquipmentTypeService {
     }
 
     /**
-     * Check if equipment type requires an operator
+     * Check if equipment category requires an operator
      */
-    public boolean requiresOperator(String equipmentType) {
-        Optional<Map<String, Object>> config = getEquipmentTypeConfig(equipmentType);
+    public boolean requiresOperator(String equipmentCategory) {
+        Optional<Map<String, Object>> config = getEquipmentCategoryConfig(equipmentCategory);
         if (config.isEmpty()) {
             return true; // Default to requiring operator
         }
@@ -121,10 +124,10 @@ public class EquipmentTypeService {
     }
 
     /**
-     * Check if equipment type requires calibration
+     * Check if equipment category requires calibration
      */
-    public boolean requiresCalibration(String equipmentType) {
-        Optional<Map<String, Object>> config = getEquipmentTypeConfig(equipmentType);
+    public boolean requiresCalibration(String equipmentCategory) {
+        Optional<Map<String, Object>> config = getEquipmentCategoryConfig(equipmentCategory);
         if (config.isEmpty()) {
             return false;
         }
@@ -132,10 +135,10 @@ public class EquipmentTypeService {
     }
 
     /**
-     * Get maintenance interval for equipment type
+     * Get maintenance interval for equipment category
      */
-    public Optional<Integer> getMaintenanceIntervalHours(String equipmentType) {
-        Optional<Map<String, Object>> config = getEquipmentTypeConfig(equipmentType);
+    public Optional<Integer> getMaintenanceIntervalHours(String equipmentCategory) {
+        Optional<Map<String, Object>> config = getEquipmentCategoryConfig(equipmentCategory);
         if (config.isEmpty()) {
             return Optional.empty();
         }

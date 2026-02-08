@@ -448,63 +448,63 @@ WHERE NOT EXISTS (SELECT 1 FROM products WHERE sku = 'PROD-PIPE-100');
 -- =====================================================
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'EAF-001', 'Electric Arc Furnace #1', 'MELTING', 120, 'T', 'Melt Shop Bay 1', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'EAF-001', 'Electric Arc Furnace #1', 'BATCH', 120, 'T', 'Melt Shop Bay 1', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'EAF-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'EAF-002', 'Electric Arc Furnace #2', 'MELTING', 120, 'T', 'Melt Shop Bay 2', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'EAF-002', 'Electric Arc Furnace #2', 'BATCH', 120, 'T', 'Melt Shop Bay 2', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'EAF-002');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'EAF-003', 'Electric Arc Furnace #3', 'MELTING', 150, 'T', 'Melt Shop Bay 3', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'EAF-003', 'Electric Arc Furnace #3', 'BATCH', 150, 'T', 'Melt Shop Bay 3', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'EAF-003');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'LF-001', 'Ladle Furnace #1', 'REFINING', 120, 'T', 'Secondary Metallurgy', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'LF-001', 'Ladle Furnace #1', 'BATCH', 120, 'T', 'Secondary Metallurgy', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'LF-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'LF-002', 'Ladle Furnace #2', 'REFINING', 150, 'T', 'Secondary Metallurgy', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'LF-002', 'Ladle Furnace #2', 'BATCH', 150, 'T', 'Secondary Metallurgy', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'LF-002');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'CCM-001', 'Continuous Caster #1 (Slab)', 'CASTING', 200, 'T/H', 'Casting Bay 1', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'CCM-001', 'Continuous Caster #1 (Slab)', 'CONTINUOUS', 200, 'T/H', 'Casting Bay 1', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'CCM-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'CCM-002', 'Continuous Caster #2 (Billet)', 'CASTING', 100, 'T/H', 'Casting Bay 2', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'CCM-002', 'Continuous Caster #2 (Billet)', 'CONTINUOUS', 100, 'T/H', 'Casting Bay 2', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'CCM-002');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'HSM-001', 'Hot Strip Mill #1', 'HOT_ROLLING', 400, 'T/H', 'Hot Rolling Bay 1', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'HSM-001', 'Hot Strip Mill #1', 'CONTINUOUS', 400, 'T/H', 'Hot Rolling Bay 1', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'HSM-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'HSM-002', 'Hot Strip Mill #2', 'HOT_ROLLING', 350, 'T/H', 'Hot Rolling Bay 2', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'HSM-002', 'Hot Strip Mill #2', 'CONTINUOUS', 350, 'T/H', 'Hot Rolling Bay 2', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'HSM-002');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'CRM-001', 'Cold Rolling Mill', 'COLD_ROLLING', 150, 'T/H', 'Cold Rolling Bay', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'CRM-001', 'Cold Rolling Mill', 'CONTINUOUS', 150, 'T/H', 'Cold Rolling Bay', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'CRM-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'BAF-001', 'Batch Annealing Furnace', 'ANNEALING', 80, 'T', 'Annealing Bay', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'BAF-001', 'Batch Annealing Furnace', 'BATCH', 80, 'T', 'Annealing Bay', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'BAF-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'PKL-001', 'Pickling Line', 'PICKLING', 200, 'T/H', 'Finishing Bay', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'PKL-001', 'Pickling Line', 'CONTINUOUS', 200, 'T/H', 'Finishing Bay', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'PKL-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'BRM-001', 'Bar Rolling Mill', 'BAR_ROLLING', 100, 'T/H', 'Long Products Bay', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'BRM-001', 'Bar Rolling Mill', 'CONTINUOUS', 100, 'T/H', 'Long Products Bay', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'BRM-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'GALV-001', 'Galvanizing Line', 'COATING', 100, 'T/H', 'Coating Bay', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'GALV-001', 'Galvanizing Line', 'CONTINUOUS', 100, 'T/H', 'Coating Bay', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'GALV-001');
 
 INSERT INTO equipment (equipment_code, name, equipment_type, capacity, capacity_unit, location, status, created_on, created_by)
-SELECT 'WRM-001', 'Wire Rod Mill', 'WIRE_ROLLING', 80, 'T/H', 'Wire Products Bay', 'AVAILABLE', NOW(), 'SYSTEM'
+SELECT 'WRM-001', 'Wire Rod Mill', 'CONTINUOUS', 80, 'T/H', 'Wire Products Bay', 'AVAILABLE', NOW(), 'SYSTEM'
 WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE equipment_code = 'WRM-001');
 
 -- =====================================================

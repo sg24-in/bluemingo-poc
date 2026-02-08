@@ -24,6 +24,27 @@ public class Equipment {
     public static final String STATUS_ON_HOLD = "ON_HOLD";
     public static final String STATUS_UNAVAILABLE = "UNAVAILABLE";
 
+    // Type constants (processing mode)
+    public static final String TYPE_BATCH = "BATCH";
+    public static final String TYPE_CONTINUOUS = "CONTINUOUS";
+
+    // Category constants (equipment function)
+    public static final String CATEGORY_MELTING = "MELTING";
+    public static final String CATEGORY_REFINING = "REFINING";
+    public static final String CATEGORY_CASTING = "CASTING";
+    public static final String CATEGORY_HOT_ROLLING = "HOT_ROLLING";
+    public static final String CATEGORY_COLD_ROLLING = "COLD_ROLLING";
+    public static final String CATEGORY_ANNEALING = "ANNEALING";
+    public static final String CATEGORY_PICKLING = "PICKLING";
+    public static final String CATEGORY_BAR_ROLLING = "BAR_ROLLING";
+    public static final String CATEGORY_COATING = "COATING";
+    public static final String CATEGORY_WIRE_ROLLING = "WIRE_ROLLING";
+    public static final String CATEGORY_FINISHING = "FINISHING";
+    public static final String CATEGORY_INSPECTION = "INSPECTION";
+    public static final String CATEGORY_PACKAGING = "PACKAGING";
+    public static final String CATEGORY_HEAT_TREATMENT = "HEAT_TREATMENT";
+    public static final String CATEGORY_GENERAL = "GENERAL";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "equipment_id")
@@ -37,6 +58,13 @@ public class Equipment {
 
     @Column(name = "equipment_type", nullable = false)
     private String equipmentType;
+
+    /**
+     * Equipment functional category: MELTING, CASTING, ROLLING, etc.
+     * Describes what the equipment does.
+     */
+    @Column(name = "equipment_category")
+    private String equipmentCategory;
 
     @Column(precision = 15, scale = 4)
     private BigDecimal capacity;

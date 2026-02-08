@@ -20,7 +20,8 @@ public class EquipmentDTO {
     private Long equipmentId;
     private String equipmentCode;
     private String name;
-    private String equipmentType;
+    private String equipmentType;      // Processing mode: BATCH/CONTINUOUS
+    private String equipmentCategory;  // Equipment function: MELTING, CASTING, etc.
     private BigDecimal capacity;
     private String capacityUnit;
     private String location;
@@ -86,6 +87,8 @@ public class EquipmentDTO {
         @NotBlank(message = "Equipment type is required")
         private String equipmentType;
 
+        private String equipmentCategory;  // Equipment function: MELTING, CASTING, etc.
+
         private BigDecimal capacity;
         private String capacityUnit;
         private String location;
@@ -107,6 +110,8 @@ public class EquipmentDTO {
         @NotBlank(message = "Equipment type is required")
         private String equipmentType;
 
+        private String equipmentCategory;  // Equipment function: MELTING, CASTING, etc.
+
         private BigDecimal capacity;
         private String capacityUnit;
         private String location;
@@ -120,6 +125,7 @@ public class EquipmentDTO {
                 .equipmentCode(equipment.getEquipmentCode())
                 .name(equipment.getName())
                 .equipmentType(equipment.getEquipmentType())
+                .equipmentCategory(equipment.getEquipmentCategory())
                 .capacity(equipment.getCapacity())
                 .capacityUnit(equipment.getCapacityUnit())
                 .location(equipment.getLocation())

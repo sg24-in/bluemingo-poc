@@ -340,40 +340,128 @@ public class PatchService {
     }
 
     /**
-     * Execute SQL statements using a specific connection
+     * Execute SQL statements using a specific connection.
+     * Custom parser that handles PostgreSQL dollar-quoted strings ($$ ... $$).
      */
     private void executeSqlStatementsWithConnection(Connection conn, String sqlContent) throws Exception {
-        // Split by semicolon, but be careful with strings containing semicolons
-        String[] statements = sqlContent.split(";(?=(?:[^']*'[^']*')*[^']*$)");
+        List<String> statements = splitSqlStatements(sqlContent);
 
         int statementCount = 0;
         for (String statement : statements) {
             String trimmed = statement.trim();
-            // Skip empty statements and pure comment lines
             if (trimmed.isEmpty()) continue;
+            // Skip pure comment lines
             if (trimmed.startsWith("--") && !trimmed.contains("\n")) continue;
 
-            // Remove leading comment lines but keep inline comments
-            String[] lines = trimmed.split("\n");
-            StringBuilder sb = new StringBuilder();
-            boolean foundCode = false;
-            for (String line : lines) {
-                String trimmedLine = line.trim();
-                if (!foundCode && trimmedLine.startsWith("--")) {
-                    continue; // Skip leading comments
-                }
-                foundCode = true;
-                sb.append(line).append("\n");
-            }
-            String cleanedStatement = sb.toString().trim();
-            if (cleanedStatement.isEmpty()) continue;
-
             try (Statement stmt = conn.createStatement()) {
-                stmt.execute(cleanedStatement);
+                stmt.execute(trimmed);
                 statementCount++;
             }
         }
         log.debug("Executed {} SQL statements", statementCount);
+    }
+
+    /**
+     * Split SQL content into individual statements.
+     * Handles single-quoted strings, dollar-quoted strings, and SQL comments.
+     */
+    private List<String> splitSqlStatements(String sqlContent) {
+        List<String> statements = new ArrayList<>();
+        StringBuilder currentStatement = new StringBuilder();
+        int i = 0;
+        int len = sqlContent.length();
+
+        while (i < len) {
+            char c = sqlContent.charAt(i);
+
+            // Check for single-line comment
+            if (c == '-' && i + 1 < len && sqlContent.charAt(i + 1) == '-') {
+                // Find end of line
+                int endOfLine = sqlContent.indexOf('\n', i);
+                if (endOfLine == -1) endOfLine = len;
+                currentStatement.append(sqlContent, i, endOfLine);
+                i = endOfLine;
+                continue;
+            }
+
+            // Check for block comment
+            if (c == '/' && i + 1 < len && sqlContent.charAt(i + 1) == '*') {
+                int endComment = sqlContent.indexOf("*/", i + 2);
+                if (endComment == -1) endComment = len - 2;
+                currentStatement.append(sqlContent, i, endComment + 2);
+                i = endComment + 2;
+                continue;
+            }
+
+            // Check for single-quoted string
+            if (c == '\'') {
+                currentStatement.append(c);
+                i++;
+                while (i < len) {
+                    char sc = sqlContent.charAt(i);
+                    currentStatement.append(sc);
+                    if (sc == '\'' && (i + 1 >= len || sqlContent.charAt(i + 1) != '\'')) {
+                        i++;
+                        break;
+                    }
+                    if (sc == '\'' && i + 1 < len && sqlContent.charAt(i + 1) == '\'') {
+                        // Escaped quote
+                        currentStatement.append(sqlContent.charAt(i + 1));
+                        i += 2;
+                    } else {
+                        i++;
+                    }
+                }
+                continue;
+            }
+
+            // Check for dollar-quoted string ($$ or $tag$)
+            if (c == '$') {
+                // Find the dollar-quote tag (e.g., $$ or $tag$)
+                int tagEnd = i + 1;
+                while (tagEnd < len && (Character.isLetterOrDigit(sqlContent.charAt(tagEnd)) || sqlContent.charAt(tagEnd) == '_')) {
+                    tagEnd++;
+                }
+                if (tagEnd < len && sqlContent.charAt(tagEnd) == '$') {
+                    String dollarTag = sqlContent.substring(i, tagEnd + 1);
+                    currentStatement.append(dollarTag);
+                    i = tagEnd + 1;
+                    // Find closing tag
+                    int closeTag = sqlContent.indexOf(dollarTag, i);
+                    if (closeTag != -1) {
+                        currentStatement.append(sqlContent, i, closeTag + dollarTag.length());
+                        i = closeTag + dollarTag.length();
+                    } else {
+                        // No closing tag found, append rest
+                        currentStatement.append(sqlContent.substring(i));
+                        i = len;
+                    }
+                    continue;
+                }
+            }
+
+            // Check for statement separator
+            if (c == ';') {
+                String stmt = currentStatement.toString().trim();
+                if (!stmt.isEmpty()) {
+                    statements.add(stmt);
+                }
+                currentStatement = new StringBuilder();
+                i++;
+                continue;
+            }
+
+            currentStatement.append(c);
+            i++;
+        }
+
+        // Add final statement if any
+        String finalStmt = currentStatement.toString().trim();
+        if (!finalStmt.isEmpty()) {
+            statements.add(finalStmt);
+        }
+
+        return statements;
     }
 
     /**

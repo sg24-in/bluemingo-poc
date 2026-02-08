@@ -4,7 +4,7 @@ import com.mes.production.entity.Equipment;
 import com.mes.production.entity.Operator;
 import com.mes.production.repository.EquipmentRepository;
 import com.mes.production.repository.OperatorRepository;
-import com.mes.production.service.EquipmentTypeService;
+import com.mes.production.service.EquipmentCategoryService;
 import com.mes.production.service.InventoryFormService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ public class MasterDataController {
     private final EquipmentRepository equipmentRepository;
     private final OperatorRepository operatorRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final EquipmentTypeService equipmentTypeService;
+    private final EquipmentCategoryService equipmentCategoryService;
     private final InventoryFormService inventoryFormService;
 
     /**
@@ -121,22 +121,22 @@ public class MasterDataController {
     }
 
     /**
-     * Get all active equipment type configurations
+     * Get all active equipment category configurations
      */
-    @GetMapping("/equipment-types")
-    public ResponseEntity<List<Map<String, Object>>> getAllEquipmentTypes() {
-        log.info("GET /api/master/equipment-types");
-        List<Map<String, Object>> types = equipmentTypeService.getAllEquipmentTypes();
-        return ResponseEntity.ok(types);
+    @GetMapping("/equipment-categories")
+    public ResponseEntity<List<Map<String, Object>>> getAllEquipmentCategories() {
+        log.info("GET /api/master/equipment-categories");
+        List<Map<String, Object>> categories = equipmentCategoryService.getAllEquipmentCategories();
+        return ResponseEntity.ok(categories);
     }
 
     /**
-     * Get configuration for a specific equipment type
+     * Get configuration for a specific equipment category
      */
-    @GetMapping("/equipment-types/{type}")
-    public ResponseEntity<Map<String, Object>> getEquipmentTypeConfig(@PathVariable String type) {
-        log.info("GET /api/master/equipment-types/{}", type);
-        return equipmentTypeService.getEquipmentTypeConfig(type)
+    @GetMapping("/equipment-categories/{category}")
+    public ResponseEntity<Map<String, Object>> getEquipmentCategoryConfig(@PathVariable String category) {
+        log.info("GET /api/master/equipment-categories/{}", category);
+        return equipmentCategoryService.getEquipmentCategoryConfig(category)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
