@@ -1,7 +1,6 @@
 package com.mes.production.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mes.production.entity.Operation;
 import com.mes.production.entity.Process;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
@@ -11,12 +10,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.mes.production.config.TestSecurityConfig;
@@ -30,9 +27,15 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
+/**
+ * Tests for RoutingController.
+ *
+ * Per MES architecture:
+ * - RoutingStep is a TEMPLATE entity with operationName/operationType fields
+ * - RoutingStep status is ACTIVE/INACTIVE (template lifecycle)
+ * - RoutingStep does NOT reference runtime Operation entities
+ */
+@WebMvcTest(RoutingController.class)
 @Import(TestSecurityConfig.class)
 class RoutingControllerTest {
 
@@ -52,22 +55,12 @@ class RoutingControllerTest {
     private Routing testRouting;
     private RoutingStep testStep1;
     private RoutingStep testStep2;
-    private Operation testOperation1;
-    private Operation testOperation2;
 
     @BeforeEach
     void setUp() {
         testProcess = new Process();
         testProcess.setProcessId(1L);
         testProcess.setProcessName("Melting Stage");
-
-        testOperation1 = new Operation();
-        testOperation1.setOperationId(1L);
-        testOperation1.setOperationName("Melting");
-
-        testOperation2 = new Operation();
-        testOperation2.setOperationId(2L);
-        testOperation2.setOperationName("Casting");
 
         testRouting = new Routing();
         testRouting.setRoutingId(1L);
@@ -78,23 +71,26 @@ class RoutingControllerTest {
         testRouting.setCreatedOn(LocalDateTime.now());
         testRouting.setRoutingSteps(new ArrayList<>());
 
+        // RoutingSteps are TEMPLATES - use operationName/operationType fields
         testStep1 = new RoutingStep();
         testStep1.setRoutingStepId(1L);
         testStep1.setRouting(testRouting);
-        testStep1.setOperation(testOperation1);
+        testStep1.setOperationName("Melting");
+        testStep1.setOperationType("MELTING");
         testStep1.setSequenceNumber(1);
         testStep1.setIsParallel(false);
         testStep1.setMandatoryFlag(true);
-        testStep1.setStatus("COMPLETED");
+        testStep1.setStatus(RoutingStep.STATUS_ACTIVE);
 
         testStep2 = new RoutingStep();
         testStep2.setRoutingStepId(2L);
         testStep2.setRouting(testRouting);
-        testStep2.setOperation(testOperation2);
+        testStep2.setOperationName("Casting");
+        testStep2.setOperationType("CASTING");
         testStep2.setSequenceNumber(2);
         testStep2.setIsParallel(false);
         testStep2.setMandatoryFlag(true);
-        testStep2.setStatus("PENDING");
+        testStep2.setStatus(RoutingStep.STATUS_ACTIVE);
 
         testRouting.getRoutingSteps().add(testStep1);
         testRouting.getRoutingSteps().add(testStep2);
@@ -287,8 +283,8 @@ class RoutingControllerTest {
                 .andExpect(jsonPath("$.steps.length()").value(2))
                 .andExpect(jsonPath("$.steps[0].isParallel").value(false))
                 .andExpect(jsonPath("$.steps[0].mandatoryFlag").value(true))
-                .andExpect(jsonPath("$.steps[0].status").value("COMPLETED"))
-                .andExpect(jsonPath("$.steps[1].status").value("PENDING"));
+                .andExpect(jsonPath("$.steps[0].status").value("ACTIVE"))
+                .andExpect(jsonPath("$.steps[1].status").value("ACTIVE"));
 
         verify(routingService, times(1)).getRoutingWithSteps(1L);
     }

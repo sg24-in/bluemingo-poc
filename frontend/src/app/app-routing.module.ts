@@ -119,6 +119,10 @@ const routes: Routes = [
       {
         path: 'routing',
         loadChildren: () => import('./features/routing/routing.module').then(m => m.RoutingModule)
+      },
+      {
+        path: 'operation-templates',
+        loadChildren: () => import('./features/operation-templates/operation-templates.module').then(m => m.OperationTemplatesModule)
       }
     ]
   },

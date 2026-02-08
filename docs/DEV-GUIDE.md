@@ -613,6 +613,37 @@ All schema changes are managed via SQL patches:
 - Test mode resets schema (DROP/CREATE public) before patches
 - Tracked in `database_patches` table to prevent re-running
 
+### SQL Patch Conventions
+
+**IMPORTANT: Avoid these in patches (parser limitations):**
+
+| Avoid | Reason | Alternative |
+|-------|--------|-------------|
+| Dollar-quoted strings (`$$...$$`) | Parser cannot handle PostgreSQL dollar-quoting | Use Java service code |
+| PL/pgSQL functions | Require dollar-quoting | Implement in Spring services |
+| Complex stored procedures | Multi-statement parsing issues | Break into separate patches |
+
+**Best practices for patches:**
+```sql
+-- DO: Use simple DDL
+CREATE TABLE IF NOT EXISTS my_table (...);
+ALTER TABLE my_table ADD COLUMN IF NOT EXISTS new_col VARCHAR(50);
+CREATE INDEX IF NOT EXISTS idx_name ON my_table(column);
+
+-- DO: Use simple DML
+INSERT INTO config_table (name, value) VALUES ('key', 'value');
+UPDATE config_table SET value = 'new' WHERE name = 'key';
+
+-- DON'T: Use dollar-quoted functions
+-- CREATE FUNCTION my_func() RETURNS void AS $$ BEGIN ... END; $$ LANGUAGE plpgsql;
+-- Instead, implement in Java: @Service public class MyService { ... }
+```
+
+**For stored procedures:**
+- Implement logic in Java service classes instead
+- If truly needed, create manual scripts in `backend/src/main/resources/manual-scripts/`
+- Run manual scripts with `psql -f script.sql` before application startup
+
 ### Seed Data
 
 Seed data is included in patches:

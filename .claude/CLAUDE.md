@@ -334,6 +334,25 @@ psql -U postgres -c "CREATE DATABASE mes_test"
 - Test mode resets schema (DROP/CREATE public) before running patches
 - Patches are tracked in `database_patches` table to prevent re-running
 
+### SQL Patch Conventions (IMPORTANT)
+
+**AVOID in patches:**
+- **Dollar-quoted strings (`$$...$$`)** - The patch parser cannot handle PostgreSQL's dollar-quoting syntax used in stored procedures and functions
+- **PL/pgSQL functions** - Use Spring application code instead of stored procedures
+- **Complex multi-statement procedures** - Keep patches simple with DDL/DML only
+
+**If you need stored procedures:**
+- Implement logic in Java service classes instead
+- For database-level logic, create a separate SQL script to run manually with `psql`
+- Document manual SQL scripts in `backend/src/main/resources/manual-scripts/`
+
+**Patch best practices:**
+- Use simple DDL: CREATE TABLE, ALTER TABLE, CREATE INDEX
+- Use simple DML: INSERT, UPDATE, DELETE
+- Use `IF NOT EXISTS` / `IF EXISTS` for idempotency
+- Use standard SQL quoting ('single quotes' for strings)
+- One logical change per patch for easier debugging
+
 ### Demo Mode Schema Alignment (IMPORTANT)
 
 Demo mode uses H2 in-memory database with **separate schema files** that must be kept in sync with patches:

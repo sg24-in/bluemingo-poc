@@ -139,7 +139,7 @@ class ProcessStatusValidationTest {
                 .operationName("Step 1")
                 .operationCode("STEP1")
                 .sequenceNumber(1)
-                .status(RoutingStep.STATUS_READY)
+                .status(RoutingStep.STATUS_ACTIVE)
                 .build();
     }
 

@@ -36,6 +36,7 @@ export class AdminLayoutComponent implements OnInit {
       items: [
         { path: '/manage/processes', label: 'Processes', icon: 'diagram-project' },
         { path: '/manage/routing', label: 'Routing', icon: 'route' },
+        { path: '/manage/operation-templates', label: 'Operation Templates', icon: 'clipboard-list' },
         { path: '/manage/equipment', label: 'Equipment', icon: 'gear' },
         { path: '/manage/operators', label: 'Operators', icon: 'id-badge' },
         { path: '/manage/bom', label: 'Bill of Materials', icon: 'sitemap' }

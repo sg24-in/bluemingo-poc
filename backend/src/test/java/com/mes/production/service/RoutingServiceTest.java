@@ -2,10 +2,12 @@ package com.mes.production.service;
 
 import com.mes.production.dto.RoutingDTO;
 import com.mes.production.entity.Operation;
+import com.mes.production.entity.OrderLineItem;
 import com.mes.production.entity.Process;
 import com.mes.production.entity.ProcessStatus;
 import com.mes.production.entity.Routing;
 import com.mes.production.entity.RoutingStep;
+import com.mes.production.repository.OperationRepository;
 import com.mes.production.repository.ProcessRepository;
 import com.mes.production.repository.RoutingRepository;
 import com.mes.production.repository.RoutingStepRepository;
@@ -27,6 +29,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests for RoutingService.
+ *
+ * Per MES architecture:
+ * - RoutingStep is a TEMPLATE entity with status ACTIVE/INACTIVE
+ * - Operation is a RUNTIME entity that tracks execution status
+ * - RoutingSteps do NOT reference Operations (one-way relationship: Operation → RoutingStep)
+ */
 @ExtendWith(MockitoExtension.class)
 class RoutingServiceTest {
 
@@ -39,6 +49,9 @@ class RoutingServiceTest {
     @Mock
     private ProcessRepository processRepository;
 
+    @Mock
+    private OperationRepository operationRepository;
+
     @InjectMocks
     private RoutingService routingService;
 
@@ -47,6 +60,7 @@ class RoutingServiceTest {
     private RoutingStep testStep1;
     private RoutingStep testStep2;
     private RoutingStep testStep3;
+    private OrderLineItem testOrderLineItem;
     private Operation testOperation1;
     private Operation testOperation2;
     private Operation testOperation3;
@@ -59,19 +73,8 @@ class RoutingServiceTest {
                 .status(ProcessStatus.ACTIVE)
                 .build();
 
-        testOperation1 = Operation.builder()
-                .operationId(1L)
-                .operationName("Melting")
-                .build();
-
-        testOperation2 = Operation.builder()
-                .operationId(2L)
-                .operationName("Casting")
-                .build();
-
-        testOperation3 = Operation.builder()
-                .operationId(3L)
-                .operationName("Rolling")
+        testOrderLineItem = OrderLineItem.builder()
+                .orderLineId(1L)
                 .build();
 
         testRouting = Routing.builder()
@@ -79,56 +82,85 @@ class RoutingServiceTest {
                 .process(testProcess)
                 .routingName("Standard Melting Route")
                 .routingType(Routing.TYPE_SEQUENTIAL)
-                .status("ACTIVE")
+                .status(Routing.STATUS_ACTIVE)
                 .createdOn(LocalDateTime.now())
                 .routingSteps(new ArrayList<>())
                 .build();
 
+        // RoutingSteps are TEMPLATES - status is ACTIVE/INACTIVE
         testStep1 = RoutingStep.builder()
                 .routingStepId(1L)
                 .routing(testRouting)
-                .operation(testOperation1)
+                .operationName("Melting")
+                .operationType("MELTING")
                 .sequenceNumber(1)
                 .isParallel(false)
                 .mandatoryFlag(true)
-                .status(RoutingStep.STATUS_COMPLETED)
+                .status(RoutingStep.STATUS_ACTIVE)
                 .build();
 
         testStep2 = RoutingStep.builder()
                 .routingStepId(2L)
                 .routing(testRouting)
-                .operation(testOperation2)
+                .operationName("Casting")
+                .operationType("CASTING")
                 .sequenceNumber(2)
                 .isParallel(false)
                 .mandatoryFlag(true)
-                .status(RoutingStep.STATUS_READY)
+                .status(RoutingStep.STATUS_ACTIVE)
                 .build();
 
         testStep3 = RoutingStep.builder()
                 .routingStepId(3L)
                 .routing(testRouting)
-                .operation(testOperation3)
+                .operationName("Rolling")
+                .operationType("HOT_ROLLING")
                 .sequenceNumber(3)
                 .isParallel(false)
                 .mandatoryFlag(false)
-                .status(RoutingStep.STATUS_READY)
+                .status(RoutingStep.STATUS_ACTIVE)
                 .build();
 
         testRouting.getRoutingSteps().add(testStep1);
         testRouting.getRoutingSteps().add(testStep2);
         testRouting.getRoutingSteps().add(testStep3);
+
+        // Operations are RUNTIME entities that reference RoutingSteps
+        testOperation1 = Operation.builder()
+                .operationId(1L)
+                .operationName("Melting")
+                .routingStepId(1L)
+                .orderLineItem(testOrderLineItem)
+                .sequenceNumber(1)
+                .status(Operation.STATUS_CONFIRMED)
+                .build();
+
+        testOperation2 = Operation.builder()
+                .operationId(2L)
+                .operationName("Casting")
+                .routingStepId(2L)
+                .orderLineItem(testOrderLineItem)
+                .sequenceNumber(2)
+                .status(Operation.STATUS_READY)
+                .build();
+
+        testOperation3 = Operation.builder()
+                .operationId(3L)
+                .operationName("Rolling")
+                .routingStepId(3L)
+                .orderLineItem(testOrderLineItem)
+                .sequenceNumber(3)
+                .status(Operation.STATUS_NOT_STARTED)
+                .build();
     }
 
     @Test
     @DisplayName("Should get routing with steps")
     void getRoutingWithSteps_ValidId_ReturnsRouting() {
-        // Arrange
         when(routingRepository.findByIdWithSteps(1L)).thenReturn(Optional.of(testRouting));
 
-        // Act
         Optional<Routing> result = routingService.getRoutingWithSteps(1L);
 
-        // Assert
         assertTrue(result.isPresent());
         assertEquals(1L, result.get().getRoutingId());
         assertEquals(3, result.get().getRoutingSteps().size());
@@ -137,26 +169,20 @@ class RoutingServiceTest {
     @Test
     @DisplayName("Should return empty when routing not found")
     void getRoutingWithSteps_NotFound_ReturnsEmpty() {
-        // Arrange
         when(routingRepository.findByIdWithSteps(999L)).thenReturn(Optional.empty());
 
-        // Act
         Optional<Routing> result = routingService.getRoutingWithSteps(999L);
 
-        // Assert
         assertTrue(result.isEmpty());
     }
 
     @Test
     @DisplayName("Should get active routing for process")
     void getActiveRoutingForProcess_ValidId_ReturnsRouting() {
-        // Arrange
         when(routingRepository.findActiveRoutingByProcessWithSteps(1L)).thenReturn(Optional.of(testRouting));
 
-        // Act
         Optional<Routing> result = routingService.getActiveRoutingForProcess(1L);
 
-        // Assert
         assertTrue(result.isPresent());
         assertEquals("Standard Melting Route", result.get().getRoutingName());
     }
@@ -164,14 +190,11 @@ class RoutingServiceTest {
     @Test
     @DisplayName("Should get routing steps in order")
     void getRoutingStepsInOrder_ValidId_ReturnsSteps() {
-        // Arrange
         when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
                 .thenReturn(List.of(testStep1, testStep2, testStep3));
 
-        // Act
         List<RoutingStep> result = routingService.getRoutingStepsInOrder(1L);
 
-        // Assert
         assertNotNull(result);
         assertEquals(3, result.size());
         assertEquals(1, result.get(0).getSequenceNumber());
@@ -182,13 +205,10 @@ class RoutingServiceTest {
     @Test
     @DisplayName("Should get next steps after current sequence")
     void getNextSteps_ValidSequence_ReturnsNextSteps() {
-        // Arrange
         when(routingStepRepository.findNextSteps(1L, 1)).thenReturn(List.of(testStep2, testStep3));
 
-        // Act
         List<RoutingStep> result = routingService.getNextSteps(1L, 1);
 
-        // Assert
         assertNotNull(result);
         assertEquals(2, result.size());
     }
@@ -196,198 +216,189 @@ class RoutingServiceTest {
     @Test
     @DisplayName("Should get parallel steps at same level")
     void getParallelSteps_ValidSequence_ReturnsParallelSteps() {
-        // Arrange
         when(routingStepRepository.findParallelSteps(1L, 2)).thenReturn(List.of(testStep2));
 
-        // Act
         List<RoutingStep> result = routingService.getParallelSteps(1L, 2);
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
     }
 
     @Test
-    @DisplayName("Should return true when routing is complete")
-    void isRoutingComplete_AllComplete_ReturnsTrue() {
-        // Arrange
-        when(routingStepRepository.findIncompleteMandatorySteps(1L)).thenReturn(List.of());
+    @DisplayName("Should return true when routing is complete (has active steps and is active)")
+    void isRoutingComplete_ActiveRoutingWithSteps_ReturnsTrue() {
+        when(routingStepRepository.findActiveSteps(1L)).thenReturn(List.of(testStep1, testStep2, testStep3));
+        when(routingRepository.findById(1L)).thenReturn(Optional.of(testRouting));
 
-        // Act
         boolean result = routingService.isRoutingComplete(1L);
 
-        // Assert
         assertTrue(result);
     }
 
     @Test
-    @DisplayName("Should return false when routing is not complete")
-    void isRoutingComplete_IncompleteMandatorySteps_ReturnsFalse() {
-        // Arrange
-        when(routingStepRepository.findIncompleteMandatorySteps(1L)).thenReturn(List.of(testStep2));
+    @DisplayName("Should return false when routing has no active steps")
+    void isRoutingComplete_NoActiveSteps_ReturnsFalse() {
+        when(routingStepRepository.findActiveSteps(1L)).thenReturn(List.of());
 
-        // Act
         boolean result = routingService.isRoutingComplete(1L);
 
-        // Assert
         assertFalse(result);
     }
 
     @Test
-    @DisplayName("Should get next operation to ready")
-    void getNextOperationToReady_ValidSequence_ReturnsNextOperation() {
-        // Arrange
-        when(routingStepRepository.findNextSteps(1L, 1)).thenReturn(List.of(testStep2));
-
-        // Act
-        Optional<Operation> result = routingService.getNextOperationToReady(1L, 1);
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals("Casting", result.get().getOperationName());
-    }
-
-    @Test
-    @DisplayName("Should return empty when no next steps")
-    void getNextOperationToReady_NoNextSteps_ReturnsEmpty() {
-        // Arrange
-        when(routingStepRepository.findNextSteps(1L, 3)).thenReturn(List.of());
-
-        // Act
-        Optional<Operation> result = routingService.getNextOperationToReady(1L, 3);
-
-        // Assert
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Should update routing step status")
-    void updateStepStatus_ValidRequest_UpdatesStatus() {
-        // Arrange
-        when(routingStepRepository.findById(2L)).thenReturn(Optional.of(testStep2));
-        when(routingStepRepository.save(any(RoutingStep.class))).thenAnswer(i -> i.getArgument(0));
-
-        // Act
-        RoutingStep result = routingService.updateStepStatus(2L, RoutingStep.STATUS_COMPLETED, "admin@mes.com");
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(RoutingStep.STATUS_COMPLETED, result.getStatus());
-        assertEquals("admin@mes.com", result.getUpdatedBy());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when step not found")
-    void updateStepStatus_NotFound_ThrowsException() {
-        // Arrange
-        when(routingStepRepository.findById(999L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> routingService.updateStepStatus(999L, RoutingStep.STATUS_COMPLETED, "admin"));
-
-        assertTrue(exception.getMessage().contains("Routing step not found"));
-    }
-
-    @Test
-    @DisplayName("Should get step for operation")
+    @DisplayName("Should get step for operation via routingStepId")
     void getStepForOperation_ValidId_ReturnsStep() {
-        // Arrange
-        when(routingStepRepository.findByOperation_OperationId(1L)).thenReturn(Optional.of(testStep1));
+        when(operationRepository.findById(1L)).thenReturn(Optional.of(testOperation1));
+        when(routingStepRepository.findById(1L)).thenReturn(Optional.of(testStep1));
 
-        // Act
         Optional<RoutingStep> result = routingService.getStepForOperation(1L);
 
-        // Assert
         assertTrue(result.isPresent());
         assertEquals(1L, result.get().getRoutingStepId());
     }
 
     @Test
-    @DisplayName("Should allow first step to proceed in sequential routing")
-    void canOperationProceed_FirstStep_ReturnsTrue() {
-        // Arrange
-        when(routingStepRepository.findByOperation_OperationId(1L)).thenReturn(Optional.of(testStep1));
+    @DisplayName("Should return empty when operation has no routingStepId")
+    void getStepForOperation_NoRoutingStepId_ReturnsEmpty() {
+        Operation operationWithoutStep = Operation.builder()
+                .operationId(100L)
+                .operationName("Standalone")
+                .routingStepId(null)
+                .build();
+        when(operationRepository.findById(100L)).thenReturn(Optional.of(operationWithoutStep));
 
-        // Act
+        Optional<RoutingStep> result = routingService.getStepForOperation(100L);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should allow operation when status is READY")
+    void canOperationProceed_OperationReady_ReturnsTrue() {
+        when(operationRepository.findById(2L)).thenReturn(Optional.of(testOperation2));
+        when(routingStepRepository.findById(2L)).thenReturn(Optional.of(testStep2));
+        when(operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(1L))
+                .thenReturn(List.of(testOperation1, testOperation2, testOperation3));
+
+        boolean result = routingService.canOperationProceed(2L);
+
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("Should block operation when status is not READY")
+    void canOperationProceed_OperationNotReady_ReturnsFalse() {
+        Operation notReadyOperation = Operation.builder()
+                .operationId(2L)
+                .status(Operation.STATUS_NOT_STARTED)
+                .build();
+        when(operationRepository.findById(2L)).thenReturn(Optional.of(notReadyOperation));
+
+        boolean result = routingService.canOperationProceed(2L);
+
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("Should allow first operation in sequence")
+    void canOperationProceed_FirstOperation_ReturnsTrue() {
+        Operation firstOp = Operation.builder()
+                .operationId(1L)
+                .status(Operation.STATUS_READY)
+                .sequenceNumber(1)
+                .routingStepId(1L)
+                .orderLineItem(testOrderLineItem)
+                .build();
+        when(operationRepository.findById(1L)).thenReturn(Optional.of(firstOp));
+        when(routingStepRepository.findById(1L)).thenReturn(Optional.of(testStep1));
+
         boolean result = routingService.canOperationProceed(1L);
 
-        // Assert
         assertTrue(result);
     }
 
     @Test
-    @DisplayName("Should allow operation when no routing step exists")
-    void canOperationProceed_NoRoutingStep_ReturnsTrue() {
-        // Arrange
-        when(routingStepRepository.findByOperation_OperationId(100L)).thenReturn(Optional.empty());
+    @DisplayName("Should block operation when previous operations incomplete")
+    void canOperationProceed_PreviousIncomplete_ReturnsFalse() {
+        // First operation is NOT_STARTED
+        Operation firstOp = Operation.builder()
+                .operationId(1L)
+                .status(Operation.STATUS_NOT_STARTED)
+                .sequenceNumber(1)
+                .routingStepId(1L)
+                .orderLineItem(testOrderLineItem)
+                .build();
 
-        // Act
-        boolean result = routingService.canOperationProceed(100L);
+        Operation secondOp = Operation.builder()
+                .operationId(2L)
+                .status(Operation.STATUS_READY)
+                .sequenceNumber(2)
+                .routingStepId(2L)
+                .orderLineItem(testOrderLineItem)
+                .build();
 
-        // Assert
-        assertTrue(result);
-    }
+        when(operationRepository.findById(2L)).thenReturn(Optional.of(secondOp));
+        when(routingStepRepository.findById(2L)).thenReturn(Optional.of(testStep2));
+        when(operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(1L))
+                .thenReturn(List.of(firstOp, secondOp));
 
-    @Test
-    @DisplayName("Should allow operation when previous mandatory steps complete")
-    void canOperationProceed_PreviousStepsComplete_ReturnsTrue() {
-        // Arrange
-        when(routingStepRepository.findByOperation_OperationId(2L)).thenReturn(Optional.of(testStep2));
-        when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
-                .thenReturn(List.of(testStep1, testStep2, testStep3));
-
-        // Act
         boolean result = routingService.canOperationProceed(2L);
 
-        // Assert
-        assertTrue(result);
-    }
-
-    @Test
-    @DisplayName("Should block operation when previous mandatory steps incomplete")
-    void canOperationProceed_PreviousStepsIncomplete_ReturnsFalse() {
-        // Arrange
-        testStep1.setStatus(RoutingStep.STATUS_IN_PROGRESS); // Not COMPLETED
-        when(routingStepRepository.findByOperation_OperationId(2L)).thenReturn(Optional.of(testStep2));
-        when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
-                .thenReturn(List.of(testStep1, testStep2, testStep3));
-
-        // Act
-        boolean result = routingService.canOperationProceed(2L);
-
-        // Assert
         assertFalse(result);
     }
 
     @Test
-    @DisplayName("Should allow parallel routing step when status is READY")
-    void canOperationProceed_ParallelRoutingReady_ReturnsTrue() {
-        // Arrange
-        testRouting.setRoutingType(Routing.TYPE_PARALLEL);
-        testStep2.setStatus(RoutingStep.STATUS_READY);
-        when(routingStepRepository.findByOperation_OperationId(2L)).thenReturn(Optional.of(testStep2));
+    @DisplayName("Should check routing completion for order line")
+    void isRoutingCompleteForOrderLine_AllConfirmed_ReturnsTrue() {
+        Operation op1 = Operation.builder().operationId(1L).status(Operation.STATUS_CONFIRMED).build();
+        Operation op2 = Operation.builder().operationId(2L).status(Operation.STATUS_CONFIRMED).build();
 
-        // Act
-        boolean result = routingService.canOperationProceed(2L);
+        when(operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(1L))
+                .thenReturn(List.of(op1, op2));
 
-        // Assert
+        boolean result = routingService.isRoutingCompleteForOrderLine(1L);
+
         assertTrue(result);
     }
 
     @Test
-    @DisplayName("Should block parallel routing step when status is not READY")
-    void canOperationProceed_ParallelRoutingNotReady_ReturnsFalse() {
-        // Arrange
-        testRouting.setRoutingType(Routing.TYPE_PARALLEL);
-        testStep2.setStatus(RoutingStep.STATUS_ON_HOLD); // Not READY
-        when(routingStepRepository.findByOperation_OperationId(2L)).thenReturn(Optional.of(testStep2));
+    @DisplayName("Should return false when some operations not confirmed")
+    void isRoutingCompleteForOrderLine_NotAllConfirmed_ReturnsFalse() {
+        Operation op1 = Operation.builder().operationId(1L).status(Operation.STATUS_CONFIRMED).build();
+        Operation op2 = Operation.builder().operationId(2L).status(Operation.STATUS_READY).build();
 
-        // Act
-        boolean result = routingService.canOperationProceed(2L);
+        when(operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(1L))
+                .thenReturn(List.of(op1, op2));
 
-        // Assert
+        boolean result = routingService.isRoutingCompleteForOrderLine(1L);
+
         assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("Should get next operation to ready")
+    void getNextOperationToReady_HasNotStarted_ReturnsOperation() {
+        when(operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(1L))
+                .thenReturn(List.of(testOperation1, testOperation2, testOperation3));
+
+        Optional<Operation> result = routingService.getNextOperationToReady(1L);
+
+        assertTrue(result.isPresent());
+        assertEquals(3L, result.get().getOperationId()); // testOperation3 is NOT_STARTED
+    }
+
+    @Test
+    @DisplayName("Should return empty when all operations started")
+    void getNextOperationToReady_AllStarted_ReturnsEmpty() {
+        Operation op1 = Operation.builder().operationId(1L).status(Operation.STATUS_CONFIRMED).build();
+        Operation op2 = Operation.builder().operationId(2L).status(Operation.STATUS_IN_PROGRESS).build();
+
+        when(operationRepository.findByOrderLineItem_OrderLineIdOrderBySequenceNumberAsc(1L))
+                .thenReturn(List.of(op1, op2));
+
+        Optional<Operation> result = routingService.getNextOperationToReady(1L);
+
+        assertTrue(result.isEmpty());
     }
 
     // ============ CRUD Operation Tests ============
@@ -475,12 +486,8 @@ class RoutingServiceTest {
             when(routingRepository.findById(1L)).thenReturn(Optional.of(testRouting));
             when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
                     .thenReturn(List.of(testStep1, testStep2, testStep3));
+            when(operationRepository.findByRoutingStepId(anyLong())).thenReturn(List.of());
             when(routingRepository.save(any(Routing.class))).thenReturn(testRouting);
-
-            // Set all steps to READY to avoid locked status
-            testStep1.setStatus(RoutingStep.STATUS_READY);
-            testStep2.setStatus(RoutingStep.STATUS_READY);
-            testStep3.setStatus(RoutingStep.STATUS_READY);
 
             Routing result = routingService.updateRouting(1L, request, "testuser");
 
@@ -491,7 +498,11 @@ class RoutingServiceTest {
         @Test
         @DisplayName("Should reject update of locked routing")
         void shouldRejectUpdateOfLockedRouting() {
-            testStep1.setStatus(RoutingStep.STATUS_COMPLETED);
+            // Create an operation that's IN_PROGRESS (locks the routing)
+            Operation inProgressOp = Operation.builder()
+                    .operationId(1L)
+                    .status(Operation.STATUS_IN_PROGRESS)
+                    .build();
 
             RoutingDTO.UpdateRoutingRequest request = RoutingDTO.UpdateRoutingRequest.builder()
                     .routingName("Updated Name")
@@ -500,6 +511,7 @@ class RoutingServiceTest {
             when(routingRepository.findById(1L)).thenReturn(Optional.of(testRouting));
             when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
                     .thenReturn(List.of(testStep1, testStep2, testStep3));
+            when(operationRepository.findByRoutingStepId(1L)).thenReturn(List.of(inProgressOp));
 
             assertThrows(IllegalStateException.class, () ->
                     routingService.updateRouting(1L, request, "testuser"));
@@ -583,13 +595,11 @@ class RoutingServiceTest {
         @DisplayName("Should delete DRAFT routing")
         void shouldDeleteDraftRouting() {
             testRouting.setStatus(Routing.STATUS_DRAFT);
-            testStep1.setStatus(RoutingStep.STATUS_READY);
-            testStep2.setStatus(RoutingStep.STATUS_READY);
-            testStep3.setStatus(RoutingStep.STATUS_READY);
 
             when(routingRepository.findById(1L)).thenReturn(Optional.of(testRouting));
             when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
                     .thenReturn(List.of(testStep1, testStep2, testStep3));
+            when(operationRepository.findByRoutingStepId(anyLong())).thenReturn(List.of());
 
             routingService.deleteRouting(1L);
 
@@ -656,25 +666,26 @@ class RoutingServiceTest {
     class StatusAndLockTests {
 
         @Test
-        @DisplayName("Should detect locked routing")
+        @DisplayName("Should detect locked routing when operations executed")
         void shouldDetectLockedRouting() {
-            testStep1.setStatus(RoutingStep.STATUS_COMPLETED);
+            Operation confirmedOp = Operation.builder()
+                    .operationId(1L)
+                    .status(Operation.STATUS_CONFIRMED)
+                    .build();
 
             when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
                     .thenReturn(List.of(testStep1, testStep2, testStep3));
+            when(operationRepository.findByRoutingStepId(1L)).thenReturn(List.of(confirmedOp));
 
             assertTrue(routingService.isRoutingLocked(1L));
         }
 
         @Test
-        @DisplayName("Should detect unlocked routing")
+        @DisplayName("Should detect unlocked routing when no operations executed")
         void shouldDetectUnlockedRouting() {
-            testStep1.setStatus(RoutingStep.STATUS_READY);
-            testStep2.setStatus(RoutingStep.STATUS_READY);
-            testStep3.setStatus(RoutingStep.STATUS_READY);
-
             when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
                     .thenReturn(List.of(testStep1, testStep2, testStep3));
+            when(operationRepository.findByRoutingStepId(anyLong())).thenReturn(List.of());
 
             assertFalse(routingService.isRoutingLocked(1L));
         }
@@ -682,21 +693,15 @@ class RoutingServiceTest {
         @Test
         @DisplayName("Should return routing status summary")
         void shouldReturnRoutingStatusSummary() {
-            testStep1.setStatus(RoutingStep.STATUS_COMPLETED);
-            testStep2.setStatus(RoutingStep.STATUS_IN_PROGRESS);
-            testStep3.setStatus(RoutingStep.STATUS_READY);
-
             when(routingRepository.findByIdWithSteps(1L)).thenReturn(Optional.of(testRouting));
             when(routingStepRepository.findByRouting_RoutingIdOrderBySequenceNumberAsc(1L))
                     .thenReturn(List.of(testStep1, testStep2, testStep3));
+            when(operationRepository.findByRoutingStepId(anyLong())).thenReturn(List.of());
 
             RoutingDTO.RoutingStatus status = routingService.getRoutingStatus(1L);
 
             assertEquals(3, status.getTotalSteps());
-            assertEquals(1, status.getCompletedSteps());
-            assertEquals(1, status.getInProgressSteps());
-            assertTrue(status.getIsLocked());
-            assertFalse(status.getIsComplete());
+            assertFalse(status.getIsLocked());
         }
     }
 }
