@@ -210,10 +210,10 @@ export class ProductionConfirmComponent implements OnInit {
 
     // Load delay reasons
     this.apiService.getDelayReasons().subscribe({
-      next: (reasons) => {
+      next: (reasons: any[]) => {
         this.delayReasons = reasons;
       },
-      error: (err) => console.error('Error loading delay reasons:', err)
+      error: (err: any) => console.error('Error loading delay reasons:', err)
     });
 
     // Load available inventory for consumption

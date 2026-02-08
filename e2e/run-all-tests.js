@@ -19,44 +19,12 @@ const path = require('path');
 const config = require('./config/playwright.config');
 const { ScreenshotManager, TestResults, runTest } = require('./utils/test-helpers');
 
-// Import test modules
+// Import test modules (POC only - 5 core tests)
 const { runAuthTests } = require('./tests/01-auth.test');
 const { runDashboardTests } = require('./tests/02-dashboard.test');
 const { runOrdersTests } = require('./tests/03-orders.test');
 const { runProductionTests } = require('./tests/04-production.test');
-const { runInventoryTests } = require('./tests/05-inventory.test');
 const { runBatchesTests } = require('./tests/06-batches.test');
-const { runHoldsTests } = require('./tests/07-holds.test');
-const { runEquipmentTests } = require('./tests/08-equipment.test');
-const { runQualityTests } = require('./tests/09-quality.test');
-const { runPaginationTests } = require('./tests/10-pagination.test');
-const { runCrudTests } = require('./tests/11-crud.test');
-const { runEntityCrudTests } = require('./tests/12-entity-crud.test');
-const { runBomCrudTests } = require('./tests/13-bom-crud.test');
-const { runConfigCrudTests } = require('./tests/14-config-crud.test');
-const { runAuditHistoryTests } = require('./tests/15-audit-history.test');
-const { runOperatorsTests } = require('./tests/16-operators.test');
-const { runOperationsTests } = require('./tests/17-operations.test');
-const { runProcessesTests } = require('./tests/18-processes.test');
-const { runUserProfileTests } = require('./tests/19-user-profile.test');
-const { runUsersTests } = require('./tests/20-users.test');
-const { runProductionHistoryTests } = require('./tests/21-production-history.test');
-const { runRoutingTests } = require('./tests/22-routing.test');
-const { runOrderSelectionTests } = require('./tests/23-order-selection.test');
-const { runPartialConfirmationTests } = require('./tests/24-partial-confirmation.test');
-const { runDetailPageTests } = require('./tests/25-detail-pages.test');
-const { runProcessParameterTests } = require('./tests/26-process-parameters.test');
-const { runAdminSidebarTests } = require('./tests/27-admin-sidebar.test');
-const { runOrderCrudTests } = require('./tests/32-order-crud.test');
-const { runProductionCompleteTests } = require('./tests/33-production-complete.test');
-const { runReceiveMaterialTests } = require('./tests/34-receive-material.test');
-const { runBatchOperationsTests } = require('./tests/35-batch-operations.test');
-const { runRoutingCrudTests } = require('./tests/36-routing-crud.test');
-const { runOperationTemplatesTests } = require('./tests/37-operation-templates.test');
-const { runDashboardFeaturesTests } = require('./tests/38-dashboard-features.test');
-const { runFormValidationsTests } = require('./tests/39-form-validations.test');
-const { runWorkflowVerificationTests } = require('./tests/40-e2e-workflow-verification.test');
-const { runProductionFlowE2ETests } = require('./tests/41-production-flow-e2e.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -140,46 +108,14 @@ async function runAllTests() {
             throw new Error('Login failed');
         }
 
-        // Run all test modules
+        // Run POC test modules (5 core tests)
         await runAuthTests(page, screenshots, results, runTest);
         await runDashboardTests(page, screenshots, results, runTest);
         await runOrdersTests(page, screenshots, results, runTest);
         await runProductionTests(page, screenshots, results, runTest);
-        await runInventoryTests(page, screenshots, results, runTest, submitActions);
         await runBatchesTests(page, screenshots, results, runTest);
-        await runHoldsTests(page, screenshots, results, runTest, submitActions);
-        await runEquipmentTests(page, screenshots, results, runTest, submitActions);
-        await runQualityTests(page, screenshots, results, runTest, submitActions);
-        await runPaginationTests(page, screenshots, results, runTest);
-        await runCrudTests(page, screenshots, results, runTest, submitActions);
-        await runEntityCrudTests(page, screenshots, results, runTest, submitActions);
-        await runBomCrudTests(page, screenshots, results, runTest, submitActions);
-        await runConfigCrudTests(page, screenshots, results, runTest, submitActions);
-        await runAuditHistoryTests(page, screenshots, results, runTest, submitActions);
-        await runOperatorsTests(page, screenshots, results, runTest, submitActions);
-        await runOperationsTests(page, screenshots, results, runTest, submitActions);
-        await runProcessesTests(page, screenshots, results, runTest, submitActions);
-        await runUserProfileTests(page, screenshots, results, runTest, submitActions);
-        await runUsersTests(page, screenshots, results, runTest, submitActions);
-        await runProductionHistoryTests(page, screenshots, results, runTest);
-        await runRoutingTests(page, screenshots, results, runTest, submitActions);
-        await runOrderSelectionTests(page, screenshots, results, runTest);
-        await runPartialConfirmationTests(page, screenshots, results, runTest, submitActions);
-        await runDetailPageTests(page, screenshots, results, runTest, submitActions);
-        await runProcessParameterTests(page, screenshots, results, runTest, submitActions);
-        await runAdminSidebarTests(page, screenshots, results, runTest, submitActions);
-        await runOrderCrudTests(page, screenshots, results, runTest, submitActions);
-        await runProductionCompleteTests(page, screenshots, results, runTest, submitActions);
-        await runReceiveMaterialTests(page, screenshots, results, runTest, submitActions);
-        await runBatchOperationsTests(page, screenshots, results, runTest, submitActions);
-        await runRoutingCrudTests(page, screenshots, results, runTest, submitActions);
-        await runOperationTemplatesTests(page, screenshots, results, runTest, submitActions);
-        await runDashboardFeaturesTests(page, screenshots, results, runTest, submitActions);
-        await runFormValidationsTests(page, screenshots, results, runTest, submitActions);
-        await runWorkflowVerificationTests(page, screenshots, results, runTest, submitActions);
-        await runProductionFlowE2ETests(page, screenshots, results, runTest, submitActions);
 
-        // Navigation flow test
+        // Navigation flow test (POC routes only)
         console.log('\n' + '─'.repeat(50));
         console.log('📂 NAVIGATION FLOW');
         console.log('─'.repeat(50));
@@ -188,31 +124,8 @@ async function runAllTests() {
             const routes = [
                 { path: '/#/dashboard', name: 'dashboard' },
                 { path: '/#/orders', name: 'orders' },
-                { path: '/#/inventory', name: 'inventory' },
-                { path: '/#/batches', name: 'batches' },
                 { path: '/#/production/confirm', name: 'production' },
-                { path: '/#/holds', name: 'holds' },
-                { path: '/#/equipment', name: 'equipment' },
-                { path: '/#/processes/list', name: 'processes' },
-                { path: '/#/processes/quality-pending', name: 'quality-pending' },
-                { path: '/#/operations', name: 'operations' },
-                { path: '/#/manage/routing', name: 'routing' },
-                { path: '/#/profile', name: 'profile' },
-                { path: '/#/change-password', name: 'change-password' },
-                { path: '/#/manage/customers', name: 'admin-customers' },
-                { path: '/#/manage/materials', name: 'admin-materials' },
-                { path: '/#/manage/products', name: 'admin-products' },
-                { path: '/#/manage/bom', name: 'admin-bom' },
-                { path: '/#/manage/operators', name: 'admin-operators' },
-                { path: '/#/manage/users', name: 'admin-users' },
-                { path: '/#/manage/config/hold-reasons', name: 'config-hold-reasons' },
-                { path: '/#/manage/config/delay-reasons', name: 'config-delay-reasons' },
-                { path: '/#/manage/config/process-params', name: 'config-process-params' },
-                { path: '/#/manage/config/batch-number', name: 'config-batch-number' },
-                { path: '/#/manage/config/quantity-type', name: 'config-quantity-type' },
-                { path: '/#/manage/audit', name: 'audit' },
-                { path: '/#/production/history', name: 'production-history' },
-                { path: '/#/manage/processes', name: 'admin-processes' }
+                { path: '/#/batches', name: 'batches' }
             ];
 
             for (const route of routes) {

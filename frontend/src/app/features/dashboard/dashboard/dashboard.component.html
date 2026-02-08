@@ -9,28 +9,6 @@
   </div>
 
   <div *ngIf="!loading">
-    <!-- Inventory Flow Pipeline (Generic: RM → WIP → IM → FG) -->
-    <div class="inventory-flow-section">
-      <h2 class="section-title"><i class="fas fa-arrows-turn-right"></i> Inventory Flow</h2>
-      <div class="inventory-flow">
-        <div class="flow-stage" *ngFor="let stage of inventoryFlowStages; let i = index">
-          <div class="flow-connector" *ngIf="i > 0">
-            <i class="fas fa-arrow-right"></i>
-          </div>
-          <div class="flow-card" [ngClass]="'stage-' + stage.status" (click)="navigateToInventoryType(stage.type)">
-            <div class="flow-icon">
-              <i class="fas" [ngClass]="stage.icon"></i>
-            </div>
-            <div class="flow-info">
-              <span class="flow-type">{{ stage.type }}</span>
-              <span class="flow-label">{{ stage.label }}</span>
-              <span class="flow-count">{{ stage.count }} available</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Operations Status Summary -->
     <div class="operations-summary-section" *ngIf="operationsSummary.length > 0">
       <h2 class="section-title"><i class="fas fa-tasks"></i> Operations Status</h2>
@@ -45,41 +23,14 @@
     </div>
 
     <!-- Alerts & Attention Needed -->
-    <div class="alerts-section" *ngIf="hasAlerts()">
+    <div class="alerts-section" *ngIf="summary.batchesPendingApproval > 0">
       <h2 class="section-title"><i class="fas fa-bell"></i> Needs Attention</h2>
       <div class="alerts-grid">
-        <div class="alert-card warning" *ngIf="summary.activeHolds > 0" (click)="navigateToHolds()">
-          <div class="alert-icon"><i class="fas fa-circle-pause"></i></div>
-          <div class="alert-content">
-            <span class="alert-count">{{ summary.activeHolds }}</span>
-            <span class="alert-label">Active Holds</span>
-          </div>
-          <i class="fas fa-chevron-right alert-arrow"></i>
-        </div>
-
         <div class="alert-card info" *ngIf="summary.batchesPendingApproval > 0" (click)="navigateToBatchApproval()">
           <div class="alert-icon"><i class="fas fa-clipboard-check"></i></div>
           <div class="alert-content">
             <span class="alert-count">{{ summary.batchesPendingApproval }}</span>
             <span class="alert-label">Batches Pending Approval</span>
-          </div>
-          <i class="fas fa-chevron-right alert-arrow"></i>
-        </div>
-
-        <div class="alert-card warning" *ngIf="summary.qualityPendingProcesses > 0" (click)="navigateToQualityPending()">
-          <div class="alert-icon"><i class="fas fa-magnifying-glass"></i></div>
-          <div class="alert-content">
-            <span class="alert-count">{{ summary.qualityPendingProcesses }}</span>
-            <span class="alert-label">Quality Inspections Pending</span>
-          </div>
-          <i class="fas fa-chevron-right alert-arrow"></i>
-        </div>
-
-        <div class="alert-card danger" *ngIf="blockedInventoryCount > 0" (click)="navigateToBlockedInventory()">
-          <div class="alert-icon"><i class="fas fa-ban"></i></div>
-          <div class="alert-content">
-            <span class="alert-count">{{ blockedInventoryCount }}</span>
-            <span class="alert-label">Blocked Inventory</span>
           </div>
           <i class="fas fa-chevron-right alert-arrow"></i>
         </div>
@@ -140,17 +91,6 @@
           </div>
         </div>
 
-        <div class="metric-card" (click)="navigateToInventory()">
-          <div class="metric-header">
-            <span class="metric-label">Inventory Items</span>
-          </div>
-          <div class="metric-value">{{ inventorySummary.total }}</div>
-          <div class="metric-breakdown">
-            <span class="breakdown-item available">{{ inventorySummary.available }} available</span>
-            <span class="breakdown-item consumed">{{ inventorySummary.consumed }} consumed</span>
-          </div>
-        </div>
-
         <div class="metric-card" (click)="navigateToBatches()">
           <div class="metric-header">
             <span class="metric-label">Active Batches</span>
@@ -167,10 +107,6 @@
     <div class="charts-section">
       <h2 class="section-title"><i class="fas fa-chart-pie"></i> Analytics</h2>
       <div class="charts-grid">
-        <div class="card chart-card">
-          <div class="chart-title">Inventory Distribution</div>
-          <div #inventoryChart class="chart-container"></div>
-        </div>
         <div class="card chart-card">
           <div class="chart-title">Order Status</div>
           <div #orderStatusChart class="chart-container"></div>
@@ -285,10 +221,6 @@
           <span class="action-icon"><i class="fas fa-industry"></i></span>
           <span class="action-label">Confirm Production</span>
         </a>
-        <a routerLink="/inventory/receive" class="action-btn success">
-          <span class="action-icon"><i class="fas fa-download"></i></span>
-          <span class="action-label">Receive Material</span>
-        </a>
         <a routerLink="/orders" class="action-btn">
           <span class="action-icon"><i class="fas fa-list"></i></span>
           <span class="action-label">View Orders</span>
@@ -296,10 +228,6 @@
         <a routerLink="/batches" class="action-btn">
           <span class="action-icon"><i class="fas fa-cubes"></i></span>
           <span class="action-label">Batch Traceability</span>
-        </a>
-        <a routerLink="/holds" class="action-btn warning">
-          <span class="action-icon"><i class="fas fa-circle-pause"></i></span>
-          <span class="action-label">Manage Holds</span>
         </a>
       </div>
     </div>

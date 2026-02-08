@@ -8,20 +8,9 @@ interface DashboardSummary {
   ordersInProgress: number;
   operationsReady: number;
   operationsInProgress: number;
-  activeHolds: number;
   todayConfirmations: number;
-  qualityPendingProcesses: number;
   batchesPendingApproval: number;
   recentActivity: any[];
-  auditActivity: any[];
-}
-
-interface InventoryFlowStage {
-  type: string;
-  label: string;
-  icon: string;
-  count: number;
-  status: 'active' | 'idle' | 'warning';
 }
 
 interface OperationSummary {
@@ -36,13 +25,11 @@ interface OperationSummary {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('inventoryChart') inventoryChartRef!: ElementRef<HTMLDivElement>;
   @ViewChild('orderStatusChart') orderStatusChartRef!: ElementRef<HTMLDivElement>;
   @ViewChild('batchStatusChart') batchStatusChartRef!: ElementRef<HTMLDivElement>;
 
   chartsReady = false;
   dataLoaded = {
-    inventory: false,
     orders: false,
     summary: false,
     batches: false
@@ -57,21 +44,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     ordersInProgress: 0,
     operationsReady: 0,
     operationsInProgress: 0,
-    activeHolds: 0,
     todayConfirmations: 0,
-    qualityPendingProcesses: 0,
     batchesPendingApproval: 0,
-    recentActivity: [],
-    auditActivity: []
+    recentActivity: []
   };
-
-  // Inventory flow stages (generic: RM → WIP → FG)
-  inventoryFlowStages: InventoryFlowStage[] = [
-    { type: 'RM', label: 'Raw Materials', icon: 'fa-cubes', count: 0, status: 'idle' },
-    { type: 'WIP', label: 'Work in Progress', icon: 'fa-gear', count: 0, status: 'idle' },
-    { type: 'IM', label: 'Intermediates', icon: 'fa-box', count: 0, status: 'idle' },
-    { type: 'FG', label: 'Finished Goods', icon: 'fa-box-check', count: 0, status: 'idle' }
-  ];
 
   // Operations by status
   operationsSummary: OperationSummary[] = [];
@@ -79,15 +55,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   availableOrders: any[] = [];
   recentBatches: any[] = [];
-  inventorySummary = {
-    total: 0,
-    available: 0,
-    consumed: 0,
-    onHold: 0,
-    blocked: 0
-  };
 
-  blockedInventoryCount = 0;
   activeBatchCount = 0;
   loading = true;
 
@@ -113,12 +81,21 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   loadDashboardData(): void {
     this.loading = true;
     this.lastUpdated = new Date();
-    this.dataLoaded = { inventory: false, orders: false, summary: false, batches: false };
+    this.dataLoaded = { orders: false, summary: false, batches: false };
 
     // Load dashboard summary
     this.apiService.getDashboardSummary().subscribe({
       next: (data) => {
-        this.summary = data;
+        this.summary = {
+          ...this.summary,
+          totalOrders: data.totalOrders || 0,
+          ordersInProgress: data.ordersInProgress || 0,
+          operationsReady: data.operationsReady || 0,
+          operationsInProgress: data.operationsInProgress || 0,
+          todayConfirmations: data.todayConfirmations || 0,
+          batchesPendingApproval: data.batchesPendingApproval || 0,
+          recentActivity: data.recentActivity || []
+        };
         this.dataLoaded.summary = true;
         this.checkLoadingComplete();
       },
@@ -155,41 +132,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
 
-    // Load inventory summary
-    this.apiService.getAllInventory().subscribe({
-      next: (inventory) => {
-        this.inventorySummary.total = inventory.length;
-        this.inventorySummary.available = inventory.filter(i => i.state === 'AVAILABLE').length;
-        this.inventorySummary.consumed = inventory.filter(i => i.state === 'CONSUMED').length;
-        this.inventorySummary.onHold = inventory.filter(i => i.state === 'ON_HOLD').length;
-        this.inventorySummary.blocked = inventory.filter(i => i.state === 'BLOCKED').length;
-        this.blockedInventoryCount = this.inventorySummary.blocked;
-
-        // Update inventory flow stages (generic pipeline)
-        const rmCount = inventory.filter(i => i.inventoryType === 'RM' && i.state === 'AVAILABLE').length;
-        const wipCount = inventory.filter(i => i.inventoryType === 'WIP' && i.state === 'AVAILABLE').length;
-        const imCount = inventory.filter(i => i.inventoryType === 'IM' && i.state === 'AVAILABLE').length;
-        const fgCount = inventory.filter(i => i.inventoryType === 'FG' && i.state === 'AVAILABLE').length;
-
-        this.inventoryFlowStages[0].count = rmCount;
-        this.inventoryFlowStages[0].status = rmCount > 0 ? 'active' : 'idle';
-        this.inventoryFlowStages[1].count = wipCount;
-        this.inventoryFlowStages[1].status = wipCount > 0 ? 'active' : 'idle';
-        this.inventoryFlowStages[2].count = imCount;
-        this.inventoryFlowStages[2].status = imCount > 0 ? 'active' : 'idle';
-        this.inventoryFlowStages[3].count = fgCount;
-        this.inventoryFlowStages[3].status = fgCount > 0 ? 'active' : 'idle';
-
-        this.dataLoaded.inventory = true;
-        this.checkLoadingComplete();
-      },
-      error: (err) => {
-        console.error('Error loading inventory:', err);
-        this.dataLoaded.inventory = true;
-        this.checkLoadingComplete();
-      }
-    });
-
     // Load all orders for status chart
     this.apiService.getOrders().subscribe({
       next: (orders) => {
@@ -204,12 +146,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
 
-    // Process is design-time only - no quality pending processes
-    // Quality tracking is at Batch level now
-    this.summary.qualityPendingProcesses = 0;
-
     // Load batches pending approval (QUALITY_PENDING status)
-    // Per MES Batch Management Specification: batches require approval before becoming AVAILABLE
     this.apiService.getBatchesByStatus('QUALITY_PENDING').subscribe({
       next: (batches) => {
         this.summary.batchesPendingApproval = batches.length;
@@ -255,21 +192,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private checkLoadingComplete(): void {
-    if (this.dataLoaded.inventory && this.dataLoaded.orders && this.dataLoaded.summary && this.dataLoaded.batches) {
+    if (this.dataLoaded.orders && this.dataLoaded.summary && this.dataLoaded.batches) {
       this.loading = false;
       this.tryBuildCharts();
     }
-  }
-
-  hasAlerts(): boolean {
-    return this.summary.activeHolds > 0 ||
-           this.summary.batchesPendingApproval > 0 ||
-           this.summary.qualityPendingProcesses > 0 ||
-           this.blockedInventoryCount > 0;
-  }
-
-  navigateToQualityPending(): void {
-    this.router.navigate(['/processes/quality-pending']);
   }
 
   navigateToOrder(orderId: number): void {
@@ -280,16 +206,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.router.navigate(['/batches', batchId]);
   }
 
-  navigateToHolds(): void {
-    this.router.navigate(['/holds']);
-  }
-
   navigateToOrders(): void {
     this.router.navigate(['/orders']);
-  }
-
-  navigateToInventory(): void {
-    this.router.navigate(['/inventory']);
   }
 
   navigateToBatches(): void {
@@ -300,50 +218,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.router.navigate(['/batches'], { queryParams: { status: 'QUALITY_PENDING' } });
   }
 
-  navigateToBlockedInventory(): void {
-    this.router.navigate(['/inventory'], { queryParams: { state: 'BLOCKED' } });
-  }
-
-  navigateToInventoryType(type: string): void {
-    this.router.navigate(['/inventory'], { queryParams: { type } });
-  }
-
   navigateToOperationsByStatus(status: string): void {
-    // Route to operations list with status filter
-    this.router.navigate(['/operations'], { queryParams: { status } });
+    // For POC, just navigate to orders (operations are shown in order detail)
+    this.router.navigate(['/orders']);
   }
 
   private tryBuildCharts(): void {
     if (!this.chartsReady || this.loading) return;
     setTimeout(() => {
-      this.buildInventoryChart();
       this.buildOrderStatusChart();
       this.buildBatchStatusChart();
     }, 0);
-  }
-
-  private buildInventoryChart(): void {
-    if (!this.inventoryChartRef) return;
-    this.chartService.initChart(this.inventoryChartRef.nativeElement, 'dashboard-inventory');
-    this.chartService.setOption('dashboard-inventory', {
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', textStyle: { fontSize: CHART_FONT.tooltip } },
-      legend: { bottom: 0, left: 'center', textStyle: { fontSize: CHART_FONT.label } },
-      series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['50%', '45%'],
-        avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
-        label: { show: false },
-        emphasis: { label: { show: true, fontSize: CHART_FONT.emphasis, fontWeight: 'bold' } },
-        data: [
-          { value: this.inventorySummary.available, name: 'Available', itemStyle: { color: '#4caf50' } },
-          { value: this.inventorySummary.consumed, name: 'Consumed', itemStyle: { color: '#9e9e9e' } },
-          { value: this.inventorySummary.onHold, name: 'On Hold', itemStyle: { color: '#ff9800' } },
-          { value: this.inventorySummary.blocked, name: 'Blocked', itemStyle: { color: '#f44336' } }
-        ].filter(d => d.value > 0)
-      }]
-    });
   }
 
   private buildOrderStatusChart(): void {

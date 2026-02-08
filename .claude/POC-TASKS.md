@@ -190,4 +190,153 @@
 
 ---
 
-*Last Updated: 2026-02-08*
+## Detailed Cleanup Analysis (2026-02-09)
+
+### Dashboard Component Fixes (COMPLETED)
+
+**Removed from Dashboard:**
+- Inventory Flow section (RM → WIP → IM → FG pipeline)
+- Active Holds alert card
+- Quality Inspections Pending alert card
+- Blocked Inventory alert card
+- Inventory Items metric card
+- Inventory Distribution chart
+- "Receive Material" quick action
+- "Manage Holds" quick action
+
+**Kept in Dashboard:**
+- Operations Status Summary
+- Key Metrics (Orders, Today's Production, Active Batches)
+- Order Status chart
+- Batch Status chart
+- Orders Ready for Production table
+- Recent Confirmations
+- Recent Batches table
+- Quick Actions: Confirm Production, View Orders, Batch Traceability
+
+### Frontend Models Analysis
+
+**KEEP - Used by POC Features (11 files):**
+1. `pagination.model.ts` - Used by orders, batches
+2. `order.model.ts` - Used by orders feature
+3. `batch.model.ts` - Used by batches feature
+4. `customer.model.ts` - Used by orders (order-form)
+5. `product.model.ts` - Used by orders (order-form)
+6. `production.model.ts` - Used by production feature
+7. `dashboard.model.ts` - Used by dashboard feature
+8. `bom.model.ts` - Used by production (suggested consumption)
+9. `batch-allocation.model.ts` - Used by batches (batch-detail)
+10. `operation.model.ts` - Required by order/production models
+11. `hold.model.ts` - Referenced in dashboard/production workflow
+
+**REMOVE - Not Used by POC (10 files):**
+1. `equipment.model.ts`
+2. `process.model.ts`
+3. `inventory.model.ts`
+4. `operator.model.ts`
+5. `config.model.ts`
+6. `unit-of-measure.model.ts`
+7. `audit.model.ts`
+8. `user.model.ts`
+9. `operation-template.model.ts`
+10. `material.model.ts` (KEEP - used in order-form)
+
+### Backend DTOs Analysis
+
+**KEEP - Used by POC Controllers (24 DTOs):**
+- PagedResponseDTO, PageRequestDTO
+- DashboardDTO
+- OrderDTO (+ CreateOrderRequest, UpdateOrderRequest, LineItemRequest)
+- ProductionConfirmationDTO
+- BatchDTO
+- OperationDTO
+- InventoryDTO (used by ProductionConfirmationDTO)
+- auth/LoginRequest, auth/LoginResponse
+- OperatorDTO, HoldReasonDTO, DelayReasonDTO
+- EquipmentDTO (used in production confirmation)
+- ProcessParametersConfigDTO
+- BatchNumberConfigDTO, QuantityTypeConfigDTO
+- BomDTO (SuggestedConsumption)
+- ProcessDTO, OperationTemplateDTO, RoutingDTO
+
+**REMOVE - Not Used by POC (8 DTOs):**
+1. `UserDTO.java` - User management out of scope
+2. `AuditDTO.java` - Audit endpoints out of scope
+3. `EquipmentUsageDTO.java` - Equipment usage logging not in POC
+4. `InventoryMovementDTO.java` - Inventory movements not exposed
+5. `BatchAllocationDTO.java` - Batch allocation not in POC
+6. `ProductDTO.java` - Phase 2 deferred
+7. `CustomerDTO.java` - Phase 2 deferred
+8. `MaterialDTO.java` - Phase 2 deferred
+
+### Backend Services Analysis
+
+**KEEP - Direct Dependencies (9 services):**
+1. `AuthService` - AuthController
+2. `DashboardService` - DashboardController
+3. `OrderService` - OrderController
+4. `ProductionService` - ProductionController
+5. `BatchService` - BatchController
+6. `BatchNumberService` - BatchController (direct)
+7. `OperationService` - OperationController
+8. `EquipmentCategoryService` - MasterDataController
+9. `InventoryFormService` - MasterDataController
+
+**KEEP - Transitive Dependencies (8 services):**
+1. `AuditService` - Used by Dashboard, Production, Batch, Operation services
+2. `EquipmentUsageService` - Used by ProductionService
+3. `InventoryMovementService` - Used by ProductionService
+4. `ProcessParameterService` - Used by ProductionService
+5. `InventoryStateValidator` - Used by ProductionService
+6. `BatchSizeService` - Used by ProductionService
+7. `FieldChangeAuditService` - Used by AuditService
+8. `ProcessParametersConfigService` - Used by ProcessParameterService
+
+**REMOVE - Not Used by POC (23 services):**
+1. `CustomerService`
+2. `MaterialService`
+3. `ProductService`
+4. `OperatorService`
+5. `EquipmentService`
+6. `HoldService`
+7. `HoldReasonService`
+8. `DelayReasonService`
+9. `BomService`
+10. `BomValidationService`
+11. `RoutingService`
+12. `ProcessService`
+13. `OperationTemplateService`
+14. `OperationInstantiationService`
+15. `ReceiveMaterialService`
+16. `DatabaseResetService`
+17. `UserService`
+18. `BatchAllocationService`
+19. `BatchNumberConfigService`
+20. `QuantityTypeConfigService`
+21. `UnitConversionService`
+22. `InventoryService`
+23. `QualityService`
+
+---
+
+### 2026-02-09 - Dashboard Cleanup & Analysis
+
+**Changes Made:**
+- Fixed dashboard component (removed inventory/holds/quality references)
+- Updated E2E test runner (reduced to 5 POC tests)
+- E2E tests: 37/38 passed (1 minor data issue)
+
+**Files Modified:**
+- `frontend/src/app/features/dashboard/dashboard/dashboard.component.html`
+- `frontend/src/app/features/dashboard/dashboard/dashboard.component.ts`
+- `e2e/run-all-tests.js`
+
+**Pending Cleanup:**
+- [ ] Remove unused frontend models (10 files)
+- [ ] Clean up api.service.ts imports
+- [ ] Remove unused backend DTOs (8 files)
+- [ ] Remove unused backend services (23 files)
+
+---
+
+*Last Updated: 2026-02-09*
