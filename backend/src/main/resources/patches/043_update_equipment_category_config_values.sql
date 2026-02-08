@@ -5,14 +5,19 @@
 -- defined in the equipment.equipment_category constraint
 -- =====================================================
 
--- Delete entries that will become duplicates (keep only CRANE to become GENERAL)
+-- Delete entries that will become duplicates or already have target value
+-- (ensures idempotency if patch is re-run)
 DELETE FROM equipment_category_config WHERE equipment_category IN ('LADLE', 'CUTTING');
+DELETE FROM equipment_category_config WHERE equipment_category = 'FURNACE' AND EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'MELTING');
+DELETE FROM equipment_category_config WHERE equipment_category = 'CASTER' AND EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'CASTING');
+DELETE FROM equipment_category_config WHERE equipment_category = 'ROLLING_MILL' AND EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'HOT_ROLLING');
+DELETE FROM equipment_category_config WHERE equipment_category = 'CRANE' AND EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'GENERAL');
 
--- Update old type values to new category values
-UPDATE equipment_category_config SET equipment_category = 'MELTING' WHERE equipment_category = 'FURNACE';
-UPDATE equipment_category_config SET equipment_category = 'CASTING' WHERE equipment_category = 'CASTER';
-UPDATE equipment_category_config SET equipment_category = 'HOT_ROLLING' WHERE equipment_category = 'ROLLING_MILL';
-UPDATE equipment_category_config SET equipment_category = 'GENERAL' WHERE equipment_category = 'CRANE';
+-- Update old type values to new category values (only if target doesn't exist)
+UPDATE equipment_category_config SET equipment_category = 'MELTING' WHERE equipment_category = 'FURNACE' AND NOT EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'MELTING');
+UPDATE equipment_category_config SET equipment_category = 'CASTING' WHERE equipment_category = 'CASTER' AND NOT EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'CASTING');
+UPDATE equipment_category_config SET equipment_category = 'HOT_ROLLING' WHERE equipment_category = 'ROLLING_MILL' AND NOT EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'HOT_ROLLING');
+UPDATE equipment_category_config SET equipment_category = 'GENERAL' WHERE equipment_category = 'CRANE' AND NOT EXISTS (SELECT 1 FROM equipment_category_config WHERE equipment_category = 'GENERAL');
 -- HEAT_TREATMENT and INSPECTION already match
 
 -- Update display names to be clearer
