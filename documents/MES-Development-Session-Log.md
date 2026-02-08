@@ -3,7 +3,7 @@
 **Purpose:** Permanent record of all development sessions for traceability and knowledge continuity.
 
 **Created:** 2026-02-07
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-02-08
 
 ---
 
@@ -107,24 +107,42 @@ e2e/tests/26-apply-hold-modal.test.js (14 tests)
   - Added "Select Materials" button in Material Consumption card
   - Added modal component instances at end of template
 
-### Test Fixes
+### Test Fixes (Continued - Session 2)
 
-**Fixed: process-list.component.spec.ts**
-- Issue: Outdated references to `allProcesses` property and `applyFilters()` method
-- Solution: Updated to match current pagination-based implementation
-  - Changed `allProcesses` → `processes`
-  - Added mock for `getProcessesPaged()` returning `PagedResponse<Process>`
-  - Removed `applyFilters()` test, added pagination tests (page/size change)
-  - Added proper typed mock data
+**Fixed Files & Issues:**
+
+1. **process-list.component.spec.ts** (from Session 1)
+   - Issue: Outdated references to `allProcesses` property and `applyFilters()` method
+   - Solution: Updated to match current pagination-based implementation
+   - Added `hasNext`/`hasPrevious` to mockPagedResponse
+
+2. **routing-form.component.spec.ts** (53 failures fixed)
+   - Issue: Missing `getActiveOperationTemplates` mock
+   - Solution: Added mock to spy array, set return value with mockOperationTemplates
+   - Issue: Step form validation tests failing (conditional validation)
+   - Solution: Updated tests to call `saveStep()` to trigger validation
+
+3. **production-confirm.component.spec.ts** (41 failures fixed)
+   - Issue: SharedModule includes ApplyHoldModal which needs API mocks
+   - Solution: Added `getHoldReasons` and `applyHold` mocks
+
+4. **apply-hold-modal.component.spec.ts** (timer issue)
+   - Issue: fakeAsync test didn't flush the 1.5s auto-close timer
+   - Solution: Added `tick(1500)` after successful submission
+
+5. **material-selection-modal.component.spec.ts** (initialization issue)
+   - Issue: ngOnChanges wasn't triggered when setting inputs directly
+   - Solution: Manually called ngOnChanges with simulated change object
 
 ### Test Status Summary
 
 | Suite | Tests | Status |
 |-------|-------|--------|
+| **Frontend Total** | **1216** | **✅ ALL PASS** |
 | MaterialSelectionModal (unit) | 19 | ✅ PASS |
 | ApplyHoldModal (unit) | 16 | ✅ PASS |
-| MaterialSelectionModal (E2E) | 11 | ✅ PASS |
-| ApplyHoldModal (E2E) | 14 | ✅ PASS |
+| RoutingForm (unit) | 53 | ✅ PASS |
+| ProductionConfirm (unit) | 41 | ✅ PASS |
 | ProcessList (unit) | 21 | ✅ PASS |
 
 ### Documentation Updates

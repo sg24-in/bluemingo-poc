@@ -1,11 +1,71 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-08
-**Session Status:** Complete - P14/P15 Modal Components Implementation
+**Session Status:** Complete - E2E Test Coverage Expanded (8 New Test Files)
 
 ---
 
-## Latest Session Changes (2026-02-08 - P14/P15 Implementation)
+## Latest Session Changes (2026-02-08 - E2E Coverage Expansion)
+
+### E2E Test Suite - 8 New Test Files Added ✅
+
+Based on comprehensive gap analysis of all Angular routes, components, buttons, actions, and validations, created 8 new E2E test files covering ~137 new test cases:
+
+**New Test Files:**
+| File | Tests | Coverage |
+|------|-------|----------|
+| `32-order-crud.test.js` | 12 | Order CRUD, line items, form validation, status filters |
+| `33-production-complete.test.js` | 14 | Full production flow, Material Selection Modal, Apply Hold Modal |
+| `34-receive-material.test.js` | 12 | Goods receipt, batch/inventory creation |
+| `35-batch-operations.test.js` | 18 | Split, merge, adjust quantity, genealogy |
+| `36-routing-crud.test.js` | 22 | Routing CRUD, step management, activation |
+| `37-operation-templates.test.js` | 19 | Template CRUD, form fields, status management |
+| `38-dashboard-features.test.js` | 20 | Statistics cards, charts, navigation, responsive |
+| `39-form-validations.test.js` | 20 | Cross-module form validation rules |
+
+**Files Modified:**
+- `e2e/run-all-tests.js` - Added imports and calls for all 8 new test modules
+- `e2e/config/constants.js` - Added ROUTES, SELECTORS, TEST_DATA for new tests
+
+**Coverage Improvement:**
+- Before: ~66% coverage across 446 features
+- After: Critical gaps filled in Orders CRUD, Production flow, Routing (was 0%), Operation Templates (was 0%)
+
+---
+
+## Previous Session Changes (2026-02-08 - Test Fixes)
+
+### Frontend Test Suite - ALL 1216 TESTS PASSING ✅
+
+**Fixed Files:**
+1. `frontend/src/app/features/processes/process-list/process-list.component.spec.ts`
+   - Updated to use server-side pagination pattern
+   - Added `hasNext`/`hasPrevious` to `mockPagedResponse`
+   - Fixed references: `allProcesses` → `processes`
+
+2. `frontend/src/app/features/routing/routing-form/routing-form.component.spec.ts`
+   - Added `getActiveOperationTemplates` mock (fixed 53 failures)
+   - Fixed step form validation tests to call `saveStep()` for conditional validation
+   - Fixed "should detect step form errors" test
+
+3. `frontend/src/app/features/production/production-confirm/production-confirm.component.spec.ts`
+   - Added `getHoldReasons` and `applyHold` mocks (fixed 41 failures)
+
+4. `frontend/src/app/shared/components/apply-hold-modal/apply-hold-modal.component.spec.ts`
+   - Added `tick(1500)` to flush auto-close timer in fakeAsync test
+
+5. `frontend/src/app/shared/components/material-selection-modal/material-selection-modal.component.spec.ts`
+   - Manually triggered `ngOnChanges` for proper initialization
+
+**Key Fixes:**
+- PagedResponse interface needed `hasNext`/`hasPrevious` boolean properties
+- SharedModule modal components require their API dependencies mocked in consuming tests
+- Conditional form validation (triggered in methods) requires calling the method in tests
+- fakeAsync tests with setTimeout need proper `tick()` to flush timers
+
+---
+
+## Previous Session Changes (2026-02-08 - P14/P15 Implementation)
 
 ### P14: MaterialSelectionModalComponent - COMPLETE ✅
 

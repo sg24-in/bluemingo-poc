@@ -129,6 +129,9 @@ describe('ApplyHoldModalComponent', () => {
 
       expect(component.success).toBeTrue();
       expect(component.submitting).toBeFalse();
+
+      // Flush the auto-close timer (1.5s delay in component)
+      tick(1500);
     }));
 
     it('should emit holdApplied on successful submission', () => {

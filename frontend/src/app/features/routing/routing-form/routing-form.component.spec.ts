@@ -494,19 +494,34 @@ describe('RoutingFormComponent', () => {
     });
 
     describe('Step Form Validation', () => {
-      it('should require operation name', () => {
+      it('should require operation name when no template selected', () => {
+        // Operation name is conditionally required (only when no template)
+        // The validation is triggered in saveStep()
         component.stepForm.patchValue({
+          operationTemplateId: null,
+          operationName: '',
           operationType: 'MELTING',
           sequenceNumber: 1
         });
+
+        component.saveStep();
+
+        // After saveStep validation, the error should be set
         expect(component.stepForm.get('operationName')?.errors?.['required']).toBeTrue();
       });
 
-      it('should require operation type', () => {
+      it('should require operation type when no template selected', () => {
+        // Operation type is conditionally required (only when no template)
         component.stepForm.patchValue({
+          operationTemplateId: null,
           operationName: 'Test',
+          operationType: '',
           sequenceNumber: 1
         });
+
+        component.saveStep();
+
+        // After saveStep validation, the error should be set
         expect(component.stepForm.get('operationType')?.errors?.['required']).toBeTrue();
       });
 
@@ -550,7 +565,16 @@ describe('RoutingFormComponent', () => {
       });
 
       it('should detect step form errors', () => {
-        component.stepForm.get('operationName')?.markAsTouched();
+        // Set up invalid state (no template, empty operation name)
+        component.stepForm.patchValue({
+          operationTemplateId: null,
+          operationName: '',
+          operationType: 'MELTING',
+          sequenceNumber: 1
+        });
+        // Trigger validation by calling saveStep
+        component.saveStep();
+        // Now the field should have errors
         expect(component.hasStepError('operationName')).toBeTrue();
       });
 
