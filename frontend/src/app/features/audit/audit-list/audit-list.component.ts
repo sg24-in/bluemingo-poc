@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
-import { AuditEntry } from '../../../shared/models';
+import { AuditEntry, PagedResponse } from '../../../shared/models';
 
 @Component({
   selector: 'app-audit-list',
@@ -20,6 +20,13 @@ export class AuditListComponent implements OnInit {
   filterUser = '';
   todaysCount = 0;
 
+  // Pagination
+  currentPage = 0;
+  pageSize = 20;
+  totalElements = 0;
+  totalPages = 0;
+  pageSizeOptions = [10, 20, 50, 100];
+
   // Detail panel
   selectedEntry: AuditEntry | null = null;
 
@@ -27,7 +34,7 @@ export class AuditListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadFilters();
-    this.loadRecent();
+    this.loadPaged();
     this.loadSummary();
   }
 
@@ -49,13 +56,31 @@ export class AuditListComponent implements OnInit {
     });
   }
 
-  loadRecent(): void {
+  loadPaged(): void {
     this.loading = true;
     this.error = '';
 
-    this.apiService.getRecentAuditActivity(200).subscribe({
-      next: (entries) => {
-        this.entries = entries;
+    const request: any = {
+      page: this.currentPage,
+      size: this.pageSize
+    };
+
+    // Add filters if set
+    if (this.filterEntityType !== 'all') {
+      request.entityType = this.filterEntityType;
+    }
+    if (this.filterAction !== 'all') {
+      request.action = this.filterAction;
+    }
+    if (this.filterUser) {
+      request.search = this.filterUser;
+    }
+
+    this.apiService.getAuditPaged(request).subscribe({
+      next: (response: PagedResponse<AuditEntry>) => {
+        this.entries = response.content;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
         this.loading = false;
       },
       error: (err) => {
@@ -65,23 +90,19 @@ export class AuditListComponent implements OnInit {
     });
   }
 
-  get filteredEntries(): AuditEntry[] {
-    let result = this.entries;
+  onFilterChange(): void {
+    this.currentPage = 0;
+    this.loadPaged();
+  }
 
-    if (this.filterEntityType !== 'all') {
-      result = result.filter(e => e.entityType === this.filterEntityType);
-    }
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadPaged();
+  }
 
-    if (this.filterAction !== 'all') {
-      result = result.filter(e => e.action === this.filterAction);
-    }
-
-    if (this.filterUser) {
-      const term = this.filterUser.toLowerCase();
-      result = result.filter(e => e.changedBy?.toLowerCase().includes(term));
-    }
-
-    return result;
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadPaged();
   }
 
   getActionClass(action: string): string {
@@ -130,5 +151,26 @@ export class AuditListComponent implements OnInit {
     this.filterEntityType = 'all';
     this.filterAction = 'all';
     this.filterUser = '';
+    this.currentPage = 0;
+    this.loadPaged();
+  }
+
+  // Pagination helper getters
+  get startIndex(): number {
+    return this.currentPage * this.pageSize + 1;
+  }
+
+  get endIndex(): number {
+    return Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
+  }
+
+  get pages(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages, start + 5);
+    for (let i = start; i < end; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 }

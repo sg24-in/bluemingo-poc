@@ -406,3 +406,149 @@
   color: #721c24;
   font-style: italic;
 }
+
+/* ========== GAP-020: Traceability Information Styles ========== */
+
+.traceability-content {
+  padding: 16px;
+}
+
+.traceability-section {
+  margin-bottom: 20px;
+}
+
+.traceability-section:last-child {
+  margin-bottom: 0;
+}
+
+.traceability-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.traceability-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* Created Via Badge */
+.created-via-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.created-via-badge i {
+  font-size: 14px;
+}
+
+.created-via-production {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.created-via-split {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.created-via-merge {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.created-via-manual {
+  background: #e8eaf6;
+  color: #3949ab;
+}
+
+.created-via-system {
+  background: #e0e0e0;
+  color: #424242;
+}
+
+.created-via-receipt {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* Link to operation */
+.link-operation {
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.link-operation:hover {
+  text-decoration: underline;
+}
+
+.link-operation i {
+  font-size: 11px;
+}
+
+/* Supplier Section */
+.supplier-section {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.supplier-section h4 {
+  color: #666;
+}
+
+.supplier-batch {
+  font-family: 'Courier New', Courier, monospace;
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.supplier-note {
+  font-size: 12px;
+  color: #888;
+  margin-top: 12px;
+  margin-bottom: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.supplier-note i {
+  margin-top: 2px;
+  color: #1976d2;
+}
+
+/* Card header with icon */
+.card-header i {
+  margin-right: 8px;
+  color: #1976d2;
+}
+
+@media (max-width: 768px) {
+  .traceability-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .traceability-grid {
+    grid-template-columns: 1fr;
+  }
+}

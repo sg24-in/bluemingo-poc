@@ -80,6 +80,128 @@
         </div>
       </div>
 
+      <!-- TASK-M4: Extended Properties Section -->
+      <div class="form-section collapsible">
+        <h2 class="section-header" (click)="toggleExtendedFields()">
+          <span class="toggle-icon">{{ showExtendedFields ? '−' : '+' }}</span>
+          Extended Properties
+          <span class="optional-badge">Optional</span>
+        </h2>
+
+        <div class="collapsible-content" *ngIf="showExtendedFields">
+          <!-- Classification -->
+          <h3 class="subsection-header">Classification</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productCategory">Product Category</label>
+              <input
+                type="text"
+                id="productCategory"
+                formControlName="productCategory"
+                placeholder="e.g., Steel Products"
+              />
+            </div>
+            <div class="form-group">
+              <label for="productGroup">Product Group</label>
+              <input
+                type="text"
+                id="productGroup"
+                formControlName="productGroup"
+                placeholder="e.g., Hot Rolled"
+              />
+            </div>
+          </div>
+
+          <!-- Physical Specifications -->
+          <h3 class="subsection-header">Physical Specifications</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="weightPerUnit">Weight per Unit</label>
+              <input
+                type="number"
+                id="weightPerUnit"
+                formControlName="weightPerUnit"
+                step="0.001"
+                min="0"
+                placeholder="e.g., 1.5"
+              />
+            </div>
+            <div class="form-group">
+              <label for="weightUnit">Weight Unit</label>
+              <select id="weightUnit" formControlName="weightUnit">
+                <option *ngFor="let unit of weightUnits" [value]="unit.value">
+                  {{ unit.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Pricing -->
+          <h3 class="subsection-header">Pricing</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="standardPrice">Standard Price</label>
+              <input
+                type="number"
+                id="standardPrice"
+                formControlName="standardPrice"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 500.00"
+              />
+            </div>
+            <div class="form-group">
+              <label for="priceCurrency">Currency</label>
+              <select id="priceCurrency" formControlName="priceCurrency">
+                <option *ngFor="let curr of currencies" [value]="curr.value">
+                  {{ curr.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Order Management -->
+          <h3 class="subsection-header">Order Management</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="minOrderQty">Minimum Order Quantity</label>
+              <input
+                type="number"
+                id="minOrderQty"
+                formControlName="minOrderQty"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 10"
+              />
+            </div>
+            <div class="form-group">
+              <label for="leadTimeDays">Lead Time (days)</label>
+              <input
+                type="number"
+                id="leadTimeDays"
+                formControlName="leadTimeDays"
+                min="0"
+                max="365"
+                placeholder="e.g., 14"
+              />
+            </div>
+          </div>
+
+          <!-- Material Linkage -->
+          <h3 class="subsection-header">Material Linkage</h3>
+          <div class="form-group">
+            <label for="materialId">Linked Material</label>
+            <select id="materialId" formControlName="materialId">
+              <option [ngValue]="null">-- No linked material --</option>
+              <option *ngFor="let mat of materials" [ngValue]="mat.materialId">
+                {{ mat.materialCode }} - {{ mat.materialName }}
+              </option>
+            </select>
+            <span class="help-text">Link this product to a finished goods material for inventory tracking</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">
           Cancel

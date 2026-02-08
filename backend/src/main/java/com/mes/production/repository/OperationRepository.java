@@ -1,6 +1,8 @@
 package com.mes.production.repository;
 
 import com.mes.production.entity.Operation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -87,4 +89,30 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
      * Find operations by operation template ID
      */
     List<Operation> findByOperationTemplateId(Long operationTemplateId);
+
+    /**
+     * TASK-P1: Paginated operations with filters
+     * Supports filtering by status, operation type, and search term
+     */
+    @Query("SELECT op FROM Operation op " +
+           "LEFT JOIN op.process p " +
+           "LEFT JOIN op.orderLineItem oli " +
+           "LEFT JOIN oli.order o " +
+           "WHERE (:status IS NULL OR op.status = :status) " +
+           "AND (:operationType IS NULL OR op.operationType = :operationType) " +
+           "AND (:search IS NULL OR " +
+           "     LOWER(op.operationName) LIKE :search OR " +
+           "     LOWER(op.operationCode) LIKE :search OR " +
+           "     LOWER(p.processName) LIKE :search OR " +
+           "     LOWER(o.orderNumber) LIKE :search)")
+    Page<Operation> findByFilters(@Param("status") String status,
+                                   @Param("operationType") String operationType,
+                                   @Param("search") String search,
+                                   Pageable pageable);
+
+    /**
+     * TASK-P1: Count operations by status for dashboard
+     */
+    @Query("SELECT op.status, COUNT(op) FROM Operation op GROUP BY op.status")
+    List<Object[]> countByStatusGrouped();
 }

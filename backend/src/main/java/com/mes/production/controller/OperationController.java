@@ -1,6 +1,8 @@
 package com.mes.production.controller;
 
 import com.mes.production.dto.OperationDTO;
+import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.service.OperationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,37 @@ public class OperationController {
         log.info("GET /api/operations");
         List<OperationDTO> operations = operationService.getAllOperations();
         return ResponseEntity.ok(operations);
+    }
+
+    /**
+     * TASK-P1: Get paginated operations with filters
+     * Supports: page, size, sortBy, sortDirection, status, type (operationType), search
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<OperationDTO>> getOperationsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String search) {
+
+        log.info("GET /api/operations/paged - page={}, size={}, status={}, type={}, search={}",
+                page, size, status, type, search);
+
+        PageRequestDTO pageRequest = PageRequestDTO.builder()
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .status(status)
+                .type(type)
+                .search(search)
+                .build();
+
+        PagedResponseDTO<OperationDTO> response = operationService.getOperationsPaged(pageRequest);
+        return ResponseEntity.ok(response);
     }
 
     /**

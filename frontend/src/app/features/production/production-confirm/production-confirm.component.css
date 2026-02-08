@@ -656,6 +656,247 @@ input[type="datetime-local"] {
   }
 }
 
+/* ========== GAP-019: Multi-Batch & Partial Confirmation Styles ========== */
+
+/* Partial Confirmation Card */
+.success-card.partial-card {
+  border: 2px solid #ff9800;
+}
+
+.success-card.partial-card h2 {
+  color: #e65100;
+}
+
+.success-icon.partial-icon {
+  background: #ff9800;
+}
+
+/* Partial Info Section */
+.partial-info {
+  margin-bottom: 20px;
+}
+
+.partial-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff3e0;
+  color: #e65100;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.partial-alert i {
+  font-size: 18px;
+}
+
+/* Progress Bar for Partial Confirmation */
+.progress-bar-container {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.progress-percent {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.progress-bar {
+  height: 12px;
+  background: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+.remaining-qty {
+  font-size: 14px;
+  color: #666;
+}
+
+.remaining-qty strong {
+  color: #e65100;
+}
+
+/* Output Batches Section */
+.output-batches-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+.batches-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.batches-header i {
+  font-size: 16px;
+}
+
+.batches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.batch-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  transition: box-shadow 0.2s;
+}
+
+.batch-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.batch-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.batch-index {
+  background: #1976d2;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.batch-number {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+  color: #333;
+  font-size: 13px;
+}
+
+.batch-details {
+  margin-bottom: 8px;
+}
+
+.batch-detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.detail-label {
+  color: #888;
+}
+
+.detail-value {
+  font-weight: 500;
+  color: #333;
+}
+
+.batch-link {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #1976d2;
+}
+
+.batch-link:hover {
+  text-decoration: underline;
+}
+
+/* Split Indicator */
+.split-indicator {
+  font-size: 12px;
+  color: #ff9800;
+  font-weight: normal;
+}
+
+/* Partial Option Section */
+.partial-option-section {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.partial-checkbox {
+  display: flex;
+  align-items: flex-start;
+}
+
+.partial-checkbox .checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.partial-checkbox .checkbox-label:hover {
+  background: transparent;
+}
+
+.partial-checkbox input[type="checkbox"] {
+  margin-top: 4px;
+  width: 20px;
+  height: 20px;
+}
+
+.partial-checkbox .checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox-hint {
+  font-size: 13px;
+  color: #666;
+  font-weight: normal;
+}
+
+.partial-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #e3f2fd;
+  color: #1565c0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.partial-info-box i {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
 @media (max-width: 768px) {
   /* P16: Single column layout on mobile */
   .form-grid {
@@ -728,5 +969,25 @@ input[type="datetime-local"] {
   .card-header.collapsible i,
   .collapse-icon {
     font-size: 16px;
+  }
+
+  /* GAP-019: Mobile styles for multi-batch */
+  .batches-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .success-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .success-actions .btn {
+    width: 100%;
   }
 }

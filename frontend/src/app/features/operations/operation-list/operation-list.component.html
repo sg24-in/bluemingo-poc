@@ -5,12 +5,21 @@
 
   <div class="card">
     <div class="filters">
-      <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
+      <div class="filter-group" [class.filter-active]="filterStatus">
         <label for="status-filter">Status:</label>
-        <select id="status-filter" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)"
-                [class.filter-active]="filterStatus && filterStatus !== 'all'">
+        <select id="status-filter" [value]="filterStatus || 'all'" (change)="onFilterStatusChange($any($event.target).value)"
+                [class.filter-active]="filterStatus">
           <option value="all">All Statuses</option>
           <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group" [class.filter-active]="filterType">
+        <label for="type-filter">Type:</label>
+        <select id="type-filter" [value]="filterType || 'all'" (change)="onFilterTypeChange($any($event.target).value)"
+                [class.filter-active]="filterType">
+          <option value="all">All Types</option>
+          <option *ngFor="let t of operationTypes" [value]="t">{{ t }}</option>
         </select>
       </div>
 
@@ -19,8 +28,8 @@
         <input
           type="text"
           id="search"
-          [(ngModel)]="searchTerm"
-          (input)="onSearchChange(searchTerm)"
+          [value]="searchTerm"
+          (input)="onSearchChange($any($event.target).value)"
           placeholder="Search by name, code, order..."
         />
       </div>
@@ -28,29 +37,6 @@
   </div>
 
   <div class="error-banner" *ngIf="actionError">{{ actionError }}</div>
-
-  <div class="summary-cards" *ngIf="!loading">
-    <div class="summary-card">
-      <span class="count">{{ allOperations.length }}</span>
-      <span class="label">Total</span>
-    </div>
-    <div class="summary-card ready">
-      <span class="count">{{ countByStatus('READY') }}</span>
-      <span class="label">Ready</span>
-    </div>
-    <div class="summary-card in-progress">
-      <span class="count">{{ countByStatus('IN_PROGRESS') }}</span>
-      <span class="label">In Progress</span>
-    </div>
-    <div class="summary-card confirmed">
-      <span class="count">{{ countByStatus('CONFIRMED') }}</span>
-      <span class="label">Confirmed</span>
-    </div>
-    <div class="summary-card blocked">
-      <span class="count">{{ countByStatus('BLOCKED') }}</span>
-      <span class="label">Blocked</span>
-    </div>
-  </div>
 
   <div class="table-container" *ngIf="!loading; else loadingTpl">
     <table class="data-table" *ngIf="operations.length > 0; else emptyTpl">
@@ -109,9 +95,18 @@
       </div>
     </ng-template>
 
-    <div class="result-count" *ngIf="operations.length > 0">
-      Showing {{ operations.length }} of {{ allOperations.length }} operations
-    </div>
+    <!-- TASK-P1: Pagination -->
+    <app-pagination
+      *ngIf="operations.length > 0"
+      [page]="page"
+      [size]="size"
+      [totalElements]="totalElements"
+      [totalPages]="totalPages"
+      [hasNext]="hasNext"
+      [hasPrevious]="hasPrevious"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-pagination>
   </div>
 
   <ng-template #loadingTpl>

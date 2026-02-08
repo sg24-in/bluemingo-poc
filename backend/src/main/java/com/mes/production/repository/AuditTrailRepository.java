@@ -1,6 +1,7 @@
 package com.mes.production.repository;
 
 import com.mes.production.entity.AuditTrail;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -62,4 +63,24 @@ public interface AuditTrailRepository extends JpaRepository<AuditTrail, Long> {
      */
     @Query("SELECT a FROM AuditTrail a WHERE a.entityType = 'PRODUCTION_CONFIRMATION' ORDER BY a.timestamp DESC")
     List<AuditTrail> findRecentProductionConfirmations(Pageable pageable);
+
+    /**
+     * Find all audit entries with pagination
+     */
+    Page<AuditTrail> findAllByOrderByTimestampDesc(Pageable pageable);
+
+    /**
+     * Find audit entries by filters with pagination
+     */
+    @Query("SELECT a FROM AuditTrail a WHERE " +
+           "(:entityType IS NULL OR a.entityType = :entityType) AND " +
+           "(:action IS NULL OR a.action = :action) AND " +
+           "(:search IS NULL OR LOWER(a.changedBy) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(a.newValue) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "ORDER BY a.timestamp DESC")
+    Page<AuditTrail> findByFilters(
+            @Param("entityType") String entityType,
+            @Param("action") String action,
+            @Param("search") String search,
+            Pageable pageable);
 }

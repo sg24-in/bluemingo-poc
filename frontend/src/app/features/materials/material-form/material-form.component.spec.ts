@@ -24,6 +24,21 @@ describe('MaterialFormComponent', () => {
     status: 'ACTIVE'
   };
 
+  // TASK-M4: Mock material with extended fields
+  const mockMaterialWithExtended: Material = {
+    ...mockMaterial,
+    materialGroup: 'Ferrous',
+    sku: 'SKU-001',
+    standardCost: 100.50,
+    costCurrency: 'USD',
+    minStockLevel: 10,
+    maxStockLevel: 1000,
+    reorderPoint: 50,
+    leadTimeDays: 14,
+    shelfLifeDays: 365,
+    storageConditions: 'Cool, dry place'
+  };
+
   const configureTestBed = async (routeParams: any = {}) => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getMaterialById',
@@ -161,6 +176,93 @@ describe('MaterialFormComponent', () => {
       expect(types).toContain('IM');
       expect(types).toContain('FG');
       expect(types).toContain('WIP');
+    });
+  });
+
+  // TASK-M4: Extended Fields Tests
+  describe('Extended Fields (TASK-M4)', () => {
+    beforeEach(async () => {
+      await configureTestBed();
+      createComponent();
+    });
+
+    it('should have extended fields hidden by default', () => {
+      expect(component.showExtendedFields).toBeFalse();
+    });
+
+    it('should toggle extended fields visibility', () => {
+      component.toggleExtendedFields();
+      expect(component.showExtendedFields).toBeTrue();
+      component.toggleExtendedFields();
+      expect(component.showExtendedFields).toBeFalse();
+    });
+
+    it('should have all extended form controls', () => {
+      expect(component.form.get('materialGroup')).toBeTruthy();
+      expect(component.form.get('sku')).toBeTruthy();
+      expect(component.form.get('standardCost')).toBeTruthy();
+      expect(component.form.get('costCurrency')).toBeTruthy();
+      expect(component.form.get('minStockLevel')).toBeTruthy();
+      expect(component.form.get('maxStockLevel')).toBeTruthy();
+      expect(component.form.get('reorderPoint')).toBeTruthy();
+      expect(component.form.get('leadTimeDays')).toBeTruthy();
+      expect(component.form.get('shelfLifeDays')).toBeTruthy();
+      expect(component.form.get('storageConditions')).toBeTruthy();
+    });
+
+    it('should have currency options', () => {
+      expect(component.currencies.length).toBeGreaterThan(0);
+      const currencyValues = component.currencies.map(c => c.value);
+      expect(currencyValues).toContain('USD');
+      expect(currencyValues).toContain('EUR');
+    });
+
+    it('should validate cost as non-negative', () => {
+      component.form.patchValue({ standardCost: -10 });
+      expect(component.form.get('standardCost')?.invalid).toBeTrue();
+    });
+
+    it('should validate stock levels as non-negative', () => {
+      component.form.patchValue({ minStockLevel: -5 });
+      expect(component.form.get('minStockLevel')?.invalid).toBeTrue();
+    });
+
+    it('should validate lead time max value', () => {
+      component.form.patchValue({ leadTimeDays: 500 });
+      expect(component.form.get('leadTimeDays')?.invalid).toBeTrue();
+    });
+  });
+
+  describe('Extended Fields in Edit Mode (TASK-M4)', () => {
+    beforeEach(async () => {
+      await configureTestBed({ id: '1' });
+      apiServiceSpy.getMaterialById.and.returnValue(of(mockMaterialWithExtended));
+      createComponent();
+    });
+
+    it('should load extended fields from material', () => {
+      expect(component.form.get('materialGroup')?.value).toBe('Ferrous');
+      expect(component.form.get('sku')?.value).toBe('SKU-001');
+      expect(component.form.get('standardCost')?.value).toBe(100.50);
+      expect(component.form.get('minStockLevel')?.value).toBe(10);
+      expect(component.form.get('maxStockLevel')?.value).toBe(1000);
+      expect(component.form.get('leadTimeDays')?.value).toBe(14);
+    });
+
+    it('should auto-expand extended fields when data exists', () => {
+      expect(component.showExtendedFields).toBeTrue();
+    });
+
+    it('should include extended fields in update request', () => {
+      apiServiceSpy.updateMaterial.and.returnValue(of(mockMaterialWithExtended));
+
+      component.onSubmit();
+
+      expect(apiServiceSpy.updateMaterial).toHaveBeenCalled();
+      const callArgs = apiServiceSpy.updateMaterial.calls.mostRecent().args[1];
+      expect(callArgs.materialGroup).toBe('Ferrous');
+      expect(callArgs.standardCost).toBe(100.50);
+      expect(callArgs.minStockLevel).toBe(10);
     });
   });
 });

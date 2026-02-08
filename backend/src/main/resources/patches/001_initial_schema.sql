@@ -308,7 +308,7 @@ CREATE TABLE IF NOT EXISTS audit_trail (
     field_name VARCHAR(100),
     old_value TEXT,
     new_value TEXT,
-    action VARCHAR(20) NOT NULL,
+    action VARCHAR(30) NOT NULL,
     changed_by VARCHAR(100) NOT NULL,
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

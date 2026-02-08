@@ -73,18 +73,17 @@ export class ProductionLandingComponent implements OnInit {
     const operations: OperationSummary[] = [];
 
     for (const lineItem of order.lineItems || []) {
-      for (const process of lineItem.processes || []) {
-        for (const op of process.operations || []) {
-          if (op.status === 'READY') {
-            operations.push({
-              operationId: op.operationId,
-              operationName: `${process.processName} - ${op.operationName}`,
-              operationCode: op.operationCode,
-              operationType: op.operationType,
-              sequenceNumber: op.sequenceNumber,
-              status: op.status
-            });
-          }
+      // Operations link directly to OrderLineItem (no Process intermediary)
+      for (const op of lineItem.operations || []) {
+        if (op.status === 'READY') {
+          operations.push({
+            operationId: op.operationId,
+            operationName: op.processName ? `${op.processName} - ${op.operationName}` : op.operationName,
+            operationCode: op.operationCode,
+            operationType: op.operationType,
+            sequenceNumber: op.sequenceNumber,
+            status: op.status
+          });
         }
       }
     }

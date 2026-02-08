@@ -1,10 +1,14 @@
 package com.mes.production.controller;
 
 import com.mes.production.dto.AuditDTO.*;
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.entity.AuditTrail;
 import com.mes.production.service.AuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -53,6 +57,38 @@ public class AuditController {
 
         List<AuditTrail> entries = auditService.getRecentActivity(Math.min(limit, 500));
         return ResponseEntity.ok(AuditEntryResponse.fromEntities(entries));
+    }
+
+    /**
+     * Get paginated audit entries with optional filters
+     * GET /api/audit/paged?page=0&size=20&entityType=ORDER&action=CREATE&search=admin
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<AuditEntryResponse>> getPagedAudit(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String search) {
+        log.debug("Getting paged audit entries (page: {}, size: {}, entityType: {}, action: {}, search: {})",
+                page, size, entityType, action, search);
+
+        Page<AuditTrail> auditPage = auditService.getPagedAudit(
+                page, size, entityType, action, search);
+
+        PagedResponseDTO<AuditEntryResponse> response = PagedResponseDTO.<AuditEntryResponse>builder()
+                .content(AuditEntryResponse.fromEntities(auditPage.getContent()))
+                .page(auditPage.getNumber())
+                .size(auditPage.getSize())
+                .totalElements(auditPage.getTotalElements())
+                .totalPages(auditPage.getTotalPages())
+                .first(auditPage.isFirst())
+                .last(auditPage.isLast())
+                .hasNext(auditPage.hasNext())
+                .hasPrevious(auditPage.hasPrevious())
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     /**

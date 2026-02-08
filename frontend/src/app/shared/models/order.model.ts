@@ -31,7 +31,10 @@ export interface OrderLineItem {
   unit: string;
   deliveryDate?: string; // LocalDate
   status: OrderLineStatusType;
+  // Operations link directly to OrderLineItem (not via Process)
+  operations?: OperationBrief[];
+  currentOperation?: OperationBrief;
+  // Legacy - kept for backwards compatibility
   processes?: ProcessSummary[];
   currentProcess?: ProcessSummary;
-  currentOperation?: OperationBrief;
 }

@@ -22,9 +22,32 @@
 
   <!-- Success State -->
   <div *ngIf="success && confirmationResult" class="success-container">
-    <div class="card success-card">
-      <div class="success-icon"><i class="fas fa-circle-check"></i></div>
-      <h2>Production Confirmed Successfully!</h2>
+    <div class="card success-card" [class.partial-card]="isPartialConfirmation()">
+      <!-- Icon changes based on partial vs complete -->
+      <div class="success-icon" [class.partial-icon]="isPartialConfirmation()">
+        <i class="fas" [ngClass]="isPartialConfirmation() ? 'fa-clock' : 'fa-circle-check'"></i>
+      </div>
+      <h2>{{ isPartialConfirmation() ? 'Partial Confirmation Saved' : 'Production Confirmed Successfully!' }}</h2>
+
+      <!-- Partial confirmation warning -->
+      <div class="partial-info" *ngIf="isPartialConfirmation()">
+        <div class="partial-alert">
+          <i class="fas fa-info-circle"></i>
+          <span>This is a partial confirmation. Additional confirmations are needed to complete this operation.</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-label">
+            <span>Progress: {{ confirmationResult.producedQty }} / {{ getTargetQty() }}</span>
+            <span class="progress-percent">{{ getConfirmationProgress() }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="getConfirmationProgress()"></div>
+          </div>
+          <div class="remaining-qty">
+            <strong>Remaining:</strong> {{ getRemainingQty() }} units
+          </div>
+        </div>
+      </div>
 
       <div class="result-summary">
         <div class="result-row">
@@ -33,25 +56,83 @@
         </div>
         <div class="result-row">
           <span class="result-label">Quantity Produced:</span>
-          <span class="result-value">{{ confirmationResult.quantityProduced }}</span>
+          <span class="result-value">{{ confirmationResult.producedQty || confirmationResult.quantityProduced }}</span>
         </div>
-        <div class="result-row" *ngIf="confirmationResult.newBatchNumber">
+
+        <!-- Multi-batch display -->
+        <div class="result-row" *ngIf="getOutputBatches().length > 0">
+          <span class="result-label">Output Batches:</span>
+          <span class="result-value">{{ getOutputBatches().length }} batch(es)</span>
+        </div>
+
+        <!-- Batch details section for multi-batch -->
+        <div class="output-batches-section" *ngIf="getOutputBatches().length > 0">
+          <h4 class="batches-header">
+            <i class="fas fa-cubes"></i>
+            Output Batches ({{ getOutputBatches().length }})
+          </h4>
+          <div class="batches-grid">
+            <div class="batch-card" *ngFor="let batch of getOutputBatches(); let i = index">
+              <div class="batch-header">
+                <span class="batch-index">#{{ i + 1 }}</span>
+                <span class="batch-number">{{ batch.batchNumber }}</span>
+              </div>
+              <div class="batch-details">
+                <div class="batch-detail">
+                  <span class="detail-label">Material:</span>
+                  <span class="detail-value">{{ batch.materialName || batch.materialId }}</span>
+                </div>
+                <div class="batch-detail">
+                  <span class="detail-label">Quantity:</span>
+                  <span class="detail-value">{{ batch.quantity }} {{ batch.unit }}</span>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-link batch-link" (click)="goToBatch(batch.batchId)">
+                <i class="fas fa-external-link-alt"></i> View Batch
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legacy single batch display (fallback) -->
+        <div class="result-row" *ngIf="getOutputBatches().length === 0 && confirmationResult.newBatchNumber">
           <span class="result-label">New Batch Created:</span>
           <span class="result-value">{{ confirmationResult.newBatchNumber }}</span>
         </div>
+
         <div class="result-row">
           <span class="result-label">Materials Consumed:</span>
           <span class="result-value">{{ confirmationResult.materialsConsumed?.length || 0 }} item(s)</span>
         </div>
         <div class="result-row">
           <span class="result-label">Operation Status:</span>
-          <app-status-badge [status]="confirmationResult.operationStatus"></app-status-badge>
+          <app-status-badge [status]="confirmationResult.status || confirmationResult.operationStatus"></app-status-badge>
+        </div>
+
+        <!-- Batch count info -->
+        <div class="result-row" *ngIf="confirmationResult.batchCount && confirmationResult.batchCount > 1">
+          <span class="result-label">Batch Split:</span>
+          <span class="result-value">
+            {{ confirmationResult.batchCount }} batches
+            <span class="split-indicator" *ngIf="confirmationResult.hasPartialBatch">
+              (includes partial batch)
+            </span>
+          </span>
         </div>
       </div>
 
       <div class="success-actions">
         <button class="btn btn-primary" (click)="goBack()">Back to Order</button>
-        <button class="btn btn-secondary" *ngIf="confirmationResult.newBatchId"
+        <!-- Continue button for partial confirmations -->
+        <button class="btn btn-success" *ngIf="isPartialConfirmation()" (click)="continueConfirmation()">
+          <i class="fas fa-play"></i> Continue Confirmation
+        </button>
+        <!-- View batch buttons -->
+        <button class="btn btn-secondary" *ngIf="getOutputBatches().length === 1"
+                (click)="goToBatch(getOutputBatches()[0].batchId)">
+          View Batch
+        </button>
+        <button class="btn btn-secondary" *ngIf="confirmationResult.newBatchId && getOutputBatches().length === 0"
                 (click)="goToBatch(confirmationResult.newBatchId)">
           View New Batch
         </button>
@@ -553,6 +634,32 @@
         {{ error }}
       </div>
 
+      <!-- GAP-019: Partial Confirmation Option -->
+      <div class="partial-option-section">
+        <div class="partial-checkbox">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              formControlName="saveAsPartial"
+            />
+            <span class="checkbox-text">
+              <strong>Save as Partial Confirmation</strong>
+              <span class="checkbox-hint">
+                Check this to save progress and continue confirmation later.
+                The operation will remain in progress.
+              </span>
+            </span>
+          </label>
+        </div>
+        <div class="partial-info-box" *ngIf="confirmForm.get('saveAsPartial')?.value">
+          <i class="fas fa-info-circle"></i>
+          <span>
+            This confirmation will be saved as partial. You can continue confirming
+            additional quantities for this operation later.
+          </span>
+        </div>
+      </div>
+
       <!-- Submit Button -->
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="goBack()">Cancel</button>
@@ -561,7 +668,9 @@
           class="btn btn-success"
           [disabled]="confirmForm.invalid || submitting"
         >
-          <span *ngIf="!submitting">Confirm Production</span>
+          <span *ngIf="!submitting">
+            {{ confirmForm.get('saveAsPartial')?.value ? 'Save Partial Confirmation' : 'Confirm Production' }}
+          </span>
           <span *ngIf="submitting" class="spinner"></span>
         </button>
       </div>

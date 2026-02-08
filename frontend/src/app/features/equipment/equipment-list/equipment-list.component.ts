@@ -24,7 +24,23 @@ export class EquipmentListComponent implements OnInit {
   // Filter state
   filterStatus = '';
   filterType = '';
+  filterCategory = '';  // GAP-021: Category filter
   searchTerm = '';
+
+  // GAP-021: Equipment category options for filter dropdown
+  categoryOptions = [
+    { value: '', label: 'All Categories' },
+    { value: 'MELTING', label: 'Melting' },
+    { value: 'CASTING', label: 'Casting' },
+    { value: 'ROLLING', label: 'Rolling' },
+    { value: 'FINISHING', label: 'Finishing' },
+    { value: 'COATING', label: 'Coating' },
+    { value: 'WIRE_ROLLING', label: 'Wire Rolling' },
+    { value: 'PACKAGING', label: 'Packaging' },
+    { value: 'QUALITY', label: 'Quality' },
+    { value: 'UTILITY', label: 'Utility' },
+    { value: 'OTHER', label: 'Other' }
+  ];
 
   // Modal states
   showMaintenanceModal = false;
@@ -51,6 +67,7 @@ export class EquipmentListComponent implements OnInit {
       sortDirection: 'ASC',
       status: this.filterStatus || undefined,
       type: this.filterType || undefined,
+      category: this.filterCategory || undefined,  // GAP-021: Include category filter
       search: this.searchTerm || undefined
     };
 
@@ -91,6 +108,13 @@ export class EquipmentListComponent implements OnInit {
 
   onFilterTypeChange(type: string): void {
     this.filterType = type === 'all' ? '' : type;
+    this.page = 0;
+    this.loadEquipment();
+  }
+
+  // GAP-021: Category filter handler
+  onFilterCategoryChange(category: string): void {
+    this.filterCategory = category === 'all' ? '' : category;
     this.page = 0;
     this.loadEquipment();
   }
@@ -260,5 +284,18 @@ export class EquipmentListComponent implements OnInit {
         alert(err.error?.message || 'Failed to delete equipment.');
       }
     });
+  }
+
+  // GAP-021: Get human-readable category label
+  getCategoryLabel(category: string | undefined): string {
+    if (!category) return '-';
+    const option = this.categoryOptions.find(opt => opt.value === category);
+    return option ? option.label : category;
+  }
+
+  // GAP-021: Get category CSS class for styling
+  getCategoryClass(category: string | undefined): string {
+    if (!category) return '';
+    return 'category-' + category.toLowerCase().replace('_', '-');
   }
 }

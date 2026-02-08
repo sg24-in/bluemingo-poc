@@ -34,6 +34,7 @@ export interface PageRequest {
   search?: string;
   status?: string;
   type?: string;
+  category?: string;  // GAP-021: Equipment category filter
   dateFrom?: string;
   dateTo?: string;
 }
@@ -78,6 +79,7 @@ export function toQueryParams(request: PageRequest): Record<string, string | num
   if (request.search) params['search'] = request.search;
   if (request.status) params['status'] = request.status;
   if (request.type) params['type'] = request.type;
+  if (request.category) params['category'] = request.category;  // GAP-021
   if (request.dateFrom) params['dateFrom'] = request.dateFrom;
   if (request.dateTo) params['dateTo'] = request.dateTo;
 

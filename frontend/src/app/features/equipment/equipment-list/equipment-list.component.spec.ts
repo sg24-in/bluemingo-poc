@@ -21,6 +21,7 @@ describe('EquipmentListComponent', () => {
       equipmentCode: 'EQ-001',
       name: 'Furnace 1',
       equipmentType: 'FURNACE',
+      equipmentCategory: 'MELTING',  // GAP-021
       capacity: 100,
       capacityUnit: 'T',
       location: 'Plant A',
@@ -31,6 +32,7 @@ describe('EquipmentListComponent', () => {
       equipmentCode: 'EQ-002',
       name: 'Caster 1',
       equipmentType: 'CASTER',
+      equipmentCategory: 'CASTING',  // GAP-021
       capacity: 50,
       capacityUnit: 'T',
       location: 'Plant A',
@@ -42,6 +44,7 @@ describe('EquipmentListComponent', () => {
       equipmentCode: 'EQ-003',
       name: 'Mill 1',
       equipmentType: 'ROLLING_MILL',
+      equipmentCategory: 'ROLLING',  // GAP-021
       capacity: 200,
       capacityUnit: 'T',
       location: 'Plant B',
@@ -135,6 +138,55 @@ describe('EquipmentListComponent', () => {
       expect(component.searchTerm).toBe('EQ-001');
       expect(component.page).toBe(0);
       expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
+    });
+
+    // GAP-021: Category filter tests
+    it('should filter by category', () => {
+      component.onFilterCategoryChange('MELTING');
+      expect(component.filterCategory).toBe('MELTING');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clear category filter when "all" is selected', () => {
+      component.filterCategory = 'MELTING';
+      component.onFilterCategoryChange('all');
+      expect(component.filterCategory).toBe('');
+      expect(apiServiceSpy.getEquipmentPaged).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // GAP-021: Category helper tests
+  describe('Category Helpers', () => {
+    it('should return label for valid category', () => {
+      expect(component.getCategoryLabel('MELTING')).toBe('Melting');
+      expect(component.getCategoryLabel('CASTING')).toBe('Casting');
+      expect(component.getCategoryLabel('ROLLING')).toBe('Rolling');
+      expect(component.getCategoryLabel('FINISHING')).toBe('Finishing');
+      expect(component.getCategoryLabel('COATING')).toBe('Coating');
+      expect(component.getCategoryLabel('WIRE_ROLLING')).toBe('Wire Rolling');
+      expect(component.getCategoryLabel('PACKAGING')).toBe('Packaging');
+      expect(component.getCategoryLabel('QUALITY')).toBe('Quality');
+      expect(component.getCategoryLabel('UTILITY')).toBe('Utility');
+      expect(component.getCategoryLabel('OTHER')).toBe('Other');
+    });
+
+    it('should return dash for undefined category', () => {
+      expect(component.getCategoryLabel(undefined)).toBe('-');
+    });
+
+    it('should return original value for unknown category', () => {
+      expect(component.getCategoryLabel('UNKNOWN' as any)).toBe('UNKNOWN');
+    });
+
+    it('should return CSS class for valid category', () => {
+      expect(component.getCategoryClass('MELTING')).toBe('category-melting');
+      expect(component.getCategoryClass('CASTING')).toBe('category-casting');
+      expect(component.getCategoryClass('WIRE_ROLLING')).toBe('category-wire-rolling');
+    });
+
+    it('should return empty string for undefined category', () => {
+      expect(component.getCategoryClass(undefined)).toBe('');
     });
   });
 

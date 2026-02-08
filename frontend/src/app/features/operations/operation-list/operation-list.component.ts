@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Operation } from '../../../shared/models';
+import { PageRequest, PagedResponse, DEFAULT_PAGE_SIZE } from '../../../shared/models/pagination.model';
 
 @Component({
   selector: 'app-operation-list',
@@ -9,16 +10,26 @@ import { Operation } from '../../../shared/models';
   styleUrls: ['./operation-list.component.css']
 })
 export class OperationListComponent implements OnInit {
-  allOperations: Operation[] = [];
   operations: Operation[] = [];
   loading = true;
   error = '';
   actionError = '';
 
-  filterStatus = 'all';
+  // TASK-P1: Pagination state
+  page = 0;
+  size = DEFAULT_PAGE_SIZE;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
+
+  // Filter state
+  filterStatus = '';
+  filterType = '';
   searchTerm = '';
 
   statuses = ['NOT_STARTED', 'READY', 'IN_PROGRESS', 'CONFIRMED', 'PARTIALLY_CONFIRMED', 'ON_HOLD', 'BLOCKED'];
+  operationTypes = ['BATCH', 'CONTINUOUS'];
 
   // Block modal
   showBlockModal = false;
@@ -36,23 +47,35 @@ export class OperationListComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['status'] && this.statuses.includes(params['status'])) {
         this.filterStatus = params['status'];
-        // Re-apply filters if operations are already loaded
-        if (this.allOperations.length > 0) {
-          this.applyFilters();
-        }
       }
+      this.loadOperations();
     });
-    this.loadOperations();
   }
 
+  // TASK-P1: Server-side paginated loading
   loadOperations(): void {
     this.loading = true;
     this.error = '';
 
-    this.apiService.getAllOperations().subscribe({
-      next: (operations) => {
-        this.allOperations = operations;
-        this.applyFilters();
+    const request: PageRequest = {
+      page: this.page,
+      size: this.size,
+      sortBy: 'sequenceNumber',
+      sortDirection: 'ASC',
+      status: this.filterStatus || undefined,
+      type: this.filterType || undefined,
+      search: this.searchTerm || undefined
+    };
+
+    this.apiService.getOperationsPaged(request).subscribe({
+      next: (response: PagedResponse<Operation>) => {
+        this.operations = response.content;
+        this.page = response.page;
+        this.size = response.size;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
@@ -62,42 +85,38 @@ export class OperationListComponent implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    let filtered = [...this.allOperations];
+  // TASK-P1: Pagination handlers
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadOperations();
+  }
 
-    if (this.filterStatus && this.filterStatus !== 'all') {
-      filtered = filtered.filter(o => o.status === this.filterStatus);
-    }
-
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(o =>
-        o.operationName?.toLowerCase().includes(term) ||
-        o.operationCode?.toLowerCase().includes(term) ||
-        o.orderNumber?.toLowerCase().includes(term) ||
-        o.processName?.toLowerCase().includes(term)
-      );
-    }
-
-    this.operations = filtered;
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadOperations();
   }
 
   onFilterStatusChange(status: string): void {
-    this.filterStatus = status;
-    this.applyFilters();
+    this.filterStatus = status === 'all' ? '' : status;
+    this.page = 0;
+    this.loadOperations();
+  }
+
+  onFilterTypeChange(type: string): void {
+    this.filterType = type === 'all' ? '' : type;
+    this.page = 0;
+    this.loadOperations();
   }
 
   onSearchChange(term: string): void {
     this.searchTerm = term;
-    this.applyFilters();
+    this.page = 0;
+    this.loadOperations();
   }
 
   getStatusClass(status: string): string {
     return status?.toLowerCase().replace(/_/g, '-') || '';
-  }
-
-  countByStatus(status: string): number {
-    return this.allOperations.filter(o => o.status === status).length;
   }
 
   // Block/Unblock

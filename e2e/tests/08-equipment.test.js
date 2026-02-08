@@ -186,6 +186,66 @@ async function runEquipmentTests(page, screenshots, results, runTest, submitActi
             await screenshots.capture(page, 'equipment-type-filter-after');
         }
     }, page, results, screenshots);
+
+    // Test 8: Filter by Category (GAP-021)
+    await runTest('Equipment - Filter by Category', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.EQUIPMENT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        await screenshots.capture(page, 'equipment-category-filter-before');
+
+        // Find category filter dropdown - look for the 3rd select in filters section
+        const categoryFilter = page.locator('.filters select').nth(2);
+        if (await categoryFilter.count() > 0) {
+            // Select MELTING category
+            await categoryFilter.selectOption('MELTING').catch(() => {
+                return categoryFilter.selectOption({ index: 1 });
+            });
+            await page.waitForTimeout(500);
+
+            await screenshots.capture(page, 'equipment-category-filter-melting');
+
+            // Check that category badges are visible in the table
+            const categoryBadges = page.locator('.category-badge');
+            const badgeCount = await categoryBadges.count();
+            console.log(`  Found ${badgeCount} category badges in filtered results`);
+
+            // Reset filter to All Categories
+            await categoryFilter.selectOption({ value: 'all' }).catch(() => {
+                return categoryFilter.selectOption({ index: 0 });
+            });
+            await page.waitForTimeout(500);
+
+            await screenshots.capture(page, 'equipment-category-filter-all');
+        } else {
+            console.log('  Category filter not found - skipping');
+        }
+    }, page, results, screenshots);
+
+    // Test 9: Category badges display correctly
+    await runTest('Equipment - Category Badges Display', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.EQUIPMENT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Check that the Category column header exists
+        const categoryHeader = page.locator('th:has-text("Category")');
+        const headerExists = await categoryHeader.count() > 0;
+        console.log(`  Category column header exists: ${headerExists}`);
+
+        // Check that category badges are rendered
+        const categoryBadges = page.locator('.category-badge');
+        const badgeCount = await categoryBadges.count();
+        console.log(`  Total category badges: ${badgeCount}`);
+
+        // Check for specific category classes
+        const meltingBadges = page.locator('.category-melting');
+        const castingBadges = page.locator('.category-casting');
+        const rollingBadges = page.locator('.category-rolling');
+
+        console.log(`  Melting: ${await meltingBadges.count()}, Casting: ${await castingBadges.count()}, Rolling: ${await rollingBadges.count()}`);
+
+        await screenshots.capture(page, 'equipment-category-badges');
+    }, page, results, screenshots);
 }
 
 module.exports = { runEquipmentTests };

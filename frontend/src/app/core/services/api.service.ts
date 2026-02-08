@@ -778,6 +778,21 @@ export class ApiService {
     return this.http.get<Operation[]>(`${environment.apiUrl}/operations`);
   }
 
+  // TASK-P1: Paginated operations with filters
+  getOperationsPaged(request: PageRequest): Observable<PagedResponse<Operation>> {
+    const params: Record<string, string | number> = {
+      page: request.page ?? 0,
+      size: request.size ?? 20
+    };
+    if (request.sortBy) params['sortBy'] = request.sortBy;
+    if (request.sortDirection) params['sortDirection'] = request.sortDirection;
+    if (request.status) params['status'] = request.status;
+    if (request.type) params['type'] = request.type;
+    if (request.search) params['search'] = request.search;
+
+    return this.http.get<PagedResponse<Operation>>(`${environment.apiUrl}/operations/paged`, { params });
+  }
+
   getOperationById(operationId: number): Observable<Operation> {
     return this.http.get<Operation>(`${environment.apiUrl}/operations/${operationId}`);
   }
@@ -1184,6 +1199,14 @@ export class ApiService {
 
   getAuditActionTypes(): Observable<string[]> {
     return this.http.get<string[]>(`${environment.apiUrl}/audit/action-types`);
+  }
+
+  /**
+   * Get audit entries with pagination, sorting, and filtering.
+   */
+  getAuditPaged(request: PageRequest = {}): Observable<PagedResponse<AuditEntry>> {
+    const params = new HttpParams({ fromObject: toQueryParams(request) as any });
+    return this.http.get<PagedResponse<AuditEntry>>(`${environment.apiUrl}/audit/paged`, { params });
   }
 
   // ============================================================

@@ -22,7 +22,7 @@
 | Products | 9 | `/api/products` |
 | BOM | 17 | `/api/bom` |
 | Dashboard | 2 | `/api/dashboard` |
-| Audit | 8 | `/api/audit` |
+| Audit | 9 | `/api/audit` |
 | Operators | 7 | `/api/operators` |
 | Operations | 6 | `/api/operations` |
 | Processes | 10 | `/api/processes` |
@@ -259,6 +259,7 @@
 
 | Method | Endpoint | Purpose | Query Params |
 |--------|----------|---------|--------------|
+| GET | `/paged` | **Paginated** audit entries | page, size, entityType, action, search |
 | GET | `/entity/{entityType}/{entityId}` | Entity history | - |
 | GET | `/recent` | Recent activity | limit (default: 50, max: 500) |
 | GET | `/production-confirmations` | Production confirmations | limit (default: 10, max: 100) |
@@ -267,6 +268,21 @@
 | GET | `/summary` | Audit summary | - |
 | GET | `/entity-types` | Valid entity types | - |
 | GET | `/action-types` | Valid action types | - |
+
+### Pagination Response Format
+```json
+{
+  "content": [...],
+  "page": 0,
+  "size": 20,
+  "totalElements": 150,
+  "totalPages": 8,
+  "first": true,
+  "last": false,
+  "hasNext": true,
+  "hasPrevious": false
+}
+```
 
 ---
 

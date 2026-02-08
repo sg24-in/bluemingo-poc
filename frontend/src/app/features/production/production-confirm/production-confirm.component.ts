@@ -119,7 +119,9 @@ export class ProductionConfirmComponent implements OnInit {
       delayMinutes: [0, [Validators.min(0)]],
       delayReason: [''],
       notes: [''],
-      processParameters: this.fb.array([])
+      processParameters: this.fb.array([]),
+      // GAP-019: Partial confirmation option
+      saveAsPartial: [false]
     }, { validators: this.timeRangeValidator() });
   }
 
@@ -518,7 +520,9 @@ export class ProductionConfirmComponent implements OnInit {
         }, {}),
       delayMinutes: formValue.delayMinutes || 0,
       delayReason: formValue.delayReason || null,
-      notes: formValue.notes
+      notes: formValue.notes,
+      // GAP-019: Include saveAsPartial flag
+      saveAsPartial: formValue.saveAsPartial || false
     };
 
     this.apiService.confirmProduction(request).subscribe({
@@ -676,5 +680,74 @@ export class ProductionConfirmComponent implements OnInit {
 
   isCollapsed(section: string): boolean {
     return this.collapsedSections[section] || false;
+  }
+
+  // ========== GAP-019: Multi-Batch & Partial Confirmation Support ==========
+
+  /**
+   * Get all output batches from the confirmation result.
+   * Falls back to single outputBatch for backward compatibility.
+   */
+  getOutputBatches(): any[] {
+    if (!this.confirmationResult) return [];
+    if (this.confirmationResult.outputBatches && this.confirmationResult.outputBatches.length > 0) {
+      return this.confirmationResult.outputBatches;
+    }
+    if (this.confirmationResult.outputBatch) {
+      return [this.confirmationResult.outputBatch];
+    }
+    return [];
+  }
+
+  /**
+   * Check if confirmation result has multiple batches
+   */
+  hasMultipleBatches(): boolean {
+    return this.getOutputBatches().length > 1;
+  }
+
+  /**
+   * Check if this is a partial confirmation
+   */
+  isPartialConfirmation(): boolean {
+    return this.confirmationResult?.isPartial === true;
+  }
+
+  /**
+   * Get remaining quantity for partial confirmation
+   */
+  getRemainingQty(): number {
+    return this.confirmationResult?.remainingQty || 0;
+  }
+
+  /**
+   * Continue with another confirmation for the same operation (for partial confirmations)
+   */
+  continueConfirmation(): void {
+    // Reset the form but keep the operation
+    this.success = false;
+    this.confirmationResult = null;
+    this.selectedMaterials = [];
+    this.initForm();
+
+    // Reload data for fresh state
+    this.loadData();
+  }
+
+  /**
+   * Get the target quantity from operation for comparison
+   */
+  getTargetQty(): number {
+    return this.operation?.targetQty || this.operation?.order?.quantity || 0;
+  }
+
+  /**
+   * Calculate progress percentage for partial confirmations
+   */
+  getConfirmationProgress(): number {
+    const target = this.getTargetQty();
+    if (target <= 0) return 0;
+    const confirmed = this.confirmationResult?.producedQty || 0;
+    return Math.min(100, Math.round((confirmed / target) * 100));
   }
 }

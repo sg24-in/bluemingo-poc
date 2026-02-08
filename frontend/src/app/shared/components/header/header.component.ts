@@ -108,7 +108,7 @@ export class HeaderComponent implements OnInit {
   // Check if Manufacturing dropdown should be highlighted
   isManufacturingActive(): boolean {
     const url = this.router.url;
-    return url.startsWith('/processes') || url.startsWith('/operations') || url.startsWith('/equipment');
+    return url.startsWith('/operations') || url.startsWith('/equipment');
   }
 
   // Check if Inventory dropdown should be highlighted

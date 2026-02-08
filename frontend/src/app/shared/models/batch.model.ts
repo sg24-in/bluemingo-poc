@@ -9,6 +9,11 @@
  */
 
 /**
+ * Batch creation source types - matches backend createdVia values
+ */
+export type BatchCreatedVia = 'PRODUCTION' | 'SPLIT' | 'MERGE' | 'MANUAL' | 'SYSTEM' | 'RECEIPT';
+
+/**
  * Matches: BatchDTO
  * Note: status can include ON_HOLD when batch is put on hold
  */
@@ -22,6 +27,28 @@ export interface Batch {
   state?: string; // Used by UI for filtering
   status: string; // Flexible to allow all batch status values including ON_HOLD
   createdOn: string; // LocalDateTime
+
+  // GAP-020: Traceability fields - Track source operation and creation context
+  /**
+   * The operation that generated this batch (for PRODUCTION batches)
+   */
+  generatedAtOperationId?: number;
+  /**
+   * How this batch was created: PRODUCTION, SPLIT, MERGE, MANUAL, SYSTEM, RECEIPT
+   */
+  createdVia?: BatchCreatedVia;
+
+  // Supplier/Receipt info for RM (Raw Material) batches
+  /**
+   * External supplier batch number reference
+   */
+  supplierBatchNumber?: string;
+  /**
+   * Supplier ID for traceability
+   */
+  supplierId?: string;
+
+  // Approval info
   approvedBy?: string;
   approvedOn?: string; // LocalDateTime
   rejectionReason?: string;

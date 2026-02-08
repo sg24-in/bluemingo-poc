@@ -21,6 +21,12 @@ export interface ProductionConfirmationRequest {
   delayReason?: string;
   processParameters?: Record<string, any>;
   notes?: string;
+  /**
+   * P10-P11: Flag to explicitly save as partial confirmation.
+   * When true, the confirmation is saved as PARTIAL even if full quantity is produced.
+   * This allows users to continue the confirmation later.
+   */
+  saveAsPartial?: boolean;
 }
 
 /**
@@ -49,13 +55,42 @@ export interface ProductionConfirmationResponse {
   notes?: string;
   status: ProductionConfirmationStatusType;
   createdOn: string; // LocalDateTime
+
+  /**
+   * P12: Indicates if this is a partial confirmation.
+   * True when status is PARTIAL and operation can be continued.
+   */
+  isPartial?: boolean;
+
+  /**
+   * P13: Remaining quantity to be confirmed to complete the operation.
+   * Only set for partial confirmations.
+   */
+  remainingQty?: number;
+
+  // Rejection fields
   rejectionReason?: string;
   rejectedBy?: string;
   rejectedOn?: string; // LocalDateTime
+
+  // Output batch info (primary batch for backward compatibility)
   outputBatch?: BatchInfo;
+
+  // All output batches (for multi-batch production)
+  outputBatches?: BatchInfo[];
+
+  // Batch split info (if quantity was split into multiple batches)
+  batchCount?: number;
+  hasPartialBatch?: boolean;
+
+  // Next operation info
   nextOperation?: NextOperationInfo;
+
+  // Equipment and operator info
   equipment?: EquipmentInfo[];
   operators?: OperatorInfo[];
+
+  // Materials consumed
   materialsConsumed?: MaterialConsumedInfo[];
 }
 

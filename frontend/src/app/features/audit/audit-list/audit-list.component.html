@@ -10,7 +10,7 @@
     <div class="filters">
       <div class="filter-group">
         <label for="entity-filter">Entity:</label>
-        <select id="entity-filter" [(ngModel)]="filterEntityType">
+        <select id="entity-filter" [(ngModel)]="filterEntityType" (change)="onFilterChange()">
           <option value="all">All Entities</option>
           <option *ngFor="let t of entityTypes" [value]="t">{{ formatEntityType(t) }}</option>
         </select>
@@ -18,7 +18,7 @@
 
       <div class="filter-group">
         <label for="action-filter">Action:</label>
-        <select id="action-filter" [(ngModel)]="filterAction">
+        <select id="action-filter" [(ngModel)]="filterAction" (change)="onFilterChange()">
           <option value="all">All Actions</option>
           <option *ngFor="let a of actionTypes" [value]="a">{{ a }}</option>
         </select>
@@ -31,7 +31,9 @@
           id="user-filter"
           [(ngModel)]="filterUser"
           placeholder="Filter by user..."
+          (keyup.enter)="onFilterChange()"
         />
+        <button class="btn btn-sm btn-primary" (click)="onFilterChange()">Search</button>
       </div>
 
       <button class="btn btn-sm btn-secondary" (click)="clearFilters()">Clear</button>
@@ -41,7 +43,7 @@
   <div class="error-banner" *ngIf="error">{{ error }}</div>
 
   <div class="audit-content" *ngIf="!loading; else loadingTpl">
-    <div class="table-container" *ngIf="filteredEntries.length > 0; else emptyTpl">
+    <div class="table-container" *ngIf="entries.length > 0; else emptyTpl">
       <table class="data-table">
         <thead>
           <tr>
@@ -55,7 +57,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let entry of filteredEntries"
+          <tr *ngFor="let entry of entries"
               (click)="selectEntry(entry)"
               [class.selected]="selectedEntry === entry"
               class="audit-row">
@@ -82,8 +84,58 @@
         </tbody>
       </table>
 
-      <div class="result-count">
-        Showing {{ filteredEntries.length }} of {{ entries.length }} entries
+      <!-- Pagination Controls -->
+      <div class="pagination-container">
+        <div class="pagination-info">
+          Showing {{ startIndex }} - {{ endIndex }} of {{ totalElements }} entries
+        </div>
+
+        <div class="pagination-controls">
+          <div class="page-size-selector">
+            <label for="page-size">Per page:</label>
+            <select id="page-size" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+              <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+            </select>
+          </div>
+
+          <div class="page-navigation">
+            <button
+              class="btn btn-sm"
+              [disabled]="currentPage === 0"
+              (click)="onPageChange(0)">
+              <i class="fas fa-angles-left"></i>
+            </button>
+            <button
+              class="btn btn-sm"
+              [disabled]="currentPage === 0"
+              (click)="onPageChange(currentPage - 1)">
+              <i class="fas fa-angle-left"></i>
+            </button>
+
+            <span class="page-numbers">
+              <button
+                *ngFor="let p of pages"
+                class="btn btn-sm"
+                [class.active]="p === currentPage"
+                (click)="onPageChange(p)">
+                {{ p + 1 }}
+              </button>
+            </span>
+
+            <button
+              class="btn btn-sm"
+              [disabled]="currentPage >= totalPages - 1"
+              (click)="onPageChange(currentPage + 1)">
+              <i class="fas fa-angle-right"></i>
+            </button>
+            <button
+              class="btn btn-sm"
+              [disabled]="currentPage >= totalPages - 1"
+              (click)="onPageChange(totalPages - 1)">
+              <i class="fas fa-angles-right"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 

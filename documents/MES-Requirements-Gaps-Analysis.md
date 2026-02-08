@@ -1,7 +1,7 @@
 # MES Requirements Gaps Analysis
 
 **Document Purpose:** Analysis of gaps between current POC implementation and requirements discussed in Teams meeting
-**Last Updated:** 2026-02-04
+**Last Updated:** 2026-02-08
 **Status:** Active - Tracking Implementation Progress
 
 ---
@@ -10,13 +10,19 @@
 
 This document tracks the gaps identified between the MES POC implementation and the requirements discussed during the Teams meeting. Each gap is categorized by priority (HIGH, MEDIUM, LOW) based on business impact and implementation complexity.
 
-**Progress Summary:**
-- HIGH Priority: 5/5 Complete (GAP-003, GAP-005, GAP-007, GAP-010, GAP-011, GAP-012)
-- MEDIUM Priority: 4/4 Complete (GAP-001, GAP-004, GAP-009, GAP-013)
-- LOW Priority: 3/3 Complete (GAP-002, GAP-006, GAP-008)
+**Progress Summary (22 Total Gaps):**
+- HIGH Priority: 7/9 Complete (GAP-003, GAP-005, GAP-007, GAP-010, GAP-011, GAP-012, GAP-015, GAP-019)
+  - Pending: GAP-016 (Operations Pagination), GAP-017 (Routing Pagination)
+- MEDIUM Priority: 5/7 Complete (GAP-001, GAP-004, GAP-009, GAP-013, GAP-020)
+  - Pending: GAP-018 (BOM Pagination), GAP-021 (Equipment Category)
+- LOW Priority: 3/4 Complete (GAP-002, GAP-006, GAP-008)
+  - Pending: GAP-022 (Material/Product Extended Fields)
 - E2E Tests: GAP-014 COMPLETE
 
-**ALL 14 GAPS COMPLETED!**
+**16/22 GAPS COMPLETED - 5 GAPS PENDING (3 Pagination + 2 Model Alignment)**
+
+**New Analysis Document:**
+- `documents/Frontend-Backend-Model-Analysis.md` - Comprehensive frontend-backend DTO alignment analysis
 
 **Recent Enhancements (Not in Original Gaps):**
 - Server-side pagination for Orders, Batches, Inventory, Equipment, and Holds lists
@@ -478,9 +484,158 @@ Added comprehensive E2E tests for all major workflows:
 
 ---
 
+## GAP-015: Frontend Model Mismatch (OrderLineItem → Operations)
+
+**Priority:** HIGH
+**Status:** COMPLETED (2026-02-08)
+
+### Issue
+Production confirmation page showed empty operations dropdown when selecting an order.
+
+### Root Cause
+- Backend `OrderDTO.OrderLineDTO` returns operations directly as `operations[]`
+- Frontend `OrderLineItem` model expected operations nested under `processes[].operations[]`
+- `extractReadyOperations()` in production-landing was iterating wrong structure
+
+### Fix Applied
+1. Updated `order.model.ts` - Added `operations?: OperationBrief[]` to `OrderLineItem`
+2. Updated `operation.model.ts` - Added `processId` and `processName` to `OperationBrief`
+3. Updated `production-landing.component.ts` - Fixed iteration to use `lineItem.operations[]`
+
+---
+
+## GAP-016: Missing Pagination - Operations List
+
+**Priority:** HIGH
+**Status:** PENDING
+
+### Issue
+Operations list uses `getAllOperations()` which loads all records at once, causing performance issues with large datasets.
+
+### Required Changes
+- Backend: Add `findByFilters()` with Pageable to OperationRepository
+- Backend: Add `getOperationsPaged()` to OperationService
+- Backend: Add `/api/operations/paged` endpoint
+- Frontend: Update operation-list.component to use paginated API
+
+---
+
+## GAP-017: Missing Pagination - Routing List
+
+**Priority:** HIGH
+**Status:** PENDING
+
+### Issue
+Routing list uses `getAllRoutings()` which loads all records at once.
+
+### Required Changes
+- Backend: Add `findByFilters()` with Pageable to RoutingRepository
+- Backend: Add `getRoutingsPaged()` to RoutingService
+- Backend: Add `/api/routing/paged` endpoint
+- Frontend: Update routing-list.component to use paginated API
+
+---
+
+## GAP-018: Missing Pagination - BOM Products List
+
+**Priority:** MEDIUM
+**Status:** PENDING
+
+### Issue
+BOM products list uses `getBomProducts()` which loads all products with BOMs at once.
+
+### Required Changes
+- Backend: Add pagination support to BOM products endpoint
+- Backend: Add `/api/bom/products/paged` endpoint
+- Frontend: Update bom-list.component to use paginated API
+
+---
+
+## GAP-019: Production Confirmation Multi-Batch Support [DONE] ✅
+
+**Source:** Frontend-Backend Model Analysis (2026-02-08)
+**Reference Document:** `documents/Frontend-Backend-Model-Analysis.md`
+**Completed:** 2026-02-08
+
+**Gap Description:**
+Frontend `ProductionConfirmation` model is missing 6 fields required for multi-batch and partial confirmation support:
+- `outputBatches` - List of produced batches (for multi-batch output)
+- `isPartial` - Boolean indicating partial confirmation
+- `remainingQty` - Quantity remaining to confirm
+- `batchCount` - Number of batches produced
+- `hasPartialBatch` - Whether a split batch exists
+- `saveAsPartial` - User intent for partial save (in request)
+
+**Implementation Completed:**
+- Added all 6 fields to `ProductionConfirmationResponse` in `production.model.ts`
+- Added `saveAsPartial` field to `ProductionConfirmationRequest`
+- Updated production-confirm component with:
+  - "Save as Partial" checkbox in form
+  - Multi-batch grid display showing all output batches
+  - Progress bar for partial confirmations
+  - Remaining quantity display
+  - "Continue Confirmation" button for partial confirmations
+- Added comprehensive CSS styling for new UI elements
+
+---
+
+## GAP-020: Batch Traceability Fields Missing [DONE] ✅
+
+**Source:** Frontend-Backend Model Analysis (2026-02-08)
+**Completed:** 2026-02-08
+
+**Gap Description:**
+Frontend `Batch` model missing traceability context fields:
+- `generatedAtOperationId` - Which operation created the batch
+- `createdVia` - How batch was created (PRODUCTION, RECEIPT, SPLIT, MERGE)
+- `supplierBatchNumber` - External batch reference for raw materials
+- `supplierId` - Supplier reference for RM batches
+
+**Implementation Completed:**
+- Added `BatchCreatedVia` type with 6 creation methods
+- Added 4 traceability fields to Batch interface
+- Added "Traceability Information" card to batch detail page with:
+  - Creation source section showing how batch was created
+  - Color-coded badges for different creation methods (PRODUCTION, SPLIT, MERGE, etc.)
+  - Link to source operation for production batches
+  - Supplier information section for goods receipt batches
+- Helper methods for display: `getCreatedViaLabel()`, `getCreatedViaIcon()`, `getCreatedViaClass()`
+- Responsive CSS styling for all screen sizes
+
+---
+
+## GAP-021: Equipment Category Field Missing [PENDING] 🟡 MEDIUM
+
+**Source:** Frontend-Backend Model Analysis (2026-02-08)
+
+**Gap Description:**
+Frontend `Equipment` model missing `equipmentCategory` field (MELTING, CASTING, ROLLING, FINISHING, etc.)
+
+**Implementation:**
+- Update `frontend/src/app/shared/models/equipment.model.ts`
+- Add category filter to equipment list
+- Display category in equipment detail
+
+---
+
+## GAP-022: Material/Product Extended Fields [PENDING] 🟢 LOW
+
+**Source:** Frontend-Backend Model Analysis (2026-02-08)
+
+**Gap Description:**
+Material model missing 11 fields (cost, thresholds, supplier, specifications)
+Product model missing 11 fields (pricing, default process, specifications)
+
+**Implementation:**
+- Update `frontend/src/app/shared/models/material.model.ts` (11 fields)
+- Update `frontend/src/app/shared/models/product.model.ts` (11 fields)
+- Update forms to support new fields (optional)
+
+---
+
 ## Next Steps
 
-**All requirements gaps have been implemented!**
+**Core requirements gaps have been implemented!**
 
 **Demo Video:** COMPLETED
 - Voiceover generator script created (`e2e/generate-voiceover.js`)
@@ -515,6 +670,14 @@ Remaining optional enhancements:
 | GAP-012 | Service Unit Tests | HIGH | DONE |
 | GAP-013 | Audit Trail Controller | IMPORTANT | DONE |
 | GAP-014 | Missing E2E Tests | MEDIUM | DONE |
+| GAP-015 | Frontend Model Mismatch | HIGH | DONE |
+| GAP-016 | Pagination - Operations List | HIGH | PENDING |
+| GAP-017 | Pagination - Routing List | HIGH | PENDING |
+| GAP-018 | Pagination - BOM Products | MEDIUM | PENDING |
+| GAP-019 | Production Confirm Multi-Batch | HIGH | DONE |
+| GAP-020 | Batch Traceability Fields | MEDIUM | DONE |
+| GAP-021 | Equipment Category Field | MEDIUM | PENDING |
+| GAP-022 | Material/Product Extended Fields | LOW | PENDING |
 
 ---
 
@@ -539,3 +702,7 @@ Remaining optional enhancements:
 | 2026-02-04 | Claude Code | **ALL GAPS COMPLETED** - Backend tests now at 499 (66 new tests) |
 | 2026-02-04 | Claude Code | Demo Video: Created voiceover generator, 21 MP3 files, documentation |
 | 2026-02-07 | Claude Code | GAP-014 COMPLETED: Added 26 E2E tests (detail-pages.test.js + process-parameters.test.js) |
+| 2026-02-08 | Claude Code | Added GAP-015 (Model Mismatch - FIXED), GAP-016/017/018 (Pagination gaps - PENDING) |
+| 2026-02-08 | Claude Code | Fixed production confirmation operations dropdown not showing operations |
+| 2026-02-08 | Claude Code | Created Frontend-Backend Model Analysis document (`documents/Frontend-Backend-Model-Analysis.md`) |
+| 2026-02-08 | Claude Code | Added GAP-019 (Multi-Batch), GAP-020 (Batch Traceability), GAP-021 (Equipment Category), GAP-022 (Material/Product Fields) |

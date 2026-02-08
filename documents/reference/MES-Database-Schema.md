@@ -314,12 +314,14 @@ CREATE TABLE audit_trail (
     field_name VARCHAR(100),
     old_value TEXT,
     new_value TEXT,
-    action VARCHAR(20) NOT NULL,
+    action VARCHAR(30) NOT NULL,  -- Extended from 20 to 30 for BATCH_NUMBER_GENERATED
     changed_by VARCHAR(100) NOT NULL,
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
--- Actions: CREATE, UPDATE, DELETE, STATUS_CHANGE, CONSUME, PRODUCE, HOLD, RELEASE
+-- Actions: CREATE, UPDATE, DELETE, STATUS_CHANGE, CONSUME, PRODUCE, HOLD, RELEASE, BATCH_NUMBER_GENERATED
 ```
+
+**Note:** The `action` column was extended from VARCHAR(20) to VARCHAR(30) in patch 045 to accommodate the `BATCH_NUMBER_GENERATED` action type (22 characters).
 
 ---
 

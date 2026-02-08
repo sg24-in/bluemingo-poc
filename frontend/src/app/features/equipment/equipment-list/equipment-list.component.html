@@ -37,6 +37,15 @@
           </select>
         </div>
 
+        <!-- GAP-021: Category Filter -->
+        <div class="filter-group" [class.filter-active]="filterCategory && filterCategory !== 'all'">
+          <label>Category:</label>
+          <select (change)="onFilterCategoryChange($any($event.target).value)" [value]="filterCategory || 'all'"
+                  [class.filter-active]="filterCategory && filterCategory !== 'all'">
+            <option *ngFor="let opt of categoryOptions" [value]="opt.value || 'all'">{{ opt.label }}</option>
+          </select>
+        </div>
+
         <div class="filter-group search-group">
           <label>Search:</label>
           <input
@@ -57,6 +66,7 @@
             <th>Code</th>
             <th>Name</th>
             <th>Type</th>
+            <th>Category</th>
             <th>Capacity</th>
             <th>Location</th>
             <th>Status</th>
@@ -68,6 +78,11 @@
             <td>{{ item.equipmentCode }}</td>
             <td>{{ item.name }}</td>
             <td>{{ item.equipmentType }}</td>
+            <td>
+              <span class="category-badge" [ngClass]="getCategoryClass(item.equipmentCategory)">
+                {{ getCategoryLabel(item.equipmentCategory) }}
+              </span>
+            </td>
             <td>{{ item.capacity }} {{ item.capacityUnit }}</td>
             <td>{{ item.location || '-' }}</td>
             <td>

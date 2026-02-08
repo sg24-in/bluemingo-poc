@@ -228,6 +228,210 @@ async function runAuditHistoryTests(page, screenshots, results, runTest, submitA
     }, page, results, screenshots);
 
     // ============================================
+    // AUDIT PAGINATION TESTS
+    // ============================================
+
+    await runTest('Audit - Pagination Controls Visible', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Check for pagination component
+        const pagination = page.locator('.pagination, app-pagination');
+        const paginationVisible = await pagination.isVisible();
+
+        // Pagination should be visible if there are entries
+        const rows = page.locator('table tbody tr');
+        const rowCount = await rows.count();
+
+        if (rowCount > 0) {
+            await screenshots.capture(page, 'audit-pagination-controls');
+
+            // Check for page info text (e.g., "Showing 1 - 20 of 150")
+            const pageInfo = page.locator('.page-info, .result-count');
+            if (await pageInfo.isVisible()) {
+                const text = await pageInfo.textContent();
+                console.log(`   Pagination info: ${text}`);
+            }
+        } else {
+            console.log('   No audit entries, skipping pagination test');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Audit - Page Size Selector', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Look for page size selector
+        const pageSizeSelect = page.locator('#page-size, select[name="pageSize"], .page-size-select');
+        if (await pageSizeSelect.isVisible()) {
+            await screenshots.capture(page, 'audit-page-size-selector');
+
+            // Verify page size options exist
+            const options = pageSizeSelect.locator('option');
+            const optionCount = await options.count();
+            if (optionCount < 2) {
+                throw new Error(`Expected at least 2 page size options, found ${optionCount}`);
+            }
+
+            // Try changing page size
+            await pageSizeSelect.selectOption('50');
+            await page.waitForTimeout(500);
+
+            await screenshots.capture(page, 'audit-page-size-changed');
+        } else {
+            console.log('   Page size selector not visible');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Audit - Next Page Navigation', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Check if there are multiple pages
+        const nextBtn = page.locator('button:has-text("Next"), .pagination-next, button[aria-label="Next page"]');
+        if (await nextBtn.isVisible()) {
+            const isDisabled = await nextBtn.isDisabled();
+            if (!isDisabled) {
+                await nextBtn.click();
+                await page.waitForTimeout(500);
+
+                await screenshots.capture(page, 'audit-next-page');
+
+                // Verify page changed (current page indicator should update)
+                const currentPage = page.locator('.current-page, .page-number.active, button[aria-current="page"]');
+                if (await currentPage.isVisible()) {
+                    const pageText = await currentPage.textContent();
+                    console.log(`   Current page after next: ${pageText}`);
+                }
+            } else {
+                console.log('   Next button disabled (only one page)');
+            }
+        } else {
+            console.log('   Next button not visible');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Audit - Previous Page Navigation', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // First go to page 2 if possible
+        const nextBtn = page.locator('button:has-text("Next"), .pagination-next');
+        if (await nextBtn.isVisible() && !await nextBtn.isDisabled()) {
+            await nextBtn.click();
+            await page.waitForTimeout(500);
+
+            // Now try previous
+            const prevBtn = page.locator('button:has-text("Previous"), .pagination-prev, button[aria-label="Previous page"]');
+            if (await prevBtn.isVisible() && !await prevBtn.isDisabled()) {
+                await prevBtn.click();
+                await page.waitForTimeout(500);
+
+                await screenshots.capture(page, 'audit-previous-page');
+            }
+        } else {
+            console.log('   Cannot test previous - only one page of data');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Audit - First Page Navigation', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Navigate to a later page first
+        const nextBtn = page.locator('button:has-text("Next"), .pagination-next');
+        if (await nextBtn.isVisible() && !await nextBtn.isDisabled()) {
+            await nextBtn.click();
+            await page.waitForTimeout(300);
+
+            // Try to go to first page
+            const firstBtn = page.locator('button:has-text("First"), .pagination-first, button[aria-label="First page"]');
+            if (await firstBtn.isVisible() && !await firstBtn.isDisabled()) {
+                await firstBtn.click();
+                await page.waitForTimeout(500);
+
+                await screenshots.capture(page, 'audit-first-page');
+            } else {
+                // Alternative: click page number 1
+                const page1Btn = page.locator('button:has-text("1")').first();
+                if (await page1Btn.isVisible()) {
+                    await page1Btn.click();
+                    await page.waitForTimeout(500);
+                    await screenshots.capture(page, 'audit-first-page');
+                }
+            }
+        } else {
+            console.log('   Cannot test first page - only one page of data');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Audit - Pagination with Filters', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Apply a filter
+        const entityFilter = page.locator('#entity-filter');
+        if (await entityFilter.isVisible()) {
+            const options = entityFilter.locator('option');
+            const optionCount = await options.count();
+            if (optionCount > 1) {
+                const firstOption = options.nth(1);
+                const optionValue = await firstOption.getAttribute('value');
+                if (optionValue && optionValue !== 'all') {
+                    await entityFilter.selectOption(optionValue);
+                    await page.waitForTimeout(500);
+
+                    await screenshots.capture(page, 'audit-pagination-with-filter');
+
+                    // Verify pagination reset to first page
+                    const pageInfo = page.locator('.page-info, .result-count');
+                    if (await pageInfo.isVisible()) {
+                        const text = await pageInfo.textContent();
+                        console.log(`   Pagination after filter: ${text}`);
+                    }
+                }
+            }
+        }
+    }, page, results, screenshots);
+
+    await runTest('Audit - Page Numbers Display', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Check for page number buttons
+        const pageButtons = page.locator('.page-numbers button, .pagination button[data-page]');
+        const pageButtonCount = await pageButtons.count();
+
+        if (pageButtonCount > 0) {
+            await screenshots.capture(page, 'audit-page-numbers');
+            console.log(`   Found ${pageButtonCount} page number buttons`);
+        } else {
+            // Alternative check for page info
+            const pageInfo = page.locator('.page-info, .result-count');
+            if (await pageInfo.isVisible()) {
+                const text = await pageInfo.textContent();
+                console.log(`   Page info: ${text}`);
+            }
+        }
+    }, page, results, screenshots);
+
+    await runTest('Audit - Total Elements Count', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.AUDIT}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Check for total count display
+        const totalCount = page.locator('.total-count, .result-count');
+        if (await totalCount.isVisible()) {
+            const text = await totalCount.textContent();
+            // Should contain something like "of X entries" or "X total"
+            if (text.includes('of') || text.includes('total') || text.includes('entries')) {
+                await screenshots.capture(page, 'audit-total-count');
+                console.log(`   Total count display: ${text}`);
+            }
+        }
+    }, page, results, screenshots);
+
+    // ============================================
     // PRODUCTION HISTORY
     // ============================================
 

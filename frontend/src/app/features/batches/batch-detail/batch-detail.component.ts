@@ -368,6 +368,79 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
     this.chartService.disposeAll();
   }
 
+  // ============================================================
+  // GAP-020: Traceability Display Helpers
+  // ============================================================
+
+  /**
+   * Get human-readable label for how the batch was created
+   */
+  getCreatedViaLabel(): string {
+    if (!this.batch?.createdVia) return 'Unknown';
+
+    const labels: Record<string, string> = {
+      'PRODUCTION': 'Production Confirmation',
+      'SPLIT': 'Batch Split',
+      'MERGE': 'Batch Merge',
+      'MANUAL': 'Manual Entry',
+      'SYSTEM': 'System Generated',
+      'RECEIPT': 'Goods Receipt'
+    };
+
+    return labels[this.batch.createdVia] || this.batch.createdVia;
+  }
+
+  /**
+   * Get icon class for the creation method
+   */
+  getCreatedViaIcon(): string {
+    if (!this.batch?.createdVia) return 'fa-question-circle';
+
+    const icons: Record<string, string> = {
+      'PRODUCTION': 'fa-industry',
+      'SPLIT': 'fa-code-branch',
+      'MERGE': 'fa-code-merge',
+      'MANUAL': 'fa-pen-to-square',
+      'SYSTEM': 'fa-robot',
+      'RECEIPT': 'fa-truck-ramp-box'
+    };
+
+    return icons[this.batch.createdVia] || 'fa-circle';
+  }
+
+  /**
+   * Get CSS class for the creation type badge
+   */
+  getCreatedViaClass(): string {
+    if (!this.batch?.createdVia) return '';
+
+    const classes: Record<string, string> = {
+      'PRODUCTION': 'created-via-production',
+      'SPLIT': 'created-via-split',
+      'MERGE': 'created-via-merge',
+      'MANUAL': 'created-via-manual',
+      'SYSTEM': 'created-via-system',
+      'RECEIPT': 'created-via-receipt'
+    };
+
+    return classes[this.batch.createdVia] || '';
+  }
+
+  /**
+   * Check if batch has supplier info (for RM batches)
+   */
+  hasSupplierInfo(): boolean {
+    return !!(this.batch?.supplierBatchNumber || this.batch?.supplierId);
+  }
+
+  /**
+   * Navigate to the source operation
+   */
+  navigateToOperation(operationId: number): void {
+    // Navigate to order/operation - operations are accessed via order detail
+    this.router.navigate(['/production/confirm', operationId]);
+  }
+
   private buildGenealogyChart(): void {
     if (!this.genealogyChartRef || !this.genealogy || !this.batch) return;
     const parents = this.genealogy.parentBatches || [];

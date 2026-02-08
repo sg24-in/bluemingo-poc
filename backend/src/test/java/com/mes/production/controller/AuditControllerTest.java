@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.context.annotation.Import;
@@ -263,6 +266,118 @@ class AuditControllerTest {
     @DisplayName("Should require authentication for recent activity")
     void getRecentActivity_Unauthenticated_Returns401() throws Exception {
         mockMvc.perform(get("/api/audit/recent")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with default params")
+    @WithMockUser(username = "admin@mes.com", roles = {"USER"})
+    void getPagedAudit_DefaultParams_ReturnsPagedResults() throws Exception {
+        Page<AuditTrail> mockPage = new PageImpl<>(testEntries, PageRequest.of(0, 20), 2);
+        when(auditService.getPagedAudit(0, 20, null, null, null)).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/audit/paged")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.page", is(0)))
+                .andExpect(jsonPath("$.size", is(20)))
+                .andExpect(jsonPath("$.totalElements", is(2)))
+                .andExpect(jsonPath("$.totalPages", is(1)));
+
+        verify(auditService, times(1)).getPagedAudit(0, 20, null, null, null);
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with custom page and size")
+    @WithMockUser(username = "admin@mes.com", roles = {"USER"})
+    void getPagedAudit_CustomPageAndSize_UsesProvidedValues() throws Exception {
+        Page<AuditTrail> mockPage = new PageImpl<>(testEntries, PageRequest.of(2, 50), 102);
+        when(auditService.getPagedAudit(2, 50, null, null, null)).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/audit/paged")
+                        .param("page", "2")
+                        .param("size", "50")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page", is(2)))
+                .andExpect(jsonPath("$.size", is(50)));
+
+        verify(auditService, times(1)).getPagedAudit(2, 50, null, null, null);
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with entity type filter")
+    @WithMockUser(username = "admin@mes.com", roles = {"USER"})
+    void getPagedAudit_EntityTypeFilter_FiltersCorrectly() throws Exception {
+        Page<AuditTrail> mockPage = new PageImpl<>(List.of(testAuditEntry), PageRequest.of(0, 20), 1);
+        when(auditService.getPagedAudit(0, 20, "BATCH", null, null)).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/audit/paged")
+                        .param("entityType", "BATCH")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].entityType", is("BATCH")));
+
+        verify(auditService, times(1)).getPagedAudit(0, 20, "BATCH", null, null);
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with action filter")
+    @WithMockUser(username = "admin@mes.com", roles = {"USER"})
+    void getPagedAudit_ActionFilter_FiltersCorrectly() throws Exception {
+        Page<AuditTrail> mockPage = new PageImpl<>(List.of(testAuditEntry), PageRequest.of(0, 20), 1);
+        when(auditService.getPagedAudit(0, 20, null, "STATUS_CHANGE", null)).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/audit/paged")
+                        .param("action", "STATUS_CHANGE")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+
+        verify(auditService, times(1)).getPagedAudit(0, 20, null, "STATUS_CHANGE", null);
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with search filter")
+    @WithMockUser(username = "admin@mes.com", roles = {"USER"})
+    void getPagedAudit_SearchFilter_FiltersCorrectly() throws Exception {
+        Page<AuditTrail> mockPage = new PageImpl<>(testEntries, PageRequest.of(0, 20), 2);
+        when(auditService.getPagedAudit(0, 20, null, null, "admin")).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/audit/paged")
+                        .param("search", "admin")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)));
+
+        verify(auditService, times(1)).getPagedAudit(0, 20, null, null, "admin");
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with all filters")
+    @WithMockUser(username = "admin@mes.com", roles = {"USER"})
+    void getPagedAudit_AllFilters_FiltersCorrectly() throws Exception {
+        Page<AuditTrail> mockPage = new PageImpl<>(List.of(testAuditEntry), PageRequest.of(0, 20), 1);
+        when(auditService.getPagedAudit(0, 20, "BATCH", "STATUS_CHANGE", "admin")).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/audit/paged")
+                        .param("entityType", "BATCH")
+                        .param("action", "STATUS_CHANGE")
+                        .param("search", "admin")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+
+        verify(auditService, times(1)).getPagedAudit(0, 20, "BATCH", "STATUS_CHANGE", "admin");
+    }
+
+    @Test
+    @DisplayName("Should require authentication for paginated audit")
+    void getPagedAudit_Unauthenticated_Returns401() throws Exception {
+        mockMvc.perform(get("/api/audit/paged")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }

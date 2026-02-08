@@ -88,6 +88,138 @@
         </div>
       </div>
 
+      <!-- TASK-M4: Extended Properties Section -->
+      <div class="form-section collapsible">
+        <h2 class="section-header" (click)="toggleExtendedFields()">
+          <span class="toggle-icon">{{ showExtendedFields ? '−' : '+' }}</span>
+          Extended Properties
+          <span class="optional-badge">Optional</span>
+        </h2>
+
+        <div class="collapsible-content" *ngIf="showExtendedFields">
+          <!-- Classification -->
+          <h3 class="subsection-header">Classification</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="materialGroup">Material Group</label>
+              <input
+                type="text"
+                id="materialGroup"
+                formControlName="materialGroup"
+                placeholder="e.g., Ferrous Metals"
+              />
+            </div>
+            <div class="form-group">
+              <label for="sku">SKU</label>
+              <input
+                type="text"
+                id="sku"
+                formControlName="sku"
+                placeholder="e.g., SKU-12345"
+              />
+            </div>
+          </div>
+
+          <!-- Cost Information -->
+          <h3 class="subsection-header">Cost Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="standardCost">Standard Cost</label>
+              <input
+                type="number"
+                id="standardCost"
+                formControlName="standardCost"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 100.00"
+              />
+            </div>
+            <div class="form-group">
+              <label for="costCurrency">Currency</label>
+              <select id="costCurrency" formControlName="costCurrency">
+                <option *ngFor="let curr of currencies" [value]="curr.value">
+                  {{ curr.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Inventory Management -->
+          <h3 class="subsection-header">Inventory Management</h3>
+          <div class="form-row three-cols">
+            <div class="form-group">
+              <label for="minStockLevel">Min Stock Level</label>
+              <input
+                type="number"
+                id="minStockLevel"
+                formControlName="minStockLevel"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 100"
+              />
+            </div>
+            <div class="form-group">
+              <label for="maxStockLevel">Max Stock Level</label>
+              <input
+                type="number"
+                id="maxStockLevel"
+                formControlName="maxStockLevel"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 1000"
+              />
+            </div>
+            <div class="form-group">
+              <label for="reorderPoint">Reorder Point</label>
+              <input
+                type="number"
+                id="reorderPoint"
+                formControlName="reorderPoint"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 200"
+              />
+            </div>
+          </div>
+
+          <!-- Logistics -->
+          <h3 class="subsection-header">Logistics & Storage</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="leadTimeDays">Lead Time (days)</label>
+              <input
+                type="number"
+                id="leadTimeDays"
+                formControlName="leadTimeDays"
+                min="0"
+                max="365"
+                placeholder="e.g., 14"
+              />
+            </div>
+            <div class="form-group">
+              <label for="shelfLifeDays">Shelf Life (days)</label>
+              <input
+                type="number"
+                id="shelfLifeDays"
+                formControlName="shelfLifeDays"
+                min="0"
+                placeholder="e.g., 365"
+              />
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="storageConditions">Storage Conditions</label>
+            <input
+              type="text"
+              id="storageConditions"
+              formControlName="storageConditions"
+              placeholder="e.g., Store in cool, dry place"
+            />
+          </div>
+        </div>
+      </div>
+
       <div class="form-section" *ngIf="isEditMode">
         <h2>Status</h2>
 

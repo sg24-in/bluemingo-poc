@@ -1,11 +1,289 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-08
-**Session Status:** Complete - UI Enhancements Implemented
+**Session Status:** Active - Frontend-Backend Model Analysis Documentation
 
 ---
 
-## Latest Session Changes (2026-02-08 - UI Enhancements P16 & P17)
+## Latest Session Changes (2026-02-08 - TASK-M4 Material/Product Fields)
+
+### TASK-M4: Material/Product Extended Fields Implementation ✅
+
+**Purpose:** Add all backend DTO fields to frontend Material and Product models with collapsible form sections
+
+**Files Modified:**
+- `frontend/src/app/shared/models/material.model.ts` - Added 11 extended fields
+- `frontend/src/app/shared/models/product.model.ts` - Added 11 extended fields
+- `frontend/src/app/features/materials/material-form/` - Extended form with collapsible section
+- `frontend/src/app/features/products/product-form/` - Extended form with collapsible section, material linking
+- `frontend/src/app/features/materials/material-form/material-form.component.spec.ts` - 13 new tests
+- `frontend/src/app/features/products/product-form/product-form.component.spec.ts` - 14 new tests
+
+**Features Implemented:**
+- Collapsible "Extended Properties" sections in both forms
+- Material fields: cost info, inventory levels, logistics
+- Product fields: pricing, physical specs, order management, material linking
+- Auto-expand section when editing records with extended data
+- Unit tests: 46 total for both forms
+
+---
+
+### GAP-021: Equipment Category Field Implementation ✅
+
+**Purpose:** Add functional category classification for equipment (MELTING, CASTING, ROLLING, etc.)
+
+**Files Modified:**
+- `frontend/src/app/shared/models/equipment.model.ts` - Added EquipmentCategoryType, equipmentCategory field
+- `frontend/src/app/shared/models/pagination.model.ts` - Added category to PageRequest interface
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.ts` - Added category filter state, helper methods
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.html` - Added category dropdown, table column with badges
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.css` - Added 10 category-specific badge styles
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.spec.ts` - Added 7 category tests
+- `e2e/tests/08-equipment.test.js` - Added 2 E2E tests for category filter
+
+**Features Implemented:**
+- Category dropdown filter (MELTING, CASTING, ROLLING, FINISHING, COATING, WIRE_ROLLING, PACKAGING, QUALITY, UTILITY, OTHER)
+- Category column in table with color-coded badges
+- Category-specific CSS styles (10 colors matching functional areas)
+- Unit tests: 28 total (7 new for category)
+- E2E tests: 9 total (2 new for category filter and badges)
+
+---
+
+## Previous Session Changes (2026-02-08 - Model Analysis Documentation)
+
+### Frontend-Backend Model Analysis Document Created ✅
+
+**Purpose:** Comprehensive analysis of frontend TypeScript models vs backend Java DTOs
+
+**Document Created:**
+- `documents/Frontend-Backend-Model-Analysis.md` - Full analysis with action items
+
+**Key Findings:**
+| Severity | Count | Description |
+|----------|-------|-------------|
+| 🔴 HIGH | 1 | Production Confirmation missing multi-batch support fields |
+| 🟡 MEDIUM | 5 | Missing fields in Batch, Equipment, Material, Product models |
+| 🟢 LOW | 6 | Well-aligned models (Orders, Operations, Inventory, Holds, etc.) |
+
+**Critical Gap Identified:**
+- `ProductionConfirmation` model missing 6 fields for multi-batch/partial confirmation
+- Fields: `outputBatches`, `isPartial`, `remainingQty`, `batchCount`, `hasPartialBatch`, `saveAsPartial`
+
+**New Pending Tasks Added:**
+- TASK-M1: Add multi-batch fields to ProductionConfirmation (HIGH) ✅
+- TASK-M2: Add traceability fields to Batch model (MEDIUM) ✅
+- TASK-M3: Add equipmentCategory to Equipment model (MEDIUM) ✅
+- TASK-M4: Add material/product management fields (MEDIUM)
+
+---
+
+## Previous Session Changes (2026-02-08 - Production Confirm Fix & UI Reorganization)
+
+### Bug Fix: Production Confirmation - Operations Not Appearing ✅
+
+**Root Cause:**
+- Frontend model `OrderLineItem` expected operations nested under `processes[].operations[]`
+- Backend DTO `OrderDTO.OrderLineDTO` sends operations directly as `operations[]`
+- Frontend `extractReadyOperations()` was iterating wrong structure
+
+**Files Modified:**
+- `frontend/src/app/shared/models/order.model.ts`
+  - Added `operations?: OperationBrief[]` to `OrderLineItem` interface
+  - Kept `processes[]` for backwards compatibility
+- `frontend/src/app/shared/models/operation.model.ts`
+  - Added `processId?: number` and `processName?: string` to `OperationBrief`
+- `frontend/src/app/features/production/production-landing/production-landing.component.ts`
+  - Fixed `extractReadyOperations()` to iterate `lineItem.operations[]` directly
+
+### UI Reorganization: Processes Moved to Admin Section ✅
+
+**Issue:** Process is a design-time entity, should be under Manage section, not main menu
+
+**Files Modified:**
+- `frontend/src/app/app-routing.module.ts`
+  - Removed `/processes` from MainLayoutComponent routes
+  - Kept only under `/manage/processes`
+- `frontend/src/app/shared/components/header/header.component.html`
+  - Removed Processes link from Manufacturing dropdown
+- `frontend/src/app/shared/components/header/header.component.ts`
+  - Updated `isManufacturingActive()` to exclude processes route
+
+### Server-Side Pagination Analysis ✅
+
+**Pages WITH Server-Side Pagination (15):**
+| Page | Endpoint | Status |
+|------|----------|--------|
+| Orders | `getOrdersPaged()` | ✓ |
+| Inventory | `getInventoryPaged()` | ✓ |
+| Batches | `getBatchesPaged()` | ✓ |
+| Equipment | `getEquipmentPaged()` | ✓ |
+| Holds | `getHoldsPaged()` | ✓ |
+| Customers | `getCustomersPaged()` | ✓ |
+| Materials | `getMaterialsPaged()` | ✓ |
+| Products | `getProductsPaged()` | ✓ |
+| Operators | `getOperatorsPaged()` | ✓ |
+| Audit Trail | `getAuditPaged()` | ✓ |
+| Processes | `getProcessesPaged()` | ✓ |
+| Operation Templates | `getOperationTemplatesPaged()` | ✓ |
+| Batch Number Config | `getBatchNumberConfigsPaged()` | ✓ |
+| Hold Reasons Config | `getHoldReasonsPaged()` | ✓ |
+| Process Parameters Config | `getProcessParamsPaged()` | ✓ |
+
+**Pages WITHOUT Server-Side Pagination (Need Implementation):**
+| Page | Current API | Priority |
+|------|------------|----------|
+| Operations | `getAllOperations()` | HIGH |
+| BOM | `getBomProducts()` | MEDIUM |
+| Routing | `getAllRoutings()` | HIGH |
+
+---
+
+## Pending Tasks
+
+### Model Alignment Tasks (From Frontend-Backend Analysis)
+
+#### TASK-M1: Add Multi-Batch Fields to Production Confirmation [DONE] ✅
+- Frontend: Add `outputBatches`, `isPartial`, `remainingQty`, `batchCount`, `hasPartialBatch` to ProductionConfirmation model ✅
+- Frontend: Add `saveAsPartial` to ProductionConfirmationRequest ✅
+- Frontend: Update production-confirm component to display multiple output batches ✅
+- Frontend: Add partial confirmation workflow support ✅
+
+**Files Modified:**
+- `frontend/src/app/shared/models/production.model.ts` - Added all multi-batch fields
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.ts` - Added saveAsPartial form field, helper methods
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.html` - Added multi-batch display, partial confirmation UI
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.css` - Added styles for batches grid, progress bar, partial indicator
+
+#### TASK-M2: Add Traceability Fields to Batch Model [DONE] ✅
+- Frontend: Add `generatedAtOperationId`, `createdVia`, `supplierBatchNumber`, `supplierId` to Batch model ✅
+- Frontend: Display creation context (PRODUCTION, RECEIPT, SPLIT, MERGE) in batch detail ✅
+- Frontend: Show supplier info for raw material batches ✅
+
+**Files Modified:**
+- `frontend/src/app/shared/models/batch.model.ts` - Added 4 traceability fields + BatchCreatedVia type
+- `frontend/src/app/features/batches/batch-detail/batch-detail.component.ts` - Added helper methods
+- `frontend/src/app/features/batches/batch-detail/batch-detail.component.html` - Added traceability section
+- `frontend/src/app/features/batches/batch-detail/batch-detail.component.css` - Added traceability styles
+
+#### TASK-M3: Add Equipment Category Field [DONE] ✅
+- Frontend: Add `equipmentCategory` to Equipment model ✅
+- Frontend: Add category filter to equipment list ✅
+- Frontend: Display category in equipment table ✅
+- Frontend: Add category badges with color coding ✅
+- Unit tests: 7 new tests for category functionality ✅
+- E2E tests: 2 new tests for category filter ✅
+
+**Files Modified:**
+- `frontend/src/app/shared/models/equipment.model.ts` - Added EquipmentCategoryType, equipmentCategory field
+- `frontend/src/app/shared/models/pagination.model.ts` - Added category to PageRequest, toQueryParams
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.ts` - Added category filter, helper methods
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.html` - Added category dropdown, table column
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.css` - Added category badge styles
+- `frontend/src/app/features/equipment/equipment-list/equipment-list.component.spec.ts` - Added 7 category tests
+- `e2e/tests/08-equipment.test.js` - Added 2 category filter E2E tests
+
+#### TASK-M4: Add Material/Product Management Fields [DONE] ✅
+- Frontend: Add 11 missing fields to Material model (cost, thresholds, supplier, specs) ✅
+- Frontend: Add 11 missing fields to Product model (pricing, process, specs) ✅
+- Frontend: Update forms with collapsible "Extended Properties" sections ✅
+- Unit tests: 27 new tests for extended fields functionality ✅
+
+**Files Modified:**
+- `frontend/src/app/shared/models/material.model.ts` - Added 11 extended fields, MaterialType/MaterialStatus types
+- `frontend/src/app/shared/models/product.model.ts` - Added 11 extended fields, ProductStatus type
+- `frontend/src/app/features/materials/material-form/material-form.component.ts` - Added extended form controls, toggleExtendedFields()
+- `frontend/src/app/features/materials/material-form/material-form.component.html` - Added collapsible extended properties section
+- `frontend/src/app/features/materials/material-form/material-form.component.css` - Added collapsible section styles
+- `frontend/src/app/features/materials/material-form/material-form.component.spec.ts` - Added 13 extended field tests
+- `frontend/src/app/features/products/product-form/product-form.component.ts` - Added extended form controls, material linking
+- `frontend/src/app/features/products/product-form/product-form.component.html` - Added collapsible extended properties section
+- `frontend/src/app/features/products/product-form/product-form.component.css` - Added collapsible section styles
+- `frontend/src/app/features/products/product-form/product-form.component.spec.ts` - Added 14 extended field tests
+
+**Extended Material Fields (11):**
+- materialGroup, sku (classification)
+- standardCost, costCurrency (cost)
+- minStockLevel, maxStockLevel, reorderPoint (inventory)
+- leadTimeDays, shelfLifeDays, storageConditions (logistics)
+- createdBy, updatedBy (audit)
+
+**Extended Product Fields (11):**
+- productCategory, productGroup (classification)
+- weightPerUnit, weightUnit (physical specs)
+- standardPrice, priceCurrency (pricing)
+- minOrderQty, leadTimeDays (order management)
+- materialId (FG material linkage)
+- createdBy, updatedBy (audit)
+
+### Pagination Tasks
+
+#### TASK-P1: Add Server-Side Pagination to Operations List [DONE]
+- Backend: Add `findByFilters()` method to OperationRepository ✅
+- Backend: Add `getOperationsPaged()` to OperationService ✅
+- Backend: Add `/api/operations/paged` endpoint to OperationController ✅
+- Frontend: Update operation-list.component.ts to use paged API ✅
+- Frontend: Add type filter dropdown ✅
+- Frontend: Update unit tests (24 tests passing) ✅
+
+#### TASK-P2: Add Server-Side Pagination to Routing List [PENDING]
+- Backend: Add `findByFilters()` method to RoutingRepository
+- Backend: Add `getRoutingsPaged()` to RoutingService
+- Backend: Add `/api/routing/paged` endpoint to RoutingController
+- Frontend: Update routing-list.component.ts to use paged API
+
+#### TASK-P3: Add Server-Side Pagination to BOM List [PENDING]
+- Backend: Add `findByFilters()` method to BomRepository
+- Backend: Add `getBomProductsPaged()` to BomService
+- Backend: Add `/api/bom/products/paged` endpoint
+- Frontend: Update bom-list.component.ts to use paged API
+
+---
+
+## Previous Session Changes (2026-02-08 - Audit Pagination & Demo Data Fixes)
+
+### Audit Trail Pagination Implementation ✅
+
+**Backend Changes:**
+- `AuditTrailRepository.java` - Added `findByFilters()` with Pageable support
+- `AuditService.java` - Added `getPagedAudit()` method for server-side pagination
+- `AuditController.java` - Added `/api/audit/paged` endpoint
+
+**Frontend Changes:**
+- `audit-list.component.ts` - Rewrote to use server-side pagination with `loadPaged()` method
+- `audit-list.component.html` - Added pagination controls, page size selector
+- `audit-list.component.spec.ts` - Added 29 unit tests covering pagination, filtering, error handling
+
+**API Endpoint:**
+```
+GET /api/audit/paged?page=0&size=20&entityType=BATCH&action=CREATE&search=admin
+```
+
+### Demo Data Fixes ✅
+
+**Issue 1:** `process_parameters_config` INSERT missing `status` column
+- **Fix:** Added `status` column with `'ACTIVE'` to all INSERT statements
+
+**Issue 2:** `audit_trail.action` column too short (VARCHAR(20)) for `BATCH_NUMBER_GENERATED` (22 chars)
+- **Fix:** Extended to VARCHAR(30) in:
+  - `AuditTrail.java` entity (`@Column(length = 30)`)
+  - `demo/schema.sql`
+  - `patches/001_initial_schema.sql`
+  - **New:** `patches/045_extend_audit_action_column.sql` - Migration for existing databases
+
+**Files Modified:**
+- `backend/src/main/resources/demo/data.sql` - Fixed INSERT statements
+- `backend/src/main/resources/demo/schema.sql` - Extended action column
+- `backend/src/main/resources/patches/001_initial_schema.sql` - Updated for new installs
+- `backend/src/main/resources/patches/045_extend_audit_action_column.sql` - **NEW** migration patch
+- `backend/src/main/java/com/mes/production/entity/AuditTrail.java` - Column length = 30
+- `documents/reference/MES-Database-Schema.md` - Updated documentation
+
+**Verification:** Backend demo mode starts successfully with all data loaded.
+
+---
+
+## Previous Session Changes (2026-02-08 - UI Enhancements P16 & P17)
 
 ### Production Confirm Form - UI Enhancements ✅
 

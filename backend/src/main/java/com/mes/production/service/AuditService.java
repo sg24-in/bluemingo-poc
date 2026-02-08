@@ -4,7 +4,9 @@ import com.mes.production.entity.AuditTrail;
 import com.mes.production.repository.AuditTrailRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -181,6 +183,22 @@ public class AuditService {
     public long countTodaysActivity() {
         LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         return auditTrailRepository.countTodaysEntries(startOfDay);
+    }
+
+    /**
+     * Get paginated audit entries with optional filters
+     */
+    @Transactional(readOnly = true)
+    public Page<AuditTrail> getPagedAudit(int page, int size, String entityType, String action, String search) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
+
+        // If no filters, return all entries
+        if (entityType == null && action == null && search == null) {
+            return auditTrailRepository.findAllByOrderByTimestampDesc(pageable);
+        }
+
+        // Apply filters
+        return auditTrailRepository.findByFilters(entityType, action, search, pageable);
     }
 
     private String getCurrentUser() {

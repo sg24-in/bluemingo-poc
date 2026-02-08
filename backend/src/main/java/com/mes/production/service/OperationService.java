@@ -1,10 +1,14 @@
 package com.mes.production.service;
 
 import com.mes.production.dto.OperationDTO;
+import com.mes.production.dto.PageRequestDTO;
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.entity.Operation;
 import com.mes.production.repository.OperationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +33,35 @@ public class OperationService {
         return operationRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * TASK-P1: Get paginated operations with filters
+     */
+    public PagedResponseDTO<OperationDTO> getOperationsPaged(PageRequestDTO pageRequest) {
+        log.info("Fetching operations with pagination: page={}, size={}, status={}, type={}, search={}",
+                pageRequest.getPage(), pageRequest.getSize(),
+                pageRequest.getStatus(), pageRequest.getType(), pageRequest.getSearch());
+
+        Pageable pageable = pageRequest.toPageable("sequenceNumber");
+
+        Page<Operation> page;
+        if (pageRequest.hasFilters()) {
+            page = operationRepository.findByFilters(
+                    pageRequest.getStatus(),
+                    pageRequest.getType(),  // operationType filter
+                    pageRequest.getSearchPattern(),
+                    pageable);
+        } else {
+            page = operationRepository.findAll(pageable);
+        }
+
+        Page<OperationDTO> dtoPage = page.map(this::convertToDTOWithDetails);
+
+        return PagedResponseDTO.fromPage(dtoPage,
+                pageRequest.getSortBy(),
+                pageRequest.getSortDirection(),
+                pageRequest.getSearch());
     }
 
     /**

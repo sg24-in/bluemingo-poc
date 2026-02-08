@@ -36,7 +36,7 @@ public class AuditTrail {
     @Column(name = "new_value", columnDefinition = "TEXT")
     private String newValue;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 30)
     private String action;
 
     @Column(name = "changed_by", nullable = false, length = 100)

@@ -59,4 +59,7 @@ export interface OperationBrief {
   operationType?: string;
   sequenceNumber: number;
   status: OperationStatusType;
+  // Reference to design-time Process (optional)
+  processId?: number;
+  processName?: string;
 }

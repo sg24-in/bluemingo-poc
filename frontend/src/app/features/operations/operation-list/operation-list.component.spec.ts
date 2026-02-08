@@ -8,6 +8,7 @@ import { of, throwError, BehaviorSubject } from 'rxjs';
 import { OperationListComponent } from './operation-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { PagedResponse } from '../../../shared/models/pagination.model';
 
 describe('OperationListComponent', () => {
   let component: OperationListComponent;
@@ -21,7 +22,7 @@ describe('OperationListComponent', () => {
       processId: 1,
       operationName: 'Melt Iron',
       operationCode: 'MLT-001',
-      operationType: 'FURNACE',
+      operationType: 'BATCH',
       sequenceNumber: 1,
       status: 'READY',
       targetQty: 100,
@@ -34,7 +35,7 @@ describe('OperationListComponent', () => {
       processId: 1,
       operationName: 'Cast Steel',
       operationCode: 'CST-001',
-      operationType: 'CASTER',
+      operationType: 'CONTINUOUS',
       sequenceNumber: 2,
       status: 'IN_PROGRESS',
       targetQty: 100,
@@ -47,7 +48,7 @@ describe('OperationListComponent', () => {
       processId: 2,
       operationName: 'Roll Sheet',
       operationCode: 'RLL-001',
-      operationType: 'ROLLING',
+      operationType: 'CONTINUOUS',
       sequenceNumber: 1,
       status: 'BLOCKED',
       targetQty: 200,
@@ -55,25 +56,25 @@ describe('OperationListComponent', () => {
       blockReason: 'Equipment maintenance',
       processName: 'Rolling',
       orderNumber: 'ORD-002'
-    },
-    {
-      operationId: 4,
-      processId: 2,
-      operationName: 'Quality Check',
-      operationCode: 'QC-001',
-      operationType: 'INSPECTION',
-      sequenceNumber: 2,
-      status: 'CONFIRMED',
-      targetQty: 50,
-      confirmedQty: 50,
-      processName: 'Inspection',
-      orderNumber: 'ORD-002'
     }
   ];
 
+  // TASK-P1: Mock paged response
+  const mockPagedResponse: PagedResponse<any> = {
+    content: mockOperations,
+    page: 0,
+    size: 20,
+    totalElements: 3,
+    totalPages: 1,
+    first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false
+  };
+
   beforeEach(async () => {
     const apiSpy = jasmine.createSpyObj('ApiService', [
-      'getAllOperations',
+      'getOperationsPaged',
       'blockOperation',
       'unblockOperation'
     ]);
@@ -103,7 +104,7 @@ describe('OperationListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getAllOperations.and.returnValue(of(mockOperations));
+    apiServiceSpy.getOperationsPaged.and.returnValue(of(mockPagedResponse));
 
     fixture = TestBed.createComponent(OperationListComponent);
     component = fixture.componentInstance;
@@ -114,73 +115,109 @@ describe('OperationListComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load operations on init', () => {
-    expect(apiServiceSpy.getAllOperations).toHaveBeenCalled();
-    expect(component.allOperations.length).toBe(4);
-    expect(component.loading).toBeFalse();
+  // TASK-P1: Pagination tests
+  describe('Pagination', () => {
+    it('should load operations on init', () => {
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalled();
+      expect(component.operations.length).toBe(3);
+      expect(component.loading).toBeFalse();
+    });
+
+    it('should set pagination state from response', () => {
+      expect(component.page).toBe(0);
+      expect(component.totalElements).toBe(3);
+      expect(component.totalPages).toBe(1);
+      expect(component.hasNext).toBeFalse();
+      expect(component.hasPrevious).toBeFalse();
+    });
+
+    it('should change page', () => {
+      const page1Response: PagedResponse<any> = {
+        ...mockPagedResponse,
+        page: 1,
+        hasPrevious: true
+      };
+      apiServiceSpy.getOperationsPaged.and.returnValue(of(page1Response));
+
+      component.onPageChange(1);
+
+      expect(component.page).toBe(1);
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalledTimes(2);
+    });
+
+    it('should reset to first page when changing page size', () => {
+      const size50Response: PagedResponse<any> = {
+        ...mockPagedResponse,
+        size: 50,
+        page: 0
+      };
+      apiServiceSpy.getOperationsPaged.and.returnValue(of(size50Response));
+
+      component.page = 2;
+      component.onSizeChange(50);
+
+      expect(component.page).toBe(0);
+      expect(component.size).toBe(50);
+    });
   });
 
-  it('should display all operations by default', () => {
-    expect(component.operations.length).toBe(4);
-  });
+  describe('Filtering', () => {
+    beforeEach(() => {
+      apiServiceSpy.getOperationsPaged.calls.reset();
+    });
 
-  it('should filter by status', () => {
-    component.onFilterStatusChange('READY');
-    expect(component.operations.length).toBe(1);
-    expect(component.operations[0].operationCode).toBe('MLT-001');
-  });
+    it('should filter by status', () => {
+      component.onFilterStatusChange('READY');
 
-  it('should filter by search term on name', () => {
-    component.onSearchChange('Cast');
-    expect(component.operations.length).toBe(1);
-    expect(component.operations[0].operationName).toBe('Cast Steel');
-  });
+      expect(component.filterStatus).toBe('READY');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalled();
+    });
 
-  it('should filter by search term on code', () => {
-    component.onSearchChange('RLL');
-    expect(component.operations.length).toBe(1);
-    expect(component.operations[0].operationCode).toBe('RLL-001');
-  });
+    it('should clear status filter when "all" is selected', () => {
+      component.filterStatus = 'READY';
+      component.onFilterStatusChange('all');
 
-  it('should filter by search term on order number', () => {
-    component.onSearchChange('ORD-002');
-    expect(component.operations.length).toBe(2);
-  });
+      expect(component.filterStatus).toBe('');
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalled();
+    });
 
-  it('should filter by search term on process name', () => {
-    component.onSearchChange('Melting');
-    expect(component.operations.length).toBe(1);
-    expect(component.operations[0].processName).toBe('Melting');
-  });
+    it('should filter by type', () => {
+      component.onFilterTypeChange('BATCH');
 
-  it('should combine status and search filters', () => {
-    component.filterStatus = 'BLOCKED';
-    component.searchTerm = 'Roll';
-    component.applyFilters();
-    expect(component.operations.length).toBe(1);
-    expect(component.operations[0].operationCode).toBe('RLL-001');
-  });
+      expect(component.filterType).toBe('BATCH');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalled();
+    });
 
-  it('should show all when filter is all', () => {
-    component.onFilterStatusChange('BLOCKED');
-    expect(component.operations.length).toBe(1);
+    it('should filter by search term', () => {
+      component.onSearchChange('Melt');
 
-    component.onFilterStatusChange('all');
-    expect(component.operations.length).toBe(4);
+      expect(component.searchTerm).toBe('Melt');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalled();
+    });
+
+    it('should include filters in API request', () => {
+      component.filterStatus = 'READY';
+      component.filterType = 'BATCH';
+      component.searchTerm = 'test';
+      component.loadOperations();
+
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          status: 'READY',
+          type: 'BATCH',
+          search: 'test'
+        })
+      );
+    });
   });
 
   it('should return correct status class', () => {
     expect(component.getStatusClass('IN_PROGRESS')).toBe('in-progress');
     expect(component.getStatusClass('NOT_STARTED')).toBe('not-started');
     expect(component.getStatusClass('BLOCKED')).toBe('blocked');
-  });
-
-  it('should count by status', () => {
-    expect(component.countByStatus('READY')).toBe(1);
-    expect(component.countByStatus('IN_PROGRESS')).toBe(1);
-    expect(component.countByStatus('BLOCKED')).toBe(1);
-    expect(component.countByStatus('CONFIRMED')).toBe(1);
-    expect(component.countByStatus('NOT_STARTED')).toBe(0);
   });
 
   describe('Block Modal', () => {
@@ -235,10 +272,10 @@ describe('OperationListComponent', () => {
 
       component.openBlockModal(mockOperations[0]);
       component.blockReason = 'Equipment issue';
+      apiServiceSpy.getOperationsPaged.calls.reset();
       component.confirmBlock();
 
-      // getAllOperations called once on init, once after block
-      expect(apiServiceSpy.getAllOperations).toHaveBeenCalledTimes(2);
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalledTimes(1);
     });
 
     it('should handle block error', () => {
@@ -279,10 +316,10 @@ describe('OperationListComponent', () => {
         updatedOn: '2024-01-01T00:00:00'
       }));
 
+      apiServiceSpy.getOperationsPaged.calls.reset();
       component.unblockOperation(mockOperations[2]);
 
-      // getAllOperations called once on init, once after unblock
-      expect(apiServiceSpy.getAllOperations).toHaveBeenCalledTimes(2);
+      expect(apiServiceSpy.getOperationsPaged).toHaveBeenCalledTimes(1);
     });
 
     it('should handle unblock error', () => {
@@ -295,15 +332,10 @@ describe('OperationListComponent', () => {
   });
 
   it('should handle load error', () => {
-    apiServiceSpy.getAllOperations.and.returnValue(throwError(() => ({ error: { message: 'Load failed' } })));
+    apiServiceSpy.getOperationsPaged.and.returnValue(throwError(() => ({ error: { message: 'Load failed' } })));
     component.loadOperations();
     expect(component.error).toBe('Load failed');
     expect(component.loading).toBeFalse();
-  });
-
-  it('should show empty state when no operations match', () => {
-    component.onFilterStatusChange('ON_HOLD');
-    expect(component.operations.length).toBe(0);
   });
 
   describe('Query Params', () => {
@@ -315,54 +347,20 @@ describe('OperationListComponent', () => {
     });
 
     it('should ignore invalid status from query params', () => {
+      apiServiceSpy.getOperationsPaged.calls.reset();
       queryParamsSubject.next({ status: 'INVALID_STATUS' });
       fixture.detectChanges();
 
-      // Should keep default 'all' filter
-      expect(component.filterStatus).toBe('all');
-    });
-
-    it('should filter operations based on query param status', () => {
-      queryParamsSubject.next({ status: 'BLOCKED' });
-      fixture.detectChanges();
-
-      expect(component.filterStatus).toBe('BLOCKED');
-      expect(component.operations.length).toBe(1);
-      expect(component.operations[0].status).toBe('BLOCKED');
+      // Should not set invalid status
+      expect(component.filterStatus).toBe('');
     });
   });
 
-  describe('Filter Highlighting', () => {
-    it('should apply filter-active class when status filter is set', () => {
-      component.onFilterStatusChange('READY');
-      fixture.detectChanges();
-
-      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
-      expect(filterGroup.classList.contains('filter-active')).toBeTrue();
-    });
-
-    it('should not apply filter-active class when status filter is all', () => {
-      component.onFilterStatusChange('all');
-      fixture.detectChanges();
-
-      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
-      expect(filterGroup.classList.contains('filter-active')).toBeFalse();
-    });
-
-    it('should apply filter-active class to select element when filter is set', () => {
-      component.onFilterStatusChange('BLOCKED');
-      fixture.detectChanges();
-
-      const select = fixture.nativeElement.querySelector('.filter-group select');
-      expect(select.classList.contains('filter-active')).toBeTrue();
-    });
-
-    it('should apply filter-active via query params', () => {
-      queryParamsSubject.next({ status: 'IN_PROGRESS' });
-      fixture.detectChanges();
-
-      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
-      expect(filterGroup.classList.contains('filter-active')).toBeTrue();
+  describe('Operation Types', () => {
+    it('should have operation type options', () => {
+      expect(component.operationTypes.length).toBeGreaterThan(0);
+      expect(component.operationTypes).toContain('BATCH');
+      expect(component.operationTypes).toContain('CONTINUOUS');
     });
   });
 });

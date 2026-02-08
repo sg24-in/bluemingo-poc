@@ -10,7 +10,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -229,5 +232,113 @@ class AuditServiceTest {
 
         // Act - should not throw
         assertDoesNotThrow(() -> auditService.logCreate("BATCH", 1L, "Test"));
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries without filters")
+    void getPagedAudit_NoFilters_ReturnsAllPaged() {
+        // Arrange
+        List<AuditTrail> entries = List.of(
+                AuditTrail.builder().auditId(1L).entityType("BATCH").action("CREATE").build(),
+                AuditTrail.builder().auditId(2L).entityType("ORDER").action("UPDATE").build()
+        );
+        Page<AuditTrail> mockPage = new PageImpl<>(entries, PageRequest.of(0, 20), 2);
+        when(auditTrailRepository.findAllByOrderByTimestampDesc(any(Pageable.class))).thenReturn(mockPage);
+
+        // Act
+        Page<AuditTrail> result = auditService.getPagedAudit(0, 20, null, null, null);
+
+        // Assert
+        assertEquals(2, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        verify(auditTrailRepository).findAllByOrderByTimestampDesc(PageRequest.of(0, 20));
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with entity type filter")
+    void getPagedAudit_WithEntityTypeFilter_FiltersCorrectly() {
+        // Arrange
+        List<AuditTrail> entries = List.of(
+                AuditTrail.builder().auditId(1L).entityType("BATCH").action("CREATE").build()
+        );
+        Page<AuditTrail> mockPage = new PageImpl<>(entries, PageRequest.of(0, 20), 1);
+        when(auditTrailRepository.findByFilters(eq("BATCH"), isNull(), isNull(), any(Pageable.class))).thenReturn(mockPage);
+
+        // Act
+        Page<AuditTrail> result = auditService.getPagedAudit(0, 20, "BATCH", null, null);
+
+        // Assert
+        assertEquals(1, result.getTotalElements());
+        verify(auditTrailRepository).findByFilters(eq("BATCH"), isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with action filter")
+    void getPagedAudit_WithActionFilter_FiltersCorrectly() {
+        // Arrange
+        List<AuditTrail> entries = List.of(
+                AuditTrail.builder().auditId(1L).entityType("BATCH").action("CREATE").build()
+        );
+        Page<AuditTrail> mockPage = new PageImpl<>(entries, PageRequest.of(0, 20), 1);
+        when(auditTrailRepository.findByFilters(isNull(), eq("CREATE"), isNull(), any(Pageable.class))).thenReturn(mockPage);
+
+        // Act
+        Page<AuditTrail> result = auditService.getPagedAudit(0, 20, null, "CREATE", null);
+
+        // Assert
+        assertEquals(1, result.getTotalElements());
+        verify(auditTrailRepository).findByFilters(isNull(), eq("CREATE"), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with search filter")
+    void getPagedAudit_WithSearchFilter_FiltersCorrectly() {
+        // Arrange
+        List<AuditTrail> entries = List.of(
+                AuditTrail.builder().auditId(1L).entityType("BATCH").action("CREATE").changedBy("admin").build()
+        );
+        Page<AuditTrail> mockPage = new PageImpl<>(entries, PageRequest.of(0, 20), 1);
+        when(auditTrailRepository.findByFilters(isNull(), isNull(), eq("admin"), any(Pageable.class))).thenReturn(mockPage);
+
+        // Act
+        Page<AuditTrail> result = auditService.getPagedAudit(0, 20, null, null, "admin");
+
+        // Assert
+        assertEquals(1, result.getTotalElements());
+        verify(auditTrailRepository).findByFilters(isNull(), isNull(), eq("admin"), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("Should get paginated audit entries with all filters")
+    void getPagedAudit_WithAllFilters_FiltersCorrectly() {
+        // Arrange
+        List<AuditTrail> entries = List.of(
+                AuditTrail.builder().auditId(1L).entityType("BATCH").action("CREATE").changedBy("admin").build()
+        );
+        Page<AuditTrail> mockPage = new PageImpl<>(entries, PageRequest.of(0, 20), 1);
+        when(auditTrailRepository.findByFilters(eq("BATCH"), eq("CREATE"), eq("admin"), any(Pageable.class))).thenReturn(mockPage);
+
+        // Act
+        Page<AuditTrail> result = auditService.getPagedAudit(0, 20, "BATCH", "CREATE", "admin");
+
+        // Assert
+        assertEquals(1, result.getTotalElements());
+        verify(auditTrailRepository).findByFilters(eq("BATCH"), eq("CREATE"), eq("admin"), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("Should cap page size at 100")
+    void getPagedAudit_ExcessivePageSize_CapsAt100() {
+        // Arrange
+        Page<AuditTrail> mockPage = new PageImpl<>(List.of(), PageRequest.of(0, 100), 0);
+        when(auditTrailRepository.findAllByOrderByTimestampDesc(any(Pageable.class))).thenReturn(mockPage);
+
+        // Act
+        auditService.getPagedAudit(0, 500, null, null, null);
+
+        // Assert
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(auditTrailRepository).findAllByOrderByTimestampDesc(captor.capture());
+        assertEquals(100, captor.getValue().getPageSize());
     }
 }
