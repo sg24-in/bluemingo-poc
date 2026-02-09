@@ -473,6 +473,22 @@ Services are kept intact because:
 
 **Build Verification:** compileJava + compileTestJava both SUCCESSFUL
 
+**Post-Cleanup Fix:** `RoutingStepRepository` query methods used JPA navigation paths
+(`routing.routingId`, `operationTemplate.operationTemplateId`) that broke after entity
+relationship changes. Fixed to use direct field names (`routingId`, `operationTemplateId`).
+Commit: `b6919b4`
+
+### Test Results (Post Full Orphan Cleanup)
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Backend | 603 | ALL PASS |
+| Frontend | 256 | ALL PASS |
+| **Total** | **859** | **ALL PASS** |
+
+**Note:** Backend tests dropped from 1,064 → 603 due to removal of 20 orphaned test files
+(tests for services no longer in the POC codebase). Frontend unchanged at 256.
+
 ---
 
 *Last Updated: 2026-02-09*
