@@ -8,9 +8,7 @@ import com.mes.production.service.BatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -130,31 +128,6 @@ public class BatchController {
     }
 
     /**
-     * Adjust batch quantity with mandatory reason.
-     * Per MES Batch Management Specification: batch quantity is NEVER edited directly.
-     * All quantity changes must use this endpoint with proper justification.
-     */
-    @PostMapping("/{batchId}/adjust-quantity")
-    public ResponseEntity<BatchDTO.AdjustQuantityResponse> adjustQuantity(
-            @PathVariable Long batchId,
-            @Valid @RequestBody BatchDTO.AdjustQuantityRequest request) {
-        log.info("POST /api/batches/{}/adjust-quantity - type: {}", batchId, request.getAdjustmentType());
-        BatchDTO.AdjustQuantityResponse response = batchService.adjustQuantity(batchId, request);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Get quantity adjustment history for a batch
-     */
-    @GetMapping("/{batchId}/adjustments")
-    public ResponseEntity<List<BatchDTO.QuantityAdjustmentHistory>> getAdjustmentHistory(
-            @PathVariable Long batchId) {
-        log.info("GET /api/batches/{}/adjustments", batchId);
-        List<BatchDTO.QuantityAdjustmentHistory> history = batchService.getAdjustmentHistory(batchId);
-        return ResponseEntity.ok(history);
-    }
-
-    /**
      * Update a batch
      */
     @PutMapping("/{batchId}")
@@ -194,39 +167,6 @@ public class BatchController {
     }
 
     /**
-     * Split a batch into multiple smaller batches
-     */
-    @PostMapping("/{batchId}/split")
-    public ResponseEntity<BatchDTO.SplitResponse> splitBatch(
-            @PathVariable Long batchId,
-            @Valid @RequestBody BatchDTO.SplitRequest request,
-            Authentication authentication) {
-        log.info("POST /api/batches/{}/split", batchId);
-
-        // Ensure the path batchId matches the request
-        request.setSourceBatchId(batchId);
-
-        String userId = authentication != null ? authentication.getName() : "system";
-        BatchDTO.SplitResponse response = batchService.splitBatch(request, userId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Merge multiple batches into one
-     */
-    @PostMapping("/merge")
-    public ResponseEntity<BatchDTO.MergeResponse> mergeBatches(
-            @Valid @RequestBody BatchDTO.MergeRequest request,
-            Authentication authentication) {
-        log.info("POST /api/batches/merge - Merging {} batches",
-                request.getSourceBatchIds() != null ? request.getSourceBatchIds().size() : 0);
-
-        String userId = authentication != null ? authentication.getName() : "system";
-        BatchDTO.MergeResponse response = batchService.mergeBatches(request, userId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
      * Get batches by status
      */
     @GetMapping("/status/{status}")
@@ -246,93 +186,4 @@ public class BatchController {
         return ResponseEntity.ok(batches);
     }
 
-    /**
-     * Get batches pending quality approval (QUALITY_PENDING status)
-     * Per MES Batch Management Specification: batches default to QUALITY_PENDING
-     * and require approval before becoming AVAILABLE.
-     */
-    @GetMapping("/pending-approval")
-    public ResponseEntity<List<BatchDTO>> getPendingApprovalBatches() {
-        log.info("GET /api/batches/pending-approval");
-        List<BatchDTO> batches = batchService.getBatchesByStatus("QUALITY_PENDING");
-        return ResponseEntity.ok(batches);
-    }
-
-    /**
-     * Send batch for quality check
-     */
-    @PostMapping("/{batchId}/quality-check")
-    public ResponseEntity<BatchDTO.StatusUpdateResponse> sendForQualityCheck(@PathVariable Long batchId) {
-        log.info("POST /api/batches/{}/quality-check", batchId);
-        BatchDTO.StatusUpdateResponse response = batchService.sendForQualityCheck(batchId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Approve a batch
-     */
-    @PostMapping("/{batchId}/approve")
-    public ResponseEntity<BatchDTO.StatusUpdateResponse> approveBatch(@PathVariable Long batchId) {
-        log.info("POST /api/batches/{}/approve", batchId);
-        BatchDTO.StatusUpdateResponse response = batchService.approveBatch(batchId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Reject a batch
-     */
-    @PostMapping("/{batchId}/reject")
-    public ResponseEntity<BatchDTO.StatusUpdateResponse> rejectBatch(
-            @PathVariable Long batchId,
-            @RequestBody BatchDTO.RejectionRequest request) {
-        log.info("POST /api/batches/{}/reject", batchId);
-        BatchDTO.StatusUpdateResponse response = batchService.rejectBatch(batchId, request.getReason());
-        return ResponseEntity.ok(response);
-    }
-
-    // ===== B16-B19: Validation Endpoints =====
-
-    /**
-     * B16: Validate split quantity invariant
-     */
-    @GetMapping("/{batchId}/validate/split")
-    public ResponseEntity<BatchDTO.ValidationResult> validateSplitInvariant(@PathVariable Long batchId) {
-        log.info("GET /api/batches/{}/validate/split", batchId);
-        BatchDTO.ValidationResult result = batchService.validateSplitInvariant(batchId);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * B17: Validate merge quantity invariant
-     */
-    @GetMapping("/{batchId}/validate/merge")
-    public ResponseEntity<BatchDTO.ValidationResult> validateMergeInvariant(@PathVariable Long batchId) {
-        log.info("GET /api/batches/{}/validate/merge", batchId);
-        BatchDTO.ValidationResult result = batchService.validateMergeInvariant(batchId);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * Validate all genealogy invariants for a batch
-     */
-    @GetMapping("/{batchId}/validate/genealogy")
-    public ResponseEntity<java.util.List<BatchDTO.ValidationResult>> validateGenealogyIntegrity(@PathVariable Long batchId) {
-        log.info("GET /api/batches/{}/validate/genealogy", batchId);
-        java.util.List<BatchDTO.ValidationResult> results = batchService.validateGenealogyIntegrity(batchId);
-        return ResponseEntity.ok(results);
-    }
-
-    /**
-     * B19: Check if a batch can be consumed (not on hold)
-     */
-    @GetMapping("/{batchId}/can-consume")
-    public ResponseEntity<java.util.Map<String, Object>> checkCanConsume(@PathVariable Long batchId) {
-        log.info("GET /api/batches/{}/can-consume", batchId);
-        boolean canConsume = batchService.canConsumeBatch(batchId);
-        return ResponseEntity.ok(java.util.Map.of(
-                "batchId", batchId,
-                "canConsume", canConsume,
-                "reason", canConsume ? "Batch is available for consumption" : "Batch is blocked or not available"
-        ));
-    }
 }

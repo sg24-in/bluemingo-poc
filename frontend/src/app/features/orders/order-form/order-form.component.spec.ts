@@ -137,7 +137,7 @@ describe('OrderFormComponent', () => {
     });
 
     it('should update customer name when customer selected', () => {
-      const event = { target: { value: '1' } } as unknown as Event;
+      const event = { target: { value: 'CUST-001' } } as unknown as Event;
       component.onCustomerChange(event);
       expect(component.form.get('customerName')?.value).toBe('Acme Corp');
     });

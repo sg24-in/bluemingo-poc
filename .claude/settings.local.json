@@ -163,7 +163,12 @@
       "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat -p D:/repositories/bluemingo-poc/backend bootRun --args=\"--spring.profiles.active=reset\")",
       "Bash(git push)",
       "Bash(Select-Object -First 400)",
-      "Bash(./gradlew testConnection:*)"
+      "Bash(./gradlew testConnection:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(./gradlew jacocoTestReport:*)",
+      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat test jacocoTestReport:*)",
+      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat:*)"
     ]
   }
 }

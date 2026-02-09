@@ -4,15 +4,12 @@ import com.mes.production.entity.Equipment;
 import com.mes.production.entity.Operator;
 import com.mes.production.repository.EquipmentRepository;
 import com.mes.production.repository.OperatorRepository;
-import com.mes.production.service.EquipmentCategoryService;
-import com.mes.production.service.InventoryFormService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,8 +22,6 @@ public class MasterDataController {
     private final EquipmentRepository equipmentRepository;
     private final OperatorRepository operatorRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final EquipmentCategoryService equipmentCategoryService;
-    private final InventoryFormService inventoryFormService;
 
     /**
      * Get all equipment
@@ -120,85 +115,4 @@ public class MasterDataController {
         return ResponseEntity.ok(params);
     }
 
-    /**
-     * Get all active equipment category configurations
-     */
-    @GetMapping("/equipment-categories")
-    public ResponseEntity<List<Map<String, Object>>> getAllEquipmentCategories() {
-        log.info("GET /api/master/equipment-categories");
-        List<Map<String, Object>> categories = equipmentCategoryService.getAllEquipmentCategories();
-        return ResponseEntity.ok(categories);
-    }
-
-    /**
-     * Get configuration for a specific equipment category
-     */
-    @GetMapping("/equipment-categories/{category}")
-    public ResponseEntity<Map<String, Object>> getEquipmentCategoryConfig(@PathVariable String category) {
-        log.info("GET /api/master/equipment-categories/{}", category);
-        return equipmentCategoryService.getEquipmentCategoryConfig(category)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Get all active inventory form configurations
-     */
-    @GetMapping("/inventory-forms")
-    public ResponseEntity<List<Map<String, Object>>> getAllInventoryForms() {
-        log.info("GET /api/master/inventory-forms");
-        List<Map<String, Object>> forms = inventoryFormService.getAllForms();
-        return ResponseEntity.ok(forms);
-    }
-
-    /**
-     * Get configuration for a specific inventory form code
-     */
-    @GetMapping("/inventory-forms/{formCode}")
-    public ResponseEntity<Map<String, Object>> getInventoryFormConfig(@PathVariable String formCode) {
-        log.info("GET /api/master/inventory-forms/{}", formCode);
-        return inventoryFormService.getFormConfig(formCode)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Get quantity type configuration with optional filters.
-     * Results are ordered by priority (most specific match first - where more fields match).
-     */
-    @GetMapping("/quantity-type-config")
-    public ResponseEntity<List<Map<String, Object>>> getQuantityTypeConfig(
-            @RequestParam(required = false) String materialCode,
-            @RequestParam(required = false) String operationType,
-            @RequestParam(required = false) String equipmentType) {
-        log.info("GET /api/master/quantity-type-config, materialCode={}, operationType={}, equipmentType={}",
-                materialCode, operationType, equipmentType);
-
-        StringBuilder sql = new StringBuilder(
-                "SELECT *, " +
-                "(CASE WHEN material_code IS NOT NULL THEN 1 ELSE 0 END " +
-                "+ CASE WHEN operation_type IS NOT NULL THEN 1 ELSE 0 END " +
-                "+ CASE WHEN equipment_type IS NOT NULL THEN 1 ELSE 0 END) AS match_score " +
-                "FROM quantity_type_config WHERE status = 'ACTIVE'");
-
-        List<Object> queryParams = new ArrayList<>();
-
-        if (materialCode != null && !materialCode.isEmpty()) {
-            sql.append(" AND (material_code = ? OR material_code IS NULL)");
-            queryParams.add(materialCode);
-        }
-        if (operationType != null && !operationType.isEmpty()) {
-            sql.append(" AND (operation_type = ? OR operation_type IS NULL)");
-            queryParams.add(operationType);
-        }
-        if (equipmentType != null && !equipmentType.isEmpty()) {
-            sql.append(" AND (equipment_type = ? OR equipment_type IS NULL)");
-            queryParams.add(equipmentType);
-        }
-
-        sql.append(" ORDER BY match_score DESC");
-
-        List<Map<String, Object>> configs = jdbcTemplate.queryForList(sql.toString(), queryParams.toArray());
-        return ResponseEntity.ok(configs);
-    }
 }

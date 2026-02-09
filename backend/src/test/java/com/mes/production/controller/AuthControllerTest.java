@@ -132,59 +132,11 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Should refresh token successfully")
-    @WithMockUser(username = "admin@mes.com")
-    void refreshToken_ValidToken_ReturnsNewTokens() throws Exception {
-        when(authService.refreshToken("valid-refresh-token")).thenReturn(loginResponse);
-
-        mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", "valid-refresh-token"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("test-access-token"));
-
-        verify(authService, times(1)).refreshToken("valid-refresh-token");
-    }
-
-    @Test
-    @DisplayName("Should return 400 for missing refresh token")
-    @WithMockUser(username = "admin@mes.com")
-    void refreshToken_MissingToken_Returns400() throws Exception {
-        mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of())))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("Should return 400 for blank refresh token")
-    @WithMockUser(username = "admin@mes.com")
-    void refreshToken_BlankToken_Returns400() throws Exception {
-        mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", "   "))))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     @DisplayName("Should logout successfully")
     @WithMockUser(username = "admin@mes.com")
     void logout_Authenticated_ReturnsSuccess() throws Exception {
         mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Logged out successfully"));
-    }
-
-    @Test
-    @DisplayName("Should handle invalid refresh token")
-    @WithMockUser(username = "admin@mes.com")
-    void refreshToken_InvalidToken_ReturnsError() throws Exception {
-        when(authService.refreshToken("invalid-token"))
-                .thenThrow(new RuntimeException("Invalid refresh token"));
-
-        mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", "invalid-token"))))
-                .andExpect(status().isBadRequest());
     }
 }

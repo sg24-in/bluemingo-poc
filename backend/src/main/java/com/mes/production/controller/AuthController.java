@@ -32,16 +32,6 @@ public class AuthController {
         return ResponseEntity.ok(user);
     }
 
-    @PostMapping("/refresh")
-    public ResponseEntity<LoginResponse> refreshToken(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        if (refreshToken == null || refreshToken.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        LoginResponse response = authService.refreshToken(refreshToken);
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout() {
         // For stateless JWT, we just return success

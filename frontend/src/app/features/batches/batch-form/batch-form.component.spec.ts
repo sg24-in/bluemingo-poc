@@ -37,11 +37,8 @@ describe('BatchFormComponent', () => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getBatchById',
       'createBatch',
-      'updateBatch',
-      'getBatchAdjustmentHistory'
+      'updateBatch'
     ]);
-    // Default mock for adjustment history
-    spy.getBatchAdjustmentHistory.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [

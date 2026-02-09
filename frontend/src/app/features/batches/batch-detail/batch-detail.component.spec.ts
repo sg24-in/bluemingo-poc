@@ -74,10 +74,7 @@ describe('BatchDetailComponent', () => {
       'getBatchAvailability',
       'allocateBatchToOrder',
       'releaseAllocation',
-      'getAvailableOrders',
-      'splitBatch',
-      'getAvailableBatches',
-      'mergeBatches'
+      'getAvailableOrders'
     ]);
 
     await TestBed.configureTestingModule({
@@ -112,7 +109,6 @@ describe('BatchDetailComponent', () => {
     apiServiceSpy.getBatchAllocations.and.returnValue(of(mockAllocations));
     apiServiceSpy.getBatchAvailability.and.returnValue(of(mockAvailability));
     apiServiceSpy.getAvailableOrders.and.returnValue(of([]));
-    apiServiceSpy.getAvailableBatches.and.returnValue(of([]));
     fixture = TestBed.createComponent(BatchDetailComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

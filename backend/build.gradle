@@ -1,3 +1,13 @@
+// ProGuard configuration for obfuscation
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.4.2'
+    }
+}
+
 plugins {
     id 'java'
     id 'war'
@@ -203,4 +213,85 @@ bootWar {
 war {
     archiveBaseName = 'mes-production'
     archiveFileName = 'mes-production.war'
+}
+
+// =====================================================
+// ProGuard Obfuscation Configuration
+// =====================================================
+
+// ProGuard task for obfuscating the JAR
+task proguard(type: proguard.gradle.ProGuardTask, dependsOn: jar) {
+    description = 'Obfuscates the application JAR using ProGuard'
+    group = 'build'
+
+    // Input: the compiled JAR
+    injars jar.archiveFile
+
+    // Output: obfuscated JAR
+    outjars layout.buildDirectory.file("libs/${project.name}-${project.version}-obfuscated.jar")
+
+    // Library JARs (don't obfuscate, just reference)
+    libraryjars "${System.getProperty('java.home')}/jmods/java.base.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+    libraryjars "${System.getProperty('java.home')}/jmods/java.sql.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+    libraryjars "${System.getProperty('java.home')}/jmods/java.naming.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+    libraryjars "${System.getProperty('java.home')}/jmods/java.desktop.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+    libraryjars "${System.getProperty('java.home')}/jmods/java.logging.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+    libraryjars "${System.getProperty('java.home')}/jmods/java.management.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+    libraryjars "${System.getProperty('java.home')}/jmods/java.xml.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+
+    // Add all dependencies as library JARs (combine and deduplicate)
+    def allDeps = (configurations.compileClasspath + configurations.runtimeClasspath).toSet()
+    allDeps.each { file ->
+        libraryjars file
+    }
+
+    // ProGuard configuration file
+    configuration file('proguard-rules.pro')
+
+    // Additional inline rules
+    printmapping layout.buildDirectory.file("proguard/mapping.txt")
+    printseeds layout.buildDirectory.file("proguard/seeds.txt")
+    printusage layout.buildDirectory.file("proguard/usage.txt")
+}
+
+// Task to build obfuscated WAR
+task obfuscatedWar(type: War, dependsOn: proguard) {
+    description = 'Creates WAR with obfuscated classes'
+    group = 'build'
+
+    archiveBaseName = 'mes-production'
+    archiveClassifier = 'obfuscated'
+
+    // Handle duplicates - keep first occurrence
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // Include the obfuscated JAR content
+    from(zipTree(layout.buildDirectory.file("libs/${project.name}-${project.version}-obfuscated.jar"))) {
+        into 'WEB-INF/classes'
+    }
+
+    // Include web resources
+    from('src/main/webapp') {
+        into ''
+    }
+
+    // Include static resources
+    from('src/main/resources/static') {
+        into ''
+    }
+
+    // Include other resources
+    from('src/main/resources') {
+        include '**/*.properties'
+        include '**/*.yml'
+        include '**/*.yaml'
+        include '**/*.xml'
+        include '**/*.sql'
+        into 'WEB-INF/classes'
+    }
+
+    // Include dependencies
+    from(configurations.runtimeClasspath) {
+        into 'WEB-INF/lib'
+    }
 }

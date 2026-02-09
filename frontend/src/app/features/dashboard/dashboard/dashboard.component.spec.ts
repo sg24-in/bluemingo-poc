@@ -18,16 +18,10 @@ describe('DashboardComponent', () => {
     ordersInProgress: 5,
     operationsReady: 3,
     operationsInProgress: 2,
-    activeHolds: 1,
     todayConfirmations: 4,
-    qualityPendingProcesses: 0, // Process is design-time only, quality is at Batch level
     batchesPendingApproval: 2,
     recentActivity: [
       { confirmationId: 1, operationName: 'Melting', productSku: 'STEEL-001', producedQty: 100 }
-    ],
-    auditActivity: [
-      { auditId: 1, entityType: 'BATCH', entityId: 1, action: 'CREATE', description: 'Created batch #1', changedBy: 'admin', timestamp: '2024-01-01T10:00:00' },
-      { auditId: 2, entityType: 'OPERATION', entityId: 1, action: 'STATUS_CHANGE', description: 'Operation #1 status: READY → CONFIRMED', changedBy: 'admin', timestamp: '2024-01-01T10:05:00' }
     ]
   };
 
@@ -39,18 +33,11 @@ describe('DashboardComponent', () => {
     { batchId: 1, batchNumber: 'BATCH-001', materialId: 'RM-001', status: 'AVAILABLE' }
   ];
 
-  const mockInventory = [
-    { inventoryId: 1, state: 'AVAILABLE' },
-    { inventoryId: 2, state: 'CONSUMED' },
-    { inventoryId: 3, state: 'ON_HOLD' }
-  ];
-
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getDashboardSummary',
       'getAvailableOrders',
       'getAllBatches',
-      'getAllInventory',
       'getOrders',
       'getAllOperations',
       'getBatchesByStatus'
@@ -83,7 +70,6 @@ describe('DashboardComponent', () => {
     apiServiceSpy.getDashboardSummary.and.returnValue(of(mockSummary as any));
     apiServiceSpy.getAvailableOrders.and.returnValue(of(mockOrders as any));
     apiServiceSpy.getAllBatches.and.returnValue(of(mockBatches as any));
-    apiServiceSpy.getAllInventory.and.returnValue(of(mockInventory as any));
     apiServiceSpy.getBatchesByStatus.and.returnValue(of([]));
     apiServiceSpy.getOrders.and.returnValue(of(mockOrders as any));
     apiServiceSpy.getAllOperations.and.returnValue(of([
@@ -104,21 +90,12 @@ describe('DashboardComponent', () => {
     expect(apiServiceSpy.getDashboardSummary).toHaveBeenCalled();
     expect(apiServiceSpy.getAvailableOrders).toHaveBeenCalled();
     expect(apiServiceSpy.getAllBatches).toHaveBeenCalled();
-    expect(apiServiceSpy.getAllInventory).toHaveBeenCalled();
   });
 
   it('should display summary data', () => {
     expect(component.summary.totalOrders).toBe(10);
     expect(component.summary.operationsReady).toBe(3);
-    expect(component.summary.activeHolds).toBe(1);
     expect(component.summary.todayConfirmations).toBe(4);
-  });
-
-  it('should calculate inventory summary', () => {
-    expect(component.inventorySummary.total).toBe(3);
-    expect(component.inventorySummary.available).toBe(1);
-    expect(component.inventorySummary.consumed).toBe(1);
-    expect(component.inventorySummary.onHold).toBe(1);
   });
 
   it('should limit available orders to 5', () => {
@@ -144,7 +121,6 @@ describe('DashboardComponent', () => {
 
   describe('navigation', () => {
     it('should navigate to orders', () => {
-      const router = TestBed.inject(RouterTestingModule);
       spyOn(component['router'], 'navigate');
 
       component.navigateToOrders();
@@ -152,12 +128,12 @@ describe('DashboardComponent', () => {
       expect(component['router'].navigate).toHaveBeenCalledWith(['/orders']);
     });
 
-    it('should navigate to holds', () => {
+    it('should navigate to batches', () => {
       spyOn(component['router'], 'navigate');
 
-      component.navigateToHolds();
+      component.navigateToBatches();
 
-      expect(component['router'].navigate).toHaveBeenCalledWith(['/holds']);
+      expect(component['router'].navigate).toHaveBeenCalledWith(['/batches']);
     });
 
     it('should navigate to specific order', () => {
@@ -176,36 +152,13 @@ describe('DashboardComponent', () => {
       expect(component['router'].navigate).toHaveBeenCalledWith(['/batches', 1]);
     });
 
-    it('should navigate to operations with status filter', () => {
+    it('should navigate to operations by status (goes to orders)', () => {
       spyOn(component['router'], 'navigate');
 
       component.navigateToOperationsByStatus('READY');
 
-      expect(component['router'].navigate).toHaveBeenCalledWith(['/operations'], { queryParams: { status: 'READY' } });
-    });
-
-    it('should navigate to operations with IN_PROGRESS status', () => {
-      spyOn(component['router'], 'navigate');
-
-      component.navigateToOperationsByStatus('IN_PROGRESS');
-
-      expect(component['router'].navigate).toHaveBeenCalledWith(['/operations'], { queryParams: { status: 'IN_PROGRESS' } });
-    });
-
-    it('should navigate to inventory with type filter', () => {
-      spyOn(component['router'], 'navigate');
-
-      component.navigateToInventoryType('RM');
-
-      expect(component['router'].navigate).toHaveBeenCalledWith(['/inventory'], { queryParams: { type: 'RM' } });
-    });
-
-    it('should navigate to blocked inventory', () => {
-      spyOn(component['router'], 'navigate');
-
-      component.navigateToBlockedInventory();
-
-      expect(component['router'].navigate).toHaveBeenCalledWith(['/inventory'], { queryParams: { state: 'BLOCKED' } });
+      // Note: In the component, this navigates to /orders (operations are shown in order detail)
+      expect(component['router'].navigate).toHaveBeenCalledWith(['/orders']);
     });
 
     it('should navigate to batch approval (QUALITY_PENDING)', () => {
@@ -214,13 +167,6 @@ describe('DashboardComponent', () => {
       component.navigateToBatchApproval();
 
       expect(component['router'].navigate).toHaveBeenCalledWith(['/batches'], { queryParams: { status: 'QUALITY_PENDING' } });
-    });
-  });
-
-  describe('audit trail', () => {
-    it('should have audit activity from summary', () => {
-      expect(component.summary.auditActivity.length).toBe(2);
-      expect(component.summary.auditActivity[0].action).toBe('CREATE');
     });
   });
 });

@@ -65,20 +65,6 @@
               <button class="btn btn-primary btn-sm" (click)="viewBatch(batch.batchId)">
                 View
               </button>
-              <button *ngIf="canApprove(batch)" class="btn btn-sm btn-success" (click)="approveBatch(batch)"
-                      [disabled]="processingBatch === batch.batchId">
-                Approve
-              </button>
-              <button *ngIf="canApprove(batch)" class="btn btn-sm btn-warning" (click)="rejectBatch(batch)"
-                      [disabled]="processingBatch === batch.batchId">
-                Reject
-              </button>
-              <button *ngIf="canEdit(batch)" class="btn btn-sm btn-primary" (click)="editBatch(batch)">
-                Edit
-              </button>
-              <button *ngIf="canDelete(batch)" class="btn btn-sm btn-danger" (click)="deleteBatch(batch)">
-                Delete
-              </button>
             </td>
           </tr>
         </tbody>

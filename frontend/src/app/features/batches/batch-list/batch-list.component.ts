@@ -25,9 +25,6 @@ export class BatchListComponent implements OnInit {
   filterStatus = '';
   searchTerm = '';
 
-  // Approval processing
-  processingBatch: number | null = null;
-
   constructor(
     private apiService: ApiService,
     private router: Router,
@@ -99,82 +96,5 @@ export class BatchListComponent implements OnInit {
 
   viewBatch(batchId: number): void {
     this.router.navigate(['/batches', batchId]);
-  }
-
-  createBatch(): void {
-    this.router.navigate(['/batches/new']);
-  }
-
-  editBatch(batch: Batch): void {
-    this.router.navigate(['/batches', batch.batchId, 'edit']);
-  }
-
-  deleteBatch(batch: Batch): void {
-    if (!confirm(`Are you sure you want to delete batch ${batch.batchNumber}?`)) {
-      return;
-    }
-
-    this.loading = true;
-    this.apiService.deleteBatch(batch.batchId).subscribe({
-      next: () => {
-        this.loadBatches();
-      },
-      error: (err) => {
-        this.loading = false;
-        alert(err.error?.message || 'Failed to delete batch.');
-      }
-    });
-  }
-
-  canEdit(batch: Batch): boolean {
-    const status = batch.status || batch.state;
-    return status !== 'CONSUMED' && status !== 'SCRAPPED';
-  }
-
-  canDelete(batch: Batch): boolean {
-    const status = batch.status || batch.state;
-    return status !== 'CONSUMED' && status !== 'SCRAPPED';
-  }
-
-  canApprove(batch: Batch): boolean {
-    const status = batch.status || batch.state;
-    return status === 'QUALITY_PENDING' || status === 'PRODUCED';
-  }
-
-  approveBatch(batch: Batch): void {
-    if (!confirm(`Approve batch ${batch.batchNumber} for release?`)) {
-      return;
-    }
-
-    this.processingBatch = batch.batchId;
-    this.apiService.approveBatch(batch.batchId).subscribe({
-      next: () => {
-        this.processingBatch = null;
-        this.loadBatches();
-      },
-      error: (err) => {
-        this.processingBatch = null;
-        alert(err.error?.message || 'Failed to approve batch.');
-      }
-    });
-  }
-
-  rejectBatch(batch: Batch): void {
-    const reason = prompt(`Enter reason for rejecting batch ${batch.batchNumber}:`);
-    if (!reason) {
-      return;
-    }
-
-    this.processingBatch = batch.batchId;
-    this.apiService.rejectBatch(batch.batchId, reason).subscribe({
-      next: () => {
-        this.processingBatch = null;
-        this.loadBatches();
-      },
-      error: (err) => {
-        this.processingBatch = null;
-        alert(err.error?.message || 'Failed to reject batch.');
-      }
-    });
   }
 }

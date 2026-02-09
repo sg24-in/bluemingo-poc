@@ -270,32 +270,12 @@ export class ApiService {
     return this.http.get<Batch[]>(`${environment.apiUrl}/batches/available`, { params });
   }
 
-  splitBatch(batchId: number, request: BatchSplitRequest): Observable<BatchSplitResponse> {
-    return this.http.post<BatchSplitResponse>(`${environment.apiUrl}/batches/${batchId}/split`, request);
-  }
-
-  mergeBatches(request: BatchMergeRequest): Observable<BatchMergeResponse> {
-    return this.http.post<BatchMergeResponse>(`${environment.apiUrl}/batches/merge`, request);
-  }
-
   getBatchesByStatus(status: string): Observable<Batch[]> {
     return this.http.get<Batch[]>(`${environment.apiUrl}/batches/status/${status}`);
   }
 
   getProducedBatches(): Observable<Batch[]> {
     return this.http.get<Batch[]>(`${environment.apiUrl}/batches/produced`);
-  }
-
-  sendBatchForQualityCheck(batchId: number): Observable<BatchStatusUpdateResponse> {
-    return this.http.post<BatchStatusUpdateResponse>(`${environment.apiUrl}/batches/${batchId}/quality-check`, {});
-  }
-
-  approveBatch(batchId: number): Observable<BatchStatusUpdateResponse> {
-    return this.http.post<BatchStatusUpdateResponse>(`${environment.apiUrl}/batches/${batchId}/approve`, {});
-  }
-
-  rejectBatch(batchId: number, reason: string): Observable<BatchStatusUpdateResponse> {
-    return this.http.post<BatchStatusUpdateResponse>(`${environment.apiUrl}/batches/${batchId}/reject`, { batchId, reason });
   }
 
   createBatch(data: CreateBatchRequest): Observable<Batch> {
@@ -308,15 +288,6 @@ export class ApiService {
 
   deleteBatch(batchId: number): Observable<BatchStatusUpdateResponse> {
     return this.http.delete<BatchStatusUpdateResponse>(`${environment.apiUrl}/batches/${batchId}`);
-  }
-
-  // Batch quantity adjustment (per MES Batch Management Specification)
-  adjustBatchQuantity(batchId: number, request: AdjustQuantityRequest): Observable<AdjustQuantityResponse> {
-    return this.http.post<AdjustQuantityResponse>(`${environment.apiUrl}/batches/${batchId}/adjust-quantity`, request);
-  }
-
-  getBatchAdjustmentHistory(batchId: number): Observable<QuantityAdjustmentHistory[]> {
-    return this.http.get<QuantityAdjustmentHistory[]>(`${environment.apiUrl}/batches/${batchId}/adjustments`);
   }
 
   /**
@@ -492,28 +463,6 @@ export class ApiService {
 
   getEquipmentTypeConfig(type: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/master/equipment-types/${type}`);
-  }
-
-  getInventoryForms(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/master/inventory-forms`);
-  }
-
-  getInventoryFormConfig(formCode: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/master/inventory-forms/${formCode}`);
-  }
-
-  getQuantityTypeConfigForContext(params: {materialCode?: string, operationType?: string, equipmentType?: string}): Observable<any> {
-    let httpParams = new HttpParams();
-    if (params.materialCode) {
-      httpParams = httpParams.set('materialCode', params.materialCode);
-    }
-    if (params.operationType) {
-      httpParams = httpParams.set('operationType', params.operationType);
-    }
-    if (params.equipmentType) {
-      httpParams = httpParams.set('equipmentType', params.equipmentType);
-    }
-    return this.http.get<any>(`${environment.apiUrl}/master/quantity-type-config`, { params: httpParams });
   }
 
   // ============================================================

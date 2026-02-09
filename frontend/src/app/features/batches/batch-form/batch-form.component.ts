@@ -1,19 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Batch } from '../../../shared/models';
-
-interface QuantityAdjustment {
-  adjustmentId: number;
-  oldQuantity: number;
-  newQuantity: number;
-  difference: number;
-  adjustmentType: string;
-  reason: string;
-  adjustedBy: string;
-  adjustedOn: string;
-}
 
 @Component({
   selector: 'app-batch-form',
@@ -22,27 +11,12 @@ interface QuantityAdjustment {
 })
 export class BatchFormComponent implements OnInit {
   form!: FormGroup;
-  adjustmentForm!: FormGroup;
   isEditMode = false;
   batchId: number | null = null;
   loading = false;
   saving = false;
   error = '';
   batch: Batch | null = null;
-
-  // Quantity adjustment
-  showAdjustmentForm = false;
-  adjustmentHistory: QuantityAdjustment[] = [];
-  loadingHistory = false;
-  adjusting = false;
-  adjustmentError = '';
-
-  adjustmentTypes = [
-    { value: 'CORRECTION', label: 'Correction' },
-    { value: 'INVENTORY_COUNT', label: 'Inventory Count' },
-    { value: 'DAMAGE', label: 'Damage' },
-    { value: 'SCRAP_RECOVERY', label: 'Scrap Recovery' }
-  ];
 
   constructor(
     private fb: FormBuilder,
@@ -53,14 +27,12 @@ export class BatchFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.initAdjustmentForm();
 
     const id = this.route.snapshot.paramMap.get('batchId');
     if (id) {
       this.isEditMode = true;
       this.batchId = +id;
       this.loadBatch();
-      this.loadAdjustmentHistory();
     }
   }
 
@@ -74,27 +46,6 @@ export class BatchFormComponent implements OnInit {
       unit: ['T', Validators.maxLength(20)],
       status: ['AVAILABLE']
     });
-  }
-
-  initAdjustmentForm(): void {
-    this.adjustmentForm = this.fb.group({
-      newQuantity: [null, [Validators.required, Validators.min(0)]],
-      adjustmentType: ['CORRECTION', Validators.required],
-      reason: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]]
-    });
-  }
-
-  // Typed getters for adjustment form controls
-  get newQuantityControl(): FormControl {
-    return this.adjustmentForm.get('newQuantity') as FormControl;
-  }
-
-  get adjustmentTypeControl(): FormControl {
-    return this.adjustmentForm.get('adjustmentType') as FormControl;
-  }
-
-  get reasonControl(): FormControl {
-    return this.adjustmentForm.get('reason') as FormControl;
   }
 
   loadBatch(): void {
@@ -112,29 +63,11 @@ export class BatchFormComponent implements OnInit {
           unit: batch.unit || 'T',
           status: batch.status
         });
-        // Pre-fill adjustment form with current quantity
-        this.adjustmentForm.patchValue({ newQuantity: batch.quantity });
         this.loading = false;
       },
       error: (err) => {
         this.error = err.error?.message || 'Failed to load batch.';
         this.loading = false;
-      }
-    });
-  }
-
-  loadAdjustmentHistory(): void {
-    if (!this.batchId) return;
-
-    this.loadingHistory = true;
-    this.apiService.getBatchAdjustmentHistory(this.batchId).subscribe({
-      next: (history) => {
-        this.adjustmentHistory = history;
-        this.loadingHistory = false;
-      },
-      error: (err) => {
-        console.error('Failed to load adjustment history:', err);
-        this.loadingHistory = false;
       }
     });
   }
@@ -196,46 +129,6 @@ export class BatchFormComponent implements OnInit {
     }
   }
 
-  toggleAdjustmentForm(): void {
-    this.showAdjustmentForm = !this.showAdjustmentForm;
-    this.adjustmentError = '';
-    if (this.showAdjustmentForm && this.batch) {
-      this.adjustmentForm.patchValue({ newQuantity: this.batch.quantity });
-    }
-  }
-
-  submitAdjustment(): void {
-    if (this.adjustmentForm.invalid || !this.batchId) {
-      this.adjustmentForm.markAllAsTouched();
-      return;
-    }
-
-    this.adjusting = true;
-    this.adjustmentError = '';
-
-    const request = {
-      newQuantity: this.adjustmentForm.value.newQuantity,
-      adjustmentType: this.adjustmentForm.value.adjustmentType,
-      reason: this.adjustmentForm.value.reason
-    };
-
-    this.apiService.adjustBatchQuantity(this.batchId, request).subscribe({
-      next: (response) => {
-        this.adjusting = false;
-        this.showAdjustmentForm = false;
-        // Reload batch and history
-        this.loadBatch();
-        this.loadAdjustmentHistory();
-        // Reset form
-        this.adjustmentForm.reset({ adjustmentType: 'CORRECTION', newQuantity: response.newQuantity });
-      },
-      error: (err) => {
-        this.adjusting = false;
-        this.adjustmentError = err.error?.message || 'Failed to adjust quantity.';
-      }
-    });
-  }
-
   cancel(): void {
     this.router.navigate(['/batches']);
   }
@@ -251,23 +144,6 @@ export class BatchFormComponent implements OnInit {
 
     if (control.errors['required']) return `This field is required`;
     if (control.errors['maxlength']) return `Value is too long`;
-
-    return 'Invalid value';
-  }
-
-  hasAdjustmentError(field: string): boolean {
-    const control = this.adjustmentForm.get(field);
-    return !!(control && control.invalid && control.touched);
-  }
-
-  getAdjustmentError(field: string): string {
-    const control = this.adjustmentForm.get(field);
-    if (!control || !control.errors) return '';
-
-    if (control.errors['required']) return 'This field is required';
-    if (control.errors['min']) return 'Quantity must be non-negative';
-    if (control.errors['minlength']) return 'Reason must be at least 10 characters';
-    if (control.errors['maxlength']) return 'Reason must not exceed 500 characters';
 
     return 'Invalid value';
   }
