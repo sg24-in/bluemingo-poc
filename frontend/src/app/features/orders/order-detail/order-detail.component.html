@@ -14,7 +14,8 @@
     </div>
     <div class="page-header-actions" *ngIf="order">
       <app-status-badge [status]="order.status"></app-status-badge>
-      <button class="btn btn-primary" (click)="editOrder()">
+      <button class="btn btn-primary" (click)="editOrder()"
+              *ngIf="order.status !== 'COMPLETED' && order.status !== 'CANCELLED'">
         <i class="fas fa-edit"></i> Edit Order
       </button>
     </div>

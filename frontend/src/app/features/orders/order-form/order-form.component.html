@@ -15,7 +15,12 @@
         <div class="form-row">
           <div class="form-group">
             <label for="customerId">Customer *</label>
-            <select
+            <!-- Read-only in edit mode to avoid async race condition with dropdown population -->
+            <input *ngIf="isEditMode" type="text"
+              [value]="form.get('customerId')?.value + ' - ' + form.get('customerName')?.value"
+              readonly class="readonly-field" />
+            <!-- Dropdown only for new orders -->
+            <select *ngIf="!isEditMode"
               id="customerId"
               formControlName="customerId"
               [class.error]="hasError('customerId')"
@@ -28,8 +33,8 @@
             </select>
             <!-- Hidden field to store customer name for form submission -->
             <input type="hidden" formControlName="customerName" />
-            <span class="hint" *ngIf="loadingCustomers">Loading customers...</span>
-            <span class="error-text" *ngIf="hasError('customerId')">Customer is required</span>
+            <span class="hint" *ngIf="!isEditMode && loadingCustomers">Loading customers...</span>
+            <span class="error-text" *ngIf="!isEditMode && hasError('customerId')">Customer is required</span>
           </div>
         </div>
 
@@ -111,7 +116,12 @@
             <div class="line-item-fields">
               <div class="form-group product-group">
                 <label>Product *</label>
-                <select
+                <!-- Read-only in edit mode to avoid async race condition -->
+                <input *ngIf="isEditMode" type="text"
+                  [value]="item.get('productSku')?.value + ' - ' + item.get('productName')?.value"
+                  readonly class="readonly-field" />
+                <!-- Dropdown only for new orders -->
+                <select *ngIf="!isEditMode"
                   formControlName="productSku"
                   [class.error]="hasLineItemError(i, 'productSku')"
                   (change)="onProductChange(i, $event)"

@@ -321,7 +321,6 @@
                 type="button"
                 class="btn btn-primary btn-sm"
                 (click)="applySuggestedConsumption()"
-                [disabled]="!hasSufficientStock()"
               >
                 Apply Suggestions
               </button>
@@ -362,37 +361,8 @@
             </div>
           </div>
 
-          <div class="available-materials">
-            <h4>Available Inventory</h4>
-            <table class="table" *ngIf="availableInventory.length > 0">
-              <thead>
-                <tr>
-                  <th>Batch #</th>
-                  <th>Material ID</th>
-                  <th>Available Qty</th>
-                  <th>State</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let inv of availableInventory">
-                  <td>{{ inv.batchNumber }}</td>
-                  <td>{{ inv.materialId }}</td>
-                  <td>{{ inv.quantity }} {{ inv.unit }}</td>
-                  <td><app-status-badge [status]="inv.state"></app-status-badge></td>
-                  <td>
-                    <button type="button" class="btn btn-primary btn-sm" (click)="addMaterial(inv)">
-                      Add
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p *ngIf="availableInventory.length === 0" class="no-data">No available inventory</p>
-          </div>
-
           <div class="selected-materials" *ngIf="selectedMaterials.length > 0">
-            <h4>Selected Materials</h4>
+            <h4>Selected Materials ({{ selectedMaterials.length }})</h4>
             <table class="table">
               <thead>
                 <tr>
@@ -426,6 +396,39 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <div class="available-materials">
+            <h4>Available Inventory</h4>
+            <table class="table" *ngIf="availableInventory.length > 0">
+              <thead>
+                <tr>
+                  <th>Batch #</th>
+                  <th>Material ID</th>
+                  <th>Available Qty</th>
+                  <th>State</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inv of availableInventory">
+                  <td>{{ inv.batchNumber }}</td>
+                  <td>{{ inv.materialId }}</td>
+                  <td>{{ inv.quantity }} {{ inv.unit }}</td>
+                  <td><app-status-badge [status]="inv.state"></app-status-badge></td>
+                  <td>
+                    <button type="button"
+                      class="btn btn-sm"
+                      [ngClass]="isMaterialSelected(inv) ? 'btn-added' : 'btn-primary'"
+                      (click)="addMaterial(inv)"
+                      [disabled]="isMaterialSelected(inv)">
+                      {{ isMaterialSelected(inv) ? 'Added' : 'Add' }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p *ngIf="availableInventory.length === 0" class="no-data">No available inventory</p>
           </div>
 
           <!-- BOM Requirements -->

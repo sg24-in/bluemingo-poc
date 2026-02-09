@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-09
-**Session Status:** Active - Applying POC Bug Fixes to Main Branch
+**Session Status:** Active - Applying Critical Bug Fixes (BF-01 through BF-05)
 
 ---
 
@@ -13,27 +13,27 @@
 
 | # | Task | Status | Files to Change |
 |---|------|--------|----------------|
-| BF-01 | Fix findNextOperation scoped by orderLineId instead of processId | PENDING | `OperationRepository.java`, `ProductionService.java` |
-| BF-02 | Fix ProductionConfirmation CLOB columnDefinition + create JSONB→TEXT patch | PENDING | `ProductionConfirmation.java`, new patch `046_fix_jsonb_to_text.sql` |
-| BF-03 | Add 20+ missing DB columns (entity-schema mismatch) | PENDING | New patch `047_add_missing_columns.sql` |
-| BF-04 | Fix CHECK constraints (CANCELLED, READY, CONSUME, PENDING_REVIEW) | PENDING | New patch `048_fix_check_constraints.sql` |
-| BF-05 | Create missing join tables (confirmation_equipment, confirmation_operators) | PENDING | New patch (can combine with BF-03 or BF-04) |
+| BF-01 | Fix findNextOperation scoped by orderLineId instead of processId | **DONE** | `OperationRepository.java`, `ProductionService.java` |
+| BF-02 | Fix ProductionConfirmation CLOB columnDefinition + create JSONB→TEXT patch | **DONE** | `ProductionConfirmation.java`, patch `046_fix_jsonb_to_text.sql` |
+| BF-03 | Add 20+ missing DB columns (entity-schema mismatch) | **N/A** | Already exist in patches 008, 011, 020, 024, 026, 027, 037, 038, 044 |
+| BF-04 | Fix CHECK constraints (CANCELLED, CONSUME) | **DONE** | Patch `047_fix_check_constraints.sql` (READY+PENDING_REVIEW already in 019+012) |
+| BF-05 | Create missing join tables (confirmation_equipment, confirmation_operators) | **N/A** | Already exist in patch 011 |
 
 ### HIGH Priority
 
 | # | Task | Status | Files to Change |
 |---|------|--------|----------------|
-| BF-06 | Fix customer/product dropdowns empty on order edit (async race condition) | PENDING | `order-form.component.html` |
-| BF-07 | Fix equipment/operator name mapping in production confirm | PENDING | `production-confirm.component.ts` |
-| BF-08 | Add NoResourceFoundException handler (500→404 for missing static files) | PENDING | `GlobalExceptionHandler.java` |
+| BF-06 | Fix customer/product dropdowns empty on order edit (async race condition) | **DONE** | `order-form.component.html`, `.css` |
+| BF-07 | Fix equipment/operator name mapping in production confirm | **DONE** | `production-confirm.component.ts` |
+| BF-08 | Add NoResourceFoundException handler (500→404 for missing static files) | **DONE** | `GlobalExceptionHandler.java` |
 
 ### MEDIUM Priority
 
 | # | Task | Status | Files to Change |
 |---|------|--------|----------------|
-| BF-09 | Production confirm UX: move Selected Materials above Available Inventory | PENDING | `production-confirm.component.html` |
-| BF-10 | Production confirm UX: enable Apply Suggestions, add isMaterialSelected feedback | PENDING | `production-confirm.component.html`, `.ts` |
-| BF-11 | Process flow chart: vertical row-based layout for multi-stage orders | PENDING | `order-detail.component.ts`, `.css` |
+| BF-09 | Production confirm UX: move Selected Materials above Available Inventory | **DONE** | `production-confirm.component.html` |
+| BF-10 | Production confirm UX: enable Apply Suggestions, add isMaterialSelected feedback | **DONE** | `production-confirm.component.html`, `.ts`, `.css` |
+| BF-11 | Process flow chart: vertical row-based layout for multi-stage orders | **DONE** | `order-detail.component.ts`, `.css` |
 
 ### LOW Priority
 
@@ -62,21 +62,64 @@
 
 ---
 
-## Latest Session Changes (2026-02-09 - POC Bug Fix Analysis)
+## Latest Session Changes (2026-02-09 - Applying Critical Bug Fixes)
 
-### Analysis Completed
+### BF-01: findNextOperation Fix — DONE
+- `OperationRepository.java` — Changed query from `processId` to `orderLineId` with `LIMIT 1`
+- `ProductionService.java` — Updated `setNextOperationReady()` to pass `orderLineId` instead of `processId`
+- **Root cause:** Process shared by multiple line items caused NonUniqueResultException
+
+### BF-02: CLOB/JSONB Fix — DONE
+- `ProductionConfirmation.java` — Removed `columnDefinition = "CLOB"` from processParametersJson and rmConsumedJson
+- `patches/046_fix_jsonb_to_text.sql` — Created: ALTER COLUMN JSONB → TEXT for both columns
+- **Root cause:** CLOB sends VARCHAR which PostgreSQL JSONB rejects
+
+### BF-03: Missing Columns — N/A (Already Exist)
+- All 20+ columns already exist in patches 008, 011, 020, 024, 026, 027, 037, 038, 044
+
+### BF-04: CHECK Constraints Fix — DONE
+- `patches/047_fix_check_constraints.sql` — Created: adds CANCELLED to chk_line_status, CONSUME to chk_relation_type
+- READY already added in patch 019, PENDING_REVIEW already added in patch 012
+
+### BF-05: Missing Join Tables — N/A (Already Exist)
+- confirmation_equipment and confirmation_operators already exist in patch 011
+
+### BF-06: Order Edit Dropdown Fix — DONE
+- `order-form.component.html` — Customer & product fields show read-only text in edit mode, dropdown only for new orders
+- `order-form.component.css` — Added `.readonly-field` style
+- **Root cause:** Async race condition — order data loaded before dropdown options populated
+
+### BF-07: Equipment/Operator Name Mapping — DONE
+- `production-confirm.component.ts` — Changed to `eq.name || eq.equipmentName` and `op.name || op.operatorName`
+- **Root cause:** API returns `name` but component expected `equipmentName`/`operatorName`
+
+### BF-08: NoResourceFoundException Handler — DONE
+- `GlobalExceptionHandler.java` — Added handler returning 404 instead of 500 for missing static resources
+
+### BF-09: Selected Materials Above Available Inventory — DONE
+- `production-confirm.component.html` — Swapped section order; Selected Materials now above Available Inventory
+- Added count display: `Selected Materials ({{ selectedMaterials.length }})`
+
+### BF-10: Apply Suggestions + isMaterialSelected Feedback — DONE
+- `production-confirm.component.html` — Removed `[disabled]="!hasSufficientStock()"` from Apply Suggestions button
+- `production-confirm.component.ts` — Added `isMaterialSelected()` method
+- `production-confirm.component.html` — Add button shows green "Added" state when material already selected
+- `production-confirm.component.css` — Added `.btn-added` style
+
+### BF-11: Process Flow Chart Vertical Layout — DONE
+- `order-detail.component.ts` — Changed to vertical row-based layout (each process = a row)
+  - Process nodes: left-aligned (x: 60), operations spread right (x: 200 + i * 130)
+  - Dynamic chart height: `Math.max(300, currentRow * 100 + 80)`
+  - Label truncation: `overflow: 'truncate', ellipsis: '..', width: 85`
+- `order-detail.component.css` — Chart height: 280px → 450px, min-height: 300px
+
+### Build Verification
+- `gradlew compileJava` — BUILD SUCCESSFUL
+
+### Previous Analysis (earlier this session)
 - Compared all POC branch commits against main
 - Identified 13 bug fixes (5 CRITICAL, 3 HIGH, 3 MEDIUM, 2 LOW)
 - Documented in `documents/MES-POC-Bug-Fixes.md`
-- Created task list above for applying fixes to main branch
-
-### Files Created
-- `documents/MES-POC-Bug-Fixes.md` - Comprehensive analysis with exact code diffs
-
-### Patches Fixed on POC (this session)
-- `005_missing_seed_data.sql` - Changed `ACTIVE` → `LOGGED` for operation_equipment_usage status
-- `006_fix_jsonb_to_text.sql` - Created: ALTER COLUMN JSONB → TEXT
-- `ProductionConfirmation.java` - Removed `columnDefinition = "CLOB"`
 
 ---
 

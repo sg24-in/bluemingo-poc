@@ -991,3 +991,17 @@ input[type="datetime-local"] {
     width: 100%;
   }
 }
+
+/* ========== BF-10: Material Added Feedback ========== */
+.btn-added {
+  background: #22c55e;
+  color: white;
+  cursor: default;
+  opacity: 0.8;
+}
+
+.btn-added:disabled {
+  background: #22c55e;
+  color: white;
+  opacity: 0.7;
+}

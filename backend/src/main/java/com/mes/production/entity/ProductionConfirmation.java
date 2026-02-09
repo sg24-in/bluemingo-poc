@@ -55,10 +55,10 @@ public class ProductionConfirmation {
     @Column(name = "delay_reason")
     private String delayReason;
 
-    @Column(name = "process_parameters", columnDefinition = "CLOB")
+    @Column(name = "process_parameters")
     private String processParametersJson;
 
-    @Column(name = "rm_consumed", columnDefinition = "CLOB")
+    @Column(name = "rm_consumed")
     private String rmConsumedJson;
 
     @ManyToMany(fetch = FetchType.LAZY)

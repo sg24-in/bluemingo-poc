@@ -248,26 +248,24 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
     const nodes: any[] = [];
     const edges: any[] = [];
-    let xOffset = 80;
-    const processY = 50;
-    const operationY = 160;
-    const nodeSpacingX = 140;
+    const rowHeight = 100;
+    const operationSpacingX = 130;
+    let currentRow = 0;
 
     this.order.lineItems.forEach((lineItem: any) => {
       const processes = this.getProcessesForLineItem(lineItem);
 
       processes.forEach((process: GroupedProcess) => {
         const processNodeId = `process-${process.processId || 'default'}-${lineItem.orderLineId}`;
-        const opsCount = process.operations?.length || 1;
-        const processX = xOffset + ((opsCount - 1) * nodeSpacingX) / 2;
+        const rowY = 50 + currentRow * rowHeight;
 
-        // Process header node - styled card
+        // Process header node - left-aligned
         nodes.push({
           id: processNodeId,
           name: process.processName,
-          x: processX,
-          y: processY,
-          symbolSize: [160, 40],
+          x: 60,
+          y: rowY,
+          symbolSize: [140, 36],
           symbol: 'roundRect',
           itemStyle: {
             color: {
@@ -285,9 +283,12 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
           },
           label: {
             show: true,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 'bold',
             color: '#fff',
+            overflow: 'truncate',
+            ellipsis: '..',
+            width: 120,
             formatter: (params: any) => params.name
           }
         });
@@ -301,9 +302,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
             id: opNodeId,
             name: op.operationName,
             value: op.status,
-            x: xOffset + i * nodeSpacingX,
-            y: operationY,
-            symbolSize: [110, 55],
+            x: 200 + i * operationSpacingX,
+            y: rowY,
+            symbolSize: [100, 50],
             symbol: 'roundRect',
             itemStyle: {
               color: bgColor,
@@ -316,12 +317,15 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
             },
             label: {
               show: true,
-              fontSize: 11,
+              fontSize: 10,
               color: '#333',
+              overflow: 'truncate',
+              ellipsis: '..',
+              width: 85,
               formatter: (params: any) => `{name|${params.name}}\n{status|${params.value}}`,
               rich: {
-                name: { fontSize: 11, fontWeight: 'bold', color: '#1e293b', lineHeight: 16 },
-                status: { fontSize: 10, color: '#64748b', lineHeight: 14 }
+                name: { fontSize: 10, fontWeight: 'bold', color: '#1e293b', lineHeight: 15 },
+                status: { fontSize: 9, color: '#64748b', lineHeight: 13 }
               }
             }
           });
@@ -349,9 +353,13 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
           prevOpId = opNodeId;
         });
 
-        xOffset += opsCount * nodeSpacingX + 100;
+        currentRow++;
       });
     });
+
+    // Dynamic chart height based on number of rows
+    const chartHeight = Math.max(300, currentRow * rowHeight + 80);
+    this.processFlowChartRef.nativeElement.style.height = chartHeight + 'px';
 
     const chart = this.chartService.initChart(this.processFlowChartRef.nativeElement, 'process-flow');
     this.chartService.setOption('process-flow', {

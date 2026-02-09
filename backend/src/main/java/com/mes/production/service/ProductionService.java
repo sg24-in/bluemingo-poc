@@ -486,11 +486,12 @@ public class ProductionService {
     }
 
     private ProductionConfirmationDTO.NextOperationInfo setNextOperationReady(Operation currentOp, String currentUser) {
-        com.mes.production.entity.Process process = currentOp.getProcess();
+        String processName = currentOp.getProcess() != null ? currentOp.getProcess().getProcessName() : "Unknown";
 
-        // Find next operation in current process
+        // Find next operation scoped by orderLineId (not processId) to avoid
+        // NonUniqueResultException when multiple line items share the same process
         Optional<Operation> nextOp = operationRepository.findNextOperation(
-                process.getProcessId(), currentOp.getSequenceNumber());
+                currentOp.getOrderLineItem().getOrderLineId(), currentOp.getSequenceNumber());
 
         if (nextOp.isPresent()) {
             // Set next operation to READY
@@ -508,13 +509,13 @@ public class ProductionService {
                     .operationId(next.getOperationId())
                     .operationName(next.getOperationName())
                     .status("READY")
-                    .processName(process.getProcessName())
+                    .processName(processName)
                     .build();
         } else {
             // All operations in this process are complete
             // Process is design-time only - no runtime status to update
             // Runtime completion is tracked at Operation level
-            log.info("All operations completed for process: {}", process.getProcessName());
+            log.info("All operations completed for process: {}", processName);
 
             // Check if there's a next process
             // For POC, we'll return null - can be enhanced later
