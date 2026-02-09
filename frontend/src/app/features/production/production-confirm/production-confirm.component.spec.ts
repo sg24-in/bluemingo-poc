@@ -174,6 +174,25 @@ describe('ProductionConfirmComponent', () => {
     expect(component.selectedMaterials.length).toBe(1);
   });
 
+  it('should return true for isMaterialSelected when material is selected', () => {
+    const inventory = mockInventory[0];
+    component.addMaterial(inventory);
+    expect(component.isMaterialSelected(inventory)).toBeTrue();
+  });
+
+  it('should return false for isMaterialSelected when material is not selected', () => {
+    const inventory = mockInventory[0];
+    expect(component.isMaterialSelected(inventory)).toBeFalse();
+  });
+
+  it('should return false for isMaterialSelected after material is removed', () => {
+    const inventory = mockInventory[0];
+    component.addMaterial(inventory);
+    expect(component.isMaterialSelected(inventory)).toBeTrue();
+    component.removeMaterial(0);
+    expect(component.isMaterialSelected(inventory)).toBeFalse();
+  });
+
   it('should remove material from selected list', () => {
     const inventory = mockInventory[0];
     component.addMaterial(inventory);
@@ -283,6 +302,114 @@ describe('ProductionConfirmComponent', () => {
 
       const req = { bomId: 1, materialId: 'RM-001', materialName: 'Iron Ore', quantityRequired: 50, unit: 'KG', sequenceLevel: 1 };
       expect(component.getRequirementStatus(req)).toBe('missing');
+    });
+  });
+
+  describe('Apply Suggested Consumption', () => {
+    it('should apply suggested materials to selectedMaterials', () => {
+      component.suggestedConsumption = {
+        operationId: 1,
+        operationName: 'Melting',
+        productSku: 'STEEL-001',
+        targetQuantity: 100,
+        totalRequiredQuantity: 150,
+        suggestedMaterials: [
+          {
+            materialId: 'RM-001',
+            materialName: 'Iron Ore',
+            requiredQuantity: 50,
+            unit: 'KG',
+            yieldLossRatio: 1.0,
+            availableQuantity: 100,
+            sufficientStock: true,
+            availableBatches: [
+              { inventoryId: 10, batchId: 1, batchNumber: 'BATCH-001', availableQuantity: 100, suggestedConsumption: 50, location: 'Store A' }
+            ]
+          }
+        ]
+      };
+
+      component.applySuggestedConsumption();
+
+      expect(component.selectedMaterials.length).toBe(1);
+      expect(component.selectedMaterials[0].inventoryId).toBe(10);
+      expect(component.selectedMaterials[0].materialId).toBe('RM-001');
+      expect(component.selectedMaterials[0].quantityToConsume).toBe(50);
+    });
+
+    it('should clear previous selections when applying suggestions', () => {
+      component.selectedMaterials = [
+        { inventoryId: 99, batchId: 99, batchNumber: 'OLD', materialId: 'OLD-001', availableQuantity: 50, quantityToConsume: 10 }
+      ];
+
+      component.suggestedConsumption = {
+        operationId: 1,
+        operationName: 'Melting',
+        productSku: 'STEEL-001',
+        targetQuantity: 100,
+        totalRequiredQuantity: 50,
+        suggestedMaterials: [
+          {
+            materialId: 'RM-001',
+            materialName: 'Iron Ore',
+            requiredQuantity: 50,
+            unit: 'KG',
+            yieldLossRatio: 1.0,
+            availableQuantity: 100,
+            sufficientStock: true,
+            availableBatches: [
+              { inventoryId: 10, batchId: 1, batchNumber: 'BATCH-001', availableQuantity: 100, suggestedConsumption: 50, location: 'Store A' }
+            ]
+          }
+        ]
+      };
+
+      component.applySuggestedConsumption();
+
+      expect(component.selectedMaterials.length).toBe(1);
+      expect(component.selectedMaterials[0].inventoryId).toBe(10);
+    });
+
+    it('should not apply if suggestedConsumption is null', () => {
+      component.suggestedConsumption = null;
+      component.selectedMaterials = [
+        { inventoryId: 99, batchId: 99, batchNumber: 'OLD', materialId: 'OLD-001', availableQuantity: 50, quantityToConsume: 10 }
+      ];
+
+      component.applySuggestedConsumption();
+
+      expect(component.selectedMaterials.length).toBe(1);
+      expect(component.selectedMaterials[0].inventoryId).toBe(99);
+    });
+
+    it('should skip batches with zero suggestedConsumption', () => {
+      component.suggestedConsumption = {
+        operationId: 1,
+        operationName: 'Melting',
+        productSku: 'STEEL-001',
+        targetQuantity: 100,
+        totalRequiredQuantity: 50,
+        suggestedMaterials: [
+          {
+            materialId: 'RM-001',
+            materialName: 'Iron Ore',
+            requiredQuantity: 50,
+            unit: 'KG',
+            yieldLossRatio: 1.0,
+            availableQuantity: 100,
+            sufficientStock: true,
+            availableBatches: [
+              { inventoryId: 10, batchId: 1, batchNumber: 'BATCH-001', availableQuantity: 50, suggestedConsumption: 50, location: 'A' },
+              { inventoryId: 11, batchId: 2, batchNumber: 'BATCH-002', availableQuantity: 50, suggestedConsumption: 0, location: 'B' }
+            ]
+          }
+        ]
+      };
+
+      component.applySuggestedConsumption();
+
+      expect(component.selectedMaterials.length).toBe(1);
+      expect(component.selectedMaterials[0].inventoryId).toBe(10);
     });
   });
 

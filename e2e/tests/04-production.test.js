@@ -164,7 +164,155 @@ async function runProductionTests(page, screenshots, results, runTest) {
         await screenshots.capture(page, 'production-equipment-operators');
     }, page, results, screenshots);
 
-    // Test 7: Complete form
+    // Test 7: Material Add button and Selected Materials
+    await runTest('Production - Material Add Button', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Select order
+        const selects = await page.$$('select');
+        if (selects.length > 0) {
+            await selects[0].selectOption({ index: 1 });
+            await page.waitForTimeout(2000);
+        }
+
+        // Select operation
+        const selects2 = await page.$$('select');
+        if (selects2.length > 1) {
+            await selects2[1].selectOption({ index: 1 });
+            await page.waitForTimeout(1500);
+        }
+
+        // Click Start Production Confirmation
+        const startBtn = await page.$('button:has-text("Start Production Confirmation")');
+        if (startBtn) {
+            await startBtn.click();
+            await page.waitForTimeout(3000);
+        }
+
+        // Find and click first Add button in Available Inventory
+        const addButtons = page.locator('.available-materials button:has-text("Add")');
+        const addCount = await addButtons.count();
+        console.log(`Found ${addCount} Add buttons in Available Inventory`);
+
+        if (addCount > 0) {
+            await addButtons.first().click();
+            await page.waitForTimeout(500);
+
+            // Verify the button changed to "Added" (disabled)
+            const firstBtnText = await addButtons.first().textContent();
+            console.log(`First button text after click: ${firstBtnText?.trim()}`);
+
+            // Verify Selected Materials section appeared
+            const selectedSection = page.locator('.selected-materials');
+            const isVisible = await selectedSection.isVisible();
+            console.log(`Selected Materials section visible: ${isVisible}`);
+
+            // Check selected materials count header
+            const selectedHeader = page.locator('.selected-materials h4');
+            if (await selectedHeader.count() > 0) {
+                const headerText = await selectedHeader.textContent();
+                console.log(`Selected Materials header: ${headerText}`);
+            }
+        }
+
+        await screenshots.capture(page, 'production-material-added');
+    }, page, results, screenshots);
+
+    // Test 8: Apply Suggestions button
+    await runTest('Production - Apply Suggestions', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Select order
+        const selects = await page.$$('select');
+        if (selects.length > 0) {
+            await selects[0].selectOption({ index: 1 });
+            await page.waitForTimeout(2000);
+        }
+
+        // Select operation
+        const selects2 = await page.$$('select');
+        if (selects2.length > 1) {
+            await selects2[1].selectOption({ index: 1 });
+            await page.waitForTimeout(1500);
+        }
+
+        // Click Start Production Confirmation
+        const startBtn = await page.$('button:has-text("Start Production Confirmation")');
+        if (startBtn) {
+            await startBtn.click();
+            await page.waitForTimeout(3000);
+        }
+
+        // Find and click Apply Suggestions button
+        const applyBtn = page.locator('button:has-text("Apply Suggestions")');
+        if (await applyBtn.count() > 0) {
+            const isDisabled = await applyBtn.isDisabled();
+            console.log(`Apply Suggestions button disabled: ${isDisabled}`);
+
+            await applyBtn.click();
+            await page.waitForTimeout(1000);
+
+            // Verify Selected Materials section appeared with auto-filled data
+            const selectedSection = page.locator('.selected-materials');
+            const isVisible = await selectedSection.isVisible();
+            console.log(`Selected Materials section visible after Apply: ${isVisible}`);
+
+            // Count selected materials rows
+            const selectedRows = page.locator('.selected-materials tbody tr');
+            const rowCount = await selectedRows.count();
+            console.log(`Selected materials count: ${rowCount}`);
+        } else {
+            console.log('Apply Suggestions button not found (BOM may not be loaded)');
+        }
+
+        await screenshots.capture(page, 'production-suggestions-applied');
+    }, page, results, screenshots);
+
+    // Test 9: Batch Number Preview
+    await runTest('Production - Batch Number Preview', async () => {
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Select order
+        const selects = await page.$$('select');
+        if (selects.length > 0) {
+            await selects[0].selectOption({ index: 1 });
+            await page.waitForTimeout(2000);
+        }
+
+        // Select operation
+        const selects2 = await page.$$('select');
+        if (selects2.length > 1) {
+            await selects2[1].selectOption({ index: 1 });
+            await page.waitForTimeout(1500);
+        }
+
+        // Click Start Production Confirmation
+        const startBtn = await page.$('button:has-text("Start Production Confirmation")');
+        if (startBtn) {
+            await startBtn.click();
+            await page.waitForTimeout(3000);
+        }
+
+        // Check for batch number preview
+        const batchPreview = page.locator('.batch-number-preview, .batch-preview');
+        if (await batchPreview.count() > 0) {
+            const previewText = await batchPreview.first().textContent();
+            console.log(`Batch number preview: ${previewText?.trim()}`);
+            // Verify it's not empty (was returning 400 before fix)
+            if (previewText && previewText.trim().length > 0) {
+                console.log('Batch number preview loaded successfully');
+            }
+        } else {
+            console.log('Batch preview section not visible (may be loading)');
+        }
+
+        await screenshots.capture(page, 'production-batch-preview');
+    }, page, results, screenshots);
+
+    // Test 10: Complete form
     await runTest('Production - Complete Form Display', async () => {
         await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(500);

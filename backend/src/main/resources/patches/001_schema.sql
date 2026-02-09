@@ -562,6 +562,7 @@ CREATE TABLE IF NOT EXISTS batch_number_config (
     config_id BIGSERIAL PRIMARY KEY,
     config_name VARCHAR(100) NOT NULL UNIQUE,
     operation_type VARCHAR(50),
+    material_id VARCHAR(100),
     product_sku VARCHAR(100),
     prefix VARCHAR(50) NOT NULL DEFAULT 'BATCH',
     include_operation_code BOOLEAN DEFAULT TRUE,

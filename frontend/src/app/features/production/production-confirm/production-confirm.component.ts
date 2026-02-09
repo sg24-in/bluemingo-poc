@@ -363,9 +363,12 @@ export class ProductionConfirmComponent implements OnInit {
     });
   }
 
+  isMaterialSelected(inventory: any): boolean {
+    return this.selectedMaterials.some(m => m.inventoryId === inventory.inventoryId);
+  }
+
   addMaterial(inventory: any): void {
-    const existing = this.selectedMaterials.find(m => m.inventoryId === inventory.inventoryId);
-    if (!existing) {
+    if (!this.isMaterialSelected(inventory)) {
       this.selectedMaterials.push({
         inventoryId: inventory.inventoryId,
         batchId: inventory.batchId,
