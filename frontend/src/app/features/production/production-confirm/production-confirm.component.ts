@@ -188,7 +188,7 @@ export class ProductionConfirmComponent implements OnInit {
         this.availableEquipment = equipment.map((eq: any) => ({
           equipmentId: eq.equipmentId,
           equipmentCode: eq.equipmentCode,
-          equipmentName: eq.equipmentName,
+          equipmentName: eq.name || eq.equipmentName,
           selected: false
         }));
       },
@@ -201,7 +201,7 @@ export class ProductionConfirmComponent implements OnInit {
         this.activeOperators = operators.map((op: any) => ({
           operatorId: op.operatorId,
           operatorCode: op.operatorCode,
-          operatorName: op.operatorName,
+          operatorName: op.name || op.operatorName,
           selected: false
         }));
       },

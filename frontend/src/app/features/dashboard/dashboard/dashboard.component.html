@@ -22,11 +22,12 @@
       </div>
     </div>
 
-    <!-- Alerts & Attention Needed -->
-    <div class="alerts-section" *ngIf="summary.batchesPendingApproval > 0">
-      <h2 class="section-title"><i class="fas fa-bell"></i> Needs Attention</h2>
-      <div class="alerts-grid">
-        <div class="alert-card info" *ngIf="summary.batchesPendingApproval > 0" (click)="navigateToBatchApproval()">
+    <!-- Alerts & Active Operations Row -->
+    <div class="attention-row" *ngIf="summary.batchesPendingApproval > 0 || activeOperations.length > 0">
+      <!-- Alerts & Attention Needed -->
+      <div class="alerts-section" *ngIf="summary.batchesPendingApproval > 0">
+        <h2 class="section-title"><i class="fas fa-bell"></i> Needs Attention</h2>
+        <div class="alert-card info" (click)="navigateToBatchApproval()">
           <div class="alert-icon"><i class="fas fa-clipboard-check"></i></div>
           <div class="alert-content">
             <span class="alert-count">{{ summary.batchesPendingApproval }}</span>
@@ -35,12 +36,10 @@
           <i class="fas fa-chevron-right alert-arrow"></i>
         </div>
       </div>
-    </div>
 
-    <!-- Active Operations (Currently Running) -->
-    <div class="active-operations-section" *ngIf="activeOperations.length > 0">
-      <h2 class="section-title"><i class="fas fa-play-circle"></i> Currently Running</h2>
-      <div class="active-operations-grid">
+      <!-- Active Operations (Currently Running) -->
+      <div class="active-operations-section" *ngIf="activeOperations.length > 0">
+        <h2 class="section-title"><i class="fas fa-play-circle"></i> Currently Running</h2>
         <div class="active-op-card" *ngFor="let op of activeOperations" (click)="navigateToOrder(op.orderId)">
           <div class="active-op-header">
             <span class="active-op-type">{{ op.operationType }}</span>

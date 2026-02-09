@@ -802,8 +802,24 @@ INSERT INTO batches (batch_id, batch_number, material_id, material_name, quantit
 (53, 'B-WIP-003', 'WIP-CAST',    'Steel Being Cast',      78, 'T',  'AVAILABLE', 'SYSTEM'),
 (54, 'B-WIP-004', 'WIP-ROLL',    'Strip on Hot Mill',     65, 'T',  'AVAILABLE', 'SYSTEM'),
 (55, 'B-WIP-005', 'WIP-PICKLE',  'Strip in Pickle Line',  45, 'T',  'AVAILABLE', 'SYSTEM'),
-(56, 'B-WIP-006', 'WIP-ROLL',    'Strip on Cold Mill',    55, 'T',  'AVAILABLE', 'SYSTEM');
-ALTER TABLE batches ALTER COLUMN batch_id RESTART WITH 57;
+(56, 'B-WIP-006', 'WIP-ROLL',    'Strip on Cold Mill',    55, 'T',  'AVAILABLE', 'SYSTEM'),
+-- Additional intermediate material batches (filling inventory gaps)
+(57, 'B-IM-021', 'IM-BLOOM',    'Steel Bloom 200mm',    160, 'T',  'AVAILABLE', 'SYSTEM'),
+(58, 'B-IM-022', 'IM-BLOOM',    'Steel Bloom 200mm',    140, 'T',  'AVAILABLE', 'SYSTEM'),
+(59, 'B-IM-023', 'IM-WIRE-ROD', 'Wire Rod',             120, 'T',  'AVAILABLE', 'SYSTEM'),
+(60, 'B-IM-024', 'IM-WIRE-ROD', 'Wire Rod',              95, 'T',  'AVAILABLE', 'SYSTEM'),
+(61, 'B-IM-025', 'IM-LIQUID',   'Liquid Steel',         200, 'T',  'AVAILABLE', 'SYSTEM'),
+(62, 'B-IM-026', 'IM-LIQUID',   'Liquid Steel',         180, 'T',  'AVAILABLE', 'SYSTEM'),
+(63, 'B-IM-027', 'IM-SLAB',     'Steel Slab 200mm',     200, 'T',  'AVAILABLE', 'SYSTEM'),
+(64, 'B-IM-028', 'IM-HR-ROUGH', 'HR Coil Rough',        110, 'T',  'AVAILABLE', 'SYSTEM'),
+-- Additional raw material batches (more stock)
+(65, 'B-RM-023', 'RM-SCRAP-A',  'Steel Scrap Grade A',  400, 'T',  'AVAILABLE', 'SYSTEM'),
+(66, 'B-RM-024', 'RM-SCRAP-B',  'Steel Scrap Grade B',  300, 'T',  'AVAILABLE', 'SYSTEM'),
+(67, 'B-RM-025', 'RM-IRON-ORE', 'Iron Ore Pellets',     250, 'T',  'AVAILABLE', 'SYSTEM'),
+(68, 'B-RM-026', 'RM-LIMESTONE','Limestone',             200, 'T',  'AVAILABLE', 'SYSTEM'),
+(69, 'B-RM-027', 'RM-FEMN',     'Ferroalloy FeMn',     2000, 'KG', 'AVAILABLE', 'SYSTEM'),
+(70, 'B-RM-028', 'RM-FESI',     'Ferroalloy FeSi',     1500, 'KG', 'AVAILABLE', 'SYSTEM');
+ALTER TABLE batches ALTER COLUMN batch_id RESTART WITH 71;
 
 -- Audit trail for batches
 INSERT INTO audit_trail (entity_type, entity_id, action, new_value, changed_by, timestamp) VALUES
@@ -821,10 +837,18 @@ INSERT INTO audit_trail (entity_type, entity_id, action, new_value, changed_by, 
 ('BATCH', 45, 'STATUS_CHANGE', 'Status: AVAILABLE -> SCRAPPED',                'OP-006', '2026-01-27 16:00:00'),
 ('BATCH', 37, 'CREATE', 'Created batch B-FG-003: Rebar 10mm, 180T',            'SYSTEM', '2026-02-01 14:00:00'),
 ('BATCH', 38, 'CREATE', 'Created batch B-FG-004: HR Coil 2mm, 120T',           'SYSTEM', '2026-02-03 14:00:00'),
-('BATCH', 27, 'CREATE', 'Created batch B-IM-009: Steel Slab 200mm, 30T',       'SYSTEM', '2026-02-04 10:00:00');
+('BATCH', 27, 'CREATE', 'Created batch B-IM-009: Steel Slab 200mm, 30T',       'SYSTEM', '2026-02-04 10:00:00'),
+('BATCH', 57, 'CREATE', 'Created batch B-IM-021: Steel Bloom 200mm, 160T',      'SYSTEM', '2026-02-05 08:00:00'),
+('BATCH', 58, 'CREATE', 'Created batch B-IM-022: Steel Bloom 200mm, 140T',      'SYSTEM', '2026-02-05 08:05:00'),
+('BATCH', 59, 'CREATE', 'Created batch B-IM-023: Wire Rod, 120T',              'SYSTEM', '2026-02-05 08:10:00'),
+('BATCH', 60, 'CREATE', 'Created batch B-IM-024: Wire Rod, 95T',               'SYSTEM', '2026-02-05 08:15:00'),
+('BATCH', 61, 'CREATE', 'Created batch B-IM-025: Liquid Steel, 200T',          'SYSTEM', '2026-02-05 08:20:00'),
+('BATCH', 62, 'CREATE', 'Created batch B-IM-026: Liquid Steel, 180T',          'SYSTEM', '2026-02-05 08:25:00'),
+('BATCH', 63, 'CREATE', 'Created batch B-IM-027: Steel Slab 200mm, 200T',      'SYSTEM', '2026-02-05 08:30:00'),
+('BATCH', 64, 'CREATE', 'Created batch B-IM-028: HR Coil Rough, 110T',         'SYSTEM', '2026-02-05 08:35:00');
 
 -- =====================================================
--- STEP 18: Inventory (50 records with all states)
+-- STEP 18: Inventory (64 records with all states)
 -- =====================================================
 INSERT INTO inventory (inventory_id, material_id, material_name, inventory_type, state, quantity, unit, batch_id, location, created_by) VALUES
 -- Raw material inventory (AVAILABLE)
@@ -892,8 +916,24 @@ INSERT INTO inventory (inventory_id, material_id, material_name, inventory_type,
 -- Scrapped
 (49, 'RM-COAL',      'Coal (Contaminated)',  'RM', 'SCRAPPED',  25,   'T',  45, 'Disposal',        'SYSTEM'),
 -- Additional available
-(50, 'RM-SCRAP-A',   'Steel Scrap Grade A',  'RM', 'AVAILABLE', 280,  'T',  46, 'Scrap Yard A',    'SYSTEM');
-ALTER TABLE inventory ALTER COLUMN inventory_id RESTART WITH 51;
+(50, 'RM-SCRAP-A',   'Steel Scrap Grade A',  'RM', 'AVAILABLE', 280,  'T',  46, 'Scrap Yard A',    'SYSTEM'),
+-- Additional intermediate inventory (filling gaps for production confirmation)
+(57, 'IM-BLOOM',     'Steel Bloom 200mm',    'IM', 'AVAILABLE', 160,  'T',  57, 'Bloom Yard',      'SYSTEM'),
+(58, 'IM-BLOOM',     'Steel Bloom 200mm',    'IM', 'AVAILABLE', 140,  'T',  58, 'Bloom Yard',      'SYSTEM'),
+(59, 'IM-WIRE-ROD',  'Wire Rod',             'IM', 'AVAILABLE', 120,  'T',  59, 'Wire Rod Bay',    'SYSTEM'),
+(60, 'IM-WIRE-ROD',  'Wire Rod',             'IM', 'AVAILABLE', 95,   'T',  60, 'Wire Rod Bay',    'SYSTEM'),
+(61, 'IM-LIQUID',    'Liquid Steel',         'IM', 'AVAILABLE', 200,  'T',  61, 'Ladle #2',        'SYSTEM'),
+(62, 'IM-LIQUID',    'Liquid Steel',         'IM', 'AVAILABLE', 180,  'T',  62, 'Ladle #3',        'SYSTEM'),
+(63, 'IM-SLAB',      'Steel Slab 200mm',     'IM', 'AVAILABLE', 200,  'T',  63, 'Slab Yard B',     'SYSTEM'),
+(64, 'IM-HR-ROUGH',  'HR Coil Rough',        'IM', 'AVAILABLE', 110,  'T',  64, 'Hot Mill',        'SYSTEM'),
+-- Additional raw material inventory (more stock)
+(65, 'RM-SCRAP-A',   'Steel Scrap Grade A',  'RM', 'AVAILABLE', 400,  'T',  65, 'Scrap Yard D',    'SYSTEM'),
+(66, 'RM-SCRAP-B',   'Steel Scrap Grade B',  'RM', 'AVAILABLE', 300,  'T',  66, 'Scrap Yard D',    'SYSTEM'),
+(67, 'RM-IRON-ORE',  'Iron Ore Pellets',     'RM', 'AVAILABLE', 250,  'T',  67, 'Ore Storage B',   'SYSTEM'),
+(68, 'RM-LIMESTONE',  'Limestone',            'RM', 'AVAILABLE', 200,  'T',  68, 'Flux Store B',    'SYSTEM'),
+(69, 'RM-FEMN',      'Ferroalloy FeMn',      'RM', 'AVAILABLE', 2000, 'KG', 69, 'Alloy Store B',   'SYSTEM'),
+(70, 'RM-FESI',      'Ferroalloy FeSi',      'RM', 'AVAILABLE', 1500, 'KG', 70, 'Alloy Store B',   'SYSTEM');
+ALTER TABLE inventory ALTER COLUMN inventory_id RESTART WITH 71;
 
 -- Audit trail for inventory
 INSERT INTO audit_trail (entity_type, entity_id, action, new_value, changed_by, timestamp) VALUES
@@ -904,7 +944,21 @@ INSERT INTO audit_trail (entity_type, entity_id, action, new_value, changed_by, 
 ('INVENTORY', 39, 'STATUS_CHANGE', 'State: AVAILABLE -> BLOCKED',                       'OP-006', '2026-01-26 14:05:00'),
 ('INVENTORY', 49, 'STATUS_CHANGE', 'State: AVAILABLE -> SCRAPPED',                      'OP-006', '2026-01-27 16:05:00'),
 ('INVENTORY', 37, 'STATUS_CHANGE', 'State: AVAILABLE -> RESERVED for Order ORD-2026-009','admin', '2026-01-30 09:00:00'),
-('INVENTORY', 38, 'STATUS_CHANGE', 'State: AVAILABLE -> RESERVED for Order ORD-2026-009','admin', '2026-01-30 09:05:00');
+('INVENTORY', 38, 'STATUS_CHANGE', 'State: AVAILABLE -> RESERVED for Order ORD-2026-009','admin', '2026-01-30 09:05:00'),
+('INVENTORY', 57, 'CREATE', 'Created inventory: IM-BLOOM 160T at Bloom Yard',              'SYSTEM', '2026-02-01 08:00:00'),
+('INVENTORY', 58, 'CREATE', 'Created inventory: IM-BLOOM 140T at Bloom Yard',              'SYSTEM', '2026-02-01 08:05:00'),
+('INVENTORY', 59, 'CREATE', 'Created inventory: IM-WIRE-ROD 120T at Wire Rod Bay',         'SYSTEM', '2026-02-01 08:10:00'),
+('INVENTORY', 60, 'CREATE', 'Created inventory: IM-WIRE-ROD 95T at Wire Rod Bay',          'SYSTEM', '2026-02-01 08:15:00'),
+('INVENTORY', 61, 'CREATE', 'Created inventory: IM-LIQUID 200T at Ladle #2',               'SYSTEM', '2026-02-01 08:20:00'),
+('INVENTORY', 62, 'CREATE', 'Created inventory: IM-LIQUID 180T at Ladle #3',               'SYSTEM', '2026-02-01 08:25:00'),
+('INVENTORY', 63, 'CREATE', 'Created inventory: IM-SLAB 200T at Slab Yard B',              'SYSTEM', '2026-02-01 08:30:00'),
+('INVENTORY', 64, 'CREATE', 'Created inventory: IM-HR-ROUGH 110T at Hot Mill',             'SYSTEM', '2026-02-01 08:35:00'),
+('INVENTORY', 65, 'CREATE', 'Created inventory: RM-SCRAP-A 400T at Scrap Yard D',          'SYSTEM', '2026-02-01 08:40:00'),
+('INVENTORY', 66, 'CREATE', 'Created inventory: RM-SCRAP-B 300T at Scrap Yard D',          'SYSTEM', '2026-02-01 08:45:00'),
+('INVENTORY', 67, 'CREATE', 'Created inventory: RM-IRON-ORE 250T at Ore Storage B',        'SYSTEM', '2026-02-01 08:50:00'),
+('INVENTORY', 68, 'CREATE', 'Created inventory: RM-LIMESTONE 200T at Flux Store B',        'SYSTEM', '2026-02-01 08:55:00'),
+('INVENTORY', 69, 'CREATE', 'Created inventory: RM-FEMN 2000KG at Alloy Store B',          'SYSTEM', '2026-02-01 09:00:00'),
+('INVENTORY', 70, 'CREATE', 'Created inventory: RM-FESI 1500KG at Alloy Store B',          'SYSTEM', '2026-02-01 09:05:00');
 
 -- =====================================================
 -- STEP 19: Production Confirmations (35 confirmations)

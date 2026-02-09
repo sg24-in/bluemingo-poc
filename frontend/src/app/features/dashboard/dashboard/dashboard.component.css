@@ -154,7 +154,6 @@
 .operation-status-card {
   flex: 1;
   min-width: 120px;
-  max-width: 200px;
   background: white;
   border-radius: 10px;
   padding: 16px 20px;
@@ -192,12 +191,12 @@
 
 /* Active Operations Section */
 .active-operations-section {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .active-operations-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -261,14 +260,22 @@
   color: #999;
 }
 
-/* Alerts Section */
-.alerts-section {
+/* Attention Row (Alerts + Active Operations side by side) */
+.attention-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
+/* Alerts Section */
+.alerts-section {
+  margin-bottom: 0;
+}
+
 .alerts-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -359,7 +366,7 @@
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -450,7 +457,7 @@
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -704,12 +711,12 @@
 
 /* Responsive */
 @media (max-width: 1200px) {
-  .alerts-grid, .metrics-grid {
+  .metrics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
   .charts-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -733,7 +740,7 @@
     flex-direction: column;
   }
 
-  .alerts-grid, .metrics-grid, .dashboard-grid, .charts-grid {
+  .attention-row, .alerts-grid, .metrics-grid, .dashboard-grid, .charts-grid {
     grid-template-columns: 1fr;
   }
 
