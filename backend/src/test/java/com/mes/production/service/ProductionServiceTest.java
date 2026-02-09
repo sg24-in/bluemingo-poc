@@ -605,4 +605,79 @@ class ProductionServiceTest {
         assertEquals("CONFIRMED", testOperation.getStatus());
         assertEquals(BigDecimal.valueOf(50), testOperation.getConfirmedQty());
     }
+
+    @Test
+    @DisplayName("Should find next operation by orderLineId not processId (regression test)")
+    void confirmProduction_SetsNextOperationReady_ByOrderLineId() {
+        // Arrange: operation with sequence 1, next operation with sequence 2 in same line item
+        Operation nextOperation = Operation.builder()
+                .operationId(2L)
+                .process(testProcess)
+                .orderLineItem(testOrderLine)
+                .operationName("Next Operation")
+                .operationCode("OP002")
+                .operationType("CASTING")
+                .sequenceNumber(2)
+                .status("NOT_STARTED")
+                .build();
+
+        ProductionConfirmationDTO.Request request = ProductionConfirmationDTO.Request.builder()
+                .operationId(1L)
+                .materialsConsumed(List.of(
+                        ProductionConfirmationDTO.MaterialConsumption.builder()
+                                .batchId(1L)
+                                .inventoryId(1L)
+                                .quantity(BigDecimal.valueOf(30))
+                                .build()
+                ))
+                .producedQty(BigDecimal.valueOf(25))
+                .scrapQty(BigDecimal.valueOf(5))
+                .startTime(LocalDateTime.now().minusHours(1))
+                .endTime(LocalDateTime.now())
+                .equipmentIds(List.of(1L))
+                .operatorIds(List.of(1L))
+                .build();
+
+        when(operationRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(testOperation));
+        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus(anyString(), anyLong(), anyString())).thenReturn(false);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+        when(batchRepository.findMaxSequenceByPrefix(anyString())).thenReturn(Optional.of(0));
+        when(batchRepository.save(any(Batch.class))).thenAnswer(i -> {
+            Batch b = i.getArgument(0);
+            b.setBatchId(2L);
+            return b;
+        });
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+        when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+        when(batchRelationRepository.save(any(BatchRelation.class))).thenAnswer(i -> i.getArgument(0));
+        when(confirmationRepository.save(any(ProductionConfirmation.class))).thenAnswer(i -> {
+            ProductionConfirmation pc = i.getArgument(0);
+            pc.setConfirmationId(1L);
+            pc.setCreatedOn(LocalDateTime.now());
+            return pc;
+        });
+        when(operationRepository.save(any(Operation.class))).thenAnswer(i -> i.getArgument(0));
+        // Key: findNextOperation must be called with orderLineId (1L), not processId (1L)
+        // We verify the correct parameter by using eq() matchers
+        when(operationRepository.findNextOperation(eq(testOrderLine.getOrderLineId()), eq(1)))
+                .thenReturn(Optional.of(nextOperation));
+        when(processRepository.save(any(Process.class))).thenAnswer(i -> i.getArgument(0));
+        when(equipmentRepository.findAllById(anyList())).thenReturn(List.of());
+        when(operatorRepository.findAllById(anyList())).thenReturn(List.of());
+        when(batchNumberService.generateBatchNumber(anyString(), anyString())).thenReturn("BATCH-TEST-001");
+
+        // Act
+        ProductionConfirmationDTO.Response response = productionService.confirmProduction(request);
+
+        // Assert
+        assertNotNull(response);
+        // Verify findNextOperation was called with orderLineId, not processId
+        verify(operationRepository).findNextOperation(eq(testOrderLine.getOrderLineId()), eq(1));
+        // Verify next operation was set to READY
+        assertEquals("READY", nextOperation.getStatus());
+        // Verify response includes next operation info
+        assertNotNull(response.getNextOperation());
+        assertEquals(2L, response.getNextOperation().getOperationId());
+        assertEquals("Next Operation", response.getNextOperation().getOperationName());
+    }
 }

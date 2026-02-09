@@ -248,26 +248,26 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
     const nodes: any[] = [];
     const edges: any[] = [];
-    let xOffset = 80;
-    const processY = 50;
-    const operationY = 160;
-    const nodeSpacingX = 140;
+    const nodeSpacingX = 130;
+    const rowHeight = 100;
+    let currentRow = 0;
 
-    this.order.lineItems.forEach((lineItem: any) => {
+    this.order.lineItems.forEach((lineItem: any, liIdx: number) => {
       const processes = this.getProcessesForLineItem(lineItem);
 
       processes.forEach((process: GroupedProcess) => {
         const processNodeId = `process-${process.processId || 'default'}-${lineItem.orderLineId}`;
-        const opsCount = process.operations?.length || 1;
-        const processX = xOffset + ((opsCount - 1) * nodeSpacingX) / 2;
+        const ops = process.operations || [];
+        const opsCount = ops.length || 1;
+        const rowY = 50 + currentRow * rowHeight;
 
-        // Process header node - styled card
+        // Process header node - left side
         nodes.push({
           id: processNodeId,
           name: process.processName,
-          x: processX,
-          y: processY,
-          symbolSize: [160, 40],
+          x: 60,
+          y: rowY,
+          symbolSize: [140, 36],
           symbol: 'roundRect',
           itemStyle: {
             color: {
@@ -285,7 +285,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
           },
           label: {
             show: true,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 'bold',
             color: '#fff',
             formatter: (params: any) => params.name
@@ -293,7 +293,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
         });
 
         let prevOpId: string | null = null;
-        (process.operations || []).forEach((op: any, i: number) => {
+        ops.forEach((op: any, i: number) => {
           const opNodeId = `op-${op.operationId}`;
           const { bgColor, borderColor, shadowColor } = this.getStatusStyles(op.status);
 
@@ -301,9 +301,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
             id: opNodeId,
             name: op.operationName,
             value: op.status,
-            x: xOffset + i * nodeSpacingX,
-            y: operationY,
-            symbolSize: [110, 55],
+            x: 200 + i * nodeSpacingX,
+            y: rowY,
+            symbolSize: [105, 48],
             symbol: 'roundRect',
             itemStyle: {
               color: bgColor,
@@ -316,12 +316,15 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
             },
             label: {
               show: true,
-              fontSize: 11,
+              fontSize: 10,
               color: '#333',
+              overflow: 'truncate',
+              ellipsis: '..',
+              width: 95,
               formatter: (params: any) => `{name|${params.name}}\n{status|${params.value}}`,
               rich: {
-                name: { fontSize: 11, fontWeight: 'bold', color: '#1e293b', lineHeight: 16 },
-                status: { fontSize: 10, color: '#64748b', lineHeight: 14 }
+                name: { fontSize: 10, fontWeight: 'bold', color: '#1e293b', lineHeight: 14, width: 95, overflow: 'truncate', ellipsis: '..' },
+                status: { fontSize: 9, color: '#64748b', lineHeight: 12 }
               }
             }
           });
@@ -349,9 +352,14 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
           prevOpId = opNodeId;
         });
 
-        xOffset += opsCount * nodeSpacingX + 100;
+        currentRow++;
       });
     });
+
+    // Dynamic height based on number of process rows
+    const chartHeight = Math.max(300, currentRow * rowHeight + 80);
+    this.processFlowChartRef.nativeElement.style.height = chartHeight + 'px';
+    this.processFlowChartRef.nativeElement.style.minHeight = chartHeight + 'px';
 
     const chart = this.chartService.initChart(this.processFlowChartRef.nativeElement, 'process-flow');
     this.chartService.setOption('process-flow', {

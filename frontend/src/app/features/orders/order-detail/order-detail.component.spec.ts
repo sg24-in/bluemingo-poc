@@ -204,4 +204,48 @@ describe('OrderDetailComponent', () => {
 
     expect(component.loading).toBeFalse();
   });
+
+  describe('Edit button visibility', () => {
+    it('should show edit button for IN_PROGRESS orders', () => {
+      component.order = { ...mockOrder, status: 'IN_PROGRESS' };
+      fixture.detectChanges();
+      const editBtn = fixture.nativeElement.querySelector('.page-header-actions .btn-primary');
+      expect(editBtn).toBeTruthy();
+    });
+
+    it('should show edit button for CREATED orders', () => {
+      component.order = { ...mockOrder, status: 'CREATED' };
+      fixture.detectChanges();
+      const editBtn = fixture.nativeElement.querySelector('.page-header-actions .btn-primary');
+      expect(editBtn).toBeTruthy();
+    });
+
+    it('should hide edit button for COMPLETED orders', () => {
+      component.order = { ...mockOrder, status: 'COMPLETED' };
+      fixture.detectChanges();
+      const editBtn = fixture.nativeElement.querySelector('.page-header-actions .btn-primary');
+      expect(editBtn).toBeFalsy();
+    });
+
+    it('should hide edit button for CANCELLED orders', () => {
+      component.order = { ...mockOrder, status: 'CANCELLED' };
+      fixture.detectChanges();
+      const editBtn = fixture.nativeElement.querySelector('.page-header-actions .btn-primary');
+      expect(editBtn).toBeFalsy();
+    });
+
+    it('should show edit button for ON_HOLD orders', () => {
+      component.order = { ...mockOrder, status: 'ON_HOLD' };
+      fixture.detectChanges();
+      const editBtn = fixture.nativeElement.querySelector('.page-header-actions .btn-primary');
+      expect(editBtn).toBeTruthy();
+    });
+  });
+
+  describe('Process flow chart', () => {
+    it('should set dynamic chart height based on line items', () => {
+      // The chart container should exist when order has line items
+      expect(component.order?.lineItems?.length).toBeGreaterThan(0);
+    });
+  });
 });

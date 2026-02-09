@@ -44,10 +44,10 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
     List<Operation> findByProcessIdOrderBySequence(@Param("processId") Long processId);
 
     /**
-     * Find next operation in a process
+     * Find next operation in the same order line item (runtime scope)
      */
-    @Query("SELECT op FROM Operation op WHERE op.process.processId = :processId AND op.sequenceNumber > :currentSequence ORDER BY op.sequenceNumber ASC")
-    Optional<Operation> findNextOperation(@Param("processId") Long processId, @Param("currentSequence") Integer currentSequence);
+    @Query("SELECT op FROM Operation op WHERE op.orderLineItem.orderLineId = :orderLineId AND op.sequenceNumber > :currentSequence ORDER BY op.sequenceNumber ASC LIMIT 1")
+    Optional<Operation> findNextOperation(@Param("orderLineId") Long orderLineId, @Param("currentSequence") Integer currentSequence);
 
     /**
      * Find operation by ID with full details

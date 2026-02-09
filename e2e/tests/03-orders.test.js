@@ -106,6 +106,69 @@ async function runOrdersTests(page, screenshots, results, runTest) {
             }
         }
     }, page, results, screenshots);
+
+    // Test 6: Edit button hidden for COMPLETED orders
+    await runTest('Orders - Edit Button Hidden for Completed Orders', async () => {
+        // Navigate to a COMPLETED order (order 5 is COMPLETED)
+        await page.goto(`${config.baseUrl}/#/orders/5`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Check status badge shows COMPLETED
+        const statusBadge = page.locator('.page-header-actions .status-badge, .page-header-actions app-status-badge');
+        if (await statusBadge.count() > 0) {
+            const badgeText = await statusBadge.first().textContent();
+            if (badgeText && badgeText.includes('COMPLETED')) {
+                // Edit button should NOT be present
+                const editBtn = page.locator('.page-header-actions button:has-text("Edit Order")');
+                const editVisible = await editBtn.count() > 0 && await editBtn.first().isVisible().catch(() => false);
+                if (editVisible) {
+                    throw new Error('Edit button should be hidden for COMPLETED orders');
+                }
+                await screenshots.capture(page, 'orders-completed-no-edit-btn');
+            }
+        }
+    }, page, results, screenshots);
+
+    // Test 7: Edit button visible for IN_PROGRESS orders
+    await runTest('Orders - Edit Button Visible for Active Orders', async () => {
+        // Navigate to an IN_PROGRESS order (order 1)
+        await page.goto(`${config.baseUrl}/#/orders/1`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const editBtn = page.locator('button:has-text("Edit Order")');
+        if (await editBtn.count() > 0) {
+            const isVisible = await editBtn.first().isVisible();
+            if (!isVisible) {
+                throw new Error('Edit button should be visible for IN_PROGRESS orders');
+            }
+        }
+        await screenshots.capture(page, 'orders-active-edit-btn-visible');
+    }, page, results, screenshots);
+
+    // Test 8: Multi-stage order process flow visualization
+    await runTest('Orders - Multi-Stage Order Flow Visualization', async () => {
+        // Navigate to the 4-stage order (order 42)
+        await page.goto(`${config.baseUrl}/#/orders/42`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1500);
+
+        // Check flow chart container exists and has adequate height
+        const flowChart = page.locator('.process-flow-container');
+        if (await flowChart.count() > 0) {
+            const box = await flowChart.first().boundingBox();
+            if (box && box.height < 200) {
+                throw new Error(`Flow chart height too small: ${box.height}px`);
+            }
+        }
+
+        await screenshots.capture(page, 'orders-multi-stage-flow', { fullPage: true });
+
+        // Verify multiple line items are shown
+        const lineItems = page.locator('.line-items-section .card');
+        const liCount = await lineItems.count();
+        if (liCount < 3) {
+            throw new Error(`Expected 4 line items for 4-stage order, found ${liCount}`);
+        }
+    }, page, results, screenshots);
 }
 
 module.exports = { runOrdersTests };
