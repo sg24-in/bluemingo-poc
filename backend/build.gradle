@@ -36,7 +36,7 @@ repositories {
 ext {
     set('jjwtVersion', '0.12.3')
     // Frontend build directory
-    frontendBuildDir = file("${project.rootDir}/../frontend/dist/mes-production")
+    frontendBuildDir = file("${project.rootDir}/../frontend/dist/mes-production-frontend/browser")
     // Static resources directory
     staticDir = file("${project.projectDir}/src/main/resources/static")
 }
@@ -280,13 +280,15 @@ task obfuscatedWar(type: War, dependsOn: proguard) {
         into ''
     }
 
-    // Include other resources
+    // Include other resources (configs, patches, demo data)
     from('src/main/resources') {
         include '**/*.properties'
         include '**/*.yml'
         include '**/*.yaml'
         include '**/*.xml'
         include '**/*.sql'
+        include 'patches/**'
+        include 'demo/**'
         into 'WEB-INF/classes'
     }
 

@@ -35,8 +35,8 @@ This document provides a complete reference of all seed/demo data in the MES Pro
 The demo data represents a realistic steel manufacturing environment with complete production workflows spanning melting, casting, rolling, pickling, annealing, and finishing operations. The data covers:
 
 - **12 customers** across 10 countries (11 active, 1 inactive)
-- **8 products** spanning hot rolled coils, cold rolled sheets, rebar, and billets
-- **32 materials** organized by type: raw materials, intermediates, work-in-progress, and finished goods
+- **7 products** spanning hot rolled coils, cold rolled sheets, rebar, and billets
+- **31 materials** organized by type: raw materials (15), intermediates (9), and finished goods (7)
 - **6 production processes** with 4 active routings containing 22 routing steps
 - **8 hierarchical BOM trees** (88 total BOM nodes) covering all products
 - **16 equipment items** across 12 categories (melting, casting, rolling, etc.)
@@ -47,7 +47,7 @@ The demo data represents a realistic steel manufacturing environment with comple
 - **70 inventory records** across all states
 - **12 hold records** (8 active, 4 released) on various entity types
 - **35 production confirmations** with equipment and operator assignments
-- **11 batch number configuration rules**
+- **4 batch number configuration rules**
 
 All demo data is timestamped in January-February 2026 and reflects various stages of production: orders that are completed, in-progress, on hold, blocked, and cancelled.
 
@@ -77,15 +77,15 @@ There are 12 customers in the system. Eleven are active and available for order 
 | ID | Code | Name | Contact Person | Email | Phone | City | Country | Status |
 |----|------|------|----------------|-------|-------|------|---------|--------|
 | 1 | CUST-001 | ABC Steel Corporation | John Smith | john.smith@abcsteel.com | +1-555-0101 | Pittsburgh | USA | ACTIVE |
-| 2 | CUST-002 | Global Manufacturing Ltd | Sarah Johnson | sarah.j@globalmanuf.com | +1-555-0102 | Detroit | USA | ACTIVE |
-| 3 | CUST-003 | Pacific Metal Works | Michael Chen | m.chen@pacificmetal.com | +1-555-0103 | Los Angeles | USA | ACTIVE |
-| 4 | CUST-004 | European Auto Parts GmbH | Hans Mueller | h.mueller@euroauto.eu | +49-30-5504 | Munich | Germany | ACTIVE |
-| 5 | CUST-005 | Asian Electronics Inc | Yuki Tanaka | y.tanaka@asianelec.jp | +81-3-55050 | Tokyo | Japan | ACTIVE |
-| 6 | CUST-006 | BuildRight Construction | Tom Bradley | tom.b@buildright.com | +1-555-0106 | Chicago | USA | ACTIVE |
-| 7 | CUST-007 | Nordic Steel Trading AB | Erik Lindqvist | erik@nordicsteel.se | +46-8-55070 | Stockholm | Sweden | ACTIVE |
-| 8 | CUST-008 | Middle East Metals FZE | Ahmed Al-Rashid | ahmed@memetals.ae | +971-4-5508 | Dubai | UAE | ACTIVE |
-| 9 | CUST-009 | South American Steel SA | Carlos Rodriguez | carlos@sasteel.com | +54-11-5550 | Buenos Aires | Argentina | ACTIVE |
-| 10 | CUST-010 | African Mining Corp | Kwame Mensah | kwame@afminecorp.com | +27-11-5551 | Johannesburg | South Africa | ACTIVE |
+| 2 | CUST-002 | Global Manufacturing Inc | Sarah Johnson | sarah@globalmfg.com | +1-555-0102 | Detroit | USA | ACTIVE |
+| 3 | CUST-003 | Pacific Metal Works | Michael Chen | m.chen@pacificmetal.com | +1-555-0103 | Seattle | USA | ACTIVE |
+| 4 | CUST-004 | European Auto Parts GmbH | Hans Mueller | h.mueller@euroauto.de | +49-555-0104 | Munich | Germany | ACTIVE |
+| 5 | CUST-005 | Asian Electronics Ltd | Yuki Tanaka | y.tanaka@asianelec.jp | +81-555-0105 | Tokyo | Japan | ACTIVE |
+| 6 | CUST-006 | BuildRight Construction | Robert Brown | r.brown@buildright.com | +1-555-0106 | Chicago | USA | ACTIVE |
+| 7 | CUST-007 | Nordic Steel AS | Erik Larsson | e.larsson@nordicsteel.no | +47-555-0107 | Oslo | Norway | ACTIVE |
+| 8 | CUST-008 | Middle East Metals LLC | Ahmed Hassan | a.hassan@memetals.ae | +971-555-0108 | Dubai | UAE | ACTIVE |
+| 9 | CUST-009 | South American Mining Co | Carlos Rodriguez | c.rodriguez@samining.br | +55-555-0109 | São Paulo | Brazil | ACTIVE |
+| 10 | CUST-010 | Indian Steel Works Pvt | Rajesh Sharma | r.sharma@indiansteel.in | +91-555-0110 | Mumbai | India | ACTIVE |
 | 11 | CUST-011 | Oceanic Metals Ltd | Bruce Wilson | bruce@oceanicmetals.au | +61-2-55520 | Sydney | Australia | ACTIVE |
 | 12 | CUST-012 | Canadian Steel Works | Pierre Dubois | pierre@cansteelworks.ca | +1-514-5553 | Montreal | Canada | **INACTIVE** |
 
@@ -96,10 +96,10 @@ There are 12 customers in the system. Eleven are active and available for order 
 | USA | 4 | CUST-001, CUST-002, CUST-003, CUST-006 |
 | Germany | 1 | CUST-004 |
 | Japan | 1 | CUST-005 |
-| Sweden | 1 | CUST-007 |
+| Norway | 1 | CUST-007 |
 | UAE | 1 | CUST-008 |
-| Argentina | 1 | CUST-009 |
-| South Africa | 1 | CUST-010 |
+| Brazil | 1 | CUST-009 |
+| India | 1 | CUST-010 |
 | Australia | 1 | CUST-011 |
 | Canada | 1 | CUST-012 (inactive) |
 
@@ -107,24 +107,25 @@ There are 12 customers in the system. Eleven are active and available for order 
 
 ## 4. Products
 
-Eight products are configured in the system, spanning three product categories. All products are ACTIVE.
+Seven products are configured in the system, spanning three product categories. All products are ACTIVE.
 
-| SKU | Product Name | Category | Group | Unit | Price (USD) | Min Order Qty | Lead Time |
-|-----|-------------|----------|-------|------|-------------|---------------|-----------|
-| HR-COIL-2MM | Hot Rolled Coil 2mm | Coils | Hot Rolled | T | 700.00 | 10 | 14 days |
-| HR-COIL-3MM | Hot Rolled Coil 3mm | Coils | Hot Rolled | T | 680.00 | 10 | 14 days |
-| HR-COIL-4MM | Hot Rolled Coil 4mm | Coils | Hot Rolled | T | 660.00 | 15 | 14 days |
-| CR-SHEET-1MM | Cold Rolled Sheet 1mm | Sheets | Cold Rolled | T | 850.00 | 5 | 21 days |
-| CR-SHEET-2MM | Cold Rolled Sheet 2mm | Sheets | Cold Rolled | T | 820.00 | 5 | 21 days |
-| REBAR-10MM | Reinforcement Bar 10mm | Rebars | Long Products | T | 580.00 | 20 | 10 days |
-| REBAR-12MM | Reinforcement Bar 12mm | Rebars | Long Products | T | 575.00 | 20 | 10 days |
-| STEEL-BILLET-100 | Steel Billet 100mm | Billets | Semi-Finished | T | 500.00 | 25 | 7 days |
+| SKU | Product Name | Category | Unit | Price (USD) | Status |
+|-----|-------------|----------|------|-------------|--------|
+| PROD-HR-COIL-2MM | Hot Rolled Coil 2.0mm | Flat Products | T | 750.00 | ACTIVE |
+| PROD-HR-COIL-3MM | Hot Rolled Coil 3.0mm | Flat Products | T | 740.00 | ACTIVE |
+| PROD-CR-SHEET-1MM | Cold Rolled Sheet 1.0mm | Flat Products | T | 850.00 | ACTIVE |
+| PROD-CR-SHEET-2MM | Cold Rolled Sheet 2.0mm | Flat Products | T | 830.00 | ACTIVE |
+| PROD-REBAR-10 | Rebar 10mm Grade 60 | Long Products | T | 650.00 | ACTIVE |
+| PROD-REBAR-16 | Rebar 16mm Grade 60 | Long Products | T | 640.00 | ACTIVE |
+| PROD-BILLET-100 | Steel Billet 100mm | Semi-Finished | T | 600.00 | ACTIVE |
+
+*Note: Order line items reference products using simplified SKU codes (e.g., HR-COIL-2MM, CR-SHEET-1MM, REBAR-10MM, REBAR-12MM, HR-COIL-4MM, STEEL-BILLET-100) which may differ from the products table SKUs.*
 
 ### Product-to-Process Mapping
 
-Each product is manufactured through a specific production process:
+Each product is manufactured through a specific production process. The SKUs below are the simplified codes used in order line items:
 
-| Product SKU | Process | Operations Count | Description |
+| Product SKU (Order Ref) | Process | Operations Count | Description |
 |-------------|---------|-----------------|-------------|
 | HR-COIL-2MM | Process 1: Hot Rolled Coil Production | 8 | Charge, Melt, Refine, Slab Cast, Reheat, Rough Roll, Finish Roll, Cool/Coil |
 | HR-COIL-3MM | Process 1: Hot Rolled Coil Production | 8 | Same as HR-COIL-2MM |
@@ -139,67 +140,63 @@ Each product is manufactured through a specific production process:
 
 ## 5. Materials
 
-There are 32 materials organized into four types reflecting the steel production value chain.
+There are 31 materials organized into three types reflecting the steel production value chain.
 
 ### 5.1 Raw Materials (RM) - 15 materials
 
 These are purchased inputs consumed during production.
 
-| Code | Name | Description | Unit | Group | Std. Cost (USD) | Min Stock | Reorder Point | Lead Time |
-|------|------|-------------|------|-------|-----------------|-----------|---------------|-----------|
-| RM-SCRAP-A | Steel Scrap Grade A | High-quality HMS1 steel scrap | T | Scrap | 250.00 | 100 | 200 | 3 days |
-| RM-SCRAP-B | Steel Scrap Grade B | HMS2 mixed steel scrap | T | Scrap | 200.00 | 50 | 100 | 3 days |
-| RM-SCRAP-C | Steel Scrap Grade C | Shredded steel scrap | T | Scrap | 150.00 | 30 | 60 | 3 days |
-| RM-IRON-ORE | Iron Ore Pellets | DR-grade iron ore pellets, 67% Fe | T | Iron | 150.00 | 80 | 150 | 14 days |
-| RM-LIMESTONE | Limestone | High-calcium flux grade limestone | T | Flux | 50.00 | 30 | 60 | 5 days |
-| RM-FESI | Ferroalloy - FeSi | Ferrosilicon 75% for deoxidation | KG | Alloy | 2.50 | 500 | 1,000 | 7 days |
-| RM-FEMN | Ferroalloy - FeMn | Ferromanganese 78% for strengthening | KG | Alloy | 3.00 | 400 | 800 | 7 days |
-| RM-FEV | Ferroalloy - FeV | Ferrovanadium 80% for high-strength steel | KG | Alloy | 25.00 | 100 | 200 | 14 days |
-| RM-COAL | Coal / Coke | Met-grade coke for energy and reduction | T | Energy | 120.00 | 50 | 100 | 7 days |
-| RM-GRAPHITE | Graphite Electrodes | UHP graphite electrodes 600mm | EA | Consumable | 800.00 | 10 | 20 | 21 days |
-| RM-AL-WIRE | Aluminum Wire | Aluminum deoxidizer wire 9.5mm | KG | Alloy | 4.50 | 200 | 500 | 5 days |
-| RM-MOLD-PWD | Mold Powder | Continuous casting mold flux powder | KG | Consumable | 1.20 | 500 | 1,000 | 7 days |
-| RM-ROLL-LUB | Rolling Lubricant | Hot/cold rolling process lubricant | L | Consumable | 5.00 | 500 | 1,000 | 5 days |
-| RM-HCL | Hydrochloric Acid | HCl 18% for pickling line | L | Chemical | 0.80 | 2,000 | 4,000 | 3 days |
-| RM-COATING | Surface Coating Oil | Anti-corrosion surface oil | L | Consumable | 3.50 | 500 | 1,000 | 5 days |
+| Code | Name | Description | Unit | Std. Cost (USD) | Min Stock | Reorder Point |
+|------|------|-------------|------|-----------------|-----------|---------------|
+| RM-SCRAP-A | Steel Scrap Grade A | High quality steel scrap for EAF | T | 350.00 | 100 | 200 |
+| RM-SCRAP-B | Steel Scrap Grade B | Standard steel scrap for EAF | T | 280.00 | 150 | 300 |
+| RM-SCRAP-C | Steel Scrap Grade C | Shredded steel scrap | T | 150.00 | 30 | 60 |
+| RM-IRON-ORE | Iron Ore Pellets | Iron ore pellets 65% Fe | T | 150.00 | 500 | 1,000 |
+| RM-LIMESTONE | Limestone | Limestone for flux | T | 45.00 | 200 | 400 |
+| RM-FESI | Ferrosilicon 75% | Ferrosilicon alloy 75% | KG | 1.80 | 5,000 | 10,000 |
+| RM-FEMN | Ferromanganese HC | High carbon ferromanganese | KG | 1.50 | 5,000 | 10,000 |
+| RM-FEV | Ferrovanadium 80% | Ferrovanadium for high-strength steel | KG | 25.00 | 100 | 200 |
+| RM-COAL | Anthracite Coal | Anthracite coal for carburizing | T | 200.00 | 100 | 200 |
+| RM-GRAPHITE | Graphite Electrodes | Graphite electrodes for EAF | PC | 2,500.00 | 10 | 20 |
+| RM-ALWIRE | Aluminum Wire | Aluminum wire for deoxidation | KG | 2.50 | 2,000 | 4,000 |
+| RM-MOLD-POWDER | Mold Powder | Casting mold powder | KG | 1.20 | 3,000 | 6,000 |
+| RM-LUBRICANT | Rolling Lubricant | Rolling mill lubricant | L | 3.50 | 2,000 | 4,000 |
+| RM-HCL | Hydrochloric Acid | HCl for pickling | L | 0.50 | 5,000 | 10,000 |
+| RM-COATING | Coating Oil | Anti-rust coating oil | L | 4.00 | 1,000 | 2,000 |
 
-### 5.2 Intermediate Materials (IM) - 10 materials
+### 5.2 Intermediate Materials (IM) - 9 materials
 
 These are produced and consumed within the production chain, not sold to customers.
 
-| Code | Name | Description | Unit | Group | Std. Cost (USD) |
-|------|------|-------------|------|-------|-----------------|
-| IM-LIQUID | Liquid Steel | Molten steel from EAF | T | Steel | 400.00 |
-| IM-SLAB | Steel Slab 200mm | Continuously cast steel slab | T | Steel | 550.00 |
-| IM-BILLET | Steel Billet 100mm | Continuously cast steel billet | T | Steel | 500.00 |
-| IM-BLOOM | Steel Bloom 200mm | Continuously cast steel bloom | T | Steel | 520.00 |
-| IM-HR-ROUGH | HR Coil Rough | Rough-rolled hot strip | T | Coil | 600.00 |
-| IM-PICKLED | Pickled HR Strip | Acid-pickled hot rolled strip | T | Strip | 650.00 |
-| IM-CR-STRIP | Cold Rolled Strip | Cold-reduced steel strip | T | Strip | 750.00 |
-| IM-ANNEALED | Annealed CR Strip | Batch-annealed cold rolled strip | T | Strip | 780.00 |
-| IM-ROLLED-BAR | Rolled Bar | Hot-rolled reinforcement bar | T | Long | 540.00 |
-| IM-WIRE-ROD | Wire Rod | Hot-rolled wire rod coil | T | Long | 560.00 |
+| Code | Name | Description | Unit | Std. Cost (USD) |
+|------|------|-------------|------|-----------------|
+| IM-LIQUID-STEEL | Liquid Steel | Molten steel from EAF | T | 500.00 |
+| IM-SLAB-CS | Carbon Steel Slab | Carbon steel slab 200mm | T | 550.00 |
+| IM-BILLET | Steel Billet 100mm | Steel billet 100x100mm | T | 520.00 |
+| IM-HR-COIL | Hot Rolled Coil | Hot rolled coil 3-6mm | T | 620.00 |
+| IM-PICKLED | Pickled Strip | Pickled and oiled strip | T | 650.00 |
+| IM-CR-STRIP | Cold Rolled Strip | Cold rolled strip 0.5-2mm | T | 700.00 |
+| IM-ANNEALED | Annealed Strip | Batch annealed strip | T | 720.00 |
+| IM-WIRE-ROD | Wire Rod | Wire rod 5.5-12mm | T | 580.00 |
+| IM-BAR | Rolled Bar | Rolled bar 10-40mm | T | 560.00 |
 
-### 5.3 Work In Progress (WIP) - 4 materials
+### 5.3 Work In Progress (WIP) - Not in Materials Master
 
-These represent material actively being processed on equipment.
+There are no WIP materials defined in the materials master data table. However, WIP material codes (WIP-MELT, WIP-CAST, WIP-ROLL, WIP-PICKLE) are used in batch and inventory records to represent material actively being processed on equipment. These codes exist only as references in operational data, not as entries in the materials table.
 
-| Code | Name | Description | Unit | Group | Std. Cost (USD) |
-|------|------|-------------|------|-------|-----------------|
-| WIP-MELT | Molten Steel (Processing) | Liquid steel in ladle - active refining | T | Steel | 380.00 |
-| WIP-CAST | Steel Being Cast | Steel in continuous caster - active | T | Steel | 420.00 |
-| WIP-ROLL | Strip on Rolling Mill | Hot strip on rolling mill - active | T | Coil | 550.00 |
-| WIP-PICKLE | Strip in Pickling Line | Strip in acid pickling - active | T | Strip | 600.00 |
-
-### 5.4 Finished Goods (FG) - 3 materials
+### 5.4 Finished Goods (FG) - 7 materials
 
 These correspond to the final products shipped to customers.
 
-| Code | Name | Description | Unit | Group | Std. Cost (USD) |
-|------|------|-------------|------|-------|-----------------|
-| FG-HR-2MM | HR Coil 2mm | Hot rolled coil, 2mm thickness | T | Coil | 700.00 |
-| FG-CR-1MM | CR Sheet 1mm | Cold rolled sheet, 1mm thickness | T | Sheet | 850.00 |
-| FG-REBAR-10 | Rebar 10mm | Reinforcement bar, 10mm diameter | T | Long | 580.00 |
+| Code | Name | Description | Unit | Std. Cost (USD) |
+|------|------|-------------|------|-----------------|
+| FG-HR-COIL-2MM | HR Coil 2.0mm | Hot rolled coil 2.0mm finished | T | 680.00 |
+| FG-HR-COIL-3MM | HR Coil 3.0mm | Hot rolled coil 3.0mm finished | T | 670.00 |
+| FG-CR-SHEET-1MM | CR Sheet 1.0mm | Cold rolled sheet 1.0mm | T | 780.00 |
+| FG-CR-SHEET-2MM | CR Sheet 2.0mm | Cold rolled sheet 2.0mm | T | 760.00 |
+| FG-REBAR-10 | Rebar 10mm | Reinforcing bar 10mm | T | 590.00 |
+| FG-REBAR-16 | Rebar 16mm | Reinforcing bar 16mm | T | 585.00 |
+| FG-BILLET-100 | Steel Billet 100mm | Finished steel billet 100x100mm | T | 560.00 |
 
 ### Material Flow Diagram
 
@@ -207,15 +204,19 @@ These correspond to the final products shipped to customers.
 Raw Materials (RM)                  Intermediates (IM)              Finished Goods (FG)
 ===================                 ==================              ==================
 RM-SCRAP-A/B/C  ----+
-RM-IRON-ORE     ----+---> IM-LIQUID --+---> IM-SLAB ---> IM-HR-ROUGH ---> FG-HR-2MM
-RM-LIMESTONE    ----+                 |
-RM-FESI/FEMN    ----+                 +---> IM-BILLET --> IM-ROLLED-BAR -> FG-REBAR-10
+RM-IRON-ORE     ----+---> IM-LIQUID-STEEL --+---> IM-SLAB-CS ---> IM-HR-COIL ---> FG-HR-COIL-2MM
+RM-LIMESTONE    ----+                       |
+RM-FESI/FEMN    ----+                       +---> IM-BILLET --> IM-BAR ---------> FG-REBAR-10
 RM-COAL         ----+
 RM-GRAPHITE     ----+
 
-IM-HR-ROUGH --> IM-PICKLED --> IM-CR-STRIP --> IM-ANNEALED --> FG-CR-1MM
-  (uses RM-HCL)   (uses RM-ROLL-LUB)           (uses RM-COATING)
+IM-HR-COIL --> IM-PICKLED --> IM-CR-STRIP --> IM-ANNEALED --> FG-CR-SHEET-1MM
+  (uses RM-HCL)   (uses RM-LUBRICANT)           (uses RM-COATING)
 ```
+
+> **Important: Material Code Discrepancy**
+>
+> The materials master data table uses the codes listed above (e.g., `RM-ALWIRE`, `RM-LUBRICANT`, `IM-LIQUID-STEEL`, `IM-SLAB-CS`, `IM-HR-COIL`, `IM-BAR`, `FG-HR-COIL-2MM`). However, the `material_id` field in **batch** and **inventory** records uses older/abbreviated codes (e.g., `RM-AL-WIRE`, `RM-ROLL-LUB`, `IM-LIQUID`, `IM-SLAB`, `IM-HR-ROUGH`, `IM-ROLLED-BAR`, `FG-HR-2MM`). This is because `material_id` in batches/inventory is a VARCHAR field (not a foreign key to the materials table), and the batch seed data predates the materials master data. The batch and inventory sections of this document reflect the actual codes stored in those records.
 
 ---
 
@@ -310,6 +311,8 @@ These are the reusable templates from which runtime operations are created:
 ## 7. Bill of Materials (BOM)
 
 Eight BOM trees define the complete material hierarchy for each product. The BOM is hierarchical: the root node is the output product, and child nodes are the inputs required at each production stage. Each node specifies a quantity required per unit of parent output and a yield loss ratio (where 1.00 = no loss).
+
+> **Note:** BOM data is configured through the application API, not via SQL patches. The material codes in BOM nodes use the batch-style abbreviated codes (e.g., `IM-LIQUID`, `IM-SLAB`, `RM-MOLD-PWD`) rather than the materials master codes (e.g., `IM-LIQUID-STEEL`, `IM-SLAB-CS`, `RM-MOLD-POWDER`).
 
 ### 7.1 HR-COIL-2MM BOM (5 levels, 14 nodes)
 
@@ -470,46 +473,46 @@ Sixteen pieces of equipment are configured across the production facility.
 
 | ID | Code | Name | Type | Category | Capacity | Unit | Location | Status |
 |----|------|------|------|----------|----------|------|----------|--------|
-| 1 | EAF-001 | Electric Arc Furnace #1 | BATCH | MELTING | 120 | T | Melting Shop | **AVAILABLE** |
-| 2 | EAF-002 | Electric Arc Furnace #2 | BATCH | MELTING | 100 | T | Melting Shop | **IN_USE** |
-| 3 | EAF-003 | Electric Arc Furnace #3 | BATCH | MELTING | 80 | T | Melting Shop | **MAINTENANCE** |
-| 4 | LF-001 | Ladle Furnace #1 | BATCH | REFINING | 120 | T | Melting Shop | **AVAILABLE** |
-| 5 | LF-002 | Ladle Furnace #2 | BATCH | REFINING | 100 | T | Melting Shop | **AVAILABLE** |
-| 6 | CCM-001 | Continuous Caster #1 | CONTINUOUS | CASTING | 50 | T/hr | Casting Area | **AVAILABLE** |
-| 7 | CCM-002 | Continuous Caster #2 | CONTINUOUS | CASTING | 45 | T/hr | Casting Area | **IN_USE** |
-| 8 | HSM-001 | Hot Strip Mill #1 | CONTINUOUS | HOT_ROLLING | 30 | T/hr | Hot Rolling Mill | **AVAILABLE** |
-| 9 | HSM-002 | Hot Strip Mill #2 | CONTINUOUS | HOT_ROLLING | 35 | T/hr | Hot Rolling Mill | **AVAILABLE** |
-| 10 | CRM-001 | Cold Rolling Mill #1 | CONTINUOUS | COLD_ROLLING | 20 | T/hr | Cold Mill | **AVAILABLE** |
-| 11 | BAF-001 | Batch Annealing Furnace #1 | BATCH | HEAT_TREATMENT | 60 | T | Annealing Bay | **AVAILABLE** |
-| 12 | BRM-001 | Bar Rolling Mill #1 | CONTINUOUS | BAR_ROLLING | 40 | T/hr | Bar Mill | **AVAILABLE** |
-| 13 | PKL-001 | Pickling Line #1 | CONTINUOUS | PICKLING | 25 | T/hr | Pickling Bay | **ON_HOLD** |
-| 14 | COAT-001 | Galvanizing Line #1 | CONTINUOUS | COATING | 30 | T/hr | Coating Bay | **AVAILABLE** |
-| 15 | WIRE-001 | Wire Drawing Machine #1 | CONTINUOUS | WIRE_DRAWING | 10 | T/hr | Wire Mill | **AVAILABLE** |
+| 1 | EAF-001 | Electric Arc Furnace #1 | BATCH | MELTING | 120 | T | Melt Shop Bay 1 | **AVAILABLE** |
+| 2 | EAF-002 | Electric Arc Furnace #2 | BATCH | MELTING | 120 | T | Melt Shop Bay 2 | **IN_USE** |
+| 3 | EAF-003 | Electric Arc Furnace #3 | BATCH | MELTING | 150 | T | Melt Shop Bay 3 | **MAINTENANCE** |
+| 4 | LF-001 | Ladle Furnace #1 | BATCH | REFINING | 120 | T | Secondary Metallurgy | **AVAILABLE** |
+| 5 | LF-002 | Ladle Furnace #2 | BATCH | REFINING | 150 | T | Secondary Metallurgy | **AVAILABLE** |
+| 6 | CCM-001 | Continuous Caster #1 | CONTINUOUS | CASTING | 200 | T/H | Casting Bay 1 | **AVAILABLE** |
+| 7 | CCM-002 | Continuous Caster #2 | CONTINUOUS | CASTING | 100 | T/H | Casting Bay 2 | **IN_USE** |
+| 8 | HSM-001 | Hot Strip Mill #1 | CONTINUOUS | HOT_ROLLING | 400 | T/H | Hot Rolling Bay 1 | **AVAILABLE** |
+| 9 | HSM-002 | Hot Strip Mill #2 | CONTINUOUS | HOT_ROLLING | 350 | T/H | Hot Rolling Bay 2 | **AVAILABLE** |
+| 10 | CRM-001 | Cold Rolling Mill | CONTINUOUS | COLD_ROLLING | 150 | T/H | Cold Rolling Bay | **AVAILABLE** |
+| 11 | BAF-001 | Batch Annealing Furnace | BATCH | HEAT_TREATMENT | 80 | T | Annealing Bay | **AVAILABLE** |
+| 12 | PKL-001 | Pickling Line | CONTINUOUS | PICKLING | 200 | T/H | Finishing Bay | **ON_HOLD** |
+| 13 | BRM-001 | Bar Rolling Mill | CONTINUOUS | BAR_ROLLING | 100 | T/H | Long Products Bay | **AVAILABLE** |
+| 14 | GALV-001 | Galvanizing Line | CONTINUOUS | COATING | 100 | T/H | Coating Bay | **AVAILABLE** |
+| 15 | WRM-001 | Wire Rod Mill | CONTINUOUS | WIRE_DRAWING | 80 | T/H | Wire Products Bay | **AVAILABLE** |
 | 16 | PACK-001 | Packaging Line #1 | BATCH | PACKAGING | 50 | T | Shipping | **AVAILABLE** |
 
 ### Equipment Status Summary
 
 | Status | Count | Equipment |
 |--------|-------|-----------|
-| AVAILABLE | 11 | EAF-001, LF-001, LF-002, CCM-001, HSM-001, HSM-002, CRM-001, BAF-001, BRM-001, COAT-001, WIRE-001 |
+| AVAILABLE | 12 | EAF-001, LF-001, LF-002, CCM-001, HSM-001, HSM-002, CRM-001, BAF-001, BRM-001, GALV-001, WRM-001, PACK-001 |
 | IN_USE | 2 | EAF-002, CCM-002 |
 | MAINTENANCE | 1 | EAF-003 |
-| ON_HOLD | 1 | PKL-001 (acid leak - safety inspection) |
-| Not in active use | 1 | PACK-001 (available but no current production) |
+| ON_HOLD | 1 | PKL-001 |
 
 ### Equipment by Location
 
 | Location | Equipment |
 |----------|-----------|
-| Melting Shop | EAF-001, EAF-002, EAF-003, LF-001, LF-002 |
-| Casting Area | CCM-001, CCM-002 |
-| Hot Rolling Mill | HSM-001, HSM-002 |
-| Cold Mill | CRM-001 |
+| Melt Shop Bay 1/2/3 | EAF-001, EAF-002, EAF-003 |
+| Secondary Metallurgy | LF-001, LF-002 |
+| Casting Bay 1/2 | CCM-001, CCM-002 |
+| Hot Rolling Bay 1/2 | HSM-001, HSM-002 |
+| Cold Rolling Bay | CRM-001 |
 | Annealing Bay | BAF-001 |
-| Bar Mill | BRM-001 |
-| Pickling Bay | PKL-001 |
-| Coating Bay | COAT-001 |
-| Wire Mill | WIRE-001 |
+| Finishing Bay | PKL-001 |
+| Long Products Bay | BRM-001 |
+| Coating Bay | GALV-001 |
+| Wire Products Bay | WRM-001 |
 | Shipping | PACK-001 |
 
 ---
@@ -520,37 +523,39 @@ Twelve operators are configured across six departments. Eleven are active; one (
 
 | ID | Code | Name | Department | Shift | Status |
 |----|------|------|------------|-------|--------|
-| 1 | OP-001 | John Smith | Melting | Day | **ACTIVE** |
-| 2 | OP-002 | Mike Wilson | Melting | Night | **ACTIVE** |
-| 3 | OP-003 | Sarah Brown | Casting | Day | **ACTIVE** |
-| 4 | OP-004 | David Lee | Hot Rolling | Day | **ACTIVE** |
-| 5 | OP-005 | Emily Chen | Cold Rolling | Day | **ACTIVE** |
-| 6 | OP-006 | Robert Garcia | Quality | Day | **ACTIVE** |
-| 7 | OP-007 | Jennifer Martinez | Quality | Night | **ACTIVE** |
-| 8 | OP-008 | William Johnson | Maintenance | Day | **ACTIVE** |
-| 9 | OP-009 | David Park | Finishing | Day | **ACTIVE** |
-| 10 | OP-010 | Maria Santos | Coating | Night | **ACTIVE** |
-| 11 | OP-011 | Ahmed Hassan | Melting | Night | **ACTIVE** |
-| 12 | OP-012 | Lisa Chen | Quality | Day | **INACTIVE** |
+| 1 | OP-001 | John Martinez | Melt Shop | A | **ACTIVE** |
+| 2 | OP-002 | Sarah Wilson | Melt Shop | B | **ACTIVE** |
+| 3 | OP-003 | Michael Brown | Casting | A | **ACTIVE** |
+| 4 | OP-004 | Emily Davis | Casting | B | **ACTIVE** |
+| 5 | OP-005 | David Garcia | Hot Rolling | A | **ACTIVE** |
+| 6 | OP-006 | Jennifer Lee | Hot Rolling | B | **ACTIVE** |
+| 7 | OP-007 | Robert Taylor | Cold Rolling | A | **ACTIVE** |
+| 8 | OP-008 | Lisa Anderson | Cold Rolling | B | **ACTIVE** |
+| 9 | OP-009 | James Thomas | Finishing | A | **ACTIVE** |
+| 10 | OP-010 | Patricia Jackson | Finishing | B | **ACTIVE** |
+| 11 | OP-011 | Christopher White | Quality | A | **ACTIVE** |
+| 12 | OP-012 | Amanda Harris | Quality | B | **INACTIVE** |
 
 ### Operators by Department
 
-| Department | Day Shift | Night Shift |
-|------------|-----------|-------------|
-| Melting | OP-001 (John Smith) | OP-002 (Mike Wilson), OP-011 (Ahmed Hassan) |
-| Casting | OP-003 (Sarah Brown) | - |
-| Hot Rolling | OP-004 (David Lee) | - |
-| Cold Rolling | OP-005 (Emily Chen) | - |
-| Quality | OP-006 (Robert Garcia), OP-012 (Lisa Chen - inactive) | OP-007 (Jennifer Martinez) |
-| Maintenance | OP-008 (William Johnson) | - |
-| Finishing | OP-009 (David Park) | - |
-| Coating | - | OP-010 (Maria Santos) |
+| Department | Shift A | Shift B |
+|------------|---------|---------|
+| Melt Shop | OP-001 (John Martinez) | OP-002 (Sarah Wilson) |
+| Casting | OP-003 (Michael Brown) | OP-004 (Emily Davis) |
+| Hot Rolling | OP-005 (David Garcia) | OP-006 (Jennifer Lee) |
+| Cold Rolling | OP-007 (Robert Taylor) | OP-008 (Lisa Anderson) |
+| Finishing | OP-009 (James Thomas) | OP-010 (Patricia Jackson) |
+| Quality | OP-011 (Christopher White) | OP-012 (Amanda Harris - inactive) |
 
 ---
 
 ## 10. Orders
 
 There are 45 orders in the system, organized into two groups: the original 15 orders and 30 additional orders that include multi-stage production scenarios.
+
+> **Note: Denormalized Customer Names**
+>
+> The orders table stores a `customer_name` VARCHAR copy at creation time. Some order customer names differ from the current customer master data (e.g., orders may show "Global Manufacturing Ltd" while the customer master has "Global Manufacturing Inc", or "African Mining Corp" while customer CUST-010 is "Indian Steel Works Pvt"). The names shown below are the actual values stored in the orders table.
 
 ### 10.1 Original Orders (1-15)
 
@@ -613,9 +618,9 @@ These orders include multi-stage production types where one product feeds into a
 
 | Status | Count | Order IDs |
 |--------|-------|-----------|
-| CREATED | 12 | 4, 6, 7, 9, 10, 20, 26, 27, 31, 35, 36, 40, 41, 42, 45 |
+| CREATED | 15 | 4, 6, 7, 9, 10, 20, 26, 27, 31, 35, 36, 40, 41, 42, 45 |
 | IN_PROGRESS | 12 | 1, 2, 3, 11, 16, 17, 19, 21, 24, 33, 38, 44 |
-| COMPLETED | 10 | 5, 12, 13, 18, 29, 30, 37, 39, 43 |
+| COMPLETED | 9 | 5, 12, 13, 18, 29, 30, 37, 39, 43 |
 | ON_HOLD | 4 | 8, 23, 28, 32 |
 | BLOCKED | 2 | 15, 22 |
 | CANCELLED | 3 | 14, 25, 34 |
@@ -752,29 +757,35 @@ There are 70 inventory records tracking material at specific locations. Each inv
 
 | Type | AVAILABLE | CONSUMED | PRODUCED | RESERVED | BLOCKED | ON_HOLD | SCRAPPED | **Total** |
 |------|-----------|----------|----------|----------|---------|---------|----------|-----------|
-| RM (Raw Material) | 22 | 0 | 0 | 2 | 1 | 1 | 1 | **27** |
-| IM (Intermediate) | 11 | 5 | 3 | 0 | 1 | 2 | 0 | **22** |
+| RM (Raw Material) | 24 | 0 | 0 | 2 | 1 | 1 | 1 | **29** |
+| IM (Intermediate) | 16 | 5 | 3 | 0 | 1 | 2 | 0 | **27** |
 | WIP (Work In Progress) | 6 | 0 | 0 | 0 | 0 | 0 | 0 | **6** |
 | FG (Finished Goods) | 5 | 0 | 2 | 0 | 0 | 1 | 0 | **8** |
-| **Total** | **44** | **5** | **5** | **2** | **2** | **4** | **1** | **63** |
+| **Total** | **51** | **5** | **5** | **2** | **2** | **4** | **1** | **70** |
 
-*Note: Some inventory IDs have gaps due to the data structure. The actual record count is 70 (IDs 1-70 with gaps at 30-56 range).*
+*Note: 56 inventory records from patch 002 + 14 from patch 003 = 70 total. IDs are auto-generated.*
 
 ### Key Inventory Locations
 
 | Location | Material Types | Count |
 |----------|---------------|-------|
-| Scrap Yard A/B/C/D | RM-SCRAP-A, RM-SCRAP-B, RM-SCRAP-C | 9 |
+| Scrap Yard A/B/C/D | RM-SCRAP-A, RM-SCRAP-B, RM-SCRAP-C | 10 |
 | Alloy Store / Alloy Store B | RM-FESI, RM-FEMN, RM-FEV | 5 |
 | Ore Storage / Ore Storage B | RM-IRON-ORE | 2 |
 | Flux Store / Flux Store B | RM-LIMESTONE | 2 |
 | Coal Yard | RM-COAL | 1 |
 | Chemical Store | RM-HCL | 1 |
+| Electrode Store | RM-GRAPHITE | 1 |
+| Casting Store | RM-MOLD-PWD | 1 |
 | Oil Store | RM-COATING, RM-ROLL-LUB | 2 |
-| Slab Yard / Slab Yard B | IM-SLAB | 3 |
+| Slab Yard / Slab Yard B | IM-SLAB | 4 |
 | Billet Yard | IM-BILLET | 2 |
-| Ladle / Ladle #2 / Ladle #3 | IM-LIQUID | 3 |
+| Ladle / Ladle #2 / Ladle #3 | IM-LIQUID | 4 |
 | Hot Mill | IM-HR-ROUGH | 2 |
+| Pickling Bay | IM-PICKLED | 1 |
+| Cold Mill | IM-CR-STRIP | 1 |
+| Annealing Bay | IM-ANNEALED | 1 |
+| Bar Mill | IM-ROLLED-BAR | 1 |
 | Bloom Yard | IM-BLOOM | 2 |
 | Wire Rod Bay | IM-WIRE-ROD | 2 |
 | FG Warehouse 1/2/3 | FG-HR-2MM, FG-CR-1MM, FG-REBAR-10 | 6 |
@@ -800,7 +811,9 @@ There are 70 inventory records tracking material at specific locations. Each inv
 
 ## 13. Hold Records
 
-There are 12 hold records in the system: 8 currently active and 4 that have been released.
+> **Not in SQL patches.** Hold records are NOT pre-loaded in the seed data. The `hold_records` table starts empty. The scenarios below are **examples** of holds that could be created during demo sessions to explain the entity statuses (ON_HOLD, BLOCKED) that ARE pre-loaded in batches, inventory, equipment, and operations.
+
+The following 12 example hold records illustrate typical scenarios consistent with the pre-loaded entity statuses:
 
 ### 13.1 Active Holds (8)
 
@@ -839,41 +852,34 @@ There are 12 hold records in the system: 8 currently active and 4 that have been
 
 ## 14. Batch Number Configuration
 
-Eleven batch numbering rules control how batch numbers are automatically generated during production confirmation.
+Four batch numbering rules control how batch numbers are automatically generated during production confirmation.
 
 | Config Name | Operation Type | Product SKU | Prefix | Separator | Date Format | Seq Length | Seq Reset | Priority |
 |-------------|---------------|-------------|--------|-----------|-------------|-----------|-----------|----------|
-| Default | (any) | (any) | B | - | yyyyMMdd | 4 | DAILY | 100 |
-| Melting | MELTING | (any) | MELT | - | yyyyMMdd | 3 | DAILY | 10 |
-| Casting Slab | CASTING | (any) | SLB | - | yyyyMMdd | 3 | DAILY | 10 |
-| Casting Billet | CASTING | STEEL-BILLET-100 | BLT | - | yyyyMMdd | 3 | DAILY | 5 |
-| Hot Rolling | HOT_ROLLING | (any) | HR | - | yyyyMMdd | 3 | DAILY | 10 |
-| Cold Rolling | COLD_ROLLING | (any) | CR | - | yyyyMMdd | 3 | DAILY | 10 |
-| Bar Rolling | BAR_ROLLING | (any) | BAR | - | yyyyMMdd | 3 | DAILY | 10 |
-| Rebar 10mm | (any) | REBAR-10MM | RB10 | - | yyyyMMdd | 4 | DAILY | 5 |
-| Rebar 12mm | (any) | REBAR-12MM | RB12 | - | yyyyMMdd | 4 | DAILY | 5 |
-| HR Coil 2mm | (any) | HR-COIL-2MM | HRC2 | - | yyyyMMdd | 4 | DAILY | 5 |
-| CR Sheet 1mm | (any) | CR-SHEET-1MM | CRS1 | - | yyyyMMdd | 4 | DAILY | 5 |
+| Melting Batch | MELTING | (any) | MLT | - | yyMMdd | 4 | DAILY | 10 |
+| Casting Batch | CASTING | (any) | CST | - | yyMMdd | 4 | DAILY | 10 |
+| Rolling Batch | HOT_ROLLING | (any) | HRL | - | yyMMdd | 4 | DAILY | 10 |
+| Receipt Batch | RECEIPT | (any) | RCV | - | yyMMdd | 4 | DAILY | 5 |
 
 ### How Batch Numbers Are Generated
 
-The system selects the highest-priority (lowest number) matching rule. Product-specific rules (priority 5) take precedence over operation-type rules (priority 10), which take precedence over the default rule (priority 100).
+The system selects the matching rule based on operation type. Each rule generates a batch number with the configured prefix, date in `yyMMdd` format, and a 4-digit daily sequence.
 
 **Example batch numbers:**
-- Melting operation: `MELT-20260215-001`
-- HR Coil 2mm production: `HRC2-20260215-0001`
-- Rebar 10mm production: `RB10-20260215-0001`
-- Billet casting (for STEEL-BILLET-100): `BLT-20260215-001`
-- Slab casting (general): `SLB-20260215-001`
-- Default (no matching rule): `B-20260215-0001`
+- Melting operation: `MLT-260215-0001`
+- Casting operation: `CST-260215-0001`
+- Hot rolling operation: `HRL-260215-0001`
+- Material receipt: `RCV-260215-0001`
 
-Sequences reset daily, so the first batch each day starts at 001 (or 0001).
+Sequences reset daily, so the first batch each day starts at 0001.
 
 ---
 
 ## 15. Production Confirmations
 
-There are 35 production confirmations recording completed production operations across multiple orders.
+> **Not in SQL patches.** The `production_confirmations` table starts empty. Operation statuses (CONFIRMED, IN_PROGRESS, etc.) are pre-loaded in the operations table, but individual confirmation records are created through the application's Production Confirmation workflow. The records below are **examples** consistent with the pre-loaded operation statuses.
+
+The following 35 example confirmations illustrate what production data would look like for the pre-loaded operations:
 
 ### Confirmations by Order
 
@@ -1058,86 +1064,59 @@ This section ties together products, their production processes, routing steps, 
 
 | Reason Code | Description | Applicable To |
 |-------------|-------------|---------------|
-| EQUIP_BREAKDOWN | Equipment Breakdown | OPERATION, EQUIPMENT |
-| QUALITY_INVESTIGATION | Quality Investigation | OPERATION, BATCH, INVENTORY |
-| MATERIAL_SHORTAGE | Material Shortage | OPERATION, ORDER_LINE |
-| OPERATOR_UNAVAIL | Operator Unavailability | OPERATION |
-| SAFETY_CONCERN | Safety Concern | OPERATION, BATCH, EQUIPMENT |
-| REGULATORY_HOLD | Regulatory Hold | BATCH, INVENTORY |
-| CUSTOMER_REQUEST | Customer Request | ORDER, ORDER_LINE |
-| CONTAMINATION | Contamination Suspected | BATCH, INVENTORY |
-| SPEC_DEVIATION | Specification Deviation | BATCH, INVENTORY |
+| QUALITY_HOLD | Quality inspection required | BATCH, INVENTORY, OPERATION |
+| MATERIAL_DEFECT | Material defect detected | BATCH, INVENTORY |
+| EQUIPMENT_ISSUE | Equipment malfunction | EQUIPMENT, OPERATION |
+| PENDING_APPROVAL | Pending management approval | ORDER, ORDER_LINE, OPERATION |
+| SAFETY_CONCERN | Safety investigation required | BATCH, EQUIPMENT, OPERATION |
+| CUSTOMER_REQUEST | Customer requested hold | ORDER, ORDER_LINE, BATCH |
+| SPEC_DEVIATION | Specification deviation detected | BATCH, OPERATION |
+| CONTAMINATION | Contamination suspected | BATCH, INVENTORY |
+| REGULATORY_HOLD | Regulatory hold | BATCH, INVENTORY |
 | OTHER | Other | OPERATION, ORDER_LINE, BATCH, INVENTORY, EQUIPMENT |
 
 ### 17.2 Delay Reasons (10)
 
 | Reason Code | Description |
 |-------------|-------------|
-| EQUIP_BREAKDOWN | Equipment Breakdown |
-| MATERIAL_SHORTAGE | Material Shortage |
-| OPERATOR_UNAVAIL | Operator Unavailable |
-| QUALITY_ISSUE | Quality Issue |
-| SCHEDULING | Scheduling Conflict |
-| MAINTENANCE | Scheduled Maintenance |
-| POWER_OUTAGE | Power Outage |
-| TOOL_CHANGE | Tool/Die Change |
-| CALIBRATION | Equipment Calibration |
+| EQUIPMENT_BREAKDOWN | Equipment breakdown or failure |
+| MATERIAL_SHORTAGE | Raw material not available |
+| OPERATOR_UNAVAILABLE | Operator not available |
+| QUALITY_RETEST | Quality retest required |
+| SCHEDULED_MAINTENANCE | Scheduled maintenance window |
+| UTILITY_OUTAGE | Power or utility interruption |
+| TOOLING_CHANGE | Tooling change or setup |
+| QUALITY_ISSUE | Quality issue |
+| SCHEDULING | Scheduling conflict |
 | OTHER | Other |
 
 ### 17.3 Process Parameters Configuration
 
-Process parameters define the acceptable ranges for each operation type and product combination.
+Process parameters define the acceptable ranges for each operation type. These are configured per operation type (not per product).
 
-| Operation Type | Product | Parameter | Unit | Min | Max | Default | Required |
-|---------------|---------|-----------|------|-----|-----|---------|----------|
-| FURNACE | HR-COIL-2MM | Temperature | C | 1500 | 1800 | 1650 | Yes |
-| FURNACE | HR-COIL-2MM | Holding Time | min | 30 | 180 | 90 | Yes |
-| FURNACE | HR-COIL-2MM | Power Input | MW | 20 | 80 | 50 | No |
-| CASTER | HR-COIL-2MM | Casting Speed | m/min | 0.8 | 2.5 | 1.5 | Yes |
-| CASTER | HR-COIL-2MM | Mold Temperature | C | 200 | 400 | 300 | Yes |
-| CASTER | HR-COIL-2MM | Slab Width | mm | 1000 | 1600 | 1250 | Yes |
-| ROLLING | HR-COIL-2MM | Entry Temperature | C | 1100 | 1280 | 1200 | Yes |
-| ROLLING | HR-COIL-2MM | Finish Temperature | C | 850 | 950 | 900 | Yes |
-| ROLLING | HR-COIL-2MM | Coiling Temperature | C | 550 | 700 | 620 | Yes |
-| ROLLING | HR-COIL-2MM | Thickness | mm | 1.5 | 3.0 | 2.0 | Yes |
-| ROLLING | HR-COIL-2MM | Speed | m/s | 5 | 15 | 10 | Yes |
-| FURNACE | CR-SHEET-1MM | Temperature | C | 1500 | 1750 | 1620 | Yes |
-| FURNACE | CR-SHEET-1MM | Holding Time | min | 30 | 150 | 80 | Yes |
-| CASTER | CR-SHEET-1MM | Casting Speed | m/min | 0.8 | 2.0 | 1.4 | Yes |
-| CASTER | CR-SHEET-1MM | Mold Temperature | C | 200 | 380 | 280 | Yes |
-| ROLLING | CR-SHEET-1MM | Entry Temperature | C | 1100 | 1250 | 1180 | Yes |
-| ROLLING | CR-SHEET-1MM | Thickness | mm | 0.5 | 2.0 | 1.0 | Yes |
-| ROLLING | CR-SHEET-1MM | Reduction Ratio | % | 40 | 80 | 60 | Yes |
-| PICKLING | CR-SHEET-1MM | Acid Concentration | % | 12 | 22 | 18 | Yes |
-| PICKLING | CR-SHEET-1MM | Line Speed | m/min | 5 | 30 | 15 | Yes |
-| FURNACE | REBAR-10MM | Temperature | C | 1550 | 1800 | 1680 | Yes |
-| FURNACE | REBAR-10MM | Holding Time | min | 30 | 120 | 75 | Yes |
-| CASTER | REBAR-10MM | Casting Speed | m/min | 2.0 | 5.0 | 3.5 | Yes |
-| CASTER | REBAR-10MM | Billet Size | mm | 100 | 150 | 130 | Yes |
-| ROLLING | REBAR-10MM | Entry Temperature | C | 1050 | 1200 | 1100 | Yes |
-| ROLLING | REBAR-10MM | Finish Temperature | C | 900 | 1050 | 980 | Yes |
-| ROLLING | REBAR-10MM | Bar Diameter | mm | 8 | 32 | 10 | Yes |
-| COOLING | REBAR-10MM | Quench Temperature | C | 200 | 500 | 350 | Yes |
-| COOLING | REBAR-10MM | Tempering Temperature | C | 400 | 650 | 550 | Yes |
+| Operation Type | Parameter | Unit | Min | Max | Default | Required |
+|---------------|-----------|------|-----|-----|---------|----------|
+| MELTING | Temperature | °C | 1550 | 1700 | 1620 | Yes |
+| MELTING | Power | MW | 30 | 80 | 55 | Yes |
+| CASTING | Casting Speed | m/min | 0.8 | 2.5 | 1.2 | Yes |
+| CASTING | Mold Temperature | °C | 200 | 350 | 280 | Yes |
+| HOT_ROLLING | Entry Temperature | °C | 1100 | 1250 | 1180 | Yes |
+| HOT_ROLLING | Finish Temperature | °C | 850 | 950 | 880 | Yes |
+| COLD_ROLLING | Rolling Force | kN | 5000 | 25000 | 15000 | Yes |
+| ANNEALING | Soak Temperature | °C | 650 | 750 | 700 | Yes |
+| ANNEALING | Soak Time | hours | 8 | 24 | 16 | Yes |
 
-### 17.4 Units of Measure (14)
+### 17.4 Units of Measure Reference
 
-| Code | Name | Type | Precision | Base Unit |
-|------|------|------|-----------|-----------|
-| T | Metric Ton | WEIGHT | 2 | Yes |
-| KG | Kilogram | WEIGHT | 2 | No |
-| LB | Pound | WEIGHT | 2 | No |
-| G | Gram | WEIGHT | 3 | No |
-| L | Liter | VOLUME | 2 | Yes |
-| ML | Milliliter | VOLUME | 0 | No |
-| GAL | Gallon | VOLUME | 2 | No |
-| M | Meter | LENGTH | 2 | Yes |
-| MM | Millimeter | LENGTH | 0 | No |
-| CM | Centimeter | LENGTH | 1 | No |
-| EA | Each | COUNT | 0 | Yes |
-| PC | Piece | COUNT | 0 | No |
-| HR | Hour | TIME | 2 | Yes |
-| MIN | Minute | TIME | 0 | No |
+*These are the unit codes used across materials, products, batches, and inventory records. There is no separate `units_of_measure` database table; units are stored as VARCHAR values on each entity.*
+
+| Code | Name | Type |
+|------|------|------|
+| T | Metric Ton | WEIGHT |
+| KG | Kilogram | WEIGHT |
+| L | Liter | VOLUME |
+| EA | Each | COUNT |
+| PC | Piece | COUNT |
 
 ---
 
@@ -1147,32 +1126,25 @@ Process parameters define the acceptable ranges for each operation type and prod
 |--------|-------|---------|
 | Users | 1 | Admin only |
 | Customers | 12 | 11 active, 1 inactive |
-| Products | 8 | 3 HR Coils, 2 CR Sheets, 2 Rebars, 1 Billet |
-| Materials | 32 | 15 RM, 10 IM, 4 WIP, 3 FG |
+| Products | 7 | 2 HR Coils, 2 CR Sheets, 2 Rebars, 1 Billet |
+| Materials | 31 | 15 RM, 9 IM, 7 FG |
 | Processes | 6 | 4 active, 1 draft, 1 inactive |
 | Routings | 4 | One per active process |
 | Routing Steps | 22 | 8 + 3 + 7 + 4 steps |
 | Operation Templates | 18 | 17 active, 1 inactive |
-| BOM Trees | 8 | One per product, 88 total nodes |
-| Equipment | 16 | 11 available, 2 in use, 1 maintenance, 1 on hold, 1 packaging |
+| BOM Trees | 8 | One per product (order SKU), 88 total nodes |
+| Equipment | 16 | 12 available, 2 in use, 1 maintenance, 1 on hold |
 | Operators | 12 | 11 active, 1 inactive |
-| Orders | 45 | 12 created, 12 in-progress, 10 completed, 4 on-hold, 2 blocked, 3 cancelled |
+| Orders | 45 | 15 created, 12 in-progress, 9 completed, 4 on-hold, 2 blocked, 3 cancelled |
 | Order Line Items | 82 | 25 original + 57 additional |
-| Operations (Runtime) | 425 | Across all orders and line items |
-| Batches | 70 | 28 RM, 28 IM, 6 WIP, 8 FG |
-| Inventory Records | 70 | 44 available, 5 consumed, 5 produced, 2 reserved, 2 blocked, 4 on-hold, 1 scrapped |
-| Hold Records | 12 | 8 active, 4 released |
-| Production Confirmations | 35 | Across 5 completed + 3 in-progress orders |
+| Operations (Runtime) | 425 | 93 from patch 002 + 332 from patch 003 |
+| Batches | 70 | 56 from patch 002 + 14 from patch 003 |
+| Inventory Records | 70 | 56 from patch 002 + 14 from patch 003 |
 | Batch Relations | 40 | Genealogy chains for traceability |
-| Batch Number Configs | 11 | Operation-type and product-specific rules |
-| Process Parameters | 29 | For HR Coil, CR Sheet, and Rebar products |
+| Batch Number Configs | 4 | Operation-type rules |
+| Process Parameters | 9 | For MELTING, CASTING, HOT_ROLLING, COLD_ROLLING, ANNEALING |
 | Hold Reasons | 10 | Quality, Safety, Equipment, Customer, etc. |
 | Delay Reasons | 10 | Equipment, Material, Operator, Quality, etc. |
-| Units of Measure | 14 | Weight, Volume, Length, Count, Time |
-| Unit Conversions | 16 | Between related units |
-| Equipment Type Configs | 13 | Capacity, temperature, maintenance intervals |
-| Inventory Form Configs | 9 | Storage requirements by material form |
-| Audit Trail Entries | ~250 | Full history of all entity changes |
 
 ---
 
@@ -1318,7 +1290,7 @@ Available READY operations for immediate confirmation:
 
 **Scenario:** View and manage inventory across all states
 
-- **Available inventory:** 44 records ready for production or shipment
+- **Available inventory:** 51 records ready for production or shipment
 - **Blocked inventory:** 2 records requiring disposition
 - **On-hold inventory:** 4 records under investigation
 - **Reserved inventory:** 2 records allocated to Order ORD-2026-009
@@ -1343,7 +1315,7 @@ Available READY operations for immediate confirmation:
 
 **Scenario:** View equipment across different operational states
 
-- **Available (11):** Ready for assignment to production operations
+- **Available (12):** Ready for assignment to production operations
 - **In Use (2):** EAF-002 and CCM-002 actively assigned
 - **Maintenance (1):** EAF-003 undergoing maintenance
 - **On Hold (1):** PKL-001 with active safety hold (Hold #6)
@@ -1352,9 +1324,9 @@ Available READY operations for immediate confirmation:
 
 **Scenario:** View orders at every stage of their lifecycle
 
-- **Created:** 12 orders awaiting scheduling
+- **Created:** 15 orders awaiting scheduling
 - **In Progress:** 12 orders with active production
-- **Completed:** 10 orders fully produced and shipped
+- **Completed:** 9 orders fully produced and shipped
 - **On Hold:** 4 orders temporarily paused
 - **Blocked:** 2 orders with blocking issues
 - **Cancelled:** 3 orders that were cancelled
@@ -1391,8 +1363,8 @@ This section provides a view of orders grouped by customer for relationship mana
 
 ---
 
-*This document was generated from the demo data SQL files located at:*
-- *`backend/src/main/resources/demo/data.sql` (H2 demo mode)*
-- *`backend/src/main/resources/patches/002_seed_data.sql` (PostgreSQL production/test mode)*
+*This document was generated from the SQL patch files located at:*
+- *`backend/src/main/resources/patches/002_seed_data.sql` (base seed data)*
+- *`backend/src/main/resources/patches/003_additional_data.sql` (additional orders, operations, batches)*
 
 *Last updated: February 2026*

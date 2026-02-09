@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS order_line_items (
     created_by VARCHAR(100),
     updated_on TIMESTAMP,
     updated_by VARCHAR(100),
-    CONSTRAINT chk_line_status CHECK (status IN ('CREATED', 'IN_PROGRESS', 'COMPLETED', 'BLOCKED', 'ON_HOLD'))
+    CONSTRAINT chk_line_status CHECK (status IN ('CREATED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'BLOCKED', 'ON_HOLD'))
 );
 
 -- =====================================================
@@ -396,7 +396,7 @@ CREATE TABLE IF NOT EXISTS batch_relations (
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
-    CONSTRAINT chk_relation_type CHECK (relation_type IN ('SPLIT', 'MERGE')),
+    CONSTRAINT chk_relation_type CHECK (relation_type IN ('SPLIT', 'MERGE', 'CONSUME')),
     CONSTRAINT chk_relation_status CHECK (status IN ('ACTIVE', 'CLOSED'))
 );
 
@@ -655,6 +655,7 @@ CREATE INDEX IF NOT EXISTS idx_equipment_code ON equipment(equipment_code);
 CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment(status);
 CREATE INDEX IF NOT EXISTS idx_process_params_op_type ON process_parameters_config(operation_type);
 CREATE INDEX IF NOT EXISTS idx_batch_config_priority ON batch_number_config(priority);
+CREATE INDEX IF NOT EXISTS idx_batch_config_material ON batch_number_config(material_id);
 
 -- =====================================================
 -- 13. DEFAULT ADMIN USER

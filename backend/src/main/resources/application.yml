@@ -6,7 +6,7 @@ spring:
     name: mes-production-confirmation
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/mes_production
+    url: jdbc:postgresql://localhost:5432/mes_poc_dev
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver

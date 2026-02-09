@@ -486,10 +486,512 @@ SELECT 'Receipt Batch', 'RECEIPT', NULL, 'RCV', '-', true, 'yyMMdd', 4, 'DAILY',
 WHERE NOT EXISTS (SELECT 1 FROM batch_number_config WHERE config_name = 'Receipt Batch');
 
 -- =====================================================
+-- 11. PROCESSES (6)
+-- =====================================================
+INSERT INTO processes (process_id, process_name, status, created_by)
+SELECT v.* FROM (VALUES
+  (1::bigint, 'Hot Rolled Coil Production', 'ACTIVE', 'SYSTEM'),
+  (2, 'Cold Rolled Sheet Production', 'ACTIVE', 'SYSTEM'),
+  (3, 'Rebar Production', 'ACTIVE', 'SYSTEM'),
+  (4, 'Billet Production', 'ACTIVE', 'SYSTEM'),
+  (5, 'Wire Rod Production', 'DRAFT', 'SYSTEM'),
+  (6, 'Galvanized Sheet Production', 'INACTIVE', 'SYSTEM')
+) AS v(process_id, process_name, status, created_by)
+WHERE NOT EXISTS (SELECT 1 FROM processes WHERE process_id = 1);
+
+SELECT setval('processes_process_id_seq', (SELECT COALESCE(MAX(process_id), 1) FROM processes));
+
+-- =====================================================
+-- 12. OPERATION TEMPLATES (18)
+-- =====================================================
+INSERT INTO operation_templates (operation_template_id, operation_name, operation_code, operation_type, quantity_type, default_equipment_type, description, estimated_duration_minutes, status, created_by)
+SELECT v.* FROM (VALUES
+  (1::bigint, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 'BATCH', 'EAF', 'Load scrap into electric arc furnace', 60::int, 'ACTIVE', 'SYSTEM'),
+  (2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 'BATCH', 'EAF', 'Melt scrap in electric arc furnace', 180, 'ACTIVE', 'SYSTEM'),
+  (3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 'BATCH', 'LF', 'Refine steel chemistry in ladle furnace', 90, 'ACTIVE', 'SYSTEM'),
+  (4, 'Slab Casting', 'CAST-SLAB', 'CASTER', 'CONTINUOUS', 'CCM', 'Continuous cast liquid steel into slabs', 240, 'ACTIVE', 'SYSTEM'),
+  (5, 'Billet Casting', 'CAST-BILL', 'CASTER', 'CONTINUOUS', 'CCM', 'Continuous cast liquid steel into billets', 180, 'ACTIVE', 'SYSTEM'),
+  (6, 'Slab Reheating', 'ROLL-RHT', 'FURNACE', 'BATCH', 'RHF', 'Reheat slabs for hot rolling', 120, 'ACTIVE', 'SYSTEM'),
+  (7, 'Rough Rolling', 'ROLL-RGH', 'ROLLING', 'CONTINUOUS', 'HSM', 'Rough roll slabs to intermediate thickness', 60, 'ACTIVE', 'SYSTEM'),
+  (8, 'Finish Rolling', 'ROLL-FIN', 'ROLLING', 'CONTINUOUS', 'HSM', 'Finish roll to target thickness', 45, 'ACTIVE', 'SYSTEM'),
+  (9, 'Cooling & Coiling', 'ROLL-COOL', 'COOLING', 'CONTINUOUS', 'HSM', 'Cool and coil hot rolled strip', 30, 'ACTIVE', 'SYSTEM'),
+  (10, 'Pickling', 'PKL', 'PICKLING', 'CONTINUOUS', 'PKL', 'Remove scale via acid pickling', 90, 'ACTIVE', 'SYSTEM'),
+  (11, 'Cold Rolling', 'CRM', 'ROLLING', 'CONTINUOUS', 'CRM', 'Cold reduce thickness', 120, 'ACTIVE', 'SYSTEM'),
+  (12, 'Batch Annealing', 'ANN', 'HEAT_TREATMENT', 'BATCH', 'BAF', 'Anneal cold rolled coils', 480, 'ACTIVE', 'SYSTEM'),
+  (13, 'Billet Reheating', 'BAR-RHT', 'FURNACE', 'BATCH', 'RHF', 'Reheat billets for bar rolling', 90, 'ACTIVE', 'SYSTEM'),
+  (14, 'Bar Rolling', 'BAR-ROLL', 'ROLLING', 'CONTINUOUS', 'BRM', 'Roll billets into bars/rebar', 60, 'ACTIVE', 'SYSTEM'),
+  (15, 'Quenching & Tempering', 'BAR-QT', 'HEAT_TREATMENT', 'CONTINUOUS', 'QT', 'Quench and temper rebar', 30, 'ACTIVE', 'SYSTEM'),
+  (16, 'Quality Inspection', 'QC', 'INSPECTION', 'DISCRETE', 'LAB', 'Perform quality inspection', 60, 'ACTIVE', 'SYSTEM'),
+  (17, 'Packaging', 'PACK', 'FINISHING', 'DISCRETE', 'PACK', 'Package finished products', 45, 'ACTIVE', 'SYSTEM'),
+  (18, 'Galvanizing', 'GALV', 'COATING', 'CONTINUOUS', 'GALV', 'Hot-dip galvanize steel', 120, 'INACTIVE', 'SYSTEM')
+) AS v(operation_template_id, operation_name, operation_code, operation_type, quantity_type, default_equipment_type, description, estimated_duration_minutes, status, created_by)
+WHERE NOT EXISTS (SELECT 1 FROM operation_templates WHERE operation_template_id = 1);
+
+SELECT setval('operation_templates_operation_template_id_seq', (SELECT COALESCE(MAX(operation_template_id), 1) FROM operation_templates));
+
+-- =====================================================
+-- 13. ORDERS (15)
+-- =====================================================
+INSERT INTO orders (order_id, order_number, customer_id, customer_name, order_date, status, created_by)
+SELECT v.* FROM (VALUES
+  (1::bigint, 'ORD-2026-001', 'CUST-001', 'ABC Steel Corporation', '2026-01-10'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (2, 'ORD-2026-002', 'CUST-002', 'Global Manufacturing Ltd', '2026-01-12'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (3, 'ORD-2026-003', 'CUST-006', 'BuildRight Construction', '2026-01-15'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (4, 'ORD-2026-004', 'CUST-003', 'Pacific Metal Works', '2026-01-18'::date, 'CREATED', 'SYSTEM'),
+  (5, 'ORD-2026-005', 'CUST-004', 'European Auto Parts GmbH', '2026-01-20'::date, 'COMPLETED', 'SYSTEM'),
+  (6, 'ORD-2026-006', 'CUST-007', 'Nordic Steel Trading AB', '2026-01-22'::date, 'CREATED', 'SYSTEM'),
+  (7, 'ORD-2026-007', 'CUST-008', 'Middle East Metals FZE', '2026-01-25'::date, 'CREATED', 'SYSTEM'),
+  (8, 'ORD-2026-008', 'CUST-005', 'Asian Electronics Inc', '2026-01-28'::date, 'ON_HOLD', 'SYSTEM'),
+  (9, 'ORD-2026-009', 'CUST-009', 'South American Steel SA', '2026-01-30'::date, 'CREATED', 'SYSTEM'),
+  (10, 'ORD-2026-010', 'CUST-010', 'African Mining Corp', '2026-01-31'::date, 'CREATED', 'SYSTEM'),
+  (11, 'ORD-2026-011', 'CUST-011', 'Oceanic Metals Ltd', '2026-02-01'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (12, 'ORD-2026-012', 'CUST-001', 'ABC Steel Corporation', '2026-02-02'::date, 'COMPLETED', 'SYSTEM'),
+  (13, 'ORD-2026-013', 'CUST-002', 'Global Manufacturing Ltd', '2026-02-03'::date, 'COMPLETED', 'SYSTEM'),
+  (14, 'ORD-2026-014', 'CUST-003', 'Pacific Metal Works', '2026-02-04'::date, 'CANCELLED', 'SYSTEM'),
+  (15, 'ORD-2026-015', 'CUST-007', 'Nordic Steel Trading AB', '2026-02-05'::date, 'BLOCKED', 'SYSTEM')
+) AS v(order_id, order_number, customer_id, customer_name, order_date, status, created_by)
+WHERE NOT EXISTS (SELECT 1 FROM orders WHERE order_id = 1);
+
+SELECT setval('orders_order_id_seq', (SELECT COALESCE(MAX(order_id), 1) FROM orders));
+
+-- =====================================================
+-- 14. ORDER LINE ITEMS (25)
+-- =====================================================
+INSERT INTO order_line_items (order_line_id, order_id, product_sku, product_name, quantity, unit, delivery_date, status, created_by)
+SELECT v.* FROM (VALUES
+  (1::bigint, 1::bigint, 'HR-COIL-2MM', 'Hot Rolled Coil 2mm', 150::numeric, 'T', '2026-02-15'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (2, 2, 'CR-SHEET-1MM', 'Cold Rolled Sheet 1mm', 80::numeric, 'T', '2026-03-05'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (3, 3, 'REBAR-10MM', 'Reinforcement Bar 10mm', 200::numeric, 'T', '2026-02-20'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (4, 4, 'HR-COIL-2MM', 'Hot Rolled Coil 2mm', 100::numeric, 'T', '2026-03-10'::date, 'CREATED', 'SYSTEM'),
+  (5, 4, 'CR-SHEET-1MM', 'Cold Rolled Sheet 1mm', 50::numeric, 'T', '2026-03-15'::date, 'CREATED', 'SYSTEM'),
+  (6, 4, 'REBAR-10MM', 'Reinforcement Bar 10mm', 80::numeric, 'T', '2026-03-10'::date, 'CREATED', 'SYSTEM'),
+  (7, 5, 'HR-COIL-2MM', 'Hot Rolled Coil 2mm', 75::numeric, 'T', '2026-02-10'::date, 'COMPLETED', 'SYSTEM'),
+  (8, 6, 'REBAR-10MM', 'Reinforcement Bar 10mm', 300::numeric, 'T', '2026-03-01'::date, 'CREATED', 'SYSTEM'),
+  (9, 7, 'CR-SHEET-1MM', 'Cold Rolled Sheet 1mm', 120::numeric, 'T', '2026-03-20'::date, 'CREATED', 'SYSTEM'),
+  (10, 8, 'HR-COIL-2MM', 'Hot Rolled Coil 2mm', 60::numeric, 'T', '2026-03-25'::date, 'ON_HOLD', 'SYSTEM'),
+  (11, 9, 'HR-COIL-3MM', 'Hot Rolled Coil 3mm', 250::numeric, 'T', '2026-03-15'::date, 'CREATED', 'SYSTEM'),
+  (12, 10, 'STEEL-BILLET-100', 'Steel Billet 100mm', 400::numeric, 'T', '2026-03-10'::date, 'CREATED', 'SYSTEM'),
+  (13, 11, 'CR-SHEET-2MM', 'Cold Rolled Sheet 2mm', 180::numeric, 'T', '2026-03-20'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (14, 12, 'REBAR-12MM', 'Reinforcement Bar 12mm', 180::numeric, 'T', '2026-02-28'::date, 'COMPLETED', 'SYSTEM'),
+  (15, 13, 'HR-COIL-4MM', 'Hot Rolled Coil 4mm', 120::numeric, 'T', '2026-02-25'::date, 'COMPLETED', 'SYSTEM'),
+  (16, 14, 'CR-SHEET-1MM', 'Cold Rolled Sheet 1mm', 90::numeric, 'T', '2026-03-30'::date, 'CANCELLED', 'SYSTEM'),
+  (17, 15, 'STEEL-BILLET-100', 'Steel Billet 100mm', 250::numeric, 'T', '2026-03-25'::date, 'BLOCKED', 'SYSTEM'),
+  (18, 1, 'HR-COIL-3MM', 'Hot Rolled Coil 3mm', 50::numeric, 'T', '2026-02-20'::date, 'CREATED', 'SYSTEM'),
+  (19, 2, 'CR-SHEET-2MM', 'Cold Rolled Sheet 2mm', 40::numeric, 'T', '2026-03-10'::date, 'CREATED', 'SYSTEM'),
+  (20, 3, 'REBAR-12MM', 'Reinforcement Bar 12mm', 100::numeric, 'T', '2026-02-25'::date, 'CREATED', 'SYSTEM'),
+  (21, 6, 'REBAR-12MM', 'Reinforcement Bar 12mm', 150::numeric, 'T', '2026-03-05'::date, 'CREATED', 'SYSTEM'),
+  (22, 9, 'HR-COIL-4MM', 'Hot Rolled Coil 4mm', 100::numeric, 'T', '2026-03-20'::date, 'CREATED', 'SYSTEM'),
+  (23, 10, 'REBAR-10MM', 'Reinforcement Bar 10mm', 200::numeric, 'T', '2026-03-15'::date, 'CREATED', 'SYSTEM'),
+  (24, 11, 'HR-COIL-2MM', 'Hot Rolled Coil 2mm', 80::numeric, 'T', '2026-03-15'::date, 'IN_PROGRESS', 'SYSTEM'),
+  (25, 13, 'CR-SHEET-2MM', 'Cold Rolled Sheet 2mm', 60::numeric, 'T', '2026-02-28'::date, 'COMPLETED', 'SYSTEM')
+) AS v(order_line_id, order_id, product_sku, product_name, quantity, unit, delivery_date, status, created_by)
+WHERE NOT EXISTS (SELECT 1 FROM order_line_items WHERE order_line_id = 1);
+
+SELECT setval('order_line_items_order_line_id_seq', (SELECT COALESCE(MAX(order_line_id), 1) FROM order_line_items));
+
+-- =====================================================
+-- 15. OPERATIONS (93)
+-- =====================================================
+INSERT INTO operations (operation_id, process_id, order_line_id, operation_template_id, operation_name, operation_code, operation_type, sequence_number, status, target_qty, created_by)
+SELECT v.* FROM (VALUES
+  (1::bigint, 1::bigint, 1::bigint, 1::bigint, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1::int, 'CONFIRMED', 150::numeric, 'SYSTEM'),
+  (2, 1, 1, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'CONFIRMED', 150, 'SYSTEM'),
+  (3, 1, 1, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'CONFIRMED', 150, 'SYSTEM'),
+  (4, 1, 1, 4, 'Slab Casting', 'CAST-SLAB', 'CASTER', 4, 'CONFIRMED', 150, 'SYSTEM'),
+  (5, 1, 1, 6, 'Slab Reheating', 'ROLL-RHT', 'FURNACE', 5, 'CONFIRMED', 150, 'SYSTEM'),
+  (6, 1, 1, 7, 'Rough Rolling', 'ROLL-RGH', 'ROLLING', 6, 'READY', 150, 'SYSTEM'),
+  (7, 1, 1, 8, 'Finish Rolling', 'ROLL-FIN', 'ROLLING', 7, 'NOT_STARTED', 150, 'SYSTEM'),
+  (8, 1, 1, 9, 'Cooling & Coiling', 'ROLL-COOL', 'COOLING', 8, 'NOT_STARTED', 150, 'SYSTEM'),
+  (9, 2, 2, 10, 'Pickling', 'PKL', 'PICKLING', 1, 'READY', 80, 'SYSTEM'),
+  (10, 2, 2, 11, 'Cold Rolling', 'CRM', 'ROLLING', 2, 'NOT_STARTED', 80, 'SYSTEM'),
+  (11, 2, 2, 12, 'Batch Annealing', 'ANN', 'HEAT_TREATMENT', 3, 'NOT_STARTED', 80, 'SYSTEM'),
+  (12, 3, 3, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'CONFIRMED', 200, 'SYSTEM'),
+  (13, 3, 3, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'CONFIRMED', 200, 'SYSTEM'),
+  (14, 3, 3, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'CONFIRMED', 200, 'SYSTEM'),
+  (15, 3, 3, 5, 'Billet Casting', 'CAST-BILL', 'CASTER', 4, 'CONFIRMED', 200, 'SYSTEM'),
+  (16, 3, 3, 13, 'Billet Reheating', 'BAR-RHT', 'FURNACE', 5, 'READY', 200, 'SYSTEM'),
+  (17, 3, 3, 14, 'Bar Rolling', 'BAR-ROLL', 'ROLLING', 6, 'NOT_STARTED', 200, 'SYSTEM'),
+  (18, 3, 3, 15, 'Quenching & Tempering', 'BAR-QT', 'HEAT_TREATMENT', 7, 'NOT_STARTED', 200, 'SYSTEM'),
+  (19, 1, 7, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'CONFIRMED', 75, 'SYSTEM'),
+  (20, 1, 7, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'CONFIRMED', 75, 'SYSTEM'),
+  (21, 1, 7, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'CONFIRMED', 75, 'SYSTEM'),
+  (22, 1, 7, 4, 'Slab Casting', 'CAST-SLAB', 'CASTER', 4, 'CONFIRMED', 75, 'SYSTEM'),
+  (23, 1, 7, 6, 'Slab Reheating', 'ROLL-RHT', 'FURNACE', 5, 'CONFIRMED', 75, 'SYSTEM'),
+  (24, 1, 7, 7, 'Rough Rolling', 'ROLL-RGH', 'ROLLING', 6, 'CONFIRMED', 75, 'SYSTEM'),
+  (25, 1, 7, 8, 'Finish Rolling', 'ROLL-FIN', 'ROLLING', 7, 'CONFIRMED', 75, 'SYSTEM'),
+  (26, 1, 7, 9, 'Cooling & Coiling', 'ROLL-COOL', 'COOLING', 8, 'CONFIRMED', 75, 'SYSTEM'),
+  (27, 1, 10, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'ON_HOLD', 60, 'SYSTEM'),
+  (28, 1, 10, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'NOT_STARTED', 60, 'SYSTEM'),
+  (29, 2, 13, 10, 'Pickling', 'PKL', 'PICKLING', 1, 'IN_PROGRESS', 180, 'SYSTEM'),
+  (30, 2, 13, 11, 'Cold Rolling', 'CRM', 'ROLLING', 2, 'NOT_STARTED', 180, 'SYSTEM'),
+  (31, 2, 13, 12, 'Batch Annealing', 'ANN', 'HEAT_TREATMENT', 3, 'NOT_STARTED', 180, 'SYSTEM'),
+  (32, 3, 14, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'CONFIRMED', 180, 'SYSTEM'),
+  (33, 3, 14, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'CONFIRMED', 180, 'SYSTEM'),
+  (34, 3, 14, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'CONFIRMED', 180, 'SYSTEM'),
+  (35, 3, 14, 5, 'Billet Casting', 'CAST-BILL', 'CASTER', 4, 'CONFIRMED', 180, 'SYSTEM'),
+  (36, 3, 14, 13, 'Billet Reheating', 'BAR-RHT', 'FURNACE', 5, 'CONFIRMED', 180, 'SYSTEM'),
+  (37, 3, 14, 14, 'Bar Rolling', 'BAR-ROLL', 'ROLLING', 6, 'CONFIRMED', 180, 'SYSTEM'),
+  (38, 3, 14, 15, 'Quenching & Tempering', 'BAR-QT', 'HEAT_TREATMENT', 7, 'CONFIRMED', 180, 'SYSTEM'),
+  (39, 1, 15, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'CONFIRMED', 120, 'SYSTEM'),
+  (40, 1, 15, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'CONFIRMED', 120, 'SYSTEM'),
+  (41, 1, 15, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'CONFIRMED', 120, 'SYSTEM'),
+  (42, 1, 15, 4, 'Slab Casting', 'CAST-SLAB', 'CASTER', 4, 'CONFIRMED', 120, 'SYSTEM'),
+  (43, 1, 15, 6, 'Slab Reheating', 'ROLL-RHT', 'FURNACE', 5, 'CONFIRMED', 120, 'SYSTEM'),
+  (44, 1, 15, 7, 'Rough Rolling', 'ROLL-RGH', 'ROLLING', 6, 'CONFIRMED', 120, 'SYSTEM'),
+  (45, 1, 15, 8, 'Finish Rolling', 'ROLL-FIN', 'ROLLING', 7, 'CONFIRMED', 120, 'SYSTEM'),
+  (46, 1, 15, 9, 'Cooling & Coiling', 'ROLL-COOL', 'COOLING', 8, 'CONFIRMED', 120, 'SYSTEM'),
+  (47, 4, 12, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'BLOCKED', 400, 'SYSTEM'),
+  (48, 4, 12, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'NOT_STARTED', 400, 'SYSTEM'),
+  (49, 1, 24, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'CONFIRMED', 80, 'SYSTEM'),
+  (50, 1, 24, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'READY', 80, 'SYSTEM'),
+  (51, 1, 24, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'NOT_STARTED', 80, 'SYSTEM'),
+  (52, 1, 4, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'READY', 100, 'SYSTEM'),
+  (53, 3, 8, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'READY', 300, 'SYSTEM'),
+  (54, 2, 9, 10, 'Pickling', 'PKL', 'PICKLING', 1, 'READY', 120, 'SYSTEM'),
+  (55, 1, 11, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'PARTIALLY_CONFIRMED', 250, 'SYSTEM'),
+  (56, 1, 11, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'NOT_STARTED', 250, 'SYSTEM'),
+  (57, 3, 6, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'NOT_STARTED', 80, 'SYSTEM'),
+  (58, 2, 5, 10, 'Pickling', 'PKL', 'PICKLING', 1, 'NOT_STARTED', 50, 'SYSTEM'),
+  (59, 4, 17, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'BLOCKED', 250, 'SYSTEM'),
+  (60, 3, 23, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'NOT_STARTED', 200, 'SYSTEM'),
+  (61, 1, 18, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'READY', 50, 'SYSTEM'),
+  (62, 1, 18, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'NOT_STARTED', 50, 'SYSTEM'),
+  (63, 1, 18, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'NOT_STARTED', 50, 'SYSTEM'),
+  (64, 1, 18, 4, 'Slab Casting', 'CAST-SLAB', 'CASTER', 4, 'NOT_STARTED', 50, 'SYSTEM'),
+  (65, 1, 18, 6, 'Slab Reheating', 'ROLL-RHT', 'FURNACE', 5, 'NOT_STARTED', 50, 'SYSTEM'),
+  (66, 1, 18, 7, 'Rough Rolling', 'ROLL-RGH', 'ROLLING', 6, 'NOT_STARTED', 50, 'SYSTEM'),
+  (67, 1, 18, 8, 'Finish Rolling', 'ROLL-FIN', 'ROLLING', 7, 'NOT_STARTED', 50, 'SYSTEM'),
+  (68, 1, 18, 9, 'Cooling & Coiling', 'ROLL-COOL', 'COOLING', 8, 'NOT_STARTED', 50, 'SYSTEM'),
+  (69, 2, 19, 10, 'Pickling', 'PKL', 'PICKLING', 1, 'READY', 40, 'SYSTEM'),
+  (70, 2, 19, 11, 'Cold Rolling', 'CRM', 'ROLLING', 2, 'NOT_STARTED', 40, 'SYSTEM'),
+  (71, 2, 19, 12, 'Batch Annealing', 'ANN', 'HEAT_TREATMENT', 3, 'NOT_STARTED', 40, 'SYSTEM'),
+  (72, 3, 20, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'READY', 100, 'SYSTEM'),
+  (73, 3, 20, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'NOT_STARTED', 100, 'SYSTEM'),
+  (74, 3, 20, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'NOT_STARTED', 100, 'SYSTEM'),
+  (75, 3, 20, 5, 'Billet Casting', 'CAST-BILL', 'CASTER', 4, 'NOT_STARTED', 100, 'SYSTEM'),
+  (76, 3, 20, 13, 'Billet Reheating', 'BAR-RHT', 'FURNACE', 5, 'NOT_STARTED', 100, 'SYSTEM'),
+  (77, 3, 20, 14, 'Bar Rolling', 'BAR-ROLL', 'ROLLING', 6, 'NOT_STARTED', 100, 'SYSTEM'),
+  (78, 3, 20, 15, 'Quenching & Tempering', 'BAR-QT', 'HEAT_TREATMENT', 7, 'NOT_STARTED', 100, 'SYSTEM'),
+  (79, 3, 21, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'READY', 150, 'SYSTEM'),
+  (80, 3, 21, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'NOT_STARTED', 150, 'SYSTEM'),
+  (81, 3, 21, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'NOT_STARTED', 150, 'SYSTEM'),
+  (82, 3, 21, 5, 'Billet Casting', 'CAST-BILL', 'CASTER', 4, 'NOT_STARTED', 150, 'SYSTEM'),
+  (83, 3, 21, 13, 'Billet Reheating', 'BAR-RHT', 'FURNACE', 5, 'NOT_STARTED', 150, 'SYSTEM'),
+  (84, 3, 21, 14, 'Bar Rolling', 'BAR-ROLL', 'ROLLING', 6, 'NOT_STARTED', 150, 'SYSTEM'),
+  (85, 3, 21, 15, 'Quenching & Tempering', 'BAR-QT', 'HEAT_TREATMENT', 7, 'NOT_STARTED', 150, 'SYSTEM'),
+  (86, 1, 22, 1, 'Scrap Charging', 'MELT-CHRG', 'FURNACE', 1, 'READY', 100, 'SYSTEM'),
+  (87, 1, 22, 2, 'EAF Melting', 'MELT-EAF', 'FURNACE', 2, 'NOT_STARTED', 100, 'SYSTEM'),
+  (88, 1, 22, 3, 'Ladle Refining', 'MELT-LF', 'FURNACE', 3, 'NOT_STARTED', 100, 'SYSTEM'),
+  (89, 1, 22, 4, 'Slab Casting', 'CAST-SLAB', 'CASTER', 4, 'NOT_STARTED', 100, 'SYSTEM'),
+  (90, 1, 22, 6, 'Slab Reheating', 'ROLL-RHT', 'FURNACE', 5, 'NOT_STARTED', 100, 'SYSTEM'),
+  (91, 1, 22, 7, 'Rough Rolling', 'ROLL-RGH', 'ROLLING', 6, 'NOT_STARTED', 100, 'SYSTEM'),
+  (92, 1, 22, 8, 'Finish Rolling', 'ROLL-FIN', 'ROLLING', 7, 'NOT_STARTED', 100, 'SYSTEM'),
+  (93, 1, 22, 9, 'Cooling & Coiling', 'ROLL-COOL', 'COOLING', 8, 'NOT_STARTED', 100, 'SYSTEM')
+) AS v(operation_id, process_id, order_line_id, operation_template_id, operation_name, operation_code, operation_type, sequence_number, status, target_qty, created_by)
+WHERE NOT EXISTS (SELECT 1 FROM operations WHERE operation_id = 1);
+
+SELECT setval('operations_operation_id_seq', (SELECT COALESCE(MAX(operation_id), 1) FROM operations));
+
+-- =====================================================
+-- 16. BATCHES (56)
+-- =====================================================
+INSERT INTO batches (batch_id, batch_number, material_id, material_name, quantity, unit, status, created_by)
+SELECT v.* FROM (VALUES
+  (1::bigint, 'B-RM-001', 'RM-SCRAP-A', 'Steel Scrap Grade A', 500::numeric, 'T', 'AVAILABLE', 'SYSTEM'),
+  (2, 'B-RM-002', 'RM-SCRAP-A', 'Steel Scrap Grade A', 350, 'T', 'AVAILABLE', 'SYSTEM'),
+  (3, 'B-RM-003', 'RM-SCRAP-B', 'Steel Scrap Grade B', 200, 'T', 'AVAILABLE', 'SYSTEM'),
+  (4, 'B-RM-004', 'RM-IRON-ORE', 'Iron Ore Pellets', 400, 'T', 'AVAILABLE', 'SYSTEM'),
+  (5, 'B-RM-005', 'RM-LIMESTONE', 'Limestone', 150, 'T', 'AVAILABLE', 'SYSTEM'),
+  (6, 'B-RM-006', 'RM-FESI', 'Ferroalloy FeSi', 2000, 'KG', 'AVAILABLE', 'SYSTEM'),
+  (7, 'B-RM-007', 'RM-FEMN', 'Ferroalloy FeMn', 1500, 'KG', 'AVAILABLE', 'SYSTEM'),
+  (8, 'B-RM-008', 'RM-COAL', 'Coal / Coke', 300, 'T', 'AVAILABLE', 'SYSTEM'),
+  (9, 'B-RM-009', 'RM-GRAPHITE', 'Graphite Electrodes', 50, 'EA', 'AVAILABLE', 'SYSTEM'),
+  (10, 'B-RM-010', 'RM-SCRAP-A', 'Steel Scrap Grade A', 180, 'T', 'ON_HOLD', 'SYSTEM'),
+  (11, 'B-RM-011', 'RM-SCRAP-B', 'Steel Scrap Grade B', 120, 'T', 'AVAILABLE', 'SYSTEM'),
+  (12, 'B-RM-012', 'RM-HCL', 'Hydrochloric Acid', 5000, 'L', 'AVAILABLE', 'SYSTEM'),
+  (13, 'B-RM-013', 'RM-COATING', 'Surface Coating Oil', 2000, 'L', 'AVAILABLE', 'SYSTEM'),
+  (14, 'B-RM-014', 'RM-ROLL-LUB', 'Rolling Lubricant', 3000, 'L', 'AVAILABLE', 'SYSTEM'),
+  (15, 'B-RM-015', 'RM-MOLD-PWD', 'Mold Powder', 1000, 'KG', 'AVAILABLE', 'SYSTEM'),
+  (16, 'B-RM-016', 'RM-AL-WIRE', 'Aluminum Wire', 500, 'KG', 'AVAILABLE', 'SYSTEM'),
+  (17, 'B-RM-017', 'RM-SCRAP-C', 'Steel Scrap Grade C', 250, 'T', 'AVAILABLE', 'SYSTEM'),
+  (18, 'B-RM-018', 'RM-FEV', 'Ferroalloy FeV', 100, 'KG', 'AVAILABLE', 'SYSTEM'),
+  (19, 'B-IM-001', 'IM-LIQUID', 'Liquid Steel', 165, 'T', 'CONSUMED', 'SYSTEM'),
+  (20, 'B-IM-002', 'IM-SLAB', 'Steel Slab 200mm', 155, 'T', 'AVAILABLE', 'SYSTEM'),
+  (21, 'B-IM-003', 'IM-LIQUID', 'Liquid Steel', 90, 'T', 'CONSUMED', 'SYSTEM'),
+  (22, 'B-IM-004', 'IM-LIQUID', 'Liquid Steel', 220, 'T', 'CONSUMED', 'SYSTEM'),
+  (23, 'B-IM-005', 'IM-BILLET', 'Steel Billet 100mm', 210, 'T', 'AVAILABLE', 'SYSTEM'),
+  (24, 'B-IM-006', 'IM-LIQUID', 'Liquid Steel', 85, 'T', 'CONSUMED', 'SYSTEM'),
+  (25, 'B-IM-007', 'IM-SLAB', 'Steel Slab 200mm', 82, 'T', 'CONSUMED', 'SYSTEM'),
+  (26, 'B-IM-008', 'IM-HR-ROUGH', 'HR Coil Rough', 78, 'T', 'CONSUMED', 'SYSTEM'),
+  (27, 'B-IM-009', 'IM-SLAB', 'Steel Slab 200mm', 30, 'T', 'QUALITY_PENDING', 'SYSTEM'),
+  (28, 'B-IM-010', 'IM-BILLET', 'Steel Billet 100mm', 195, 'T', 'AVAILABLE', 'SYSTEM'),
+  (29, 'B-IM-011', 'IM-PICKLED', 'Pickled HR Strip', 85, 'T', 'AVAILABLE', 'SYSTEM'),
+  (30, 'B-IM-012', 'IM-CR-STRIP', 'Cold Rolled Strip', 80, 'T', 'PRODUCED', 'SYSTEM'),
+  (31, 'B-IM-013', 'IM-ANNEALED', 'Annealed CR Strip', 75, 'T', 'AVAILABLE', 'SYSTEM'),
+  (32, 'B-IM-014', 'IM-ROLLED-BAR', 'Rolled Bar', 190, 'T', 'AVAILABLE', 'SYSTEM'),
+  (33, 'B-IM-015', 'IM-LIQUID', 'Liquid Steel', 130, 'T', 'PRODUCED', 'SYSTEM'),
+  (34, 'B-IM-016', 'IM-SLAB', 'Steel Slab 200mm', 125, 'T', 'PRODUCED', 'SYSTEM'),
+  (35, 'B-FG-001', 'FG-HR-2MM', 'HR Coil 2mm', 75, 'T', 'AVAILABLE', 'SYSTEM'),
+  (36, 'B-FG-002', 'FG-CR-1MM', 'CR Sheet 1mm', 70, 'T', 'AVAILABLE', 'SYSTEM'),
+  (37, 'B-FG-003', 'FG-REBAR-10', 'Rebar 10mm', 180, 'T', 'AVAILABLE', 'SYSTEM'),
+  (38, 'B-FG-004', 'FG-HR-2MM', 'HR Coil 2mm', 120, 'T', 'AVAILABLE', 'SYSTEM'),
+  (39, 'B-FG-005', 'FG-REBAR-10', 'Rebar 10mm', 175, 'T', 'PRODUCED', 'SYSTEM'),
+  (40, 'B-FG-006', 'FG-CR-1MM', 'CR Sheet 1mm', 55, 'T', 'PRODUCED', 'SYSTEM'),
+  (41, 'B-RM-019', 'RM-SCRAP-A', 'Steel Scrap Grade A', 100, 'T', 'BLOCKED', 'SYSTEM'),
+  (42, 'B-IM-017', 'IM-SLAB', 'Steel Slab 200mm', 45, 'T', 'BLOCKED', 'SYSTEM'),
+  (43, 'B-IM-018', 'IM-BILLET', 'Steel Billet 100mm', 60, 'T', 'QUALITY_PENDING', 'SYSTEM'),
+  (44, 'B-FG-007', 'FG-HR-2MM', 'HR Coil 2mm', 25, 'T', 'QUALITY_PENDING', 'SYSTEM'),
+  (45, 'B-RM-020', 'RM-COAL', 'Coal (Contaminated)', 25, 'T', 'SCRAPPED', 'SYSTEM'),
+  (46, 'B-RM-021', 'RM-SCRAP-A', 'Steel Scrap Grade A', 280, 'T', 'AVAILABLE', 'SYSTEM'),
+  (47, 'B-RM-022', 'RM-SCRAP-B', 'Steel Scrap Grade B', 150, 'T', 'AVAILABLE', 'SYSTEM'),
+  (48, 'B-IM-019', 'IM-HR-ROUGH', 'HR Coil Rough', 95, 'T', 'AVAILABLE', 'SYSTEM'),
+  (49, 'B-IM-020', 'IM-LIQUID', 'Liquid Steel', 100, 'T', 'AVAILABLE', 'SYSTEM'),
+  (50, 'B-FG-008', 'FG-REBAR-10', 'Rebar 10mm', 150, 'T', 'AVAILABLE', 'SYSTEM'),
+  (51, 'B-WIP-001', 'WIP-MELT', 'Molten Steel EAF #1', 85, 'T', 'AVAILABLE', 'SYSTEM'),
+  (52, 'B-WIP-002', 'WIP-MELT', 'Molten Steel EAF #2', 92, 'T', 'AVAILABLE', 'SYSTEM'),
+  (53, 'B-WIP-003', 'WIP-CAST', 'Steel Being Cast', 78, 'T', 'AVAILABLE', 'SYSTEM'),
+  (54, 'B-WIP-004', 'WIP-ROLL', 'Strip on Hot Mill', 65, 'T', 'AVAILABLE', 'SYSTEM'),
+  (55, 'B-WIP-005', 'WIP-PICKLE', 'Strip in Pickle Line', 45, 'T', 'AVAILABLE', 'SYSTEM'),
+  (56, 'B-WIP-006', 'WIP-ROLL', 'Strip on Cold Mill', 55, 'T', 'AVAILABLE', 'SYSTEM')
+) AS v(batch_id, batch_number, material_id, material_name, quantity, unit, status, created_by)
+WHERE NOT EXISTS (SELECT 1 FROM batches WHERE batch_id = 1);
+
+SELECT setval('batches_batch_id_seq', (SELECT COALESCE(MAX(batch_id), 1) FROM batches));
+
+-- =====================================================
+-- 17. INVENTORY (56)
+-- =====================================================
+INSERT INTO inventory (inventory_id, material_id, material_name, inventory_type, state, quantity, unit, batch_id, location, created_by)
+SELECT v.* FROM (VALUES
+  (1::bigint, 'RM-SCRAP-A', 'Steel Scrap Grade A', 'RM', 'AVAILABLE', 500::numeric, 'T', 1::bigint, 'Scrap Yard A', 'SYSTEM'),
+  (2, 'RM-SCRAP-A', 'Steel Scrap Grade A', 'RM', 'AVAILABLE', 350, 'T', 2, 'Scrap Yard A', 'SYSTEM'),
+  (3, 'RM-SCRAP-B', 'Steel Scrap Grade B', 'RM', 'AVAILABLE', 200, 'T', 3, 'Scrap Yard B', 'SYSTEM'),
+  (4, 'RM-IRON-ORE', 'Iron Ore Pellets', 'RM', 'AVAILABLE', 400, 'T', 4, 'Ore Storage', 'SYSTEM'),
+  (5, 'RM-LIMESTONE', 'Limestone', 'RM', 'AVAILABLE', 150, 'T', 5, 'Flux Store', 'SYSTEM'),
+  (6, 'RM-FESI', 'Ferroalloy FeSi', 'RM', 'AVAILABLE', 2000, 'KG', 6, 'Alloy Store', 'SYSTEM'),
+  (7, 'RM-FEMN', 'Ferroalloy FeMn', 'RM', 'AVAILABLE', 1500, 'KG', 7, 'Alloy Store', 'SYSTEM'),
+  (8, 'RM-COAL', 'Coal / Coke', 'RM', 'AVAILABLE', 300, 'T', 8, 'Coal Yard', 'SYSTEM'),
+  (9, 'RM-GRAPHITE', 'Graphite Electrodes', 'RM', 'AVAILABLE', 50, 'EA', 9, 'Electrode Store', 'SYSTEM'),
+  (10, 'RM-SCRAP-A', 'Steel Scrap (On Hold)', 'RM', 'ON_HOLD', 180, 'T', 10, 'Scrap Yard C', 'SYSTEM'),
+  (11, 'RM-SCRAP-B', 'Steel Scrap Grade B', 'RM', 'AVAILABLE', 120, 'T', 11, 'Scrap Yard B', 'SYSTEM'),
+  (12, 'RM-HCL', 'Hydrochloric Acid', 'RM', 'AVAILABLE', 5000, 'L', 12, 'Chemical Store', 'SYSTEM'),
+  (13, 'RM-COATING', 'Surface Coating Oil', 'RM', 'AVAILABLE', 2000, 'L', 13, 'Oil Store', 'SYSTEM'),
+  (14, 'RM-ROLL-LUB', 'Rolling Lubricant', 'RM', 'AVAILABLE', 3000, 'L', 14, 'Oil Store', 'SYSTEM'),
+  (15, 'RM-MOLD-PWD', 'Mold Powder', 'RM', 'AVAILABLE', 1000, 'KG', 15, 'Casting Store', 'SYSTEM'),
+  (16, 'RM-AL-WIRE', 'Aluminum Wire', 'RM', 'AVAILABLE', 500, 'KG', 16, 'Alloy Store', 'SYSTEM'),
+  (17, 'RM-SCRAP-C', 'Steel Scrap Grade C', 'RM', 'AVAILABLE', 250, 'T', 17, 'Scrap Yard C', 'SYSTEM'),
+  (18, 'RM-FEV', 'Ferroalloy FeV', 'RM', 'AVAILABLE', 100, 'KG', 18, 'Alloy Store', 'SYSTEM'),
+  (19, 'IM-SLAB', 'Steel Slab 200mm', 'IM', 'AVAILABLE', 155, 'T', 20, 'Slab Yard', 'SYSTEM'),
+  (20, 'IM-BILLET', 'Steel Billet 100mm', 'IM', 'AVAILABLE', 210, 'T', 23, 'Billet Yard', 'SYSTEM'),
+  (21, 'IM-BILLET', 'Steel Billet 100mm', 'IM', 'AVAILABLE', 195, 'T', 28, 'Billet Yard', 'SYSTEM'),
+  (22, 'IM-PICKLED', 'Pickled HR Strip', 'IM', 'AVAILABLE', 85, 'T', 29, 'Pickling Bay', 'SYSTEM'),
+  (23, 'IM-CR-STRIP', 'Cold Rolled Strip', 'IM', 'PRODUCED', 80, 'T', 30, 'Cold Mill', 'SYSTEM'),
+  (24, 'IM-ANNEALED', 'Annealed CR Strip', 'IM', 'AVAILABLE', 75, 'T', 31, 'Annealing Bay', 'SYSTEM'),
+  (25, 'IM-ROLLED-BAR', 'Rolled Bar', 'IM', 'AVAILABLE', 190, 'T', 32, 'Bar Mill', 'SYSTEM'),
+  (26, 'IM-LIQUID', 'Liquid Steel', 'IM', 'PRODUCED', 130, 'T', 33, 'Ladle', 'SYSTEM'),
+  (27, 'IM-SLAB', 'Steel Slab 200mm', 'IM', 'PRODUCED', 125, 'T', 34, 'Slab Yard', 'SYSTEM'),
+  (28, 'IM-HR-ROUGH', 'HR Coil Rough', 'IM', 'AVAILABLE', 95, 'T', 48, 'Hot Mill', 'SYSTEM'),
+  (29, 'IM-LIQUID', 'Liquid Steel', 'IM', 'AVAILABLE', 100, 'T', 49, 'Ladle', 'SYSTEM'),
+  (30, 'FG-HR-2MM', 'HR Coil 2mm', 'FG', 'AVAILABLE', 75, 'T', 35, 'FG Warehouse 1', 'SYSTEM'),
+  (31, 'FG-CR-1MM', 'CR Sheet 1mm', 'FG', 'AVAILABLE', 70, 'T', 36, 'FG Warehouse 2', 'SYSTEM'),
+  (32, 'FG-REBAR-10', 'Rebar 10mm', 'FG', 'AVAILABLE', 180, 'T', 37, 'FG Warehouse 3', 'SYSTEM'),
+  (33, 'FG-HR-2MM', 'HR Coil 2mm', 'FG', 'AVAILABLE', 120, 'T', 38, 'FG Warehouse 1', 'SYSTEM'),
+  (34, 'FG-REBAR-10', 'Rebar 10mm', 'FG', 'PRODUCED', 175, 'T', 39, 'FG Warehouse 3', 'SYSTEM'),
+  (35, 'FG-CR-1MM', 'CR Sheet 1mm', 'FG', 'PRODUCED', 55, 'T', 40, 'FG Warehouse 2', 'SYSTEM'),
+  (36, 'FG-REBAR-10', 'Rebar 10mm', 'FG', 'AVAILABLE', 150, 'T', 50, 'FG Warehouse 3', 'SYSTEM'),
+  (37, 'RM-SCRAP-A', 'Steel Scrap Grade A', 'RM', 'RESERVED', 200, 'T', 46, 'Scrap Yard A', 'SYSTEM'),
+  (38, 'RM-SCRAP-B', 'Steel Scrap Grade B', 'RM', 'RESERVED', 100, 'T', 47, 'Scrap Yard B', 'SYSTEM'),
+  (39, 'RM-SCRAP-A', 'Steel Scrap (Blocked)', 'RM', 'BLOCKED', 100, 'T', 41, 'Quarantine Area', 'SYSTEM'),
+  (40, 'IM-SLAB', 'Steel Slab (Blocked)', 'IM', 'BLOCKED', 45, 'T', 42, 'QC Area', 'SYSTEM'),
+  (41, 'IM-SLAB', 'Steel Slab (QC Pend)', 'IM', 'ON_HOLD', 30, 'T', 27, 'QC Area', 'SYSTEM'),
+  (42, 'IM-BILLET', 'Steel Billet (QC)', 'IM', 'ON_HOLD', 60, 'T', 43, 'QC Area', 'SYSTEM'),
+  (43, 'FG-HR-2MM', 'HR Coil (QC Pending)', 'FG', 'ON_HOLD', 25, 'T', 44, 'QC Area', 'SYSTEM'),
+  (44, 'IM-LIQUID', 'Liquid Steel (Used)', 'IM', 'CONSUMED', 165, 'T', 19, 'Historical', 'SYSTEM'),
+  (45, 'IM-LIQUID', 'Liquid Steel (Used)', 'IM', 'CONSUMED', 90, 'T', 21, 'Historical', 'SYSTEM'),
+  (46, 'IM-LIQUID', 'Liquid Steel (Used)', 'IM', 'CONSUMED', 220, 'T', 22, 'Historical', 'SYSTEM'),
+  (47, 'IM-SLAB', 'Steel Slab (Used)', 'IM', 'CONSUMED', 82, 'T', 25, 'Historical', 'SYSTEM'),
+  (48, 'IM-HR-ROUGH', 'HR Coil Rough (Used)', 'IM', 'CONSUMED', 78, 'T', 26, 'Historical', 'SYSTEM'),
+  (49, 'RM-COAL', 'Coal (Contaminated)', 'RM', 'SCRAPPED', 25, 'T', 45, 'Disposal', 'SYSTEM'),
+  (50, 'RM-SCRAP-A', 'Steel Scrap Grade A', 'RM', 'AVAILABLE', 280, 'T', 46, 'Scrap Yard A', 'SYSTEM'),
+  (51, 'WIP-MELT', 'Molten Steel (Active)', 'WIP', 'AVAILABLE', 85, 'T', 51, 'EAF #1', 'SYSTEM'),
+  (52, 'WIP-MELT', 'Molten Steel (Active)', 'WIP', 'AVAILABLE', 92, 'T', 52, 'EAF #2', 'SYSTEM'),
+  (53, 'WIP-CAST', 'Steel Being Cast', 'WIP', 'AVAILABLE', 78, 'T', 53, 'Caster #1', 'SYSTEM'),
+  (54, 'WIP-ROLL', 'Strip on Mill', 'WIP', 'AVAILABLE', 65, 'T', 54, 'Hot Mill #1', 'SYSTEM'),
+  (55, 'WIP-PICKLE', 'Strip in Pickle Line', 'WIP', 'AVAILABLE', 45, 'T', 55, 'Pickle Line #1', 'SYSTEM'),
+  (56, 'WIP-ROLL', 'Strip on Mill', 'WIP', 'AVAILABLE', 55, 'T', 56, 'Cold Mill #1', 'SYSTEM')
+) AS v(inventory_id, material_id, material_name, inventory_type, state, quantity, unit, batch_id, location, created_by)
+WHERE NOT EXISTS (SELECT 1 FROM inventory WHERE inventory_id = 1);
+
+SELECT setval('inventory_inventory_id_seq', (SELECT COALESCE(MAX(inventory_id), 1) FROM inventory));
+
+-- =====================================================
+-- 18. BATCH RELATIONS (40)
+-- =====================================================
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 1, 19, 'MERGE', 105, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 1 AND child_batch_id = 19 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 3, 19, 'MERGE', 30, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 3 AND child_batch_id = 19 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 4, 19, 'MERGE', 22, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 4 AND child_batch_id = 19 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 8, 19, 'MERGE', 15, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 8 AND child_batch_id = 19 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 19, 20, 'MERGE', 155, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 19 AND child_batch_id = 20 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 2, 22, 'MERGE', 160, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 2 AND child_batch_id = 22 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 11, 22, 'MERGE', 36, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 11 AND child_batch_id = 22 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 4, 22, 'MERGE', 30, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 4 AND child_batch_id = 22 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 8, 22, 'MERGE', 18, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 8 AND child_batch_id = 22 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 22, 23, 'MERGE', 210, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 22 AND child_batch_id = 23 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 1, 24, 'MERGE', 56, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 1 AND child_batch_id = 24 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 3, 24, 'MERGE', 16, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 3 AND child_batch_id = 24 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 4, 24, 'MERGE', 12, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 4 AND child_batch_id = 24 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 8, 24, 'MERGE', 8, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 8 AND child_batch_id = 24 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 24, 25, 'MERGE', 82, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 24 AND child_batch_id = 25 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 25, 26, 'MERGE', 78, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 25 AND child_batch_id = 26 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 26, 35, 'MERGE', 75, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 26 AND child_batch_id = 35 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 2, 33, 'MERGE', 140, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 2 AND child_batch_id = 33 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 17, 33, 'MERGE', 45, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 17 AND child_batch_id = 33 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 7, 33, 'MERGE', 8, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 7 AND child_batch_id = 33 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 33, 28, 'MERGE', 180, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 33 AND child_batch_id = 28 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 28, 32, 'MERGE', 178, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 28 AND child_batch_id = 32 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 32, 39, 'MERGE', 175, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 32 AND child_batch_id = 39 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 46, 49, 'MERGE', 100, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 46 AND child_batch_id = 49 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 47, 49, 'MERGE', 30, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 47 AND child_batch_id = 49 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 4, 49, 'MERGE', 10, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 4 AND child_batch_id = 49 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 49, 34, 'MERGE', 125, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 49 AND child_batch_id = 34 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 34, 48, 'MERGE', 120, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 34 AND child_batch_id = 48 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 48, 38, 'MERGE', 118, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 48 AND child_batch_id = 38 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 48, 29, 'MERGE', 90, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 48 AND child_batch_id = 29 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 29, 30, 'MERGE', 85, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 29 AND child_batch_id = 30 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 30, 31, 'MERGE', 80, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 30 AND child_batch_id = 31 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 31, 36, 'MERGE', 70, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 31 AND child_batch_id = 36 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 20, 27, 'SPLIT', 30, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 20 AND child_batch_id = 27 AND relation_type = 'SPLIT');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 1, 21, 'CONSUME', 50, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 1 AND child_batch_id = 21 AND relation_type = 'CONSUME');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 3, 21, 'CONSUME', 25, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 3 AND child_batch_id = 21 AND relation_type = 'CONSUME');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 21, 40, 'MERGE', 55, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 21 AND child_batch_id = 40 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 2, 19, 'MERGE', 40, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 2 AND child_batch_id = 19 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 6, 19, 'MERGE', 3, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 6 AND child_batch_id = 19 AND relation_type = 'MERGE');
+
+INSERT INTO batch_relations (parent_batch_id, child_batch_id, relation_type, quantity_consumed, status, created_by)
+SELECT 6, 22, 'MERGE', 2, 'ACTIVE', 'SYSTEM'
+WHERE NOT EXISTS (SELECT 1 FROM batch_relations WHERE parent_batch_id = 6 AND child_batch_id = 22 AND relation_type = 'MERGE');
+
+-- =====================================================
 -- Summary:
 --   Users:           1 (admin)
 --   Customers:       12
---   Materials:       30+ (RM, IM, FG)
+--   Materials:       55 (RM, IM, FG)
 --   Products:        15
 --   Equipment:       16
 --   Operators:       12
@@ -497,4 +999,12 @@ WHERE NOT EXISTS (SELECT 1 FROM batch_number_config WHERE config_name = 'Receipt
 --   Delay Reasons:   10
 --   Process Params:  9
 --   Batch Configs:   4
+--   Processes:       6
+--   Op Templates:    18
+--   Orders:          15
+--   Order Lines:     25
+--   Operations:      93
+--   Batches:         56
+--   Inventory:       56
+--   Batch Relations: 40
 -- =====================================================
