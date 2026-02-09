@@ -46,7 +46,7 @@ async function runBatchesTests(page, screenshots, results, runTest) {
 
         const searchInput = page.locator('input[name="search"], input[type="search"], input[placeholder*="search" i]');
         if (await searchInput.count() > 0) {
-            await searchInput.fill('RM-BATCH');
+            await searchInput.fill('B-IM');
             await page.waitForTimeout(500);
         }
 

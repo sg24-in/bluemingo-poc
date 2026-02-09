@@ -322,7 +322,7 @@ async function recordComprehensiveDemo() {
         // Search
         const searchInput = page.locator('input[placeholder*="Search"]').first();
         if (await searchInput.count() > 0) {
-            await searchInput.fill('RM-BATCH');
+            await searchInput.fill('B-IM');
             await page.waitForTimeout(1000);
             await showCaption(page, '5.3', 'Search Batches', 'Find batches by number or material ID');
             shotNum = await capture(page, screenshotDir, 'batches-search', shotNum);
