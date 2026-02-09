@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { RoutingListComponent } from './routing-list/routing-list.component';
+import { RoutingDetailComponent } from './routing-detail/routing-detail.component';
 import { RoutingFormComponent } from './routing-form/routing-form.component';
 
 const routes: Routes = [
@@ -11,6 +12,10 @@ const routes: Routes = [
   {
     path: 'new',
     component: RoutingFormComponent
+  },
+  {
+    path: ':id',
+    component: RoutingDetailComponent
   },
   {
     path: ':id/edit',

@@ -57,7 +57,7 @@ class ExcelExportServiceTest {
         testInventory.setUnit("KG");
         testInventory.setState("AVAILABLE");
         testInventory.setLocation("Warehouse A");
-        testInventory.setBatchNumber("BATCH-001");
+        // Batch number is accessed via batch relationship, not a direct field
     }
 
     @Test

@@ -146,7 +146,7 @@ export class RoutingListComponent implements OnInit {
   }
 
   viewRouting(routing: Routing): void {
-    this.router.navigate(['/manage/routing', routing.routingId, 'edit']);
+    this.router.navigate(['/manage/routing', routing.routingId]);
   }
 
   activateRouting(routing: Routing): void {

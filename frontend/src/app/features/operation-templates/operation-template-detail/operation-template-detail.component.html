@@ -1,0 +1,108 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1 class="page-title">Operation Template Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="template">
+      <button class="btn btn-secondary" (click)="editTemplate()">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button
+        class="btn"
+        [ngClass]="template.status === 'ACTIVE' ? 'btn-danger' : 'btn-success'"
+        (click)="toggleStatus()"
+      >
+        <i class="fas" [ngClass]="template.status === 'ACTIVE' ? 'fa-ban' : 'fa-check-circle'"></i>
+        {{ template.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading operation template..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && template" class="detail-content">
+    <div class="detail-card">
+      <div class="card-header">
+        <h2>{{ template.operationName }}</h2>
+        <span class="status-badge" [ngClass]="getStatusClass(template.status)">
+          {{ template.status }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Basic Information</h3>
+          <div class="detail-row">
+            <span class="label">Template ID</span>
+            <span class="value">{{ template.operationTemplateId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Operation Code</span>
+            <span class="value code">{{ template.operationCode || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Operation Name</span>
+            <span class="value">{{ template.operationName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Operation Type</span>
+            <span class="value">
+              <span class="type-badge" [ngClass]="template.operationType.toLowerCase()">
+                {{ getOperationTypeLabel(template.operationType) }}
+              </span>
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Quantity Type</span>
+            <span class="value">{{ getQuantityTypeLabel(template.quantityType) }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Configuration</h3>
+          <div class="detail-row">
+            <span class="label">Default Equipment Type</span>
+            <span class="value">{{ template.defaultEquipmentType ? getEquipmentTypeLabel(template.defaultEquipmentType) : '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Estimated Duration</span>
+            <span class="value">{{ template.estimatedDurationMinutes ? template.estimatedDurationMinutes + ' minutes' : '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Description</span>
+            <span class="value description">{{ template.description || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Timestamps</h3>
+          <div class="detail-row">
+            <span class="label">Created On</span>
+            <span class="value">{{ template.createdOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Created By</span>
+            <span class="value">{{ template.createdBy || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated On</span>
+            <span class="value">{{ template.updatedOn | date:'medium' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated By</span>
+            <span class="value">{{ template.updatedBy || '-' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

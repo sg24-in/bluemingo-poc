@@ -41,7 +41,7 @@ public class ExcelExportService {
 
             // Header row
             Row header = sheet.createRow(0);
-            String[] columns = {"ID", "Order Number", "Customer", "Status", "Order Date", "Delivery Date", "Notes"};
+            String[] columns = {"ID", "Order Number", "Customer", "Status", "Order Date", "Created On"};
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(columns[i]);
@@ -61,11 +61,10 @@ public class ExcelExportService {
                 if (order.getOrderDate() != null) {
                     dateCell.setCellValue(order.getOrderDate().toString());
                 }
-                Cell deliveryCell = row.createCell(5);
-                if (order.getDeliveryDate() != null) {
-                    deliveryCell.setCellValue(order.getDeliveryDate().toString());
+                Cell createdOnCell = row.createCell(5);
+                if (order.getCreatedOn() != null) {
+                    createdOnCell.setCellValue(order.getCreatedOn().toString());
                 }
-                row.createCell(6).setCellValue(order.getNotes() != null ? order.getNotes() : "");
             }
 
             // Auto-size columns
@@ -118,7 +117,7 @@ public class ExcelExportService {
                 row.createCell(5).setCellValue(inv.getUnit() != null ? inv.getUnit() : "");
                 row.createCell(6).setCellValue(inv.getState() != null ? inv.getState() : "");
                 row.createCell(7).setCellValue(inv.getLocation() != null ? inv.getLocation() : "");
-                row.createCell(8).setCellValue(inv.getBatchNumber() != null ? inv.getBatchNumber() : "");
+                row.createCell(8).setCellValue(inv.getBatch() != null && inv.getBatch().getBatchNumber() != null ? inv.getBatch().getBatchNumber() : "");
             }
 
             for (int i = 0; i < columns.length; i++) {

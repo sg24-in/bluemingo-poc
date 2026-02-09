@@ -58,6 +58,8 @@ const ROUTES = {
     CONFIG_BATCH_SIZE: '/#/manage/config/batch-size',
     CONFIG_BATCH_SIZE_NEW: '/#/manage/config/batch-size/new',
     CONFIG_BATCH_SIZE_EDIT: (id) => `/#/manage/config/batch-size/${id}/edit`,
+    // Hold form
+    HOLD_NEW: '/#/holds/new',
     // Audit and Production History
     AUDIT: '/#/manage/audit',
     PRODUCTION_HISTORY: '/#/production/history',

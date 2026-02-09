@@ -1,0 +1,184 @@
+<div class="detail-container">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1 class="page-title">Routing Details</h1>
+    </div>
+    <div class="header-actions" *ngIf="routing">
+      <button class="btn btn-secondary" (click)="editRouting()">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button
+        *ngIf="routing.status === 'DRAFT' || routing.status === 'INACTIVE'"
+        class="btn btn-success"
+        (click)="activateRouting()"
+      >
+        <i class="fas fa-check"></i> Activate
+      </button>
+      <button
+        *ngIf="routing.status === 'ACTIVE'"
+        class="btn btn-warning"
+        (click)="deactivateRouting()"
+      >
+        <i class="fas fa-pause"></i> Deactivate
+      </button>
+      <button
+        *ngIf="routing.status !== 'ON_HOLD'"
+        class="btn btn-danger"
+        (click)="putOnHold()"
+      >
+        <i class="fas fa-ban"></i> Put on Hold
+      </button>
+      <button
+        *ngIf="routing.status === 'ON_HOLD'"
+        class="btn btn-success"
+        (click)="releaseFromHold()"
+      >
+        <i class="fas fa-play"></i> Release Hold
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <app-loading-spinner message="Loading routing..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && routing" class="detail-content">
+    <!-- Routing Info Card -->
+    <div class="detail-card">
+      <div class="card-header">
+        <div class="header-title">
+          <h2>{{ routing.routingName }}</h2>
+          <span class="type-badge">{{ getTypeLabel(routing.routingType) }}</span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(routing.status)">
+          {{ routing.status }}
+        </span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h3>Basic Information</h3>
+          <div class="detail-row">
+            <span class="label">Routing ID</span>
+            <span class="value">{{ routing.routingId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Routing Name</span>
+            <span class="value">{{ routing.routingName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Type</span>
+            <span class="value">{{ getTypeLabel(routing.routingType) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Process</span>
+            <span class="value">{{ routing.processName || 'N/A' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Audit Information</h3>
+          <div class="detail-row">
+            <span class="label">Created By</span>
+            <span class="value">{{ routing.createdBy || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Created On</span>
+            <span class="value">{{ routing.createdOn ? (routing.createdOn | date:'medium') : '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated By</span>
+            <span class="value">{{ routing.updatedBy || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Updated On</span>
+            <span class="value">{{ routing.updatedOn ? (routing.updatedOn | date:'medium') : '-' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steps Table Card -->
+    <div class="detail-card">
+      <div class="card-header">
+        <h2>Routing Steps ({{ routing.steps?.length || 0 }})</h2>
+      </div>
+
+      <div class="steps-content" *ngIf="routing.steps && routing.steps.length > 0; else noSteps">
+        <table class="steps-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Operation Name</th>
+              <th>Type</th>
+              <th>Code</th>
+              <th>Parallel</th>
+              <th>Mandatory</th>
+              <th>Output Batch</th>
+              <th>Split</th>
+              <th>Merge</th>
+              <th>Duration</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let step of routing.steps">
+              <td>{{ step.sequenceNumber }}</td>
+              <td>{{ step.operationName }}</td>
+              <td>{{ step.operationType }}</td>
+              <td><span class="code-value">{{ step.operationCode || '-' }}</span></td>
+              <td>
+                <span class="flag-badge" [class.flag-yes]="step.isParallel" [class.flag-no]="!step.isParallel">
+                  {{ step.isParallel ? 'Yes' : 'No' }}
+                </span>
+              </td>
+              <td>
+                <span class="flag-badge" [class.flag-yes]="step.mandatoryFlag" [class.flag-no]="!step.mandatoryFlag">
+                  {{ step.mandatoryFlag ? 'Yes' : 'No' }}
+                </span>
+              </td>
+              <td>
+                <span class="flag-badge" [class.flag-yes]="step.producesOutputBatch" [class.flag-no]="!step.producesOutputBatch">
+                  {{ step.producesOutputBatch ? 'Yes' : 'No' }}
+                </span>
+              </td>
+              <td>
+                <span class="flag-badge" [class.flag-yes]="step.allowsSplit" [class.flag-no]="!step.allowsSplit">
+                  {{ step.allowsSplit ? 'Yes' : 'No' }}
+                </span>
+              </td>
+              <td>
+                <span class="flag-badge" [class.flag-yes]="step.allowsMerge" [class.flag-no]="!step.allowsMerge">
+                  {{ step.allowsMerge ? 'Yes' : 'No' }}
+                </span>
+              </td>
+              <td>{{ step.estimatedDurationMinutes ? step.estimatedDurationMinutes + ' min' : '-' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStepStatusClass(step.status)" *ngIf="step.status">
+                  {{ step.status }}
+                </span>
+                <span *ngIf="!step.status">-</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noSteps>
+        <div class="empty-state">
+          <p>No steps defined for this routing.</p>
+          <button class="btn btn-secondary" (click)="editRouting()">
+            <i class="fas fa-plus"></i> Add Steps
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
