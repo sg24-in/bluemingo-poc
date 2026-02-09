@@ -1,11 +1,57 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-09
-**Session Status:** Active - Demo Data Enhancement & Bug Fixes Complete
+**Session Status:** Active - Production Confirm Bug Fix, Order Detail UI, Demo Data Docs
 
 ---
 
-## Latest Session Changes (2026-02-09 - Demo Data Enhancement & Production Confirm Fixes)
+## Latest Session Changes (2026-02-09 - Production Confirm Fix, Order Detail UI, Demo Data Docs)
+
+### Critical Bug Fix: Production Confirm 36-Result Error ✅
+
+**Problem:** Confirming operation 121 (Pickling, CR Sheet process) returned 400 error:
+`"Query did not return a unique result: 36 results were returned"`
+
+**Root Cause:** `findNextOperation()` in OperationRepository queried by `processId` (shared design-time template) instead of `orderLineId` (runtime scope per order). Process 2 (CR Sheet) is shared by 18 line items, each with 2 operations = 36 results.
+
+**Fix:**
+- `OperationRepository.java`: Changed query from `process.processId` to `orderLineItem.orderLineId`
+- `ProductionService.java`: Updated `setNextOperationReady()` to pass `orderLineId` instead of `processId`
+- Added backend regression test in `ProductionServiceTest.java`
+
+### Order Detail UI Fixes ✅
+
+1. **Edit button hidden for COMPLETED/CANCELLED orders** - `order-detail.component.html`
+2. **Process flow chart redesigned** - Changed from horizontal to vertical row-based layout
+3. **Chart height increased** - From 280px to 450px with dynamic height based on process count
+4. **Label overflow fixed** - Added truncation with ellipsis for operation node labels
+
+### Tests Added ✅
+- 1 backend regression test (findNextOperation by orderLineId)
+- 5 frontend unit tests (edit button visibility for different order statuses)
+- 3 E2E tests (order detail: edit button hidden/visible, multi-stage flow visualization)
+- 1 E2E test (production confirm regression API test)
+
+### Demo Data Reference Document ✅
+
+Created `documents/MES-Demo-Data-Reference.md` (1398 lines, 21 sections):
+- Complete reference of ALL seed data entities
+- Covers users, customers, products, materials, processes, BOM trees, equipment, operators
+- All 45 orders with statuses, line items, operations
+- Batch genealogy with ASCII flow diagrams
+- Inventory summary by type and state
+- Hold records, batch number configs, production confirmations
+- Demo scenarios guide for testing
+- Customer order history cross-reference
+
+### Commits
+- `316595e` - Fix batch preview, production confirm UX, and add 30 multi-stage orders
+- `1f37d88` - Update session log and tasks with demo data enhancement session
+- `c2ac56c` - Fix production confirm 36-result bug, order detail UI, and add demo data docs
+
+---
+
+## Previous Session Changes (2026-02-09 - Demo Data Enhancement & Production Confirm Fixes)
 
 ### Bug Fixes ✅
 

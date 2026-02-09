@@ -11,6 +11,7 @@
 
 | Date | Focus Areas | Key Outcomes |
 |------|-------------|--------------|
+| 2026-02-09 | Production Confirm Fix, Order Detail UI, Demo Data Docs | Fixed 36-result bug, redesigned flow chart, 1398-line demo data reference doc |
 | 2026-02-09 | Demo Data Enhancement, Bug Fixes | 30 multi-stage orders, 3 new patches (004-006), production confirm UX fixes, schema governance |
 | 2026-02-08 | Audit Pagination, Demo Data Fixes | Paginated audit API, 29 frontend tests, 8 E2E tests, patch 045 |
 | 2026-02-08 | P14/P15 Modal Components, Test Fixes | MaterialSelectionModal, ApplyHoldModal, 30+ tests |
@@ -18,6 +19,53 @@
 | 2026-02-06 | MES Data Model Gap Analysis, Dashboard Charts, Config Entities | 5 new patches, 11 new entities, Chart race condition fixed |
 | 2026-02-05 | BOM CRUD Backend, E2E CRUD Tests | Full BOM tree API, 22 E2E tests |
 | 2026-02-04 | Architecture Refactoring, Routing Module | Hash routing, admin layout, routing CRUD |
+
+---
+
+## Session: 2026-02-09 (Production Confirm Fix, Order Detail UI, Demo Data Docs)
+
+### Session Overview
+**Primary Focus:** Critical production confirm bug fix, order detail UI improvements, comprehensive demo data documentation
+**Key Accomplishments:**
+- Fixed production confirm 36-result NonUniqueResultException (findNextOperation query scoped by processId instead of orderLineId)
+- Redesigned order detail process flow chart to vertical row-based layout with dynamic height
+- Hidden edit button for COMPLETED/CANCELLED orders
+- Fixed label overflow in process flow chart operation nodes
+- Created comprehensive MES-Demo-Data-Reference.md (1398 lines, 21 sections)
+- Added regression tests: 1 backend, 5 frontend unit, 4 E2E tests
+
+### Production Confirm 36-Result Bug Fix - DONE
+**Root Cause:** `findNextOperation()` in OperationRepository used `processId` (shared design-time template). Process 2 (CR Sheet) shared by 18 line items = 36 results.
+**Files Modified:**
+- `backend/src/main/java/com/mes/production/repository/OperationRepository.java` - Changed query to scope by orderLineId
+- `backend/src/main/java/com/mes/production/service/ProductionService.java` - Updated setNextOperationReady() to pass orderLineId; fixed process variable reference
+- `backend/src/test/java/com/mes/production/service/ProductionServiceTest.java` - Added regression test
+
+### Order Detail UI Improvements - DONE
+**Files Modified:**
+- `frontend/src/app/features/orders/order-detail/order-detail.component.html` - Hidden edit button for COMPLETED/CANCELLED
+- `frontend/src/app/features/orders/order-detail/order-detail.component.css` - Increased flow chart height to 450px
+- `frontend/src/app/features/orders/order-detail/order-detail.component.ts` - Redesigned flow chart: vertical row-based layout, dynamic height, label truncation
+- `frontend/src/app/features/orders/order-detail/order-detail.component.spec.ts` - Added 5 edit button visibility tests
+
+### E2E Tests Added - DONE
+**Files Modified:**
+- `e2e/tests/03-orders.test.js` - 3 tests: edit button hidden/visible, multi-stage flow visualization
+- `e2e/tests/04-production.test.js` - 1 test: production confirm API regression
+
+### Demo Data Reference Document - DONE
+**Files Created:**
+- `documents/MES-Demo-Data-Reference.md` - 1398 lines, 21 sections covering all seed data entities
+
+### Test Status Summary
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Backend | All pass (including new regression test) | PASS |
+| Frontend | 269 tests | PASS |
+| E2E | 4 new tests added | PASS |
+
+### Commits
+- `c2ac56c` - Fix production confirm 36-result bug, order detail UI, and add demo data docs
 
 ---
 
