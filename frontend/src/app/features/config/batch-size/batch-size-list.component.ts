@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { PagedResponse } from '../../../shared/models';
 
 interface BatchSizeConfig {
   configId: number;
@@ -28,13 +29,20 @@ interface BatchSizeConfig {
 })
 export class BatchSizeListComponent implements OnInit {
   configs: BatchSizeConfig[] = [];
-  filteredConfigs: BatchSizeConfig[] = [];
   loading = true;
   error = '';
 
   // Filters
-  statusFilter = '';
+  filterStatus = 'all';
   searchTerm = '';
+
+  // Pagination
+  page = 0;
+  size = 20;
+  totalElements = 0;
+  totalPages = 0;
+  hasNext = false;
+  hasPrevious = false;
 
   constructor(
     private apiService: ApiService,
@@ -42,17 +50,35 @@ export class BatchSizeListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadConfigs();
+    this.loadPaged();
   }
 
-  loadConfigs(): void {
+  loadPaged(): void {
     this.loading = true;
     this.error = '';
 
-    this.apiService.getBatchSizeConfigs().subscribe({
-      next: (data) => {
-        this.configs = data;
-        this.applyFilters();
+    const request: any = {
+      page: this.page,
+      size: this.size
+    };
+
+    if (this.filterStatus === 'active') {
+      request.isActive = true;
+    } else if (this.filterStatus === 'inactive') {
+      request.isActive = false;
+    }
+
+    if (this.searchTerm) {
+      request.search = this.searchTerm;
+    }
+
+    this.apiService.getBatchSizeConfigsPaged(request).subscribe({
+      next: (response: PagedResponse<BatchSizeConfig>) => {
+        this.configs = response.content;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.hasNext = response.hasNext;
+        this.hasPrevious = response.hasPrevious;
         this.loading = false;
       },
       error: (err) => {
@@ -62,34 +88,27 @@ export class BatchSizeListComponent implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    let result = [...this.configs];
-
-    if (this.statusFilter === 'active') {
-      result = result.filter(c => c.isActive);
-    } else if (this.statusFilter === 'inactive') {
-      result = result.filter(c => !c.isActive);
-    }
-
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      result = result.filter(c =>
-        c.operationType?.toLowerCase().includes(term) ||
-        c.materialId?.toLowerCase().includes(term) ||
-        c.productSku?.toLowerCase().includes(term) ||
-        c.equipmentType?.toLowerCase().includes(term)
-      );
-    }
-
-    this.filteredConfigs = result;
+  onFilterStatusChange(status: string): void {
+    this.filterStatus = status;
+    this.page = 0;
+    this.loadPaged();
   }
 
-  onFilterChange(): void {
-    this.applyFilters();
+  onSearchChange(term: string): void {
+    this.searchTerm = term;
+    this.page = 0;
+    this.loadPaged();
   }
 
-  onSearch(): void {
-    this.applyFilters();
+  onPageChange(newPage: number): void {
+    this.page = newPage;
+    this.loadPaged();
+  }
+
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 0;
+    this.loadPaged();
   }
 
   create(): void {
@@ -104,7 +123,7 @@ export class BatchSizeListComponent implements OnInit {
     if (confirm(`Deactivate batch size config for ${config.operationType || 'generic'}?`)) {
       this.apiService.deleteBatchSizeConfig(config.configId).subscribe({
         next: () => {
-          this.loadConfigs();
+          this.loadPaged();
         },
         error: (err) => {
           alert(err.error?.message || 'Failed to delete configuration');

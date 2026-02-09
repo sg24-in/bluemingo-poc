@@ -254,4 +254,24 @@ describe('BatchNumberListComponent', () => {
     expect(component.loading).toBe(false);
     expect(component.items).toEqual([]);
   });
+
+  it('should render app-pagination when data is present', () => {
+    apiServiceSpy.getBatchNumberConfigsPaged.and.returnValue(of(mockPagedResponse));
+    fixture.detectChanges();
+
+    component.items = [
+      { configName: 'Test', operationType: 'FURNACE', prefix: 'B', dateFormat: 'yyyyMMdd', sequenceLength: 4, sequenceReset: 'DAILY', priority: 1, status: 'ACTIVE' } as any
+    ];
+    component.loading = false;
+    component.totalElements = 1;
+    component.totalPages = 1;
+    component.hasNext = false;
+    component.hasPrevious = false;
+    component.page = 0;
+    component.size = 20;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-pagination')).toBeTruthy();
+  });
 });

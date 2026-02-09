@@ -331,4 +331,19 @@ describe('AuditListComponent', () => {
       expect(component.error).toBe('Failed to load audit trail.');
     });
   });
+
+  it('should render app-pagination when there is data', () => {
+    component.entries = [{ action: 'CREATE', entityType: 'ORDER', entityId: '1', changedBy: 'admin', timestamp: '2026-01-01T00:00:00' } as any];
+    component.loading = false;
+    component.totalElements = 1;
+    component.totalPages = 1;
+    component.hasNext = false;
+    component.hasPrevious = false;
+    component.currentPage = 0;
+    component.pageSize = 20;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-pagination')).toBeTruthy();
+  });
 });

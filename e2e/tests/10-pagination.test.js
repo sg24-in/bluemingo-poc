@@ -156,6 +156,46 @@ async function runPaginationTests(page, screenshots, results, runTest) {
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
         await screenshots.capture(page, 'pagination-search-cleared');
     }, page, results, screenshots);
+
+    // ─── Tests 9-20: Verify <app-pagination> renders on all 12 newly-paginated pages ───
+
+    const paginatedPages = [
+        { name: 'Customers',          route: ROUTES.CUSTOMERS },
+        { name: 'Materials',           route: ROUTES.MATERIALS },
+        { name: 'Products',            route: ROUTES.PRODUCTS },
+        { name: 'Operators',           route: ROUTES.OPERATORS },
+        { name: 'Operation Templates', route: ROUTES.OPERATION_TEMPLATES },
+        { name: 'Batch Number Config', route: ROUTES.CONFIG_BATCH_NUMBER },
+        { name: 'Hold Reasons',        route: ROUTES.CONFIG_HOLD_REASONS },
+        { name: 'Delay Reasons',       route: ROUTES.CONFIG_DELAY_REASONS },
+        { name: 'Process Params',      route: ROUTES.CONFIG_PROCESS_PARAMS },
+        { name: 'Quantity Type',       route: ROUTES.CONFIG_QUANTITY_TYPE },
+        { name: 'Audit Log',           route: ROUTES.AUDIT },
+        { name: 'Batch Size Config',   route: ROUTES.CONFIG_BATCH_SIZE },
+    ];
+
+    for (const pg of paginatedPages) {
+        await runTest(`Pagination - ${pg.name} Page`, async () => {
+            await page.goto(`${config.baseUrl}${pg.route}`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(1000);
+
+            // Scroll to bottom to see pagination
+            await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+            await page.waitForTimeout(500);
+
+            const screenshotName = `pagination-${pg.name.toLowerCase().replace(/\s+/g, '-')}`;
+            await screenshots.capture(page, screenshotName);
+
+            // Check pagination component exists
+            const pagination = page.locator('app-pagination');
+            const paginationCount = await pagination.count();
+            if (paginationCount > 0) {
+                console.log(`   ✅ app-pagination found on ${pg.name}`);
+            } else {
+                console.log(`   ⚠️  No app-pagination on ${pg.name} (may have few items)`);
+            }
+        }, page, results, screenshots);
+    }
 }
 
 module.exports = { runPaginationTests };

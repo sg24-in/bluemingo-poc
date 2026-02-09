@@ -53,6 +53,13 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // Report & Export Libraries
+    implementation 'com.github.librepdf:openpdf:2.0.3'          // PDF generation
+    implementation 'org.jfree:jfreechart:1.5.5'                  // Chart generation
+    implementation 'org.apache.poi:poi:5.2.5'                    // Excel export (xls)
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'              // Excel export (xlsx)
+    implementation 'org.openpnp:opencv:4.9.0-0'                  // OpenCV image processing
+
     // DevTools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

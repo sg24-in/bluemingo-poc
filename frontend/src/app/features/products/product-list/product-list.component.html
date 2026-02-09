@@ -77,29 +77,14 @@
       </div>
     </ng-template>
 
-    <div class="pagination-controls" *ngIf="products.length > 0">
-      <div class="page-info">
-        Showing {{ page * size + 1 }} - {{ page * size + products.length }} of {{ totalElements }}
-      </div>
-      <div class="page-buttons">
-        <button class="btn btn-sm" (click)="onPageChange(page - 1)" [disabled]="!hasPrevious">
-          Previous
-        </button>
-        <span class="page-number">Page {{ page + 1 }} of {{ totalPages }}</span>
-        <button class="btn btn-sm" (click)="onPageChange(page + 1)" [disabled]="!hasNext">
-          Next
-        </button>
-      </div>
-      <div class="page-size">
-        <label for="page-size">Show:</label>
-        <select id="page-size" [(ngModel)]="size" (ngModelChange)="onSizeChange($event)">
-          <option [ngValue]="10">10</option>
-          <option [ngValue]="20">20</option>
-          <option [ngValue]="50">50</option>
-          <option [ngValue]="100">100</option>
-        </select>
-      </div>
-    </div>
+    <app-pagination
+      *ngIf="products.length > 0"
+      [page]="page" [size]="size"
+      [totalElements]="totalElements" [totalPages]="totalPages"
+      [hasNext]="hasNext" [hasPrevious]="hasPrevious"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-pagination>
   </div>
 
   <ng-template #loadingTpl>

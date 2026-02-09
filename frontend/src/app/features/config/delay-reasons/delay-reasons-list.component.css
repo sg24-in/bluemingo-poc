@@ -4,13 +4,6 @@
 .status-badge.active { background: #d4edda; color: #155724; }
 .status-badge.inactive { background: #f8d7da; color: #721c24; }
 .actions { display: flex; gap: 8px; }
-.pagination-controls { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid #eee; }
-.page-info { color: #666; font-size: 14px; }
-.page-buttons { display: flex; align-items: center; gap: 12px; }
-.page-number { font-size: 14px; color: #333; }
-.page-size { display: flex; align-items: center; gap: 8px; }
-.page-size label { font-size: 14px; color: #666; }
-.page-size select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; }
 .empty-state { text-align: center; padding: 60px 20px; color: #666; }
 .empty-state p { margin-bottom: 20px; }
 .loading { text-align: center; padding: 60px 20px; color: #666; }

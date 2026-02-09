@@ -201,4 +201,21 @@ describe('CustomerListComponent', () => {
     component.loadCustomers();
     expect(component.loading).toBeFalse();
   });
+
+  it('should render app-pagination when data is present', () => {
+    component.customers = [
+      { customerCode: 'C1', customerName: 'Test', status: 'ACTIVE', contactPerson: '', email: '', phone: '', city: '' }
+    ];
+    component.loading = false;
+    component.totalElements = 1;
+    component.totalPages = 1;
+    component.hasNext = false;
+    component.hasPrevious = false;
+    component.page = 0;
+    component.size = 20;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-pagination')).toBeTruthy();
+  });
 });

@@ -25,7 +25,8 @@ export class AuditListComponent implements OnInit {
   pageSize = 20;
   totalElements = 0;
   totalPages = 0;
-  pageSizeOptions = [10, 20, 50, 100];
+  hasNext = false;
+  hasPrevious = false;
 
   // Detail panel
   selectedEntry: AuditEntry | null = null;
@@ -81,6 +82,8 @@ export class AuditListComponent implements OnInit {
         this.entries = response.content;
         this.totalElements = response.totalElements;
         this.totalPages = response.totalPages;
+        this.hasNext = this.currentPage < this.totalPages - 1;
+        this.hasPrevious = this.currentPage > 0;
         this.loading = false;
       },
       error: (err) => {
@@ -100,7 +103,8 @@ export class AuditListComponent implements OnInit {
     this.loadPaged();
   }
 
-  onPageSizeChange(): void {
+  onSizeChange(newSize: number): void {
+    this.pageSize = newSize;
     this.currentPage = 0;
     this.loadPaged();
   }
@@ -155,22 +159,4 @@ export class AuditListComponent implements OnInit {
     this.loadPaged();
   }
 
-  // Pagination helper getters
-  get startIndex(): number {
-    return this.currentPage * this.pageSize + 1;
-  }
-
-  get endIndex(): number {
-    return Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
-  }
-
-  get pages(): number[] {
-    const pages: number[] = [];
-    const start = Math.max(0, this.currentPage - 2);
-    const end = Math.min(this.totalPages, start + 5);
-    for (let i = start; i < end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
 }

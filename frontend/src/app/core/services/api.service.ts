@@ -1151,6 +1151,19 @@ export class ApiService {
     return this.http.get<any[]>(`${environment.apiUrl}/batch-size-config`);
   }
 
+  getBatchSizeConfigsPaged(request: any): Observable<PagedResponse<any>> {
+    let params = new HttpParams()
+      .set('page', request.page?.toString() || '0')
+      .set('size', request.size?.toString() || '20');
+    if (request.sortBy) params = params.set('sortBy', request.sortBy);
+    if (request.sortDirection) params = params.set('sortDirection', request.sortDirection);
+    if (request.search) params = params.set('search', request.search);
+    if (request.operationType) params = params.set('operationType', request.operationType);
+    if (request.materialId) params = params.set('materialId', request.materialId);
+    if (request.isActive !== undefined && request.isActive !== null) params = params.set('isActive', request.isActive.toString());
+    return this.http.get<PagedResponse<any>>(`${environment.apiUrl}/batch-size-config/paged`, { params });
+  }
+
   getActiveBatchSizeConfigs(): Observable<any[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/batch-size-config/active`);
   }

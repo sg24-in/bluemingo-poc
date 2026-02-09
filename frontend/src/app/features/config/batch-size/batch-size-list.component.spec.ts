@@ -256,4 +256,19 @@ describe('BatchSizeListComponent', () => {
       expect(filterGroup.classList.contains('filter-active')).toBeFalse();
     });
   });
+
+  it('should render app-pagination when there is data', () => {
+    component.configs = [{ configId: 1, maxBatchSize: 100, minBatchSize: 10, unit: 'T', allowPartialBatch: true, isActive: true, priority: 1 } as any];
+    component.loading = false;
+    component.totalElements = 1;
+    component.totalPages = 1;
+    component.hasNext = false;
+    component.hasPrevious = false;
+    component.page = 0;
+    component.size = 20;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-pagination')).toBeTruthy();
+  });
 });

@@ -297,4 +297,19 @@ describe('QuantityTypeListComponent', () => {
 
     expect(component.loading).toBe(false);
   });
+
+  it('should render app-pagination when there is data', () => {
+    component.items = [{ configName: 'Test', quantityType: 'WEIGHT', decimalPrecision: 2, roundingRule: 'HALF_UP', status: 'ACTIVE' } as any];
+    component.loading = false;
+    component.totalElements = 1;
+    component.totalPages = 1;
+    component.hasNext = false;
+    component.hasPrevious = false;
+    component.page = 0;
+    component.size = 20;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-pagination')).toBeTruthy();
+  });
 });

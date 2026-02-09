@@ -1,11 +1,15 @@
 package com.mes.production.controller;
 
+import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.entity.BatchSizeConfig;
 import com.mes.production.repository.BatchSizeConfigRepository;
 import com.mes.production.service.AuditService;
 import com.mes.production.service.BatchSizeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +48,34 @@ public class BatchSizeConfigController {
     public ResponseEntity<List<BatchSizeConfig>> getActive() {
         List<BatchSizeConfig> configs = batchSizeService.getAllActiveConfigs();
         return ResponseEntity.ok(configs);
+    }
+
+    /**
+     * Get paginated batch size configurations with filters
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<BatchSizeConfig>> getPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String operationType,
+            @RequestParam(required = false) String materialId,
+            @RequestParam(required = false) Boolean isActive) {
+
+        log.info("GET /api/batch-size-config/paged - page={}, size={}, search={}", page, size, search);
+
+        String sortField = sortBy != null ? sortBy : "configId";
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
+
+        String searchPattern = search != null ? "%" + search.toLowerCase() + "%" : null;
+
+        Page<BatchSizeConfig> result = repository.findByFilters(
+                operationType, materialId, isActive, searchPattern, pageRequest);
+
+        return ResponseEntity.ok(PagedResponseDTO.fromPage(result, sortField, sortDirection, search));
     }
 
     /**

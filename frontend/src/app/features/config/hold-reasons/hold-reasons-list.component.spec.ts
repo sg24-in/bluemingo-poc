@@ -155,4 +155,19 @@ describe('HoldReasonsListComponent', () => {
     component.create();
     expect(component['router'].navigate).toHaveBeenCalledWith(['/manage/config/hold-reasons/new']);
   });
+
+  it('should render app-pagination when there is data', () => {
+    component.items = [{ reasonCode: 'HR1', reasonDescription: 'Test', status: 'ACTIVE', applicableTo: 'ORDER' } as any];
+    component.loading = false;
+    component.totalElements = 1;
+    component.totalPages = 1;
+    component.hasNext = false;
+    component.hasPrevious = false;
+    component.page = 0;
+    component.size = 20;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-pagination')).toBeTruthy();
+  });
 });

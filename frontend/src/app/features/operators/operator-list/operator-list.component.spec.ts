@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 
 import { OperatorListComponent } from './operator-list.component';
 import { ApiService } from '../../../core/services/api.service';
+import { SharedModule } from '../../../shared/shared.module';
 
 describe('OperatorListComponent', () => {
   let component: OperatorListComponent;
@@ -34,7 +35,7 @@ describe('OperatorListComponent', () => {
     spy.getOperatorsPaged.and.returnValue(of(mockPagedResponse));
 
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, RouterTestingModule, FormsModule],
+      imports: [HttpClientTestingModule, RouterTestingModule, FormsModule, SharedModule],
       declarations: [OperatorListComponent],
       providers: [{ provide: ApiService, useValue: spy }]
     }).compileComponents();
@@ -130,5 +131,22 @@ describe('OperatorListComponent', () => {
 
     expect(component.deleteError).toBe('Cannot delete');
     expect(component.deleteLoading).toBeFalse();
+  });
+
+  it('should render app-pagination when data is present', () => {
+    component.operators = [
+      { operatorCode: 'OP1', name: 'Test', department: 'Dept', shift: 'A', status: 'ACTIVE' }
+    ] as any[];
+    component.loading = false;
+    component.totalElements = 1;
+    component.totalPages = 1;
+    component.hasNext = false;
+    component.hasPrevious = false;
+    component.page = 0;
+    component.size = 20;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-pagination')).toBeTruthy();
   });
 });

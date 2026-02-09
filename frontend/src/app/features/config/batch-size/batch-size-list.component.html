@@ -8,17 +8,18 @@
 
   <!-- Filters -->
   <div class="filters">
-    <div class="filter-group" [class.filter-active]="statusFilter">
+    <div class="filter-group" [class.filter-active]="filterStatus && filterStatus !== 'all'">
       <label for="status">Status:</label>
-      <select id="status" [(ngModel)]="statusFilter" (change)="onFilterChange()" [class.filter-active]="statusFilter">
-        <option value="">All</option>
+      <select id="status" [(ngModel)]="filterStatus" (change)="onFilterStatusChange(filterStatus)"
+              [class.filter-active]="filterStatus && filterStatus !== 'all'">
+        <option value="all">All</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group search-group">
       <label for="search">Search:</label>
-      <input type="text" id="search" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search...">
+      <input type="text" id="search" [(ngModel)]="searchTerm" (input)="onSearchChange(searchTerm)" placeholder="Search...">
     </div>
   </div>
 
@@ -30,7 +31,7 @@
 
   <!-- Table -->
   <div *ngIf="!loading && !error" class="table-container">
-    <table class="data-table">
+    <table class="data-table" *ngIf="configs.length > 0; else emptyTpl">
       <thead>
         <tr>
           <th>ID</th>
@@ -46,7 +47,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let config of filteredConfigs">
+        <tr *ngFor="let config of configs">
           <td>{{ config.configId }}</td>
           <td>{{ formatScope(config) }}</td>
           <td>{{ config.minBatchSize | number:'1.2-4' }}</td>
@@ -73,10 +74,19 @@
             </button>
           </td>
         </tr>
-        <tr *ngIf="filteredConfigs.length === 0">
-          <td colspan="10" class="no-data">No configurations found</td>
-        </tr>
       </tbody>
     </table>
+    <ng-template #emptyTpl>
+      <div class="no-data">No configurations found</div>
+    </ng-template>
+
+    <app-pagination
+      *ngIf="configs.length > 0"
+      [page]="page" [size]="size"
+      [totalElements]="totalElements" [totalPages]="totalPages"
+      [hasNext]="hasNext" [hasPrevious]="hasPrevious"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-pagination>
   </div>
 </div>
