@@ -155,17 +155,34 @@
 
 ## Removed File Count
 
-| Category | Files Removed |
-|----------|---------------|
-| Frontend Modules | 17 / 17 |
-| Frontend Components | 3 / 3 |
-| Backend Controllers | 19 / 19 |
-| Backend Services | 27 / 27 |
-| Backend Entities | pending |
-| Backend Repositories | pending |
-| Backend DTOs | pending |
-| E2E Tests | 36 / 36 |
-| **TOTAL** | **~102 / 167** |
+| Category | Files Removed | Notes |
+|----------|---------------|-------|
+| Frontend Modules | 17 | Phase 1 |
+| Frontend Components | 3 | Phase 1 |
+| Backend Controllers | 19 | Phase 1 |
+| Backend Services | 27 + 22 = 49 | Phase 1 (27) + orphan cleanup (22) |
+| Backend Entities | 21 | Orphan cleanup + JPA fixes |
+| Backend Repositories | 12 | Orphan cleanup |
+| Backend DTOs | 8 + 6 = 14 | Phase 1 (8) + orphan cleanup (6) |
+| Backend Tests | 4 + 20 = 24 | Service tests for removed services |
+| Backend Config | 1 | application-reset.yml |
+| E2E Tests | 36 | Phase 1 |
+| **TOTAL** | **~196 files, 20,780 lines** | |
+
+### Remaining Backend Files (93 Java + 31 Tests = 124)
+
+| Category | Count | Files |
+|----------|-------|-------|
+| Controllers | 7 | Auth, Dashboard, Order, Production, Batch, MasterData, Operation |
+| Services | 13 | Auth, Dashboard, Order, Production, Batch, Operation, Audit, BatchNumber, BatchSize, EquipmentUsage, InventoryMovement, InventoryStateValidator, ProcessParameter |
+| Service/Patch | 3 | PatchRunner, PatchService, TestPatchRunner |
+| Repositories | 19 | All needed for POC controllers + support services |
+| Entities | 23 | Core domain model for POC workflows |
+| DTOs | 19 | API request/response objects |
+| Security | 3 | JWT auth chain |
+| Config | 4 | Security, exception handler, test configs |
+| Root | 2 | Application, ServletInitializer |
+| Tests | 31 | Controller + service tests for kept code |
 
 ---
 
@@ -339,8 +356,12 @@
 **Pending Cleanup:**
 - [x] Remove unused frontend models (10 files) - SKIPPED: Models kept for type safety
 - [x] Clean up api.service.ts imports - DONE: 621 lines removed (44% reduction)
-- [ ] Remove unused backend DTOs (8 files) - DEFERRED: Low priority
-- [ ] Remove unused backend services (23 files) - NOT RECOMMENDED: Transitive dependencies
+- [x] Remove unused backend DTOs (14 files) - DONE
+- [x] Remove unused backend services (26 files) - DONE
+- [x] Remove unused backend repositories (12 files) - DONE
+- [x] Remove unused backend entities (21 files) - DONE + 2 JPA fixes
+- [x] Remove unused backend tests (24 files) - DONE
+- [x] Remove unused config (1 file) - DONE
 
 ---
 
@@ -369,6 +390,88 @@ Services are kept intact because:
 4. Controllers already reduced to 7 essential ones in Phase 1
 
 **E2E Tests:** 37/38 passed (97%)
+
+---
+
+### 2026-02-09 - Unused Backend DTO & Service Removal
+
+**Verification Analysis:**
+
+| # | DTO | Referenced Outside Self | Verdict |
+|---|-----|----------------------|---------|
+| 1 | `UserDTO.java` | Only `UserService.java` (no controller) | REMOVED |
+| 2 | `AuditDTO.java` | Self only | REMOVED |
+| 3 | `EquipmentUsageDTO.java` | Self only | REMOVED |
+| 4 | `InventoryMovementDTO.java` | Self only | REMOVED |
+| 5 | `BatchAllocationDTO.java` | Self only | REMOVED |
+| 6 | `ProductDTO.java` | Only `ProductService.java` (no controller) | REMOVED |
+| 7 | `CustomerDTO.java` | Only `CustomerService.java` (no controller) | REMOVED |
+| 8 | `MaterialDTO.java` | Only `MaterialService.java` (no controller) | REMOVED |
+
+**Cascading Removals (orphaned by DTO deletion):**
+
+| File | Reason |
+|------|--------|
+| `service/UserService.java` | Imported `UserDTO` (no controller references it) |
+| `service/ProductService.java` | Imported `ProductDTO` (no controller references it) |
+| `service/CustomerService.java` | Imported `CustomerDTO` (no controller references it) |
+| `service/MaterialService.java` | Imported `MaterialDTO` (no controller references it) |
+| `test/service/UserServiceTest.java` | Tests for removed service |
+| `test/service/ProductServiceTest.java` | Tests for removed service |
+| `test/service/CustomerServiceTest.java` | Tests for removed service |
+| `test/service/MaterialServiceTest.java` | Tests for removed service |
+
+**Total Removed:** 8 DTOs + 4 services + 4 test files = **16 files**
+
+**Build Verification:** Backend compileJava + compileTestJava both SUCCESSFUL
+
+---
+
+### 2026-02-09 - Full Orphan Cleanup (DTOs, Services, Repos, Entities, Tests)
+
+**Method:** Traced transitive dependencies from 7 POC controllers → services → repos → entities. Removed everything not in the dependency chain.
+
+**Batch 1: Orphaned DTOs (6 removed)**
+- `BomDTO.java`, `RoutingDTO.java`, `BatchNumberConfigDTO.java`
+- `OperationTemplateDTO.java`, `QuantityTypeConfigDTO.java`, `HoldDTO.java`
+
+**Batch 2: Orphaned Services (22 removed)**
+- `BomService`, `BomValidationService`, `OperatorService`, `EquipmentService`
+- `EquipmentCategoryService`, `ProcessService`, `RoutingService`, `HoldService`
+- `InventoryService`, `InventoryFormService`, `OperationTemplateService`
+- `OperationInstantiationService`, `BatchAllocationService`, `BatchNumberConfigService`
+- `DelayReasonService`, `HoldReasonService`, `DatabaseResetService`
+- `QuantityTypeConfigService`, `FieldChangeAuditService`, `UnitConversionService`
+- `ReceiveMaterialService`, `ProcessParametersConfigService`
+
+**Batch 3: Orphaned Repositories (12 removed)**
+- `BatchNumberConfigRepository`, `BatchOrderAllocationRepository`, `BomRepository`
+- `CustomerRepository`, `DelayReasonRepository`, `HoldReasonRepository`
+- `MaterialRepository`, `OperationTemplateRepository`, `ProcessParametersConfigRepository`
+- `ProductRepository`, `QuantityTypeConfigRepository`, `RoutingRepository`
+
+**Batch 4: Orphaned Entities (21 removed)**
+- `AttributeDefinition`, `BatchNumberConfig`, `BatchOrderAllocation`, `BillOfMaterial`
+- `ConsumedMaterial`, `Customer`, `Department`, `Location`, `Material`, `MaterialGroup`
+- `OperationTemplate`, `OperationType`, `ProcessParameterValue`, `ProducedOutput`
+- `Product`, `ProductCategory`, `ProductGroup`, `QuantityTypeConfig`
+- `Routing`, `Shift`, `UnitOfMeasure`
+
+**JPA Relationship Fixes (2 entities modified):**
+- `Order.java` — Replaced `@ManyToOne Customer customer` with `Long customerRefId`
+- `RoutingStep.java` — Replaced `@ManyToOne Routing/OperationTemplate` with `Long routingId/operationTemplateId`, simplified helper methods
+
+**Batch 5: Orphaned Test Files (20 removed)**
+- All `*ServiceTest.java` and `*ComprehensiveTest.java` for removed services
+
+**Batch 6: Config cleanup (1 removed)**
+- `application-reset.yml` — Reset profile for deleted DatabaseResetService
+
+**Total this session:** 6 DTOs + 22 services + 12 repos + 21 entities + 20 tests + 1 config = **82 files, ~20,780 lines**
+
+**Cumulative total (including earlier 16):** **98 files removed in orphan cleanup**
+
+**Build Verification:** compileJava + compileTestJava both SUCCESSFUL
 
 ---
 

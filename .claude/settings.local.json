@@ -168,7 +168,15 @@
       "Bash(git push:*)",
       "Bash(./gradlew jacocoTestReport:*)",
       "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat test jacocoTestReport:*)",
-      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat:*)"
+      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat:*)",
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\UserDTO.java\")",
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\AuditDTO.java\")",
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\EquipmentUsageDTO.java\")",
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\InventoryMovementDTO.java\")",
+      "Bash(del:*)",
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\ProductDTO.java\")",
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\CustomerDTO.java\")",
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\MaterialDTO.java\")"
     ]
   }
 }

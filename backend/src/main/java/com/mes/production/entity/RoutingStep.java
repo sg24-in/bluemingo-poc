@@ -40,14 +40,11 @@ public class RoutingStep {
     @Column(name = "routing_step_id")
     private Long routingStepId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "routing_id", nullable = false)
-    private Routing routing;
+    @Column(name = "routing_id", nullable = false)
+    private Long routingId;
 
-    // Design-time reference to OperationTemplate (NEW)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "operation_template_id")
-    private OperationTemplate operationTemplate;
+    @Column(name = "operation_template_id")
+    private Long operationTemplateId;
 
     @Column(name = "sequence_number", nullable = false)
     private Integer sequenceNumber;
@@ -122,36 +119,15 @@ public class RoutingStep {
         updatedOn = LocalDateTime.now();
     }
 
-    /**
-     * Get the effective operation name - from OperationTemplate if available,
-     * otherwise from legacy fields.
-     */
     public String getEffectiveOperationName() {
-        if (operationTemplate != null) {
-            return operationTemplate.getOperationName();
-        }
         return operationName;
     }
 
-    /**
-     * Get the effective operation type - from OperationTemplate if available,
-     * otherwise from legacy fields.
-     */
     public String getEffectiveOperationType() {
-        if (operationTemplate != null) {
-            return operationTemplate.getOperationType();
-        }
         return operationType;
     }
 
-    /**
-     * Get the effective operation code - from OperationTemplate if available,
-     * otherwise from legacy fields.
-     */
     public String getEffectiveOperationCode() {
-        if (operationTemplate != null) {
-            return operationTemplate.getOperationCode();
-        }
         return operationCode;
     }
 }
