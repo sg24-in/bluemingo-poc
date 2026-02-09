@@ -3,7 +3,7 @@
 **Purpose:** Permanent record of all development sessions for traceability and knowledge continuity.
 
 **Created:** 2026-02-07
-**Last Updated:** 2026-02-08
+**Last Updated:** 2026-02-09
 
 ---
 
@@ -11,12 +11,66 @@
 
 | Date | Focus Areas | Key Outcomes |
 |------|-------------|--------------|
+| 2026-02-09 | Demo Data Enhancement, Bug Fixes | 30 multi-stage orders, 3 new patches (004-006), production confirm UX fixes, schema governance |
 | 2026-02-08 | Audit Pagination, Demo Data Fixes | Paginated audit API, 29 frontend tests, 8 E2E tests, patch 045 |
 | 2026-02-08 | P14/P15 Modal Components, Test Fixes | MaterialSelectionModal, ApplyHoldModal, 30+ tests |
 | 2026-02-07 | Phase 8A-8E (Batch Management), Phase 9F (Routing Tests) | Batch immutability complete, 65+ batch tests, 6 new E2E tests |
 | 2026-02-06 | MES Data Model Gap Analysis, Dashboard Charts, Config Entities | 5 new patches, 11 new entities, Chart race condition fixed |
 | 2026-02-05 | BOM CRUD Backend, E2E CRUD Tests | Full BOM tree API, 22 E2E tests |
 | 2026-02-04 | Architecture Refactoring, Routing Module | Hash routing, admin layout, routing CRUD |
+
+---
+
+## Session: 2026-02-09 (Demo Data Enhancement & Production Confirm Fixes)
+
+### Session Overview
+**Primary Focus:** Bug fixes, production confirm UX, demo data expansion with multi-stage orders
+**Key Accomplishments:**
+- Fixed batch number preview 400 error (missing material_id column)
+- Fixed production confirm UX (selected materials placement, Apply Suggestions button)
+- Added operations for 5 line items that had none defined
+- Generated and added 30 new multi-stage orders (57 line items, 332 operations)
+- Established schema change governance (documents/schema-changes.md)
+
+### Bug Fixes - COMPLETED
+**Files Modified:**
+- `backend/src/main/resources/patches/004_batch_number_config_material_id.sql` - NEW: Migration for material_id column
+- `backend/src/main/resources/demo/schema.sql` - Added material_id to batch_number_config
+- `backend/src/main/resources/patches/001_schema.sql` - Added material_id to batch_number_config
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.html` - Moved Selected Materials above Available Inventory, enabled Apply Suggestions
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.ts` - Added isMaterialSelected() method
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.spec.ts` - Added unit tests
+- `e2e/tests/04-production.test.js` - Added E2E tests for production confirm fixes
+
+### Demo Data Expansion - COMPLETED
+**Files Modified:**
+- `backend/src/main/resources/patches/005_missing_operations.sql` - NEW: 33 operations for 5 line items
+- `backend/src/main/resources/patches/006_additional_orders_multi_stage.sql` - NEW: 30 orders, 57 line items, 332 operations (PostgreSQL)
+- `backend/src/main/resources/demo/data.sql` - Added all new demo data (H2)
+- `e2e/generate-orders.js` - NEW: Reproducible order generator (seed=42)
+- `e2e/check-maxids.js` - NEW: API-based data verification
+
+### Schema Change Governance - COMPLETED
+**Files Created:**
+- `documents/schema-changes.md` - Formal change log (SC-001 through SC-004)
+
+### Implementation Decisions
+- Multi-stage orders use multiple line items per order (each line item has one process)
+- PostgreSQL patch converts CANCELLED line items to CREATED (constraint doesn't allow CANCELLED)
+- Generator uses seeded random (seed=42) for reproducible output
+- Patch 006 uses INSERT...SELECT...WHERE NOT EXISTS for idempotency
+
+### Test Status Summary
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Demo Mode | 45 orders loaded | PASS |
+| Multi-stage | 28 orders with 2-4 line items | PASS |
+| Operations | IDs 1-425 loaded | PASS |
+
+### Pending Work
+- E2E tests for all frontend features
+- Entity-level comprehensive data gap analysis
+- Demo data documentation document
 
 ---
 

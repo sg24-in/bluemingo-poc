@@ -1,11 +1,64 @@
 # MES POC - Active Tasks & Session Log
 
 **Last Updated:** 2026-02-09
-**Session Status:** Active - Test Coverage & Obfuscation Complete
+**Session Status:** Active - Demo Data Enhancement & Bug Fixes Complete
 
 ---
 
-## Latest Session Changes (2026-02-09 - Test Coverage & ProGuard Obfuscation)
+## Latest Session Changes (2026-02-09 - Demo Data Enhancement & Production Confirm Fixes)
+
+### Bug Fixes ✅
+
+1. **Batch Number Preview 400 Error (SC-001)**
+   - Missing `material_id` column in `batch_number_config` table
+   - Created patch 004: `patches/004_batch_number_config_material_id.sql`
+   - Updated `demo/schema.sql` and `patches/001_schema.sql`
+
+2. **Production Confirm UX Fixes**
+   - Moved "Selected Materials" section above "Available Inventory" for better workflow
+   - Removed disabled restriction on "Apply Suggestions" button (was requiring material pre-selection)
+   - Added `isMaterialSelected()` visual feedback method
+   - Added E2E tests for fixes (`e2e/tests/04-production.test.js`)
+   - Added unit tests (`production-confirm.component.spec.ts`)
+
+### Demo Data Enhancement ✅
+
+3. **Missing Operations for 5 Line Items (SC-003)**
+   - Found 5 line items (IDs 18-22) with no operations defined
+   - Created patch 005: `patches/005_missing_operations.sql` (33 operations)
+   - Updated `demo/data.sql`
+
+4. **30 New Multi-Stage Orders (SC-004)**
+   - Created `e2e/generate-orders.js` - Reproducible order generator (seed=42)
+   - Generated 30 orders (IDs 16-45), 57 line items, 332 operations
+   - Multi-stage types: HR→CR (5), Billet→Rebar (4), Full Pipeline (2), Triple Process (1), 4-Stage (1), Mixed (4), Single (11)
+   - Status distribution: CREATED 10, IN_PROGRESS 8, COMPLETED 6, ON_HOLD 3, CANCELLED 2, BLOCKED 1
+   - Created patch 006: `patches/006_additional_orders_multi_stage.sql` (PostgreSQL)
+   - Updated `demo/data.sql` (H2)
+
+### Schema Change Governance ✅
+
+5. **Created `documents/schema-changes.md`**
+   - Formal change log with Change IDs (SC-001 through SC-004)
+   - Each entry includes: reason, exact SQL, impact analysis, rollback SQL, files modified
+
+### Tools Created ✅
+
+6. **`e2e/check-maxids.js`** - API-based data verification tool
+7. **`e2e/generate-orders.js`** - Reproducible multi-stage order generator
+
+### Verification ✅
+- Backend restarted in demo mode
+- All 45 orders loaded successfully
+- 28 multi-stage orders with 2-4 line items each
+- Operation IDs span 1-425
+
+### Commit
+- `316595e` - Fix batch preview, production confirm UX, and add 30 multi-stage orders
+
+---
+
+## Previous Session Changes (2026-02-09 - Test Coverage & ProGuard Obfuscation)
 
 ### POC Endpoint Cleanup ✅
 Removed unused backend endpoints that have no corresponding UI:
