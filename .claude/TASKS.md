@@ -1,11 +1,86 @@
 # MES POC - Active Tasks & Session Log
 
-**Last Updated:** 2026-02-08
-**Session Status:** Active - POC Delivery Package Complete
+**Last Updated:** 2026-02-09
+**Session Status:** Active - Applying POC Bug Fixes to Main Branch
 
 ---
 
-## Latest Session Changes (2026-02-08 - POC Demo Document & PDF Generation)
+## Apply POC Bug Fixes to Main Branch
+
+**Reference:** `documents/MES-POC-Bug-Fixes.md`
+
+### CRITICAL Priority
+
+| # | Task | Status | Files to Change |
+|---|------|--------|----------------|
+| BF-01 | Fix findNextOperation scoped by orderLineId instead of processId | PENDING | `OperationRepository.java`, `ProductionService.java` |
+| BF-02 | Fix ProductionConfirmation CLOB columnDefinition + create JSONB→TEXT patch | PENDING | `ProductionConfirmation.java`, new patch `046_fix_jsonb_to_text.sql` |
+| BF-03 | Add 20+ missing DB columns (entity-schema mismatch) | PENDING | New patch `047_add_missing_columns.sql` |
+| BF-04 | Fix CHECK constraints (CANCELLED, READY, CONSUME, PENDING_REVIEW) | PENDING | New patch `048_fix_check_constraints.sql` |
+| BF-05 | Create missing join tables (confirmation_equipment, confirmation_operators) | PENDING | New patch (can combine with BF-03 or BF-04) |
+
+### HIGH Priority
+
+| # | Task | Status | Files to Change |
+|---|------|--------|----------------|
+| BF-06 | Fix customer/product dropdowns empty on order edit (async race condition) | PENDING | `order-form.component.html` |
+| BF-07 | Fix equipment/operator name mapping in production confirm | PENDING | `production-confirm.component.ts` |
+| BF-08 | Add NoResourceFoundException handler (500→404 for missing static files) | PENDING | `GlobalExceptionHandler.java` |
+
+### MEDIUM Priority
+
+| # | Task | Status | Files to Change |
+|---|------|--------|----------------|
+| BF-09 | Production confirm UX: move Selected Materials above Available Inventory | PENDING | `production-confirm.component.html` |
+| BF-10 | Production confirm UX: enable Apply Suggestions, add isMaterialSelected feedback | PENDING | `production-confirm.component.html`, `.ts` |
+| BF-11 | Process flow chart: vertical row-based layout for multi-stage orders | PENDING | `order-detail.component.ts`, `.css` |
+
+### LOW Priority
+
+| # | Task | Status | Files to Change |
+|---|------|--------|----------------|
+| BF-12 | Hide edit button for COMPLETED/CANCELLED orders | PENDING | `order-detail.component.html` |
+| BF-13 | Fix E2E batch search test pattern | PENDING | `06-batches.test.js` |
+
+### DO NOT APPLY (POC-Specific)
+
+| # | Change | Reason |
+|---|--------|--------|
+| -- | Database URL `mes_poc_dev` | Main uses `mes_production` |
+| -- | RoutingStep/Order entity ManyToOne → Long | Main still has full entity relationships |
+| -- | RoutingStepRepository query changes | Follows from entity change above |
+| -- | Dashboard grid layout (3 metrics, 2 charts) | Main has more metrics/charts |
+| -- | API URL / proxy config | Main has different setup |
+| -- | Schema consolidation (45 patches → 6) | Main uses incremental patches |
+
+### EVALUATE Before Applying
+
+| # | Change | Notes |
+|---|--------|-------|
+| -- | Seed data (30 orders, BOM trees, confirmations, etc.) | Main may have different data; create separate seed patch |
+| -- | Frontend proxy.conf.json | May be useful for main dev mode too |
+
+---
+
+## Latest Session Changes (2026-02-09 - POC Bug Fix Analysis)
+
+### Analysis Completed
+- Compared all POC branch commits against main
+- Identified 13 bug fixes (5 CRITICAL, 3 HIGH, 3 MEDIUM, 2 LOW)
+- Documented in `documents/MES-POC-Bug-Fixes.md`
+- Created task list above for applying fixes to main branch
+
+### Files Created
+- `documents/MES-POC-Bug-Fixes.md` - Comprehensive analysis with exact code diffs
+
+### Patches Fixed on POC (this session)
+- `005_missing_seed_data.sql` - Changed `ACTIVE` → `LOGGED` for operation_equipment_usage status
+- `006_fix_jsonb_to_text.sql` - Created: ALTER COLUMN JSONB → TEXT
+- `ProductionConfirmation.java` - Removed `columnDefinition = "CLOB"`
+
+---
+
+## Previous Session Changes (2026-02-08 - POC Demo Document & PDF Generation)
 
 ### POC Demo Document Creation ✅
 
