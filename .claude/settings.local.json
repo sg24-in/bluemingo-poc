@@ -182,7 +182,8 @@
       "Bash(git log:*)",
       "Bash(popd:*)",
       "Bash(npx md-to-pdf:*)",
-      "Bash(jar tf:*)"
+      "Bash(jar tf:*)",
+      "Bash(./gradlew bootWar:*)"
     ]
   }
 }

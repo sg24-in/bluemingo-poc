@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS orders (
     order_number VARCHAR(50) UNIQUE,
     customer_id VARCHAR(100),
     customer_name VARCHAR(255),
+    customer_ref_id BIGINT,
     order_date DATE NOT NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
     notes TEXT,
@@ -176,11 +177,12 @@ CREATE TABLE IF NOT EXISTS order_line_items (
     unit VARCHAR(20) NOT NULL DEFAULT 'T',
     delivery_date DATE,
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
+    process_id BIGINT,
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
     updated_on TIMESTAMP,
     updated_by VARCHAR(100),
-    CONSTRAINT chk_line_status CHECK (status IN ('CREATED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'BLOCKED', 'ON_HOLD'))
+    CONSTRAINT chk_line_status CHECK (status IN ('CREATED', 'READY', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'BLOCKED', 'ON_HOLD'))
 );
 
 -- =====================================================
@@ -296,6 +298,9 @@ CREATE TABLE IF NOT EXISTS operations (
     operation_type VARCHAR(50),
     sequence_number INTEGER NOT NULL DEFAULT 1,
     target_qty DECIMAL(15,4),
+    confirmed_qty DECIMAL(15,4),
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
     planned_start TIMESTAMP,
     planned_end TIMESTAMP,
     actual_start TIMESTAMP,
@@ -340,8 +345,8 @@ CREATE TABLE IF NOT EXISTS production_confirmation (
     delay_reason VARCHAR(100),
     equipment_id BIGINT REFERENCES equipment(equipment_id),
     operator_id BIGINT REFERENCES operators(operator_id),
-    process_parameters JSONB,
-    rm_consumed JSONB,
+    process_parameters TEXT,
+    rm_consumed TEXT,
     is_partial BOOLEAN DEFAULT FALSE,
     status VARCHAR(30) NOT NULL DEFAULT 'CONFIRMED',
     rejection_reason VARCHAR(500),
@@ -352,7 +357,21 @@ CREATE TABLE IF NOT EXISTS production_confirmation (
     created_by VARCHAR(100),
     updated_on TIMESTAMP,
     updated_by VARCHAR(100),
-    CONSTRAINT chk_confirm_status CHECK (status IN ('CONFIRMED', 'PARTIALLY_CONFIRMED', 'REJECTED'))
+    CONSTRAINT chk_confirm_status CHECK (status IN ('CONFIRMED', 'PARTIALLY_CONFIRMED', 'REJECTED', 'PENDING_REVIEW'))
+);
+
+-- Production Confirmation - Equipment Join Table (ManyToMany)
+CREATE TABLE IF NOT EXISTS confirmation_equipment (
+    confirmation_id BIGINT NOT NULL REFERENCES production_confirmation(confirmation_id),
+    equipment_id BIGINT NOT NULL REFERENCES equipment(equipment_id),
+    PRIMARY KEY (confirmation_id, equipment_id)
+);
+
+-- Production Confirmation - Operators Join Table (ManyToMany)
+CREATE TABLE IF NOT EXISTS confirmation_operators (
+    confirmation_id BIGINT NOT NULL REFERENCES production_confirmation(confirmation_id),
+    operator_id BIGINT NOT NULL REFERENCES operators(operator_id),
+    PRIMARY KEY (confirmation_id, operator_id)
 );
 
 -- =====================================================
@@ -371,7 +390,10 @@ CREATE TABLE IF NOT EXISTS batches (
     supplier_id VARCHAR(100),
     supplier_name VARCHAR(255),
     supplier_batch_number VARCHAR(100),
+    created_via VARCHAR(50),
     created_via_receipt BOOLEAN DEFAULT FALSE,
+    received_date DATE,
+    receipt_notes VARCHAR(500),
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',
     approved_by VARCHAR(100),
     approved_on TIMESTAMP,
@@ -417,10 +439,13 @@ CREATE TABLE IF NOT EXISTS batch_order_allocation (
 CREATE TABLE IF NOT EXISTS batch_quantity_adjustments (
     adjustment_id BIGSERIAL PRIMARY KEY,
     batch_id BIGINT NOT NULL REFERENCES batches(batch_id),
-    adjustment_qty DECIMAL(15,4) NOT NULL,
-    new_total_qty DECIMAL(15,4) NOT NULL,
-    reason VARCHAR(500) NOT NULL,
+    old_quantity DECIMAL(15,4) NOT NULL,
+    new_quantity DECIMAL(15,4) NOT NULL,
+    adjustment_reason VARCHAR(500) NOT NULL,
     adjustment_type VARCHAR(50),
+    adjustment_qty DECIMAL(15,4),
+    new_total_qty DECIMAL(15,4),
+    reason VARCHAR(500),
     reference_document VARCHAR(100),
     adjusted_by VARCHAR(100) NOT NULL,
     adjusted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -437,14 +462,26 @@ CREATE TABLE IF NOT EXISTS inventory (
     material_id VARCHAR(100) NOT NULL,
     material_name VARCHAR(255),
     inventory_type VARCHAR(20) NOT NULL,
+    inventory_form VARCHAR(20),
     state VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',
     quantity DECIMAL(15,4) NOT NULL,
     unit VARCHAR(20) NOT NULL DEFAULT 'T',
     batch_id BIGINT REFERENCES batches(batch_id),
     location VARCHAR(100),
+    current_temperature DECIMAL(10,2),
+    moisture_content DECIMAL(5,2),
+    density DECIMAL(10,4),
     block_reason VARCHAR(500),
     blocked_by VARCHAR(100),
     blocked_on TIMESTAMP,
+    scrap_reason VARCHAR(500),
+    scrapped_by VARCHAR(100),
+    scrapped_on TIMESTAMP,
+    reserved_for_order_id BIGINT,
+    reserved_for_operation_id BIGINT,
+    reserved_by VARCHAR(100),
+    reserved_on TIMESTAMP,
+    reserved_qty DECIMAL(15,4),
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
     updated_on TIMESTAMP,
@@ -594,12 +631,18 @@ CREATE TABLE IF NOT EXISTS batch_number_sequence (
 -- Batch Size Config
 CREATE TABLE IF NOT EXISTS batch_size_config (
     config_id BIGSERIAL PRIMARY KEY,
+    material_id VARCHAR(50),
     operation_type VARCHAR(50) NOT NULL,
+    equipment_type VARCHAR(50),
     product_sku VARCHAR(100),
     min_batch_size DECIMAL(15,4),
     max_batch_size DECIMAL(15,4),
+    preferred_batch_size DECIMAL(15,4),
     standard_batch_size DECIMAL(15,4),
     unit VARCHAR(20) DEFAULT 'T',
+    allow_partial_batch BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    priority INTEGER DEFAULT 0,
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
