@@ -39,8 +39,8 @@
 
 | # | Task | Status | Files to Change |
 |---|------|--------|----------------|
-| BF-12 | Hide edit button for COMPLETED/CANCELLED orders | PENDING | `order-detail.component.html` |
-| BF-13 | Fix E2E batch search test pattern | PENDING | `06-batches.test.js` |
+| BF-12 | Hide edit button for COMPLETED/CANCELLED orders | **DONE** | `order-detail.component.html` |
+| BF-13 | Fix E2E batch search test pattern | **DONE** | `06-batches.test.js` |
 
 ### DO NOT APPLY (POC-Specific)
 
@@ -112,6 +112,12 @@
   - Dynamic chart height: `Math.max(300, currentRow * 100 + 80)`
   - Label truncation: `overflow: 'truncate', ellipsis: '..', width: 85`
 - `order-detail.component.css` — Chart height: 280px → 450px, min-height: 300px
+
+### BF-12: Hide Edit Button for Terminal Orders — DONE
+- `order-detail.component.html` — Added `*ngIf="order.status !== 'COMPLETED' && order.status !== 'CANCELLED'"` to edit button
+
+### BF-13: Fix E2E Batch Search Pattern — DONE
+- `06-batches.test.js` — Changed search pattern from `'RM-BATCH'` to `'B-IM'`
 
 ### Build Verification
 - `gradlew compileJava` — BUILD SUCCESSFUL

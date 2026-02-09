@@ -562,4 +562,67 @@ describe('ProductionConfirmComponent', () => {
     expect(component.error).toBe('Failed to load operation details');
     expect(component.loading).toBeFalse();
   });
+
+  describe('Equipment/Operator Name Mapping - BF-07', () => {
+    it('should use name field when API returns name instead of equipmentName', () => {
+      const equipmentWithNameField = [
+        { equipmentId: 10, equipmentCode: 'EQ-010', name: 'Lathe Machine', status: 'AVAILABLE' },
+        { equipmentId: 11, equipmentCode: 'EQ-011', name: 'CNC Mill', status: 'AVAILABLE' }
+      ];
+      apiServiceSpy.getAvailableEquipment.and.returnValue(of(equipmentWithNameField as any));
+
+      component.loadMasterData();
+
+      expect(component.availableEquipment.length).toBe(2);
+      expect(component.availableEquipment[0].equipmentName).toBe('Lathe Machine');
+      expect(component.availableEquipment[1].equipmentName).toBe('CNC Mill');
+    });
+
+    it('should fallback to equipmentName when name field is missing', () => {
+      const equipmentWithLegacyField = [
+        { equipmentId: 10, equipmentCode: 'EQ-010', equipmentName: 'Legacy Furnace', status: 'AVAILABLE' }
+      ];
+      apiServiceSpy.getAvailableEquipment.and.returnValue(of(equipmentWithLegacyField as any));
+
+      component.loadMasterData();
+
+      expect(component.availableEquipment.length).toBe(1);
+      expect(component.availableEquipment[0].equipmentName).toBe('Legacy Furnace');
+    });
+
+    it('should use name field for operators when API returns name', () => {
+      const operatorsWithNameField = [
+        { operatorId: 10, operatorCode: 'OP-010', name: 'Alice Johnson', status: 'ACTIVE' },
+        { operatorId: 11, operatorCode: 'OP-011', name: 'Bob Williams', status: 'ACTIVE' }
+      ];
+      apiServiceSpy.getActiveOperators.and.returnValue(of(operatorsWithNameField as any));
+
+      component.loadMasterData();
+
+      expect(component.activeOperators.length).toBe(2);
+      expect(component.activeOperators[0].operatorName).toBe('Alice Johnson');
+      expect(component.activeOperators[1].operatorName).toBe('Bob Williams');
+    });
+  });
+
+  describe('Material Selection Feedback - BF-10', () => {
+    it('should return true from isMaterialSelected when inventory is already selected', () => {
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+
+      expect(component.isMaterialSelected({ inventoryId: 1 })).toBeTrue();
+    });
+
+    it('should return false from isMaterialSelected when inventory is not selected', () => {
+      expect(component.isMaterialSelected({ inventoryId: 999 })).toBeFalse();
+    });
+
+    it('should not add duplicate material when already selected', () => {
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+      component.addMaterial(inventory);
+
+      expect(component.selectedMaterials.length).toBe(1);
+    });
+  });
 });

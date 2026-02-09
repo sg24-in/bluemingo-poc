@@ -204,4 +204,183 @@ describe('OrderDetailComponent', () => {
 
     expect(component.loading).toBeFalse();
   });
+
+  describe('Edit Button Visibility - BF-12', () => {
+    it('should show edit button when order is IN_PROGRESS', () => {
+      // Default mockOrder has status IN_PROGRESS
+      const editBtn = fixture.nativeElement.querySelector('.btn-primary');
+      expect(editBtn).toBeTruthy();
+      expect(editBtn.textContent).toContain('Edit Order');
+    });
+
+    it('should hide edit button when order is COMPLETED', () => {
+      const completedOrder = { ...mockOrder, status: 'COMPLETED' };
+      apiServiceSpy.getOrderById.and.returnValue(of(completedOrder as any));
+      component.loadOrder();
+      fixture.detectChanges();
+
+      const buttons = fixture.nativeElement.querySelectorAll('.btn-primary');
+      const editBtn = Array.from(buttons).find((btn: any) => btn.textContent.includes('Edit Order'));
+      expect(editBtn).toBeFalsy();
+    });
+
+    it('should hide edit button when order is CANCELLED', () => {
+      const cancelledOrder = { ...mockOrder, status: 'CANCELLED' };
+      apiServiceSpy.getOrderById.and.returnValue(of(cancelledOrder as any));
+      component.loadOrder();
+      fixture.detectChanges();
+
+      const buttons = fixture.nativeElement.querySelectorAll('.btn-primary');
+      const editBtn = Array.from(buttons).find((btn: any) => btn.textContent.includes('Edit Order'));
+      expect(editBtn).toBeFalsy();
+    });
+
+    it('should show edit button when order is CREATED', () => {
+      const createdOrder = { ...mockOrder, status: 'CREATED' };
+      apiServiceSpy.getOrderById.and.returnValue(of(createdOrder as any));
+      component.loadOrder();
+      fixture.detectChanges();
+
+      const buttons = fixture.nativeElement.querySelectorAll('.btn-primary');
+      const editBtn = Array.from(buttons).find((btn: any) => btn.textContent.includes('Edit Order'));
+      expect(editBtn).toBeTruthy();
+    });
+  });
+
+  describe('Flow Chart Layout - BF-11', () => {
+    it('should calculate correct statistics for multi-process orders', () => {
+      // mockOrder has 2 operations: READY and NOT_STARTED
+      expect(component.getTotalOperations()).toBe(2);
+      expect(component.getCompletedOperations()).toBe(0);
+      expect(component.getReadyOperations()).toBe(1);
+    });
+
+    it('should return correct completion percentage', () => {
+      // 0 completed out of 2 operations = 0%
+      expect(component.getCompletionPercentage()).toBe(0);
+    });
+  });
+
+  // ===== Phase 2: Additional coverage tests =====
+
+  it('should navigate to edit page when editOrder called', () => {
+    spyOn(router, 'navigate');
+    component.editOrder();
+    expect(router.navigate).toHaveBeenCalledWith(['/orders', 1, 'edit']);
+  });
+
+  describe('Statistics with mixed statuses', () => {
+    const mixedOrder = {
+      orderId: 2,
+      orderNumber: 'ORD-002',
+      status: 'IN_PROGRESS',
+      customerName: 'Test',
+      lineItems: [{
+        orderLineId: 10,
+        productSku: 'P-001',
+        productName: 'Product',
+        quantity: 100,
+        unit: 'T',
+        operations: [
+          { operationId: 10, operationName: 'Op1', operationCode: 'O1', sequenceNumber: 1, status: 'CONFIRMED', processId: 1, processName: 'P' },
+          { operationId: 11, operationName: 'Op2', operationCode: 'O2', sequenceNumber: 2, status: 'COMPLETED', processId: 1, processName: 'P' },
+          { operationId: 12, operationName: 'Op3', operationCode: 'O3', sequenceNumber: 3, status: 'IN_PROGRESS', processId: 1, processName: 'P' },
+          { operationId: 13, operationName: 'Op4', operationCode: 'O4', sequenceNumber: 4, status: 'PARTIALLY_CONFIRMED', processId: 1, processName: 'P' },
+          { operationId: 14, operationName: 'Op5', operationCode: 'O5', sequenceNumber: 5, status: 'NOT_STARTED', processId: 1, processName: 'P' },
+          { operationId: 15, operationName: 'Op6', operationCode: 'O6', sequenceNumber: 6, status: 'ON_HOLD', processId: 1, processName: 'P' },
+          { operationId: 16, operationName: 'Op7', operationCode: 'O7', sequenceNumber: 7, status: 'BLOCKED', processId: 1, processName: 'P' },
+          { operationId: 17, operationName: 'Op8', operationCode: 'O8', sequenceNumber: 8, status: 'READY', processId: 1, processName: 'P' }
+        ]
+      }]
+    };
+
+    beforeEach(() => {
+      apiServiceSpy.getOrderById.and.returnValue(of(mixedOrder as any));
+      component.loadOrder();
+      fixture.detectChanges();
+    });
+
+    it('should count in-progress operations including PARTIALLY_CONFIRMED', () => {
+      // IN_PROGRESS + PARTIALLY_CONFIRMED = 2
+      expect(component.getInProgressOperations()).toBe(2);
+    });
+
+    it('should count pending operations including ON_HOLD and BLOCKED', () => {
+      // NOT_STARTED + ON_HOLD + BLOCKED = 3
+      expect(component.getPendingOperations()).toBe(3);
+    });
+
+    it('should count completed operations including CONFIRMED', () => {
+      // CONFIRMED + COMPLETED = 2
+      expect(component.getCompletedOperations()).toBe(2);
+    });
+
+    it('should calculate completion percentage from completed operations', () => {
+      // 2 completed out of 8 total = 25%
+      expect(component.getCompletionPercentage()).toBe(25);
+    });
+
+    it('should calculate line item progress as percentage of completed operations', () => {
+      // 2 completed out of 8 = 25%
+      expect(component.getLineItemProgress(mixedOrder.lineItems[0])).toBe(25);
+    });
+  });
+
+  describe('getOperationIcon', () => {
+    it('should return check icon for COMPLETED status', () => {
+      expect(component.getOperationIcon('COMPLETED')).toBe('fa-check');
+    });
+
+    it('should return check icon for CONFIRMED status', () => {
+      expect(component.getOperationIcon('CONFIRMED')).toBe('fa-check');
+    });
+
+    it('should return spinner icon for IN_PROGRESS status', () => {
+      expect(component.getOperationIcon('IN_PROGRESS')).toBe('fa-spinner fa-spin');
+    });
+
+    it('should return play icon for READY status', () => {
+      expect(component.getOperationIcon('READY')).toBe('fa-play');
+    });
+
+    it('should return pause icon for ON_HOLD status', () => {
+      expect(component.getOperationIcon('ON_HOLD')).toBe('fa-pause');
+    });
+
+    it('should return ban icon for BLOCKED status', () => {
+      expect(component.getOperationIcon('BLOCKED')).toBe('fa-ban');
+    });
+
+    it('should return circle icon for NOT_STARTED status', () => {
+      expect(component.getOperationIcon('NOT_STARTED')).toBe('fa-circle');
+    });
+
+    it('should return circle icon for unknown status', () => {
+      expect(component.getOperationIcon('UNKNOWN')).toBe('fa-circle');
+    });
+  });
+
+  describe('UI state toggles', () => {
+    it('should toggle flow chart collapsed state', () => {
+      expect(component.flowChartCollapsed).toBeFalse();
+      component.toggleFlowChart();
+      expect(component.flowChartCollapsed).toBeTrue();
+      component.toggleFlowChart();
+      expect(component.flowChartCollapsed).toBeFalse();
+    });
+
+    it('should toggle line item collapsed state', () => {
+      expect(component.isLineItemCollapsed(1)).toBeFalse();
+      component.toggleLineItem(1);
+      expect(component.isLineItemCollapsed(1)).toBeTrue();
+      component.toggleLineItem(1);
+      expect(component.isLineItemCollapsed(1)).toBeFalse();
+    });
+  });
+
+  it('should dispose all charts on destroy', () => {
+    const chartSpy = TestBed.inject(ChartService) as jasmine.SpyObj<ChartService>;
+    component.ngOnDestroy();
+    expect(chartSpy.disposeAll).toHaveBeenCalled();
+  });
 });

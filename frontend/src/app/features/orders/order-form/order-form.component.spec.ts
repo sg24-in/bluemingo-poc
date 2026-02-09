@@ -283,4 +283,59 @@ describe('OrderFormComponent', () => {
       expect(component.saving).toBeFalse();
     });
   });
+
+  describe('Edit Mode - BF-06 Dropdown Fix', () => {
+    describe('when in edit mode', () => {
+      beforeEach(async () => {
+        await configureTestBed({ orderId: '1' });
+        apiServiceSpy.getOrderById.and.returnValue(of(mockOrder));
+        createComponent();
+      });
+
+      it('should show readonly customer text when in edit mode', () => {
+        const el = fixture.nativeElement;
+        const customerSelect = el.querySelector('select#customerId');
+        const readonlyInput = el.querySelector('input.readonly-field');
+
+        expect(customerSelect).toBeNull();
+        expect(readonlyInput).toBeTruthy();
+      });
+
+      it('should display customer code and name in readonly field when editing', () => {
+        const el = fixture.nativeElement;
+        const readonlyInput = el.querySelector('input.readonly-field') as HTMLInputElement;
+
+        expect(readonlyInput).toBeTruthy();
+        const value = readonlyInput.value;
+        expect(value).toContain(component.form.get('customerId')?.value);
+        expect(value).toContain(component.form.get('customerName')?.value);
+      });
+
+      it('should show readonly product text in line items when in edit mode', () => {
+        const el = fixture.nativeElement;
+        const productSelect = el.querySelector('select[formControlName="productSku"]');
+        const readonlyInputs = el.querySelectorAll('input.readonly-field');
+
+        expect(productSelect).toBeNull();
+        // At least 2 readonly inputs: one for customer, one for product in line item
+        expect(readonlyInputs.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    describe('when in create mode', () => {
+      beforeEach(async () => {
+        await configureTestBed();
+        createComponent();
+      });
+
+      it('should show customer dropdown when in create mode', () => {
+        const el = fixture.nativeElement;
+        const customerSelect = el.querySelector('select#customerId');
+        const readonlyInput = el.querySelector('input.readonly-field');
+
+        expect(customerSelect).toBeTruthy();
+        expect(readonlyInput).toBeNull();
+      });
+    });
+  });
 });
