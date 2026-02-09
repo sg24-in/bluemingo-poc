@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-02-09T07-17-42",
+  "totalScreenshots": 79,
+  "outputDir": "D:\\repositories\\bluemingo-poc\\e2e\\output\\user-guide-screenshots\\2026-02-09T07-17-42",
+  "sections": {
+    "login": "001-005",
+    "dashboard": "006-015",
+    "orders": "016-030",
+    "production": "031-045",
+    "inventory": "046-055",
+    "batches": "056-062",
+    "holds": "063-067",
+    "equipment": "068-072",
+    "admin": "073-090",
+    "forms": "091-093",
+    "statusColors": "094-096",
+    "navigation": "097-098"
+  }
+}

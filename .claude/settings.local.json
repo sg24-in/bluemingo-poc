@@ -177,7 +177,9 @@
       "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\ProductDTO.java\")",
       "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\CustomerDTO.java\")",
       "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\MaterialDTO.java\")",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(set TOKEN=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBtZXMuY29tIiwiaWF0IjoxNzcwNjA4Njg3LCJleHAiOjE3NzA2OTUwODd9.fZ8xxBzffaqdLbBOXnn7kF8hDZ8-3dx3ZBHFxFG4yfM)",
+      "Bash(git log:*)"
     ]
   }
 }
