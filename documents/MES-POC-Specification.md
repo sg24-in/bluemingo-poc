@@ -1,7 +1,6 @@
 # MES Production Confirmation POC - Specification
 
 **Document Version:** 1.0
-**Last Updated:** 2026-02-04
 **Project:** Bluemingo MES POC
 
 ---
@@ -11,14 +10,13 @@
 ### 1.1 Purpose
 This Proof of Concept (POC) demonstrates a Manufacturing Execution System (MES) focused on production confirmation workflows, material consumption tracking, and batch traceability for steel manufacturing environments.
 
-### 1.2 Scope
-The POC covers the following functional areas:
-- Production confirmation and data capture
-- Material consumption and inventory management
-- Batch creation and genealogy tracking
-- Hold management across entities
-- Equipment and operator tracking
-- Quality status management
+### 1.2 POC Scope
+The POC covers the following core screens:
+- **Login** - User authentication
+- **Dashboard** - Production metrics and status overview
+- **Orders** - Order management and tracking
+- **Production Confirmation** - Confirm production with material consumption
+- **Batches/Traceability** - Batch genealogy and tracking
 
 ### 1.3 Out of Scope
 - ERP integration
@@ -26,6 +24,7 @@ The POC covers the following functional areas:
 - Advanced scheduling and planning
 - Detailed costing and financials
 - Multi-plant/multi-site support
+- Administrative configuration screens
 
 ---
 
@@ -35,7 +34,6 @@ The POC covers the following functional areas:
 |-----------|------------------|
 | Demonstrate production confirmation workflow | Complete end-to-end confirmation with all data captured |
 | Show batch traceability | Forward and backward genealogy navigation |
-| Prove hold management capability | Apply/release holds on multiple entity types |
 | Validate inventory state management | Track all inventory state transitions |
 | Enable equipment/operator tracking | Associate resources with production |
 
@@ -83,22 +81,7 @@ Finished Good → Intermediate → Raw Material
  BATCH-FG-001 → BATCH-IM-001 → BATCH-RM-001
 ```
 
-### 3.3 Hold Management Workflow
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ Select Entity│────▶│ Apply Hold   │────▶│ Hold Active  │
-│ (Order/Batch)│     │ (With reason)│     │ (Blocks use) │
-└──────────────┘     └──────────────┘     └──────────────┘
-                                                 │
-                                                 ▼
-                     ┌──────────────┐     ┌──────────────┐
-                     │ Hold Released│◀────│ Release Hold │
-                     │ (Available)  │     │ (With notes) │
-                     └──────────────┘     └──────────────┘
-```
-
-### 3.4 Inventory State Transitions
+### 3.3 Inventory State Transitions
 
 ```
                     ┌──────────────┐
@@ -127,7 +110,7 @@ Finished Good → Intermediate → Raw Material
 ┌─────────────────────────────────────────────────────────────┐
 │                      Frontend (Angular 17)                   │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐           │
-│  │Dashboard│ │ Orders  │ │Production│ │Inventory│ ...       │
+│  │Dashboard│ │ Orders  │ │Production│ │ Batches │           │
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘           │
 └─────────────────────────────────────────────────────────────┘
                            │ HTTP/REST
@@ -147,7 +130,7 @@ Finished Good → Intermediate → Raw Material
 ┌─────────────────────────────────────────────────────────────┐
 │              Database (PostgreSQL / H2 Demo)                 │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐           │
-│  │ Orders  │ │ Batches │ │Inventory│ │  Audit  │ ...       │
+│  │ Orders  │ │ Batches │ │Inventory│ │  Audit  │           │
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘           │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -171,24 +154,42 @@ Finished Good → Intermediate → Raw Material
 
 ---
 
-## 5. User Roles
+## 5. POC Screens
 
-### 5.1 Role Definitions
+### 5.1 Login Screen
+- Email/password authentication
+- JWT token generation
+- Redirect to Dashboard on success
 
-| Role | Permissions |
-|------|-------------|
-| Admin | Full access to all modules, configuration |
-| Supervisor | Production confirmation, hold management, reports |
-| Operator | Production confirmation (own area), view-only for others |
-| Quality | Quality decisions, hold management |
+### 5.2 Dashboard Screen
+- Operations status summary (Ready, In Progress, Confirmed)
+- Key metrics (Orders, Today's Production, Active Batches)
+- Orders ready for production table
+- Recent confirmations activity
+- Recent batches table
+- Quick actions navigation
 
-### 5.2 POC Users
+### 5.3 Orders Screen
+- List all orders with status filtering
+- Order detail with line items
+- Operations timeline per order
+- Status: DRAFT, PENDING, IN_PROGRESS, COMPLETED, CANCELLED
 
-| User | Email | Password | Role |
-|------|-------|----------|------|
-| Admin | admin@mes.com | admin123 | Admin |
-| Operator1 | operator1@mes.com | operator123 | Operator |
-| Quality1 | quality1@mes.com | quality123 | Quality |
+### 5.4 Production Confirmation Screen
+- Order/operation selection
+- Input material selection (available inventory/batches)
+- Process parameter entry
+- Equipment and operator selection
+- Output quantity entry
+- Batch number preview
+- Confirmation submission
+
+### 5.5 Batches Screen
+- List all batches with status filtering
+- Batch detail with genealogy
+- Forward/backward traceability
+- Split and merge operations
+- Batch approval workflow
 
 ---
 
@@ -209,14 +210,20 @@ Finished Good → Intermediate → Raw Material
 | BatchRelation | Genealogy | parentBatch, childBatch, relationType |
 | Equipment | Machines | name, status, type |
 | Operator | Personnel | name, employeeId |
-| HoldRecord | Hold tracking | entityType, reason, status |
-| AuditTrail | Change history | action, oldValue, newValue |
 
 ---
 
-## 7. Demo Scenarios
+## 7. Demo Credentials
 
-### 7.1 Scenario 1: Complete Production Confirmation
+| User | Email | Password | Role |
+|------|-------|----------|------|
+| Admin | admin@mes.com | admin123 | Admin |
+
+---
+
+## 8. Demo Scenarios
+
+### 8.1 Scenario 1: Complete Production Confirmation
 1. Login as admin@mes.com
 2. Navigate to Orders, select IN_PROGRESS order
 3. Navigate to Production Confirmation
@@ -228,23 +235,16 @@ Finished Good → Intermediate → Raw Material
 9. Submit confirmation
 10. Verify: New batch created, inventory updated, genealogy linked
 
-### 7.2 Scenario 2: Batch Traceability
+### 8.2 Scenario 2: Batch Traceability
 1. Navigate to Batches
 2. Select a finished good batch
 3. View genealogy
 4. Trace backward to raw materials
 5. Verify complete chain of custody
 
-### 7.3 Scenario 3: Hold Management
-1. Navigate to Holds
-2. Apply hold to a batch (Quality reason)
-3. Verify batch shows ON_HOLD status
-4. Release hold with resolution notes
-5. Verify batch returns to previous state
-
 ---
 
-## 8. Success Metrics
+## 9. Success Metrics
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
@@ -252,12 +252,7 @@ Finished Good → Intermediate → Raw Material
 | Test Coverage | 80%+ | Unit + integration tests |
 | UI Responsiveness | <2s | Page load times |
 | Data Integrity | 100% | Batch genealogy accuracy |
-| Audit Completeness | 100% | All changes logged |
 
 ---
 
-## Document History
-
-| Date | Author | Changes |
-|------|--------|---------|
-| 2026-02-04 | Claude Code | Initial document creation |
+*Bluemingo MES Production Confirmation POC*

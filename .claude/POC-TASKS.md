@@ -484,10 +484,12 @@ Commit: `b6919b4`
 |-------|-------|--------|
 | Backend | 603 | ALL PASS |
 | Frontend | 256 | ALL PASS |
-| **Total** | **859** | **ALL PASS** |
+| E2E | 38 | ALL PASS |
+| **Total** | **897** | **ALL PASS** |
 
 **Note:** Backend tests dropped from 1,064 → 603 due to removal of 20 orphaned test files
 (tests for services no longer in the POC codebase). Frontend unchanged at 256.
+E2E improved from 37/38 → 38/38 (100%).
 
 ---
 

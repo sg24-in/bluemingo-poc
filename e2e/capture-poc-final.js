@@ -128,19 +128,25 @@ async function captureScreenshots() {
     await page.screenshot({ path: path.join(OUTPUT_DIR, '24-production-resources.png'), fullPage: false });
 
     // Scroll to output section
-    console.log('[11/14] Output section...');
+    console.log('[11/15] Output section...');
     await page.evaluate(() => window.scrollTo(0, 1600));
     await delay(500);
     await page.screenshot({ path: path.join(OUTPUT_DIR, '25-production-output.png'), fullPage: false });
 
+    // Scroll to confirm button
+    console.log('[12/15] Confirm button...');
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await delay(500);
+    await page.screenshot({ path: path.join(OUTPUT_DIR, '26-production-confirm-button.png'), fullPage: false });
+
     // ========== SCREEN 4: TRACEABILITY ==========
-    console.log('[12/14] Batches list...');
+    console.log('[13/15] Batches list...');
     await page.goto(`${BASE_URL}/#/batches`);
     await waitForPageReady(page);
     await page.screenshot({ path: path.join(OUTPUT_DIR, '15-batches-list.png'), fullPage: true });
 
     // Batch detail - try to find one with genealogy
-    console.log('[13/14] Batch detail...');
+    console.log('[14/15] Batch detail...');
     await page.goto(`${BASE_URL}/#/batches/1`);
     await waitForPageReady(page);
     await page.screenshot({ path: path.join(OUTPUT_DIR, '16-batch-detail.png'), fullPage: true });

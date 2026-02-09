@@ -176,7 +176,8 @@
       "Bash(del:*)",
       "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\ProductDTO.java\")",
       "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\CustomerDTO.java\")",
-      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\MaterialDTO.java\")"
+      "Bash(del \"backend\\\\src\\\\main\\\\java\\\\com\\\\mes\\\\production\\\\dto\\\\MaterialDTO.java\")",
+      "Bash(git status:*)"
     ]
   }
 }
