@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { OrderFormComponent } from './order-form.component';
@@ -137,7 +137,7 @@ describe('OrderFormComponent', () => {
     });
 
     it('should update customer name when customer selected', () => {
-      const event = { target: { value: '1' } } as unknown as Event;
+      const event = { target: { value: 'CUST-001' } } as unknown as Event;
       component.onCustomerChange(event);
       expect(component.form.get('customerName')?.value).toBe('Acme Corp');
     });
@@ -336,6 +336,89 @@ describe('OrderFormComponent', () => {
         expect(customerSelect).toBeTruthy();
         expect(readonlyInput).toBeNull();
       });
+    });
+  });
+
+  // ===== Phase 3: Additional coverage tests =====
+
+  describe('cancel navigation', () => {
+    beforeEach(async () => {
+      await configureTestBed();
+      createComponent();
+    });
+
+    it('should navigate to orders list when cancel clicked', () => {
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
+      component.cancel();
+      expect(router.navigate).toHaveBeenCalledWith(['/orders']);
+    });
+  });
+
+  describe('API error handling', () => {
+    it('should set loadingCustomers false when customer load fails', async () => {
+      await configureTestBed();
+      apiServiceSpy.getActiveCustomers.and.returnValue(throwError(() => new Error('Network error')));
+      createComponent();
+
+      expect(component.loadingCustomers).toBeFalse();
+      expect(component.customers).toEqual([]);
+    });
+
+    it('should set loadingProducts false when product load fails', async () => {
+      await configureTestBed();
+      apiServiceSpy.getActiveProducts.and.returnValue(throwError(() => new Error('Network error')));
+      createComponent();
+
+      expect(component.loadingProducts).toBeFalse();
+      expect(component.products).toEqual([]);
+    });
+  });
+
+  describe('Form submission guard', () => {
+    beforeEach(async () => {
+      await configureTestBed();
+      createComponent();
+    });
+
+    it('should not submit when form is invalid', () => {
+      // Leave required fields empty
+      component.form.patchValue({ customerId: '', customerName: '' });
+
+      component.onSubmit();
+
+      expect(apiServiceSpy.createOrder).not.toHaveBeenCalled();
+      expect(component.saving).toBeFalse();
+      // All fields should be marked as touched for validation display
+      expect(component.form.get('customerId')?.touched).toBeTrue();
+    });
+  });
+
+  describe('Validation helpers', () => {
+    beforeEach(async () => {
+      await configureTestBed();
+      createComponent();
+    });
+
+    it('should return true from hasError when field is invalid and touched', () => {
+      component.form.get('customerId')?.setValue('');
+      component.form.get('customerId')?.markAsTouched();
+
+      expect(component.hasError('customerId')).toBeTrue();
+    });
+
+    it('should return false from hasError when field is valid', () => {
+      component.form.get('customerId')?.setValue('CUST-001');
+      component.form.get('customerId')?.markAsTouched();
+
+      expect(component.hasError('customerId')).toBeFalse();
+    });
+
+    it('should return required message from getError for empty required field', () => {
+      component.form.get('customerId')?.setValue('');
+
+      const msg = component.getError('customerId');
+      expect(msg).toContain('required');
     });
   });
 });
