@@ -203,6 +203,8 @@ bootJar {
     archiveBaseName = 'mes-production-confirmation'
 }
 
+processResources.dependsOn copyFrontendToStatic
+
 bootWar {
     archiveBaseName = 'mes-production'
     archiveFileName = 'mes-production.war'

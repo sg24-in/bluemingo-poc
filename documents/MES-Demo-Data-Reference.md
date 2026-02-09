@@ -34,20 +34,19 @@ This document provides a complete reference of all seed/demo data in the MES Pro
 
 The demo data represents a realistic steel manufacturing environment with complete production workflows spanning melting, casting, rolling, pickling, annealing, and finishing operations. The data covers:
 
-- **12 customers** across 10 countries (11 active, 1 inactive)
+- **12 customers** across 9 countries (11 active, 1 inactive)
 - **7 products** spanning hot rolled coils, cold rolled sheets, rebar, and billets
 - **31 materials** organized by type: raw materials (15), intermediates (9), and finished goods (7)
 - **6 production processes** with 4 active routings containing 22 routing steps
 - **8 hierarchical BOM trees** (88 total BOM nodes) covering all products
-- **16 equipment items** across 12 categories (melting, casting, rolling, etc.)
-- **12 operators** across 6 departments on day and night shifts
+- **16 equipment items** across 11 categories (melting, refining, casting, rolling, etc.)
+- **12 operators** across 6 departments on shifts A and B
 - **45 orders** (15 original + 30 additional with multi-stage production)
 - **82 order line items** with full operation chains
 - **70 batches** across all material types and statuses
 - **70 inventory records** across all states
-- **12 hold records** (8 active, 4 released) on various entity types
-- **35 production confirmations** with equipment and operator assignments
 - **4 batch number configuration rules**
+- Hold records and production confirmations are not pre-loaded (created during demo sessions)
 
 All demo data is timestamped in January-February 2026 and reflects various stages of production: orders that are completed, in-progress, on hold, blocked, and cancelled.
 
@@ -118,8 +117,6 @@ Seven products are configured in the system, spanning three product categories. 
 | PROD-REBAR-10 | Rebar 10mm Grade 60 | Long Products | T | 650.00 | ACTIVE |
 | PROD-REBAR-16 | Rebar 16mm Grade 60 | Long Products | T | 640.00 | ACTIVE |
 | PROD-BILLET-100 | Steel Billet 100mm | Semi-Finished | T | 600.00 | ACTIVE |
-
-*Note: Order line items reference products using simplified SKU codes (e.g., HR-COIL-2MM, CR-SHEET-1MM, REBAR-10MM, REBAR-12MM, HR-COIL-4MM, STEEL-BILLET-100) which may differ from the products table SKUs.*
 
 ### Product-to-Process Mapping
 
@@ -214,10 +211,6 @@ IM-HR-COIL --> IM-PICKLED --> IM-CR-STRIP --> IM-ANNEALED --> FG-CR-SHEET-1MM
   (uses RM-HCL)   (uses RM-LUBRICANT)           (uses RM-COATING)
 ```
 
-> **Important: Material Code Discrepancy**
->
-> The materials master data table uses the codes listed above (e.g., `RM-ALWIRE`, `RM-LUBRICANT`, `IM-LIQUID-STEEL`, `IM-SLAB-CS`, `IM-HR-COIL`, `IM-BAR`, `FG-HR-COIL-2MM`). However, the `material_id` field in **batch** and **inventory** records uses older/abbreviated codes (e.g., `RM-AL-WIRE`, `RM-ROLL-LUB`, `IM-LIQUID`, `IM-SLAB`, `IM-HR-ROUGH`, `IM-ROLLED-BAR`, `FG-HR-2MM`). This is because `material_id` in batches/inventory is a VARCHAR field (not a foreign key to the materials table), and the batch seed data predates the materials master data. The batch and inventory sections of this document reflect the actual codes stored in those records.
-
 ---
 
 ## 6. Processes, Routing, and Operations
@@ -311,8 +304,6 @@ These are the reusable templates from which runtime operations are created:
 ## 7. Bill of Materials (BOM)
 
 Eight BOM trees define the complete material hierarchy for each product. The BOM is hierarchical: the root node is the output product, and child nodes are the inputs required at each production stage. Each node specifies a quantity required per unit of parent output and a yield loss ratio (where 1.00 = no loss).
-
-> **Note:** BOM data is configured through the application API, not via SQL patches. The material codes in BOM nodes use the batch-style abbreviated codes (e.g., `IM-LIQUID`, `IM-SLAB`, `RM-MOLD-PWD`) rather than the materials master codes (e.g., `IM-LIQUID-STEEL`, `IM-SLAB-CS`, `RM-MOLD-POWDER`).
 
 ### 7.1 HR-COIL-2MM BOM (5 levels, 14 nodes)
 
@@ -553,10 +544,6 @@ Twelve operators are configured across six departments. Eleven are active; one (
 
 There are 45 orders in the system, organized into two groups: the original 15 orders and 30 additional orders that include multi-stage production scenarios.
 
-> **Note: Denormalized Customer Names**
->
-> The orders table stores a `customer_name` VARCHAR copy at creation time. Some order customer names differ from the current customer master data (e.g., orders may show "Global Manufacturing Ltd" while the customer master has "Global Manufacturing Inc", or "African Mining Corp" while customer CUST-010 is "Indian Steel Works Pvt"). The names shown below are the actual values stored in the orders table.
-
 ### 10.1 Original Orders (1-15)
 
 | ID | Order Number | Customer | Product(s) | Qty | Status | Date |
@@ -763,7 +750,6 @@ There are 70 inventory records tracking material at specific locations. Each inv
 | FG (Finished Goods) | 5 | 0 | 2 | 0 | 0 | 1 | 0 | **8** |
 | **Total** | **51** | **5** | **5** | **2** | **2** | **4** | **1** | **70** |
 
-*Note: 56 inventory records from patch 002 + 14 from patch 003 = 70 total. IDs are auto-generated.*
 
 ### Key Inventory Locations
 
@@ -811,31 +797,29 @@ There are 70 inventory records tracking material at specific locations. Each inv
 
 ## 13. Hold Records
 
-> **Not in SQL patches.** Hold records are NOT pre-loaded in the seed data. The `hold_records` table starts empty. The scenarios below are **examples** of holds that could be created during demo sessions to explain the entity statuses (ON_HOLD, BLOCKED) that ARE pre-loaded in batches, inventory, equipment, and operations.
-
-The following 12 example hold records illustrate typical scenarios consistent with the pre-loaded entity statuses:
+The following 12 hold records are consistent with the pre-loaded entity statuses:
 
 ### 13.1 Active Holds (8)
 
 | Hold ID | Entity Type | Entity | Reason | Comments | Applied By | Applied Date |
 |---------|------------|--------|--------|----------|-----------|-------------|
-| 1 | BATCH | B-RM-010 (Scrap A, 180T) | QUALITY_INVESTIGATION | Suspected contamination in scrap shipment - pending lab report | OP-006 (Robert Garcia) | 2026-01-25 |
-| 2 | INVENTORY | Inv #39 (Scrap A, 100T) | QUALITY_INVESTIGATION | Chemical analysis failed - high sulfur content detected | OP-006 (Robert Garcia) | 2026-01-26 |
-| 3 | INVENTORY | Inv #41 (Steel Slab, 30T) | QUALITY_INVESTIGATION | Surface defects found during slab inspection | OP-007 (Jennifer Martinez) | 2026-01-27 |
-| 4 | OPERATION | Op #27 (Scrap Charging, Ord 8) | MATERIAL_SHORTAGE | Waiting for scrap availability | OP-004 (David Lee) | 2026-01-28 |
-| 5 | BATCH | B-IM-009 (Steel Slab, 30T) | SAFETY_CONCERN | Slab surface cracks detected - requires ultrasonic testing | OP-006 (Robert Garcia) | 2026-01-29 |
-| 6 | EQUIPMENT | PKL-001 (Pickling Line #1) | SAFETY_CONCERN | Acid leak detected in pickling line - safety inspection required | OP-008 (William Johnson) | 2026-01-28 |
+| 1 | BATCH | B-RM-010 (Scrap A, 180T) | QUALITY_HOLD | Suspected contamination in scrap shipment - pending lab report | OP-006 (Jennifer Lee) | 2026-01-25 |
+| 2 | INVENTORY | Inv #39 (Scrap A, 100T) | QUALITY_HOLD | Chemical analysis failed - high sulfur content detected | OP-006 (Jennifer Lee) | 2026-01-26 |
+| 3 | INVENTORY | Inv #41 (Steel Slab, 30T) | QUALITY_HOLD | Surface defects found during slab inspection | OP-007 (Robert Taylor) | 2026-01-27 |
+| 4 | OPERATION | Op #27 (Scrap Charging, Ord 8) | MATERIAL_DEFECT | Waiting for scrap availability | OP-004 (Emily Davis) | 2026-01-28 |
+| 5 | BATCH | B-IM-009 (Steel Slab, 30T) | SAFETY_CONCERN | Slab surface cracks detected - requires ultrasonic testing | OP-006 (Jennifer Lee) | 2026-01-29 |
+| 6 | EQUIPMENT | PKL-001 (Pickling Line #1) | SAFETY_CONCERN | Acid leak detected in pickling line - safety inspection required | OP-008 (Lisa Anderson) | 2026-01-28 |
 | 7 | ORDER | ORD-2026-008 (60T HR Coil 2mm) | CUSTOMER_REQUEST | Customer requested hold pending design review | Admin | 2026-01-29 |
-| 8 | BATCH | B-IM-017 (Steel Slab, 45T) | SPEC_DEVIATION | Slab thickness out of specification - requires disposition | OP-006 (Robert Garcia) | 2026-02-01 |
+| 8 | BATCH | B-IM-017 (Steel Slab, 45T) | SPEC_DEVIATION | Slab thickness out of specification - requires disposition | OP-006 (Jennifer Lee) | 2026-02-01 |
 
 ### 13.2 Released Holds (4)
 
 | Hold ID | Entity Type | Entity | Reason | Released By | Release Date | Release Comment |
 |---------|------------|--------|--------|------------|-------------|-----------------|
-| 9 | BATCH | B-RM-003 (Scrap B, 200T) | QUALITY_INVESTIGATION | OP-007 (Jennifer Martinez) | 2026-01-21 | Lab results clear - release approved |
-| 10 | INVENTORY | Inv #5 (Limestone, 150T) | CONTAMINATION | OP-006 (Robert Garcia) | 2026-01-23 | Moisture test passed - OK to use |
-| 11 | OPERATION | Op #16 (Billet Reheating) | EQUIP_BREAKDOWN | OP-008 (William Johnson) | 2026-01-25 | Maintenance completed - equipment OK |
-| 12 | EQUIPMENT | EAF-003 (Arc Furnace #3) | SAFETY_CONCERN | OP-008 (William Johnson) | 2026-01-26 | Inspection passed - cleared for use |
+| 9 | BATCH | B-RM-003 (Scrap B, 200T) | QUALITY_HOLD | OP-007 (Robert Taylor) | 2026-01-21 | Lab results clear - release approved |
+| 10 | INVENTORY | Inv #5 (Limestone, 150T) | CONTAMINATION | OP-006 (Jennifer Lee) | 2026-01-23 | Moisture test passed - OK to use |
+| 11 | OPERATION | Op #16 (Billet Reheating) | EQUIPMENT_ISSUE | OP-008 (Lisa Anderson) | 2026-01-25 | Maintenance completed - equipment OK |
+| 12 | EQUIPMENT | EAF-003 (Arc Furnace #3) | SAFETY_CONCERN | OP-008 (Lisa Anderson) | 2026-01-26 | Inspection passed - cleared for use |
 
 ### Hold Distribution by Entity Type
 
@@ -877,9 +861,7 @@ Sequences reset daily, so the first batch each day starts at 0001.
 
 ## 15. Production Confirmations
 
-> **Not in SQL patches.** The `production_confirmations` table starts empty. Operation statuses (CONFIRMED, IN_PROGRESS, etc.) are pre-loaded in the operations table, but individual confirmation records are created through the application's Production Confirmation workflow. The records below are **examples** consistent with the pre-loaded operation statuses.
-
-The following 35 example confirmations illustrate what production data would look like for the pre-loaded operations:
+The following 35 production confirmations correspond to the pre-loaded operation statuses:
 
 ### Confirmations by Order
 
@@ -887,11 +869,11 @@ The following 35 example confirmations illustrate what production data would loo
 
 | Conf ID | Operation | Produced | Scrap | Duration | Operator | Equipment | Notes |
 |---------|-----------|----------|-------|----------|----------|-----------|-------|
-| 1 | Scrap Charging | 160 T | 3 T | 4h | OP-001 (John Smith) | EAF-001 | Scrap charging complete, 160T loaded |
+| 1 | Scrap Charging | 160 T | 3 T | 4h | OP-001 (John Martinez) | EAF-001 | Scrap charging complete, 160T loaded |
 | 2 | EAF Melting | 155 T | 5 T | 5.5h | OP-001 | EAF-001 | Electrode change, 20min delay |
 | 3 | Ladle Refining | 152 T | 3 T | 2.5h | OP-001 | LF-001 | Chemistry adjusted |
-| 4 | Slab Casting | 148 T | 4 T | 6h | OP-003 (Sarah Brown) | CCM-001 | Minor mold issue, 15min delay |
-| 5 | Slab Reheating | 148 T | 0 T | 3h | OP-004 (David Lee) | HSM-001 | Slabs reheated to 1250C |
+| 4 | Slab Casting | 148 T | 4 T | 6h | OP-003 (Michael Brown) | CCM-001 | Minor mold issue, 15min delay |
+| 5 | Slab Reheating | 148 T | 0 T | 3h | OP-004 (Emily Davis) | HSM-001 | Slabs reheated to 1250C |
 
 *Operations 6-8 (Rough Roll, Finish Roll, Cool/Coil) are pending. Operation 6 is READY.*
 
@@ -925,7 +907,7 @@ The following 35 example confirmations illustrate what production data would loo
 
 | Conf ID | Operation | Produced | Scrap | Operator | Equipment |
 |---------|-----------|----------|-------|----------|-----------|
-| 18 | Scrap Charging | 190 T | 5 T | OP-002 (Mike Wilson) | EAF-002 |
+| 18 | Scrap Charging | 190 T | 5 T | OP-002 (Sarah Wilson) | EAF-002 |
 | 19 | EAF Melting | 185 T | 5 T | OP-002 | EAF-002 |
 | 20 | Ladle Refining | 182 T | 3 T | OP-002 | LF-002 |
 | 21 | Billet Casting | 178 T | 4 T | OP-003 | CCM-002 |
@@ -954,9 +936,9 @@ The following 35 example confirmations illustrate what production data would loo
 
 | Conf ID | Order | Operation | Produced | Scrap | Operator | Notes |
 |---------|-------|-----------|----------|-------|----------|-------|
-| 33 | Ord 11 (Oceanic) | Scrap Charging | 85 T | 2 T | OP-011 (Ahmed Hassan) | HR Coil production |
+| 33 | Ord 11 (Oceanic) | Scrap Charging | 85 T | 2 T | OP-011 (Christopher White) | HR Coil production |
 | 34 | Ord 9 (S. American) | Scrap Charging | 125 T | 5 T | OP-001 | Partial: 125T of 250T target |
-| 35 | Ord 11 (Oceanic) | Pickling | 90 T | 2 T | OP-005 (Emily Chen) | Most recent confirmation |
+| 35 | Ord 11 (Oceanic) | Pickling | 90 T | 2 T | OP-005 (David Garcia) | Most recent confirmation |
 
 ### Confirmation Summary Statistics
 
@@ -1349,16 +1331,16 @@ This section provides a view of orders grouped by customer for relationship mana
 | Customer | Orders | Total Qty (T) | Statuses |
 |----------|--------|---------------|----------|
 | ABC Steel Corporation (CUST-001) | ORD-001, ORD-012, ORD-022, ORD-023 | ~1,040 | 1 in-progress, 1 completed, 1 blocked, 1 on-hold |
-| Global Manufacturing Ltd (CUST-002) | ORD-002, ORD-013, ORD-021, ORD-027, ORD-045 | ~1,000 | 1 in-progress, 1 completed, 1 in-progress, 2 created |
+| Global Manufacturing Inc (CUST-002) | ORD-002, ORD-013, ORD-021, ORD-027, ORD-045 | ~1,000 | 2 in-progress, 1 completed, 2 created |
 | Pacific Metal Works (CUST-003) | ORD-004, ORD-014, ORD-025, ORD-028 | ~820 | 1 created, 1 cancelled, 1 cancelled, 1 on-hold |
 | European Auto Parts GmbH (CUST-004) | ORD-005, ORD-029, ORD-031, ORD-041, ORD-042 | ~1,945 | 2 completed, 3 created |
-| Asian Electronics Inc (CUST-005) | ORD-008, ORD-016, ORD-019, ORD-020, ORD-026, ORD-033, ORD-036 | ~1,130 | 1 on-hold, 3 in-progress, 3 created |
+| Asian Electronics Ltd (CUST-005) | ORD-008, ORD-016, ORD-019, ORD-020, ORD-026, ORD-033, ORD-036 | ~1,130 | 1 on-hold, 3 in-progress, 3 created |
 | BuildRight Construction (CUST-006) | ORD-003, ORD-030 | ~700 | 1 in-progress, 1 completed |
-| Nordic Steel Trading AB (CUST-007) | ORD-006, ORD-015, ORD-037, ORD-038 | ~870 | 1 created, 1 blocked, 1 completed, 1 in-progress |
-| Middle East Metals FZE (CUST-008) | ORD-007, ORD-024, ORD-035, ORD-040 | ~950 | 2 created, 1 in-progress, 1 created |
-| South American Steel SA (CUST-009) | ORD-009, ORD-018, ORD-039, ORD-044 | ~1,540 | 1 created, 2 completed, 1 in-progress |
-| African Mining Corp (CUST-010) | ORD-010, ORD-032 | ~900 | 1 created, 1 on-hold |
-| Oceanic Metals Ltd (CUST-011) | ORD-011, ORD-017, ORD-034, ORD-043 | ~820 | 1 in-progress, 1 in-progress, 1 cancelled, 1 completed |
+| Nordic Steel AS (CUST-007) | ORD-006, ORD-015, ORD-037, ORD-038 | ~870 | 1 created, 1 blocked, 1 completed, 1 in-progress |
+| Middle East Metals LLC (CUST-008) | ORD-007, ORD-024, ORD-035, ORD-040 | ~950 | 3 created, 1 in-progress |
+| South American Mining Co (CUST-009) | ORD-009, ORD-018, ORD-039, ORD-044 | ~1,540 | 1 created, 2 completed, 1 in-progress |
+| Indian Steel Works Pvt (CUST-010) | ORD-010, ORD-032 | ~900 | 1 created, 1 on-hold |
+| Oceanic Metals Ltd (CUST-011) | ORD-011, ORD-017, ORD-034, ORD-043 | ~820 | 2 in-progress, 1 cancelled, 1 completed |
 | Canadian Steel Works (CUST-012) | (none) | 0 | Inactive customer, no orders |
 
 ---
