@@ -15,7 +15,16 @@
         <div class="form-row">
           <div class="form-group">
             <label for="customerId">Customer *</label>
+            <!-- Read-only label in edit mode -->
+            <input
+              *ngIf="isEditMode"
+              type="text"
+              [value]="form.get('customerId')?.value + ' - ' + form.get('customerName')?.value"
+              readonly
+            />
+            <!-- Dropdown for new orders -->
             <select
+              *ngIf="!isEditMode"
               id="customerId"
               formControlName="customerId"
               [class.error]="hasError('customerId')"
@@ -28,7 +37,7 @@
             </select>
             <!-- Hidden field to store customer name for form submission -->
             <input type="hidden" formControlName="customerName" />
-            <span class="hint" *ngIf="loadingCustomers">Loading customers...</span>
+            <span class="hint" *ngIf="!isEditMode && loadingCustomers">Loading customers...</span>
             <span class="error-text" *ngIf="hasError('customerId')">Customer is required</span>
           </div>
         </div>
@@ -111,7 +120,16 @@
             <div class="line-item-fields">
               <div class="form-group product-group">
                 <label>Product *</label>
+                <!-- Read-only label for existing line items in edit mode -->
+                <input
+                  *ngIf="isEditMode && lineItems.at(i).get('orderLineId')?.value"
+                  type="text"
+                  [value]="lineItems.at(i).get('productSku')?.value + ' - ' + lineItems.at(i).get('productName')?.value"
+                  readonly
+                />
+                <!-- Dropdown for new line items -->
                 <select
+                  *ngIf="!isEditMode || !lineItems.at(i).get('orderLineId')?.value"
                   formControlName="productSku"
                   [class.error]="hasLineItemError(i, 'productSku')"
                   (change)="onProductChange(i, $event)"

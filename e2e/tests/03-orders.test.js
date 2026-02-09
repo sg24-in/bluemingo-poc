@@ -145,7 +145,43 @@ async function runOrdersTests(page, screenshots, results, runTest) {
         await screenshots.capture(page, 'orders-active-edit-btn-visible');
     }, page, results, screenshots);
 
-    // Test 8: Multi-stage order process flow visualization
+    // Test 8: Customer and Product visible when editing order
+    await runTest('Orders - Customer & Product Visible in Edit Mode', async () => {
+        await page.goto(`${config.baseUrl}/#/orders/3/edit`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1500);
+
+        // Verify edit page loaded
+        const pageTitle = page.locator('.page-title');
+        const titleText = await pageTitle.textContent();
+        if (!titleText.includes('Edit Order')) {
+            throw new Error(`Expected edit order page, got: ${titleText}`);
+        }
+
+        // Check customer read-only input has value
+        const customerInput = page.locator('.form-group:has(label:has-text("Customer")) input[readonly]');
+        if (await customerInput.count() > 0) {
+            const value = await customerInput.first().inputValue();
+            if (!value || value === ' - ') {
+                throw new Error(`Customer label is empty: "${value}"`);
+            }
+        } else {
+            throw new Error('No customer read-only input found');
+        }
+
+        // Check product read-only input has value in line items
+        const productInput = page.locator('.line-item .product-group input[readonly]');
+        if (await productInput.count() === 0) {
+            throw new Error('No product label found in line items');
+        }
+        const productValue = await productInput.first().inputValue();
+        if (!productValue || productValue === ' - ') {
+            throw new Error(`Product label is empty: "${productValue}"`);
+        }
+
+        await screenshots.capture(page, 'orders-edit-customer-product-visible');
+    }, page, results, screenshots);
+
+    // Test 9: Multi-stage order process flow visualization
     await runTest('Orders - Multi-Stage Order Flow Visualization', async () => {
         // Navigate to the 4-stage order (order 42)
         await page.goto(`${config.baseUrl}/#/orders/42`, { waitUntil: 'networkidle' });
