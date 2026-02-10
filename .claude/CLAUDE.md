@@ -57,26 +57,45 @@
 
 This ensures traceability and allows future sessions to understand the development history.
 
-### Documentation Maintenance (IMPORTANT)
+### Documentation Maintenance (MANDATORY - TASK IS NOT COMPLETE WITHOUT THIS)
 
-**Keep reference documents updated with every enhancement!**
+> **STRICT RULE: NO development task is considered DONE unless ALL affected reference documents are updated.**
+> **This is a BLOCKING requirement — not optional, not "nice to have". Treat doc updates as part of the code change itself.**
 
-When making changes that affect APIs, entities, validations, or database schema, update the corresponding reference documents:
+**Reference Documents (MUST be kept in sync with code at ALL times):**
 
-| Document | Update When |
-|----------|-------------|
-| `documents/reference/MES-Entity-Reference.md` | Adding/modifying JPA entities, fields, or relationships |
-| `documents/reference/MES-API-Reference.md` | Adding/modifying REST endpoints |
-| `documents/reference/MES-Validation-Rules.md` | Adding/modifying validation rules in services |
-| `documents/reference/MES-Database-Schema.md` | Creating new SQL patches or tables |
-| `documents/MES-Functional-Document-Complete.md` | Major feature additions or workflow changes |
+| # | Document | Update When | What to Update |
+|---|----------|-------------|----------------|
+| 1 | `documents/reference/MES-Controllers-Endpoints-Reference.md` | Adding/modifying ANY REST endpoint or controller | Controller class, HTTP method, path, params, request/response DTOs |
+| 2 | `documents/reference/MES-Services-Methods-Reference.md` | Adding/modifying ANY service method | Method signature, parameters, return type, business logic summary |
+| 3 | `documents/reference/MES-Entity-DTO-Reference.md` | Adding/modifying ANY JPA entity, field, or DTO | Entity fields, types, annotations, relationships, DTO fields |
+| 4 | `documents/reference/MES-Database-Schema-Reference.md` | Creating ANY SQL patch or modifying tables | Patch entry, table columns, constraints, indexes, relationships |
+| 5 | `documents/reference/MES-Frontend-Pages-Reference.md` | Adding/modifying ANY route, component, or module | Route path, component name, module, inputs/outputs, services used |
+| 6 | `documents/reference/MES-Validation-Rules.md` | Adding/modifying ANY validation rule in services | Rule description, error message, code location |
+| 7 | `documents/reference/MES-API-Reference.md` | Adding/modifying ANY API endpoint | Endpoint path, method, params, auth requirements |
+| 8 | `documents/MES-Functional-Document-Complete.md` | Major feature additions or workflow changes | Feature description, workflows, business rules |
 
-**Update Checklist:**
-1. After adding a new entity → Update Entity Reference + Database Schema
-2. After adding a new endpoint → Update API Reference
-3. After adding validation rules → Update Validation Rules Reference
-4. After creating SQL patches → Update Database Schema Reference
-5. After major features → Update main Functional Document
+**Mandatory Update Checklist (apply ALL that match):**
+
+| Change Type | Documents to Update |
+|-------------|-------------------|
+| New/modified JPA entity | #3 Entity Reference + #4 Database Schema |
+| New/modified DTO | #3 Entity Reference |
+| New/modified REST endpoint | #1 Controllers Reference + #7 API Reference |
+| New/modified service method | #2 Services Reference |
+| New/modified validation rule | #6 Validation Rules |
+| New SQL patch | #4 Database Schema |
+| New/modified Angular route | #5 Frontend Pages Reference |
+| New/modified Angular component | #5 Frontend Pages Reference |
+| New/modified Angular service method | #5 Frontend Pages Reference |
+| Major feature addition | #8 Functional Document |
+
+**Enforcement Rules:**
+1. **Before marking any task as DONE** → verify all affected reference docs are updated
+2. **Before creating a git commit** → ensure reference doc updates are included in the same commit
+3. **At session end** → review all code changes and confirm corresponding doc updates were made
+4. **If you forget** → go back and update the docs BEFORE moving to the next task
+5. **When in doubt** → update the doc. It's better to over-document than under-document
 
 ---
 
