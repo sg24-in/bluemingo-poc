@@ -40,6 +40,12 @@ public class Order {
     @Column(name = "order_date", nullable = false)
     private LocalDate orderDate;
 
+    @Column(name = "delivery_date")
+    private LocalDate deliveryDate;
+
+    @Column(name = "notes", length = 1000)
+    private String notes;
+
     @Column(nullable = false)
     private String status;
 

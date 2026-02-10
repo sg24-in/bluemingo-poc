@@ -138,6 +138,8 @@ public class OrderService {
                 .customerId(order.getCustomerId())
                 .customerName(order.getCustomerName())
                 .orderDate(order.getOrderDate())
+                .deliveryDate(order.getDeliveryDate())
+                .notes(order.getNotes())
                 .status(order.getStatus())
                 .lineItems(lineDTOs)
                 .build();
@@ -208,6 +210,8 @@ public class OrderService {
                 .customerId(request.getCustomerId())
                 .customerName(request.getCustomerName())
                 .orderDate(request.getOrderDate())
+                .deliveryDate(request.getDeliveryDate())
+                .notes(request.getNotes())
                 .status("CREATED")
                 .createdBy(currentUser)
                 .build();
@@ -261,6 +265,8 @@ public class OrderService {
         if (request.getStatus() != null) {
             order.setStatus(request.getStatus());
         }
+        order.setDeliveryDate(request.getDeliveryDate());
+        order.setNotes(request.getNotes());
         order.setUpdatedBy(currentUser);
 
         Order saved = orderRepository.save(order);

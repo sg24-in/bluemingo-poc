@@ -33,6 +33,11 @@ public class CreateOrderRequest {
 
     private String orderNumber; // Optional - will be auto-generated if not provided
 
+    private LocalDate deliveryDate;
+
+    @Size(max = 1000, message = "Notes must not exceed 1000 characters")
+    private String notes;
+
     @NotEmpty(message = "At least one line item is required")
     @Valid
     private List<LineItemRequest> lineItems;

@@ -26,6 +26,7 @@ public class HoldService {
     private final OperationRepository operationRepository;
     private final ProcessRepository processRepository;
     private final OrderLineItemRepository orderLineItemRepository;
+    private final OrderRepository orderRepository;
     private final InventoryRepository inventoryRepository;
     private final BatchRepository batchRepository;
 
@@ -154,8 +155,10 @@ public class HoldService {
         return holdRecordRepository.countByStatus("ACTIVE");
     }
 
+    private final EquipmentRepository equipmentRepository;
+
     private void validateEntityType(String entityType) {
-        List<String> validTypes = List.of("OPERATION", "PROCESS", "ORDER_LINE", "INVENTORY", "BATCH");
+        List<String> validTypes = List.of("OPERATION", "PROCESS", "ORDER", "ORDER_LINE", "INVENTORY", "BATCH", "EQUIPMENT");
         if (!validTypes.contains(entityType)) {
             throw new RuntimeException("Invalid entity type: " + entityType);
         }
@@ -169,6 +172,9 @@ public class HoldService {
             case "PROCESS" -> processRepository.findById(entityId)
                     .map(p -> p.getProcessName())
                     .orElse("Unknown Process");
+            case "ORDER" -> orderRepository.findById(entityId)
+                    .map(o -> o.getOrderNumber() + " - " + o.getCustomerName())
+                    .orElse("Unknown Order");
             case "ORDER_LINE" -> orderLineItemRepository.findById(entityId)
                     .map(oli -> oli.getProductSku() + " - " + oli.getProductName())
                     .orElse("Unknown Order Line");
@@ -178,6 +184,9 @@ public class HoldService {
             case "BATCH" -> batchRepository.findById(entityId)
                     .map(Batch::getBatchNumber)
                     .orElse("Unknown Batch");
+            case "EQUIPMENT" -> equipmentRepository.findById(entityId)
+                    .map(eq -> eq.getEquipmentCode() + " - " + eq.getName())
+                    .orElse("Unknown Equipment");
             default -> "Unknown";
         };
     }
@@ -190,6 +199,9 @@ public class HoldService {
             case "PROCESS" -> processRepository.findById(entityId)
                     .map(p -> p.getStatus().name())
                     .orElseThrow(() -> new RuntimeException("Process not found"));
+            case "ORDER" -> orderRepository.findById(entityId)
+                    .map(Order::getStatus)
+                    .orElseThrow(() -> new RuntimeException("Order not found"));
             case "ORDER_LINE" -> orderLineItemRepository.findById(entityId)
                     .map(OrderLineItem::getStatus)
                     .orElseThrow(() -> new RuntimeException("Order line not found"));
@@ -199,6 +211,9 @@ public class HoldService {
             case "BATCH" -> batchRepository.findById(entityId)
                     .map(Batch::getStatus)
                     .orElseThrow(() -> new RuntimeException("Batch not found"));
+            case "EQUIPMENT" -> equipmentRepository.findById(entityId)
+                    .map(Equipment::getStatus)
+                    .orElseThrow(() -> new RuntimeException("Equipment not found"));
             default -> throw new RuntimeException("Invalid entity type");
         };
     }
@@ -207,9 +222,11 @@ public class HoldService {
         return switch (entityType) {
             case "OPERATION" -> "READY";
             case "PROCESS" -> "READY";
+            case "ORDER" -> "CREATED";
             case "ORDER_LINE" -> "CREATED";
             case "INVENTORY" -> "AVAILABLE";
             case "BATCH" -> "AVAILABLE";
+            case "EQUIPMENT" -> "AVAILABLE";
             default -> "AVAILABLE";
         };
     }
@@ -227,6 +244,44 @@ public class HoldService {
                 // Process is design-time only (DRAFT/ACTIVE/INACTIVE)
                 // Holds don't change Process status - just recorded in HoldRecord
                 log.info("Hold applied to Process {} - design-time entity, status unchanged", entityId);
+            }
+            case "ORDER" -> {
+                Order order = orderRepository.findById(entityId)
+                        .orElseThrow(() -> new RuntimeException("Order not found"));
+                order.setStatus(newStatus);
+                order.setUpdatedBy(updatedBy);
+                orderRepository.save(order);
+
+                // R-09: Cascade hold to READY/IN_PROGRESS operations
+                if ("ON_HOLD".equals(newStatus) && order.getLineItems() != null) {
+                    for (OrderLineItem li : order.getLineItems()) {
+                        if (li.getOperations() != null) {
+                            for (Operation op : li.getOperations()) {
+                                if ("READY".equals(op.getStatus()) || "IN_PROGRESS".equals(op.getStatus())) {
+                                    op.setStatus("ON_HOLD");
+                                    op.setUpdatedBy(updatedBy);
+                                    operationRepository.save(op);
+                                    log.info("Cascaded hold to operation {} ({})", op.getOperationId(), op.getOperationName());
+                                }
+                            }
+                        }
+                    }
+                }
+                // R-09: Cascade release - restore operations to READY
+                if ("CREATED".equals(newStatus) && order.getLineItems() != null) {
+                    for (OrderLineItem li : order.getLineItems()) {
+                        if (li.getOperations() != null) {
+                            for (Operation op : li.getOperations()) {
+                                if ("ON_HOLD".equals(op.getStatus())) {
+                                    op.setStatus("READY");
+                                    op.setUpdatedBy(updatedBy);
+                                    operationRepository.save(op);
+                                    log.info("Cascaded release to operation {} ({})", op.getOperationId(), op.getOperationName());
+                                }
+                            }
+                        }
+                    }
+                }
             }
             case "ORDER_LINE" -> {
                 OrderLineItem orderLine = orderLineItemRepository.findById(entityId)
@@ -248,6 +303,13 @@ public class HoldService {
                 batch.setStatus(newStatus);
                 batch.setUpdatedBy(updatedBy);
                 batchRepository.save(batch);
+            }
+            case "EQUIPMENT" -> {
+                Equipment equipment = equipmentRepository.findById(entityId)
+                        .orElseThrow(() -> new RuntimeException("Equipment not found"));
+                equipment.setStatus(newStatus);
+                equipment.setUpdatedBy(updatedBy);
+                equipmentRepository.save(equipment);
             }
         }
     }

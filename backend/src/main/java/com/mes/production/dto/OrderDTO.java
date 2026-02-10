@@ -20,6 +20,8 @@ public class OrderDTO {
     private String customerId;
     private String customerName;
     private LocalDate orderDate;
+    private LocalDate deliveryDate;
+    private String notes;
     private String status;
     private List<OrderLineDTO> lineItems;
 

@@ -5,8 +5,10 @@ import com.mes.production.dto.PagedResponseDTO;
 import com.mes.production.dto.PageRequestDTO;
 import com.mes.production.entity.AuditTrail;
 import com.mes.production.entity.Equipment;
+import com.mes.production.entity.HoldRecord;
 import com.mes.production.repository.AuditTrailRepository;
 import com.mes.production.repository.EquipmentRepository;
+import com.mes.production.repository.HoldRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +30,7 @@ public class EquipmentService {
     private final EquipmentRepository equipmentRepository;
     private final AuditService auditService;
     private final AuditTrailRepository auditTrailRepository;
+    private final HoldRecordRepository holdRecordRepository;
 
     /**
      * Get all equipment
@@ -211,6 +214,18 @@ public class EquipmentService {
         equipment.setUpdatedBy(currentUser);
         equipmentRepository.save(equipment);
 
+        // Create HoldRecord for audit trail consistency (R-07)
+        HoldRecord holdRecord = HoldRecord.builder()
+                .entityType(HoldRecord.ENTITY_TYPE_EQUIPMENT)
+                .entityId(equipmentId)
+                .reason(reason)
+                .appliedBy(currentUser)
+                .appliedOn(LocalDateTime.now())
+                .status(HoldRecord.STATUS_ACTIVE)
+                .build();
+        holdRecord.setPreviousStatus(oldStatus);
+        holdRecordRepository.save(holdRecord);
+
         log.info("Equipment {} put on hold by {}", equipmentId, currentUser);
         auditService.logStatusChange("EQUIPMENT", equipmentId, oldStatus, Equipment.STATUS_ON_HOLD);
 
@@ -247,6 +262,16 @@ public class EquipmentService {
         equipment.setHeldBy(null);
         equipment.setUpdatedBy(currentUser);
         equipmentRepository.save(equipment);
+
+        // Release active HoldRecord for audit trail consistency (R-07)
+        holdRecordRepository.findByEntityTypeAndEntityIdAndStatus(
+                HoldRecord.ENTITY_TYPE_EQUIPMENT, equipmentId, HoldRecord.STATUS_ACTIVE)
+                .ifPresent(holdRecord -> {
+                    holdRecord.setReleasedBy(currentUser);
+                    holdRecord.setReleasedOn(LocalDateTime.now());
+                    holdRecord.setStatus(HoldRecord.STATUS_RELEASED);
+                    holdRecordRepository.save(holdRecord);
+                });
 
         log.info("Equipment {} released from hold by {}", equipmentId, currentUser);
         auditService.logStatusChange("EQUIPMENT", equipmentId, oldStatus, Equipment.STATUS_AVAILABLE);

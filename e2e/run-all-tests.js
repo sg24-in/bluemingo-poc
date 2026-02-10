@@ -61,6 +61,8 @@ const { runNewDetailPageTests } = require('./tests/42-new-detail-pages.test');
 const { runChangePasswordTests } = require('./tests/43-change-password.test');
 const { runEntityDetailPageTests } = require('./tests/44-entity-detail-pages.test');
 const { runCrudSubmissionTests } = require('./tests/45-crud-submissions.test');
+// Note: 46-material-selection-modal.test.js and 47-apply-hold-modal.test.js
+// use standalone describe/it pattern (run independently, not via master runner)
 
 // Parse command line arguments
 const args = process.argv.slice(2);

@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_id VARCHAR(100),
     customer_name VARCHAR(255),
     order_date DATE NOT NULL,
+    delivery_date DATE,
+    notes VARCHAR(1000),
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),

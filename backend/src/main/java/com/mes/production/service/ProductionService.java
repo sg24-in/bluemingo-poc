@@ -1,5 +1,6 @@
 package com.mes.production.service;
 
+import com.mes.production.dto.BomDTO;
 import com.mes.production.dto.ProductionConfirmationDTO;
 import com.mes.production.entity.*;
 import com.mes.production.repository.*;
@@ -42,6 +43,8 @@ public class ProductionService {
     private final BatchNumberService batchNumberService;
     private final InventoryStateValidator inventoryStateValidator;
     private final BatchSizeService batchSizeService;
+    private final OrderRepository orderRepository;
+    private final BomValidationService bomValidationService;
 
     /**
      * Confirm production for an operation
@@ -170,10 +173,38 @@ public class ProductionService {
             log.info("Consumed {} from batch {}", consumption.getQuantity(), consumption.getBatchId());
         }
 
-        // 3. Calculate batch splits using BatchSizeService (B13: Multi-batch support)
-        String operationType = operation.getOperationType();
+        // R-02: Validate consumed materials against BOM requirements
         String productSku = operation.getOrderLineItem() != null ?
                 operation.getOrderLineItem().getProductSku() : null;
+        if (productSku != null) {
+            List<BomDTO.MaterialConsumption> bomConsumptions = materialsConsumedInfo.stream()
+                    .map(m -> BomDTO.MaterialConsumption.builder()
+                            .materialId(m.getMaterialId())
+                            .quantity(m.getQuantityConsumed())
+                            .build())
+                    .collect(Collectors.toList());
+
+            BomDTO.BomValidationRequest bomValidationRequest = BomDTO.BomValidationRequest.builder()
+                    .productSku(productSku)
+                    .targetQuantity(request.getProducedQty())
+                    .materialsConsumed(bomConsumptions)
+                    .build();
+
+            BomDTO.BomValidationResult bomResult = bomValidationService.validateConsumption(bomValidationRequest);
+            if (!bomResult.isValid()) {
+                String bomErrors = String.join("; ", bomResult.getErrors());
+                log.warn("BOM validation failed for operation {}: {}", operation.getOperationId(), bomErrors);
+                // Log warnings but continue (soft enforcement for POC)
+                auditService.logCreate("BOM_VALIDATION", operation.getOperationId(),
+                        "BOM validation warning: " + bomErrors);
+            }
+            for (String warning : bomResult.getWarnings()) {
+                log.warn("BOM validation warning: {}", warning);
+            }
+        }
+
+        // 3. Calculate batch splits using BatchSizeService (B13: Multi-batch support)
+        String operationType = operation.getOperationType();
         String equipmentType = null; // Could be enhanced to get from request.getEquipmentIds()
 
         BatchSizeService.BatchSizeResult batchSizeResult = batchSizeService.calculateBatchSizes(
@@ -512,14 +543,53 @@ public class ProductionService {
                     .processName(processName)
                     .build();
         } else {
-            // All operations in this process are complete
+            // All operations in this line item are complete
             // Process is design-time only - no runtime status to update
             // Runtime completion is tracked at Operation level
             log.info("All operations completed for process: {}", processName);
 
-            // Check if there's a next process
-            // For POC, we'll return null - can be enhanced later
+            // R-08: Check if all operations across ALL line items in the order are CONFIRMED
+            checkAndCompleteOrder(currentOp, currentUser);
+
             return null;
+        }
+    }
+
+    /**
+     * R-08: Auto-complete order when all operations across all line items are CONFIRMED.
+     */
+    private void checkAndCompleteOrder(Operation completedOp, String currentUser) {
+        try {
+            OrderLineItem lineItem = completedOp.getOrderLineItem();
+            if (lineItem == null || lineItem.getOrder() == null) return;
+
+            Order order = orderRepository.findById(lineItem.getOrder().getOrderId()).orElse(null);
+            if (order == null || "COMPLETED".equals(order.getStatus()) || "CANCELLED".equals(order.getStatus())) return;
+
+            // Check if ALL operations across ALL line items are CONFIRMED
+            boolean allConfirmed = true;
+            for (OrderLineItem li : order.getLineItems()) {
+                if (li.getOperations() != null) {
+                    for (Operation op : li.getOperations()) {
+                        if (!"CONFIRMED".equals(op.getStatus())) {
+                            allConfirmed = false;
+                            break;
+                        }
+                    }
+                }
+                if (!allConfirmed) break;
+            }
+
+            if (allConfirmed) {
+                String oldStatus = order.getStatus();
+                order.setStatus("COMPLETED");
+                order.setUpdatedBy(currentUser);
+                orderRepository.save(order);
+                log.info("Order {} auto-completed: all operations confirmed", order.getOrderNumber());
+                auditService.logStatusChange("ORDER", order.getOrderId(), oldStatus, "COMPLETED");
+            }
+        } catch (Exception e) {
+            log.warn("Could not check order completion: {}", e.getMessage());
         }
     }
 
