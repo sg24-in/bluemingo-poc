@@ -29,3 +29,6 @@ export * from './unit-of-measure.model';
 export * from './config.model';
 export * from './audit.model';
 export * from './user.model';
+
+// Report Analytics
+export * from './report-analytics.model';

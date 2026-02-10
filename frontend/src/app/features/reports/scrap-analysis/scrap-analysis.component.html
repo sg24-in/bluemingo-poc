@@ -1,0 +1,94 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Scrap Analysis</h1>
+      <p class="page-subtitle">Where is scrap occurring and what are the trends?</p>
+    </div>
+    <a routerLink="/reports" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Reports</a>
+  </div>
+
+  <div class="date-filter card">
+    <label>From:</label>
+    <input type="date" [(ngModel)]="startDate" (change)="onDateChange()">
+    <label>To:</label>
+    <input type="date" [(ngModel)]="endDate" (change)="onDateChange()">
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading scrap analysis..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading && scrapData">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Scrap</span>
+        <span class="kpi-value scrap">{{ scrapData.totalScrap | number:'1.0-0' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Products Affected</span>
+        <span class="kpi-value">{{ scrapData.scrapByProduct.length }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Operations Affected</span>
+        <span class="kpi-value">{{ scrapData.scrapByOperation.length }}</span>
+      </div>
+    </div>
+
+    <div class="tables-grid">
+      <div class="card" *ngIf="scrapData.scrapByProduct.length > 0">
+        <h3>Scrap by Product</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product SKU</th>
+              <th>Scrap Quantity</th>
+              <th>% of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of scrapData.scrapByProduct">
+              <td><span class="product-badge">{{ entry.productSku }}</span></td>
+              <td class="scrap">{{ entry.scrapQuantity | number:'1.0-0' }}</td>
+              <td>
+                <div class="percentage-bar-container">
+                  <div class="percentage-bar" [style.width.%]="entry.percentage"></div>
+                  <span class="percentage-text">{{ entry.percentage | number:'1.1-1' }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" *ngIf="scrapData.scrapByOperation.length > 0">
+        <h3>Scrap by Operation</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Operation Type</th>
+              <th>Scrap Quantity</th>
+              <th>% of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of scrapData.scrapByOperation">
+              <td><span class="type-badge">{{ entry.operationType }}</span></td>
+              <td class="scrap">{{ entry.scrapQuantity | number:'1.0-0' }}</td>
+              <td>
+                <div class="percentage-bar-container">
+                  <div class="percentage-bar" [style.width.%]="entry.percentage"></div>
+                  <span class="percentage-text">{{ entry.percentage | number:'1.1-1' }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card empty-state" *ngIf="scrapData.scrapByProduct.length === 0 && scrapData.scrapByOperation.length === 0">
+      <p>No scrap data found for the selected date range.</p>
+    </div>
+  </div>
+</div>

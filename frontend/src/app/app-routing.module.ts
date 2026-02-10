@@ -59,6 +59,10 @@ const routes: Routes = [
       {
         path: 'change-password',
         loadChildren: () => import('./features/change-password/change-password.module').then(m => m.ChangePasswordModule)
+      },
+      {
+        path: 'reports',
+        loadChildren: () => import('./features/reports/reports.module').then(m => m.ReportsModule)
       }
     ]
   },

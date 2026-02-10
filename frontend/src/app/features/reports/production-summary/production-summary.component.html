@@ -1,0 +1,74 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Production Summary</h1>
+      <p class="page-subtitle">What was produced, where, and how efficiently?</p>
+    </div>
+    <a routerLink="/reports" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Reports</a>
+  </div>
+
+  <div class="date-filter card">
+    <label>From:</label>
+    <input type="date" [(ngModel)]="startDate" (change)="onDateChange()">
+    <label>To:</label>
+    <input type="date" [(ngModel)]="endDate" (change)="onDateChange()">
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading production data..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading && summary">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Produced</span>
+        <span class="kpi-value">{{ summary.totalProduced | number:'1.0-0' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Total Scrap</span>
+        <span class="kpi-value scrap">{{ summary.totalScrap | number:'1.0-0' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Yield %</span>
+        <span class="kpi-value" [class.good]="summary.yieldPercentage >= 90" [class.warn]="summary.yieldPercentage < 90 && summary.yieldPercentage >= 80" [class.bad]="summary.yieldPercentage < 80">{{ summary.yieldPercentage | number:'1.1-1' }}%</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Avg Cycle Time</span>
+        <span class="kpi-value">{{ summary.avgCycleTimeMinutes | number:'1.0-0' }} min</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Confirmations</span>
+        <span class="kpi-value">{{ summary.confirmationCount }}</span>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="byOperation?.entries?.length">
+      <h3>Production by Operation Type</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Operation Type</th>
+            <th>Confirmations</th>
+            <th>Total Produced</th>
+            <th>Total Scrap</th>
+            <th>Yield %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entry of byOperation!.entries">
+            <td><span class="type-badge">{{ entry.operationType }}</span></td>
+            <td>{{ entry.confirmationCount }}</td>
+            <td>{{ entry.totalProduced | number:'1.0-0' }}</td>
+            <td>{{ entry.totalScrap | number:'1.0-0' }}</td>
+            <td>
+              <span [class.good]="entry.yieldPercentage >= 90" [class.warn]="entry.yieldPercentage < 90 && entry.yieldPercentage >= 80" [class.bad]="entry.yieldPercentage < 80">
+                {{ entry.yieldPercentage | number:'1.1-1' }}%
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

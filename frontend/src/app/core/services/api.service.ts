@@ -94,7 +94,16 @@ import {
   OperationTemplate,
   CreateOperationTemplateRequest,
   UpdateOperationTemplateRequest,
-  OperationTemplateSummary
+  OperationTemplateSummary,
+  // Report Analytics
+  ProductionSummary,
+  ProductionByOperation,
+  ScrapAnalysis,
+  OrderFulfillment,
+  InventoryBalance,
+  OperationCycleTimes,
+  HoldAnalysis,
+  ExecutiveDashboard
 } from '../../shared/models';
 
 /**
@@ -1433,5 +1442,49 @@ export class ApiService {
 
   deactivateUser(userId: number): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/users/${userId}/deactivate`, {});
+  }
+
+  // ============================================================
+  // Report Analytics
+  // ============================================================
+
+  getProductionSummary(startDate: string, endDate: string): Observable<ProductionSummary> {
+    return this.http.get<ProductionSummary>(`${environment.apiUrl}/reports/analytics/production/summary`, {
+      params: { startDate, endDate }
+    });
+  }
+
+  getProductionByOperation(startDate: string, endDate: string): Observable<ProductionByOperation> {
+    return this.http.get<ProductionByOperation>(`${environment.apiUrl}/reports/analytics/production/by-operation`, {
+      params: { startDate, endDate }
+    });
+  }
+
+  getScrapAnalysis(startDate: string, endDate: string): Observable<ScrapAnalysis> {
+    return this.http.get<ScrapAnalysis>(`${environment.apiUrl}/reports/analytics/quality/scrap-analysis`, {
+      params: { startDate, endDate }
+    });
+  }
+
+  getOrderFulfillment(): Observable<OrderFulfillment> {
+    return this.http.get<OrderFulfillment>(`${environment.apiUrl}/reports/analytics/orders/fulfillment`);
+  }
+
+  getInventoryBalance(): Observable<InventoryBalance> {
+    return this.http.get<InventoryBalance>(`${environment.apiUrl}/reports/analytics/inventory/balance`);
+  }
+
+  getOperationCycleTimes(startDate: string, endDate: string): Observable<OperationCycleTimes> {
+    return this.http.get<OperationCycleTimes>(`${environment.apiUrl}/reports/analytics/operations/cycle-times`, {
+      params: { startDate, endDate }
+    });
+  }
+
+  getHoldAnalysis(): Observable<HoldAnalysis> {
+    return this.http.get<HoldAnalysis>(`${environment.apiUrl}/reports/analytics/operations/holds`);
+  }
+
+  getExecutiveDashboard(): Observable<ExecutiveDashboard> {
+    return this.http.get<ExecutiveDashboard>(`${environment.apiUrl}/reports/analytics/executive/dashboard`);
   }
 }

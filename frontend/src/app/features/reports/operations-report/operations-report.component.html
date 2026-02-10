@@ -1,0 +1,110 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Operations & Holds</h1>
+      <p class="page-subtitle">Cycle times and hold analysis by entity type</p>
+    </div>
+    <a routerLink="/reports" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Reports</a>
+  </div>
+
+  <div class="date-filter card">
+    <label>From:</label>
+    <input type="date" [(ngModel)]="startDate" (change)="onDateChange()">
+    <label>To:</label>
+    <input type="date" [(ngModel)]="endDate" (change)="onDateChange()">
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading operations data..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Cycle Times Table -->
+    <div class="card" *ngIf="cycleTimes.length > 0">
+      <h3>Operation Cycle Times</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Operation Type</th>
+            <th>Avg (min)</th>
+            <th>Min (min)</th>
+            <th>Max (min)</th>
+            <th>Samples</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entry of cycleTimes">
+            <td><span class="type-badge">{{ entry.operationType }}</span></td>
+            <td [ngClass]="getCycleTimeClass(entry.avgMinutes, entry.maxMinutes)">
+              {{ entry.avgMinutes | number:'1.0-0' }}
+            </td>
+            <td>{{ entry.minMinutes | number:'1.0-0' }}</td>
+            <td>{{ entry.maxMinutes | number:'1.0-0' }}</td>
+            <td>{{ entry.sampleCount }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card empty-state" *ngIf="cycleTimes.length === 0">
+      <p>No cycle time data for the selected date range.</p>
+    </div>
+
+    <!-- Hold Analysis -->
+    <div *ngIf="holdAnalysis">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Active Holds</span>
+          <span class="kpi-value holds-active">{{ holdAnalysis.totalActiveHolds }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Released Holds</span>
+          <span class="kpi-value holds-released">{{ holdAnalysis.totalReleasedHolds }}</span>
+        </div>
+      </div>
+
+      <div class="tables-grid">
+        <div class="card" *ngIf="holdAnalysis.byEntityType.length > 0">
+          <h3>Holds by Entity Type</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Entity Type</th>
+                <th>Active</th>
+                <th>Released</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of holdAnalysis.byEntityType">
+                <td><span class="entity-badge">{{ entry.entityType }}</span></td>
+                <td class="holds-active">{{ entry.activeCount }}</td>
+                <td>{{ entry.releasedCount }}</td>
+                <td>{{ entry.totalCount }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card" *ngIf="holdAnalysis.topReasons.length > 0">
+          <h3>Top Hold Reasons</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Reason</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of holdAnalysis.topReasons">
+                <td>{{ entry.reason }}</td>
+                <td>{{ entry.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

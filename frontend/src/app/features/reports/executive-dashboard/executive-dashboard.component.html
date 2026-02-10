@@ -1,0 +1,193 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Executive Dashboard</h1>
+      <p class="page-subtitle">Comprehensive overview of production, orders, inventory, and holds</p>
+    </div>
+    <a routerLink="/reports" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Reports</a>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading executive dashboard..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading && data">
+    <!-- Production Section -->
+    <div class="section">
+      <h2 class="section-title">Production Performance</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Yield</span>
+          <span class="kpi-value" [ngClass]="getYieldClass(data.productionSummary.yieldPercentage)">
+            {{ data.productionSummary.yieldPercentage | number:'1.1-1' }}%
+          </span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Produced</span>
+          <span class="kpi-value">{{ data.productionSummary.totalProduced | number:'1.0-0' }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Scrap</span>
+          <span class="kpi-value scrap">{{ data.productionSummary.totalScrap | number:'1.0-0' }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Avg Cycle Time</span>
+          <span class="kpi-value">{{ data.productionSummary.avgCycleTimeMinutes | number:'1.0-0' }} min</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Confirmations</span>
+          <span class="kpi-value">{{ data.productionSummary.confirmationCount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Section -->
+    <div class="section">
+      <h2 class="section-title">Order Fulfillment</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card highlight">
+          <span class="kpi-label">Completion Rate</span>
+          <span class="kpi-value" [ngClass]="getCompletionClass(data.orderFulfillment.completionPercentage)">
+            {{ data.orderFulfillment.completionPercentage | number:'1.1-1' }}%
+          </span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Orders</span>
+          <span class="kpi-value">{{ data.orderFulfillment.totalOrders }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Completed</span>
+          <span class="kpi-value completed">{{ data.orderFulfillment.completedOrders }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">In Progress</span>
+          <span class="kpi-value in-progress">{{ data.orderFulfillment.inProgressOrders }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Overdue</span>
+          <span class="kpi-value overdue">{{ data.orderFulfillment.overdueOrders }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Section -->
+    <div class="section">
+      <h2 class="section-title">Inventory Overview</h2>
+      <div class="kpi-grid kpi-grid-sm">
+        <div class="kpi-card">
+          <span class="kpi-label">Total Items</span>
+          <span class="kpi-value">{{ data.inventoryBalance.totalItems | number:'1.0-0' }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Quantity</span>
+          <span class="kpi-value">{{ data.inventoryBalance.totalQuantity | number:'1.0-0' }}</span>
+        </div>
+      </div>
+      <div class="card" *ngIf="data.inventoryBalance.byType.length > 0">
+        <h3>By Type</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Items</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of data.inventoryBalance.byType">
+              <td>
+                <span class="type-badge">{{ entry.inventoryType }}</span>
+                <span class="type-label">{{ getTypeLabel(entry.inventoryType) }}</span>
+              </td>
+              <td>{{ entry.itemCount | number:'1.0-0' }}</td>
+              <td>{{ entry.totalQuantity | number:'1.0-0' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Holds Section -->
+    <div class="section">
+      <h2 class="section-title">Hold Status</h2>
+      <div class="kpi-grid kpi-grid-sm">
+        <div class="kpi-card">
+          <span class="kpi-label">Active Holds</span>
+          <span class="kpi-value holds-active">{{ data.holdAnalysis.totalActiveHolds }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Released Holds</span>
+          <span class="kpi-value holds-released">{{ data.holdAnalysis.totalReleasedHolds }}</span>
+        </div>
+      </div>
+      <div class="tables-grid" *ngIf="data.holdAnalysis.byEntityType.length > 0 || data.holdAnalysis.topReasons.length > 0">
+        <div class="card" *ngIf="data.holdAnalysis.byEntityType.length > 0">
+          <h3>By Entity Type</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Entity Type</th>
+                <th>Active</th>
+                <th>Released</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of data.holdAnalysis.byEntityType">
+                <td><span class="entity-badge">{{ entry.entityType }}</span></td>
+                <td class="holds-active">{{ entry.activeCount }}</td>
+                <td>{{ entry.releasedCount }}</td>
+                <td>{{ entry.totalCount }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card" *ngIf="data.holdAnalysis.topReasons.length > 0">
+          <h3>Top Hold Reasons</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Reason</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of data.holdAnalysis.topReasons">
+                <td>{{ entry.reason }}</td>
+                <td>{{ entry.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Cycle Times -->
+    <div class="section" *ngIf="data.topCycleTimes && data.topCycleTimes.length > 0">
+      <h2 class="section-title">Top Cycle Times</h2>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Operation Type</th>
+              <th>Avg (min)</th>
+              <th>Min (min)</th>
+              <th>Max (min)</th>
+              <th>Samples</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of data.topCycleTimes">
+              <td><span class="type-badge">{{ entry.operationType }}</span></td>
+              <td>{{ entry.avgMinutes | number:'1.0-0' }}</td>
+              <td>{{ entry.minMinutes | number:'1.0-0' }}</td>
+              <td>{{ entry.maxMinutes | number:'1.0-0' }}</td>
+              <td>{{ entry.sampleCount }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

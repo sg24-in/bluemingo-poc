@@ -1,0 +1,78 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Order Fulfillment</h1>
+      <p class="page-subtitle">Order completion rates and delivery status</p>
+    </div>
+    <a routerLink="/reports" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Reports</a>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading order fulfillment..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading && fulfillmentData">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Orders</span>
+        <span class="kpi-value">{{ fulfillmentData.totalOrders }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Completed</span>
+        <span class="kpi-value completed">{{ fulfillmentData.completedOrders }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">In Progress</span>
+        <span class="kpi-value in-progress">{{ fulfillmentData.inProgressOrders }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Overdue</span>
+        <span class="kpi-value overdue">{{ fulfillmentData.overdueOrders }}</span>
+      </div>
+      <div class="kpi-card highlight">
+        <span class="kpi-label">Completion Rate</span>
+        <span class="kpi-value" [ngClass]="getCompletionClass(fulfillmentData.completionPercentage)">
+          {{ fulfillmentData.completionPercentage | number:'1.1-1' }}%
+        </span>
+      </div>
+    </div>
+
+    <!-- Visual Progress Bar -->
+    <div class="card">
+      <h3>Order Status Distribution</h3>
+      <div class="status-bar">
+        <div class="status-segment completed-segment"
+             *ngIf="fulfillmentData.completedOrders > 0"
+             [style.flex]="fulfillmentData.completedOrders"
+             title="Completed: {{ fulfillmentData.completedOrders }}">
+          <span *ngIf="fulfillmentData.completedOrders > 0">{{ fulfillmentData.completedOrders }}</span>
+        </div>
+        <div class="status-segment in-progress-segment"
+             *ngIf="fulfillmentData.inProgressOrders > 0"
+             [style.flex]="fulfillmentData.inProgressOrders"
+             title="In Progress: {{ fulfillmentData.inProgressOrders }}">
+          <span *ngIf="fulfillmentData.inProgressOrders > 0">{{ fulfillmentData.inProgressOrders }}</span>
+        </div>
+        <div class="status-segment pending-segment"
+             *ngIf="pendingOrders > 0"
+             [style.flex]="pendingOrders"
+             title="Pending: {{ pendingOrders }}">
+          <span *ngIf="pendingOrders > 0">{{ pendingOrders }}</span>
+        </div>
+        <div class="status-segment overdue-segment"
+             *ngIf="fulfillmentData.overdueOrders > 0"
+             [style.flex]="fulfillmentData.overdueOrders"
+             title="Overdue: {{ fulfillmentData.overdueOrders }}">
+          <span *ngIf="fulfillmentData.overdueOrders > 0">{{ fulfillmentData.overdueOrders }}</span>
+        </div>
+      </div>
+      <div class="status-legend">
+        <div class="legend-item"><span class="legend-dot completed-dot"></span> Completed</div>
+        <div class="legend-item"><span class="legend-dot in-progress-dot"></span> In Progress</div>
+        <div class="legend-item"><span class="legend-dot pending-dot"></span> Pending</div>
+        <div class="legend-item"><span class="legend-dot overdue-dot"></span> Overdue</div>
+      </div>
+    </div>
+  </div>
+</div>

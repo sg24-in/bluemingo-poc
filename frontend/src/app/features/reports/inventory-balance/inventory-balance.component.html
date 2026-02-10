@@ -1,0 +1,84 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Inventory Balance</h1>
+      <p class="page-subtitle">Current inventory levels by type and state</p>
+    </div>
+    <a routerLink="/reports" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Reports</a>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="loading" class="text-center">
+    <app-loading-spinner message="Loading inventory balance..."></app-loading-spinner>
+  </div>
+
+  <div *ngIf="!loading && balanceData">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Items</span>
+        <span class="kpi-value">{{ balanceData.totalItems | number:'1.0-0' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Total Quantity</span>
+        <span class="kpi-value">{{ balanceData.totalQuantity | number:'1.0-0' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Material Types</span>
+        <span class="kpi-value">{{ balanceData.byType.length }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Active States</span>
+        <span class="kpi-value">{{ balanceData.byState.length }}</span>
+      </div>
+    </div>
+
+    <div class="tables-grid">
+      <div class="card" *ngIf="balanceData.byType.length > 0">
+        <h3>By Inventory Type</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Item Count</th>
+              <th>Total Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of balanceData.byType">
+              <td>
+                <span class="type-badge">{{ entry.inventoryType }}</span>
+                <span class="type-label">{{ getTypeLabel(entry.inventoryType) }}</span>
+              </td>
+              <td>{{ entry.itemCount | number:'1.0-0' }}</td>
+              <td>{{ entry.totalQuantity | number:'1.0-0' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" *ngIf="balanceData.byState.length > 0">
+        <h3>By Inventory State</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>State</th>
+              <th>Item Count</th>
+              <th>Total Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of balanceData.byState">
+              <td><span class="state-badge" [ngClass]="getStateClass(entry.state)">{{ entry.state }}</span></td>
+              <td>{{ entry.itemCount | number:'1.0-0' }}</td>
+              <td>{{ entry.totalQuantity | number:'1.0-0' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card empty-state" *ngIf="balanceData.byType.length === 0 && balanceData.byState.length === 0">
+      <p>No inventory data available.</p>
+    </div>
+  </div>
+</div>
