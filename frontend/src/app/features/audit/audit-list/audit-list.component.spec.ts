@@ -157,49 +157,10 @@ describe('AuditListComponent', () => {
 
     it('should change page size and reset to first page', () => {
       component.currentPage = 2;
-      component.pageSize = 50;
-      component.onPageSizeChange();
+      component.onSizeChange(50);
       expect(component.currentPage).toBe(0);
+      expect(component.pageSize).toBe(50);
       expect(apiServiceSpy.getAuditPaged).toHaveBeenCalled();
-    });
-
-    it('should calculate start index correctly', () => {
-      component.currentPage = 0;
-      component.pageSize = 20;
-      component.totalElements = 50;
-      expect(component.startIndex).toBe(1);
-
-      component.currentPage = 1;
-      expect(component.startIndex).toBe(21);
-    });
-
-    it('should calculate end index correctly', () => {
-      component.currentPage = 0;
-      component.pageSize = 20;
-      component.totalElements = 50;
-      expect(component.endIndex).toBe(20);
-
-      component.currentPage = 2;
-      expect(component.endIndex).toBe(50);
-    });
-
-    it('should generate page numbers around current page', () => {
-      component.totalPages = 10;
-      component.currentPage = 5;
-      expect(component.pages).toEqual([3, 4, 5, 6, 7]);
-    });
-
-    it('should handle pages at start', () => {
-      component.totalPages = 10;
-      component.currentPage = 0;
-      expect(component.pages).toEqual([0, 1, 2, 3, 4]);
-    });
-
-    it('should handle pages at end', () => {
-      component.totalPages = 10;
-      component.currentPage = 9;
-      // Pages are calculated as: start = max(0, currentPage - 2) = 7, end = min(10, 7 + 5) = 10
-      expect(component.pages).toEqual([7, 8, 9]);
     });
   });
 

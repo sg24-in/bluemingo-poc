@@ -85,7 +85,9 @@ describe('ProductionConfirmComponent', () => {
       'confirmProduction',
       'getDelayReasons',
       'getHoldReasons',
-      'applyHold'
+      'applyHold',
+      'getSuggestedConsumption',
+      'previewBatchNumber'
     ]);
 
     await TestBed.configureTestingModule({
@@ -126,6 +128,8 @@ describe('ProductionConfirmComponent', () => {
     apiServiceSpy.getDelayReasons.and.returnValue(of(mockDelayReasons as any));
     apiServiceSpy.getHoldReasons.and.returnValue(of(mockHoldReasons as any));
     apiServiceSpy.applyHold.and.returnValue(of({ holdId: 1, status: 'ACTIVE' } as any));
+    apiServiceSpy.getSuggestedConsumption.and.returnValue(of({ suggestedMaterials: [], productSku: '', operationId: 0 } as any));
+    apiServiceSpy.previewBatchNumber.and.returnValue(of({ batchNumber: 'BATCH-PREVIEW-001' } as any));
 
     fixture = TestBed.createComponent(ProductionConfirmComponent);
     component = fixture.componentInstance;

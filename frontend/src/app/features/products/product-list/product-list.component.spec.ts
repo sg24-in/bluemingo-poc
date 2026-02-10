@@ -167,7 +167,7 @@ describe('ProductListComponent', () => {
 
   it('should render app-pagination when data is present', () => {
     component.products = [
-      { sku: 'P1', productName: 'Test', baseUnit: 'KG', status: 'ACTIVE', description: '' }
+      { productId: 1, sku: 'P1', productName: 'Test', baseUnit: 'KG', status: 'ACTIVE', description: '' } as any
     ];
     component.loading = false;
     component.totalElements = 1;

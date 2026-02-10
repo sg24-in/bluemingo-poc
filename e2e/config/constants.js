@@ -99,7 +99,18 @@ const ROUTES = {
     // Operation Templates
     OPERATION_TEMPLATES: '/#/manage/operation-templates',
     OPERATION_TEMPLATE_NEW: '/#/manage/operation-templates/new',
-    OPERATION_TEMPLATE_EDIT: (id) => `/#/manage/operation-templates/${id}/edit`
+    OPERATION_TEMPLATE_EDIT: (id) => `/#/manage/operation-templates/${id}/edit`,
+    OPERATION_TEMPLATE_DETAIL: (id) => `/#/manage/operation-templates/${id}`,
+    // Routing Detail
+    ADMIN_ROUTING_DETAIL: (id) => `/#/manage/routing/${id}`,
+    // Reports
+    REPORTS: '/#/reports',
+    REPORTS_PRODUCTION: '/#/reports/production',
+    REPORTS_SCRAP: '/#/reports/scrap-analysis',
+    REPORTS_INVENTORY: '/#/reports/inventory-balance',
+    REPORTS_ORDERS: '/#/reports/order-fulfillment',
+    REPORTS_OPERATIONS: '/#/reports/operations',
+    REPORTS_EXECUTIVE: '/#/reports/executive-dashboard'
 };
 
 // CSS Selectors

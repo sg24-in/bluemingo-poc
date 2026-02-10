@@ -204,7 +204,7 @@ describe('CustomerListComponent', () => {
 
   it('should render app-pagination when data is present', () => {
     component.customers = [
-      { customerCode: 'C1', customerName: 'Test', status: 'ACTIVE', contactPerson: '', email: '', phone: '', city: '' }
+      { customerId: 1, customerCode: 'C1', customerName: 'Test', status: 'ACTIVE', contactPerson: '', email: '', phone: '', city: '' } as any
     ];
     component.loading = false;
     component.totalElements = 1;

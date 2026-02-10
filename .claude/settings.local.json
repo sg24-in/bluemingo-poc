@@ -164,7 +164,12 @@
       "Bash(git push)",
       "Bash(Select-Object -First 400)",
       "Bash(./gradlew testConnection:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(for f in 25-material-selection-modal.test.js 26-apply-hold-modal.test.js 30-full-workflow-setup.test.js 31-big-demo-setup.test.js)",
+      "Bash(do if [ -f \"$f\" ])",
+      "Bash(then echo \"EXISTS: $f\")",
+      "Bash(else echo \"MISSING: $f\")",
+      "Bash(fi:*)"
     ]
   }
 }

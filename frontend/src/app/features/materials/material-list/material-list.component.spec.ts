@@ -190,7 +190,7 @@ describe('MaterialListComponent', () => {
 
   it('should render app-pagination when data is present', () => {
     component.materials = [
-      { materialCode: 'M1', materialName: 'Test', materialType: 'RM', baseUnit: 'KG', status: 'ACTIVE', description: '' }
+      { materialId: 1, materialCode: 'M1', materialName: 'Test', materialType: 'RM', baseUnit: 'KG', status: 'ACTIVE', description: '' } as any
     ];
     component.loading = false;
     component.totalElements = 1;

@@ -57,6 +57,7 @@ const { runDashboardFeaturesTests } = require('./tests/38-dashboard-features.tes
 const { runFormValidationsTests } = require('./tests/39-form-validations.test');
 const { runWorkflowVerificationTests } = require('./tests/40-e2e-workflow-verification.test');
 const { runProductionFlowE2ETests } = require('./tests/41-production-flow-e2e.test');
+const { runNewDetailPageTests } = require('./tests/42-new-detail-pages.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -178,6 +179,7 @@ async function runAllTests() {
         await runFormValidationsTests(page, screenshots, results, runTest, submitActions);
         await runWorkflowVerificationTests(page, screenshots, results, runTest, submitActions);
         await runProductionFlowE2ETests(page, screenshots, results, runTest, submitActions);
+        await runNewDetailPageTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
@@ -212,7 +214,8 @@ async function runAllTests() {
                 { path: '/#/manage/config/quantity-type', name: 'config-quantity-type' },
                 { path: '/#/manage/audit', name: 'audit' },
                 { path: '/#/production/history', name: 'production-history' },
-                { path: '/#/manage/processes', name: 'admin-processes' }
+                { path: '/#/manage/processes', name: 'admin-processes' },
+                { path: '/#/reports', name: 'reports-landing' }
             ];
 
             for (const route of routes) {

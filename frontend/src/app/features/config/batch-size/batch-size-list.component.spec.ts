@@ -8,6 +8,7 @@ import { of, throwError } from 'rxjs';
 import { BatchSizeListComponent } from './batch-size-list.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { PagedResponse } from '../../../shared/models/pagination.model';
 
 describe('BatchSizeListComponent', () => {
   let component: BatchSizeListComponent;
@@ -66,9 +67,21 @@ describe('BatchSizeListComponent', () => {
     }
   ];
 
+  const mockPagedResponse: PagedResponse<any> = {
+    content: mockConfigs,
+    page: 0,
+    size: 20,
+    totalElements: 3,
+    totalPages: 1,
+    first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false
+  };
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj('ApiService', [
-      'getBatchSizeConfigs',
+      'getBatchSizeConfigsPaged',
       'deleteBatchSizeConfig'
     ]);
 
@@ -90,7 +103,7 @@ describe('BatchSizeListComponent', () => {
   });
 
   beforeEach(() => {
-    apiServiceSpy.getBatchSizeConfigs.and.returnValue(of(mockConfigs));
+    apiServiceSpy.getBatchSizeConfigsPaged.and.returnValue(of(mockPagedResponse));
     fixture = TestBed.createComponent(BatchSizeListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -101,66 +114,58 @@ describe('BatchSizeListComponent', () => {
   });
 
   it('should load configs on init', () => {
-    expect(apiServiceSpy.getBatchSizeConfigs).toHaveBeenCalled();
+    expect(apiServiceSpy.getBatchSizeConfigsPaged).toHaveBeenCalled();
     expect(component.configs.length).toBe(3);
     expect(component.loading).toBeFalse();
   });
 
-  it('should display all configs by default', () => {
-    expect(component.filteredConfigs.length).toBe(3);
-  });
-
   describe('Filtering', () => {
+    beforeEach(() => {
+      apiServiceSpy.getBatchSizeConfigsPaged.calls.reset();
+    });
+
     it('should filter by active status', () => {
-      component.statusFilter = 'active';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(2);
+      component.onFilterStatusChange('active');
+      expect(component.filterStatus).toBe('active');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getBatchSizeConfigsPaged).toHaveBeenCalledTimes(1);
     });
 
     it('should filter by inactive status', () => {
-      component.statusFilter = 'inactive';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(1);
-      expect(component.filteredConfigs[0].isActive).toBeFalse();
+      component.onFilterStatusChange('inactive');
+      expect(component.filterStatus).toBe('inactive');
+      expect(apiServiceSpy.getBatchSizeConfigsPaged).toHaveBeenCalledTimes(1);
     });
 
-    it('should filter by search term on operation type', () => {
-      component.searchTerm = 'MELTING';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(1);
-      expect(component.filteredConfigs[0].operationType).toBe('MELTING');
+    it('should filter by search term', () => {
+      component.onSearchChange('MELTING');
+      expect(component.searchTerm).toBe('MELTING');
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getBatchSizeConfigsPaged).toHaveBeenCalledTimes(1);
     });
 
-    it('should filter by search term on material ID', () => {
-      component.searchTerm = 'RM-001';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(1);
-      expect(component.filteredConfigs[0].materialId).toBe('RM-001');
+    it('should reset to first page when filter changes', () => {
+      component.page = 2;
+      component.onFilterStatusChange('active');
+      expect(component.page).toBe(0);
+    });
+  });
+
+  describe('Pagination', () => {
+    beforeEach(() => {
+      apiServiceSpy.getBatchSizeConfigsPaged.calls.reset();
     });
 
-    it('should filter by search term on product SKU', () => {
-      component.searchTerm = 'STL-ROD';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(1);
-      expect(component.filteredConfigs[0].productSku).toBe('STL-ROD');
+    it('should change page', () => {
+      component.onPageChange(1);
+      expect(apiServiceSpy.getBatchSizeConfigsPaged).toHaveBeenCalledTimes(1);
     });
 
-    it('should combine status and search filters', () => {
-      component.statusFilter = 'active';
-      component.searchTerm = 'CASTING';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(1);
-      expect(component.filteredConfigs[0].operationType).toBe('CASTING');
-    });
-
-    it('should show all when filters are cleared', () => {
-      component.statusFilter = 'active';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(2);
-
-      component.statusFilter = '';
-      component.applyFilters();
-      expect(component.filteredConfigs.length).toBe(3);
+    it('should change page size', () => {
+      component.onSizeChange(50);
+      expect(component.size).toBe(50);
+      expect(component.page).toBe(0);
+      expect(apiServiceSpy.getBatchSizeConfigsPaged).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -186,7 +191,6 @@ describe('BatchSizeListComponent', () => {
       component.delete(mockConfigs[0]);
 
       expect(apiServiceSpy.deleteBatchSizeConfig).toHaveBeenCalledWith(1);
-      expect(apiServiceSpy.getBatchSizeConfigs).toHaveBeenCalledTimes(2);
     });
 
     it('should not delete when not confirmed', () => {
@@ -228,32 +232,12 @@ describe('BatchSizeListComponent', () => {
 
   describe('Error Handling', () => {
     it('should handle load error', () => {
-      apiServiceSpy.getBatchSizeConfigs.and.returnValue(throwError(() => ({ error: { message: 'Load failed' } })));
+      apiServiceSpy.getBatchSizeConfigsPaged.and.returnValue(throwError(() => ({ error: { message: 'Load failed' } })));
 
-      component.loadConfigs();
+      component.loadPaged();
 
       expect(component.error).toBe('Load failed');
       expect(component.loading).toBeFalse();
-    });
-  });
-
-  describe('Filter Highlighting', () => {
-    it('should apply filter-active class when status filter is set', () => {
-      component.statusFilter = 'active';
-      component.applyFilters();
-      fixture.detectChanges();
-
-      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
-      expect(filterGroup.classList.contains('filter-active')).toBeTrue();
-    });
-
-    it('should not apply filter-active class when status filter is empty', () => {
-      component.statusFilter = '';
-      component.applyFilters();
-      fixture.detectChanges();
-
-      const filterGroup = fixture.nativeElement.querySelector('.filter-group');
-      expect(filterGroup.classList.contains('filter-active')).toBeFalse();
     });
   });
 

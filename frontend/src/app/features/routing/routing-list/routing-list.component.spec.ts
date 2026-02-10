@@ -247,7 +247,7 @@ describe('RoutingListComponent', () => {
     it('should navigate to view routing page', () => {
       spyOn(router, 'navigate');
       component.viewRouting(mockRoutings[0]);
-      expect(router.navigate).toHaveBeenCalledWith(['/manage/routing', 1, 'edit']);
+      expect(router.navigate).toHaveBeenCalledWith(['/manage/routing', 1]);
     });
   });
 

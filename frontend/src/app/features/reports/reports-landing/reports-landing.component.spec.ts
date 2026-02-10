@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { ReportsLandingComponent } from './reports-landing.component';
 
 describe('ReportsLandingComponent', () => {
   let component: ReportsLandingComponent;
   let fixture: ComponentFixture<ReportsLandingComponent>;
+  let router: Router;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -15,6 +17,7 @@ describe('ReportsLandingComponent', () => {
 
     fixture = TestBed.createComponent(ReportsLandingComponent);
     component = fixture.componentInstance;
+    router = TestBed.inject(Router);
   });
 
   it('should create', () => {
@@ -30,7 +33,6 @@ describe('ReportsLandingComponent', () => {
   });
 
   it('should navigate to correct route on card click', () => {
-    const router = TestBed.inject(require('@angular/router').Router);
     spyOn(router, 'navigate');
     component.navigateTo('/reports/production');
     expect(router.navigate).toHaveBeenCalledWith(['/reports/production']);
