@@ -169,7 +169,9 @@
       "Bash(do if [ -f \"$f\" ])",
       "Bash(then echo \"EXISTS: $f\")",
       "Bash(else echo \"MISSING: $f\")",
-      "Bash(fi:*)"
+      "Bash(fi:*)",
+      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat test:*)",
+      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat:*)"
     ]
   }
 }

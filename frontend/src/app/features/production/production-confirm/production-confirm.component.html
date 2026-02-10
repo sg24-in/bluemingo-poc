@@ -273,6 +273,18 @@
                 </div>
               </div>
             </div>
+            <!-- R-12: Batch Size Config Warning (soft, non-blocking) -->
+            <div class="batch-size-warning" *ngIf="batchSizeWarning">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span>{{ batchSizeWarning }}</span>
+            </div>
+            <!-- R-12: Batch Size Config Info -->
+            <div class="batch-size-info" *ngIf="batchSizeConfig?.found && !batchSizeWarning">
+              <i class="fas fa-info-circle"></i>
+              <span>
+                Batch size range: {{ batchSizeConfig.minBatchSize || 0 }} - {{ batchSizeConfig.maxBatchSize }} {{ batchSizeConfig.unit || 'T' }}
+              </span>
+            </div>
             <!-- P05-P06: Yield Calculation Display -->
             <div class="yield-display" *ngIf="totalProduction > 0">
               <div class="yield-stats">

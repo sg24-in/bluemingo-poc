@@ -1209,6 +1209,18 @@ export class ApiService {
     return this.http.get<any>(`${environment.apiUrl}/batch-size-config/calculate`, { params });
   }
 
+  /**
+   * R-12: Check applicable batch size config for the given production context.
+   * Returns min/max/preferred batch size if a config exists.
+   */
+  checkBatchSizeConfig(operationType?: string, productSku?: string, equipmentType?: string): Observable<any> {
+    let params = new HttpParams();
+    if (operationType) params = params.set('operationType', operationType);
+    if (productSku) params = params.set('productSku', productSku);
+    if (equipmentType) params = params.set('equipmentType', equipmentType);
+    return this.http.get<any>(`${environment.apiUrl}/batch-size-config/check`, { params });
+  }
+
   // ============================================================
   // Audit Trail
   // ============================================================

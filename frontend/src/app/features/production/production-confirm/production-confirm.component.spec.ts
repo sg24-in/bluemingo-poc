@@ -89,7 +89,8 @@ describe('ProductionConfirmComponent', () => {
       'getSuggestedConsumption',
       'previewBatchNumber',
       'reserveInventory',
-      'releaseReservation'
+      'releaseReservation',
+      'checkBatchSizeConfig'
     ]);
 
     await TestBed.configureTestingModule({
@@ -134,6 +135,7 @@ describe('ProductionConfirmComponent', () => {
     apiServiceSpy.previewBatchNumber.and.returnValue(of({ batchNumber: 'BATCH-PREVIEW-001' } as any));
     apiServiceSpy.reserveInventory.and.returnValue(of({ inventoryId: 1, state: 'RESERVED' } as any));
     apiServiceSpy.releaseReservation.and.returnValue(of({ inventoryId: 1, state: 'AVAILABLE' } as any));
+    apiServiceSpy.checkBatchSizeConfig.and.returnValue(of({ found: false } as any));
 
     fixture = TestBed.createComponent(ProductionConfirmComponent);
     component = fixture.componentInstance;
@@ -748,6 +750,99 @@ describe('ProductionConfirmComponent', () => {
       component.reserveInventoryItem(1, 100);
 
       expect(apiServiceSpy.reserveInventory).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('R-12: Batch Size Config Validation', () => {
+    it('should load batch size config on init', () => {
+      expect(apiServiceSpy.checkBatchSizeConfig).toHaveBeenCalled();
+    });
+
+    it('should show no warning when no config found', () => {
+      apiServiceSpy.checkBatchSizeConfig.and.returnValue(of({ found: false }));
+      component.loadBatchSizeConfig();
+
+      component.confirmForm.patchValue({ quantityProduced: 100 });
+      component.checkBatchSizeWarning();
+
+      expect(component.batchSizeWarning).toBe('');
+    });
+
+    it('should show warning when quantity below minimum', () => {
+      apiServiceSpy.checkBatchSizeConfig.and.returnValue(of({
+        found: true,
+        minBatchSize: 10,
+        maxBatchSize: 100,
+        preferredBatchSize: 50,
+        unit: 'T'
+      }));
+      component.loadBatchSizeConfig();
+
+      component.confirmForm.patchValue({ quantityProduced: 5 });
+      component.checkBatchSizeWarning();
+
+      expect(component.batchSizeWarning).toContain('below minimum');
+    });
+
+    it('should show warning when quantity exceeds maximum', () => {
+      apiServiceSpy.checkBatchSizeConfig.and.returnValue(of({
+        found: true,
+        minBatchSize: 10,
+        maxBatchSize: 100,
+        preferredBatchSize: 50,
+        unit: 'T'
+      }));
+      component.loadBatchSizeConfig();
+
+      component.confirmForm.patchValue({ quantityProduced: 150 });
+      component.checkBatchSizeWarning();
+
+      expect(component.batchSizeWarning).toContain('exceeds maximum');
+    });
+
+    it('should show no warning when quantity is within range', () => {
+      apiServiceSpy.checkBatchSizeConfig.and.returnValue(of({
+        found: true,
+        minBatchSize: 10,
+        maxBatchSize: 100,
+        preferredBatchSize: 50,
+        unit: 'T'
+      }));
+      component.loadBatchSizeConfig();
+
+      component.confirmForm.patchValue({ quantityProduced: 50 });
+      component.checkBatchSizeWarning();
+
+      expect(component.batchSizeWarning).toBe('');
+    });
+
+    it('should not block submission when batch size warning is present', () => {
+      const mockResult = { confirmationId: 1, outputBatchNumber: 'BATCH-OUT-001' } as any;
+      apiServiceSpy.confirmProduction.and.returnValue(of(mockResult));
+
+      // Set config with restrictive limits
+      component.batchSizeConfig = { found: true, minBatchSize: 10, maxBatchSize: 50, unit: 'T' };
+      component.confirmForm.patchValue({ quantityProduced: 200 }); // Exceeds max
+      component.checkBatchSizeWarning();
+      expect(component.batchSizeWarning).toBeTruthy();
+
+      // Set up valid form
+      const pastStart = new Date();
+      pastStart.setHours(pastStart.getHours() - 2);
+      const pastEnd = new Date();
+      pastEnd.setHours(pastEnd.getHours() - 1);
+
+      component.confirmForm.patchValue({
+        startTime: component.formatDateTimeLocal(pastStart),
+        endTime: component.formatDateTimeLocal(pastEnd)
+      });
+      component.availableEquipment[0].selected = true;
+      component.activeOperators[0].selected = true;
+
+      component.onSubmit();
+
+      // Should still submit (soft enforcement)
+      expect(apiServiceSpy.confirmProduction).toHaveBeenCalled();
     });
   });
 });

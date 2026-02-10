@@ -16,6 +16,9 @@ export interface Order {
   customerId?: string;
   customerName?: string;
   orderDate?: string; // LocalDate
+  deliveryDate?: string; // LocalDate
+  notes?: string;
+  priority?: number; // 1=CRITICAL, 2=HIGH, 3=MEDIUM, 4=LOW, 5=BACKLOG
   status: OrderStatusType;
   lineItems?: OrderLineItem[];
 }

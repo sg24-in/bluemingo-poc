@@ -22,6 +22,7 @@ public class OrderDTO {
     private LocalDate orderDate;
     private LocalDate deliveryDate;
     private String notes;
+    private Integer priority;
     private String status;
     private List<OrderLineDTO> lineItems;
 

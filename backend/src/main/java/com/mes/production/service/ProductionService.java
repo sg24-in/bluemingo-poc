@@ -217,6 +217,9 @@ public class ProductionService {
         log.info("Batch size calculation: {} batches for {} qty",
                 batchSizeResult.batchCount(), request.getProducedQty());
 
+        // R-12: Validate produced quantity against batch size config (soft enforcement)
+        validateBatchSizeConfig(request.getProducedQty(), operationType, productSku, equipmentType, operation.getOperationId());
+
         // 4. Generate output batches (may be multiple if quantity exceeds max batch size)
         List<Batch> outputBatches = new java.util.ArrayList<>();
         List<Inventory> outputInventories = new java.util.ArrayList<>();
@@ -598,6 +601,53 @@ public class ProductionService {
             return SecurityContextHolder.getContext().getAuthentication().getName();
         } catch (Exception e) {
             return "SYSTEM";
+        }
+    }
+
+    /**
+     * R-12: Validate produced quantity against batch size configuration.
+     * This is SOFT enforcement - logs warnings and audit entries but does not block production.
+     */
+    private void validateBatchSizeConfig(BigDecimal producedQty, String operationType,
+                                          String productSku, String equipmentType, Long operationId) {
+        try {
+            Optional<BatchSizeConfig> configOpt = batchSizeService.findApplicableConfig(
+                    operationType, null, productSku, equipmentType);
+
+            if (configOpt.isEmpty()) {
+                log.debug("R-12: No batch size config found for operation={}, product={} - skipping validation",
+                        operationType, productSku);
+                return;
+            }
+
+            BatchSizeConfig config = configOpt.get();
+            BigDecimal minBatchSize = config.getMinBatchSize();
+            BigDecimal maxBatchSize = config.getMaxBatchSize();
+
+            StringBuilder warnings = new StringBuilder();
+
+            if (minBatchSize != null && producedQty.compareTo(minBatchSize) < 0) {
+                String warning = String.format("Produced quantity %s is below minimum batch size %s (config=%d)",
+                        producedQty, minBatchSize, config.getConfigId());
+                warnings.append(warning);
+                log.warn("R-12 Batch size validation: {}", warning);
+            }
+
+            if (maxBatchSize != null && producedQty.compareTo(maxBatchSize) > 0) {
+                String warning = String.format("Produced quantity %s exceeds maximum batch size %s (config=%d)",
+                        producedQty, maxBatchSize, config.getConfigId());
+                if (warnings.length() > 0) warnings.append("; ");
+                warnings.append(warning);
+                log.warn("R-12 Batch size validation: {}", warning);
+            }
+
+            if (warnings.length() > 0) {
+                auditService.logCreate("BATCH_SIZE_VALIDATION", operationId,
+                        "Batch size warning: " + warnings);
+            }
+        } catch (Exception e) {
+            // R-12: Never block production due to batch size validation errors
+            log.warn("R-12: Error during batch size validation (non-blocking): {}", e.getMessage());
         }
     }
 

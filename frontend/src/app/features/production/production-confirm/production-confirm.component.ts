@@ -86,6 +86,10 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
   // P15: Apply Hold Modal
   showHoldModal = false;
 
+  // R-12: Batch Size Config Validation
+  batchSizeConfig: { found: boolean; minBatchSize?: number; maxBatchSize?: number; preferredBatchSize?: number; unit?: string } | null = null;
+  batchSizeWarning: string = '';
+
   // P17: Collapsible Sections
   collapsedSections: { [key: string]: boolean } = {
     operationDetails: false,
@@ -109,6 +113,11 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
     this.operationId = Number(this.route.snapshot.paramMap.get('operationId'));
     this.initForm();
     this.loadData();
+
+    // R-12: Listen for quantity changes to update batch size warning
+    this.confirmForm.get('quantityProduced')?.valueChanges.subscribe(() => {
+      this.checkBatchSizeWarning();
+    });
   }
 
   ngOnDestroy(): void {
@@ -268,6 +277,9 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
 
     // P07: Load batch number preview
     this.loadBatchNumberPreview();
+
+    // R-12: Load batch size config for quantity validation
+    this.loadBatchSizeConfig();
   }
 
   /**
@@ -310,6 +322,56 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
         this.loadingSuggestions = false;
       }
     });
+  }
+
+  /**
+   * R-12: Load batch size config for the current operation context.
+   * Used to show inline quantity warnings without blocking submission.
+   */
+  loadBatchSizeConfig(): void {
+    const operationType = this.operation?.operationType || '';
+    const productSku = this.operation?.order?.productSku || '';
+
+    this.apiService.checkBatchSizeConfig(operationType, productSku).subscribe({
+      next: (result) => {
+        this.batchSizeConfig = result;
+        // Re-validate current quantity against config
+        this.checkBatchSizeWarning();
+      },
+      error: (err) => {
+        console.error('Error loading batch size config:', err);
+        this.batchSizeConfig = null;
+      }
+    });
+  }
+
+  /**
+   * R-12: Check produced quantity against batch size config and set warning message.
+   * Called when quantity changes or config loads.
+   */
+  checkBatchSizeWarning(): void {
+    this.batchSizeWarning = '';
+
+    if (!this.batchSizeConfig || !this.batchSizeConfig.found) return;
+
+    const qty = this.confirmForm.get('quantityProduced')?.value || 0;
+    if (qty <= 0) return;
+
+    const min = this.batchSizeConfig.minBatchSize || 0;
+    const max = this.batchSizeConfig.maxBatchSize || 0;
+    const unit = this.batchSizeConfig.unit || 'T';
+
+    const warnings: string[] = [];
+
+    if (min > 0 && qty < min) {
+      warnings.push(`Quantity ${qty} is below minimum batch size of ${min} ${unit}`);
+    }
+
+    if (max > 0 && qty > max) {
+      warnings.push(`Quantity ${qty} exceeds maximum batch size of ${max} ${unit}`);
+    }
+
+    this.batchSizeWarning = warnings.join('. ');
   }
 
   applySuggestedConsumption(): void {

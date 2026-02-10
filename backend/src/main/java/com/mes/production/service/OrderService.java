@@ -140,6 +140,7 @@ public class OrderService {
                 .orderDate(order.getOrderDate())
                 .deliveryDate(order.getDeliveryDate())
                 .notes(order.getNotes())
+                .priority(order.getPriority())
                 .status(order.getStatus())
                 .lineItems(lineDTOs)
                 .build();
@@ -212,6 +213,7 @@ public class OrderService {
                 .orderDate(request.getOrderDate())
                 .deliveryDate(request.getDeliveryDate())
                 .notes(request.getNotes())
+                .priority(request.getPriority())
                 .status("CREATED")
                 .createdBy(currentUser)
                 .build();
@@ -267,6 +269,9 @@ public class OrderService {
         }
         order.setDeliveryDate(request.getDeliveryDate());
         order.setNotes(request.getNotes());
+        if (request.getPriority() != null) {
+            order.setPriority(request.getPriority());
+        }
         order.setUpdatedBy(currentUser);
 
         Order saved = orderRepository.save(order);

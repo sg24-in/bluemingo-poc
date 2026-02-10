@@ -203,6 +203,34 @@ public class BatchSizeConfigController {
     }
 
     /**
+     * R-12: Check applicable batch size config for given context.
+     * Returns the matching config (min/max/preferred) or empty if none found.
+     * Used by the production confirmation UI to show inline warnings.
+     */
+    @GetMapping("/check")
+    public ResponseEntity<?> checkConfig(
+            @RequestParam(required = false) String operationType,
+            @RequestParam(required = false) String materialId,
+            @RequestParam(required = false) String productSku,
+            @RequestParam(required = false) String equipmentType) {
+
+        log.info("GET /api/batch-size-config/check - op={}, material={}, product={}, equipment={}",
+                operationType, materialId, productSku, equipmentType);
+
+        return batchSizeService.findApplicableConfig(operationType, materialId, productSku, equipmentType)
+                .map(config -> ResponseEntity.ok(Map.of(
+                        "found", true,
+                        "configId", config.getConfigId(),
+                        "minBatchSize", config.getMinBatchSize() != null ? config.getMinBatchSize() : 0,
+                        "maxBatchSize", config.getMaxBatchSize(),
+                        "preferredBatchSize", config.getPreferredBatchSize() != null ? config.getPreferredBatchSize() : config.getMaxBatchSize(),
+                        "unit", config.getUnit() != null ? config.getUnit() : "T",
+                        "allowPartialBatch", Boolean.TRUE.equals(config.getAllowPartialBatch())
+                )))
+                .orElse(ResponseEntity.ok(Map.of("found", false)));
+    }
+
+    /**
      * Calculate batch sizes for a given quantity
      */
     @GetMapping("/calculate")

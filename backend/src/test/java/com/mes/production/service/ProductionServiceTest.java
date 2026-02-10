@@ -174,6 +174,10 @@ class ProductionServiceTest {
                     );
                 });
 
+        // R-12: Default batch size config lookup - no config found (no validation warnings)
+        when(batchSizeService.findApplicableConfig(any(), any(), any(), any()))
+                .thenReturn(Optional.empty());
+
         // Default BOM validation mock - returns valid result (R-02)
         when(bomValidationService.validateConsumption(any(BomDTO.BomValidationRequest.class)))
                 .thenReturn(BomDTO.BomValidationResult.builder()
@@ -1032,6 +1036,142 @@ class ProductionServiceTest {
 
         assertTrue(exception.getMessage().contains("Cannot confirm production"));
         assertTrue(exception.getMessage().contains("must be ACTIVE"));
+    }
+
+    // ===== R-12: Batch Size Config Validation =====
+
+    @Test
+    @DisplayName("R-12: Should log audit warning when produced qty below min batch size (soft enforcement)")
+    void should_logAuditWarning_when_producedQtyBelowMinBatchSize() {
+        // GIVEN: A batch size config with min=10, max=100
+        BatchSizeConfig config = BatchSizeConfig.builder()
+                .configId(1L)
+                .minBatchSize(BigDecimal.valueOf(10))
+                .maxBatchSize(BigDecimal.valueOf(100))
+                .preferredBatchSize(BigDecimal.valueOf(50))
+                .unit("T")
+                .build();
+
+        when(batchSizeService.findApplicableConfig(any(), any(), any(), any()))
+                .thenReturn(Optional.of(config));
+
+        testOperation.setTargetQty(BigDecimal.valueOf(5)); // Target = 5 (below min)
+        testOperation.setConfirmedQty(BigDecimal.ZERO);
+
+        ProductionConfirmationDTO.Request request = ProductionConfirmationDTO.Request.builder()
+                .operationId(1L)
+                .materialsConsumed(List.of(
+                        ProductionConfirmationDTO.MaterialConsumption.builder()
+                                .batchId(1L)
+                                .inventoryId(1L)
+                                .quantity(BigDecimal.valueOf(10))
+                                .build()
+                ))
+                .producedQty(BigDecimal.valueOf(5)) // Below min of 10
+                .scrapQty(BigDecimal.ZERO)
+                .startTime(LocalDateTime.now().minusHours(1))
+                .endTime(LocalDateTime.now())
+                .equipmentIds(List.of(1L))
+                .operatorIds(List.of(1L))
+                .build();
+
+        when(operationRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(testOperation));
+        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus(anyString(), anyLong(), anyString())).thenReturn(false);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+        when(batchRepository.save(any(Batch.class))).thenAnswer(i -> {
+            Batch b = i.getArgument(0);
+            b.setBatchId(2L);
+            return b;
+        });
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+        when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+        when(batchRelationRepository.save(any(BatchRelation.class))).thenAnswer(i -> i.getArgument(0));
+        when(confirmationRepository.save(any(ProductionConfirmation.class))).thenAnswer(i -> {
+            ProductionConfirmation pc = i.getArgument(0);
+            pc.setConfirmationId(1L);
+            pc.setCreatedOn(LocalDateTime.now());
+            return pc;
+        });
+        when(operationRepository.save(any(Operation.class))).thenAnswer(i -> i.getArgument(0));
+        when(operationRepository.findNextOperation(anyLong(), anyInt())).thenReturn(Optional.empty());
+        when(equipmentRepository.findAllById(anyList())).thenReturn(List.of());
+        when(operatorRepository.findAllById(anyList())).thenReturn(List.of());
+        when(batchNumberService.generateBatchNumber(anyString(), anyString())).thenReturn("BATCH-TEST-001");
+
+        // WHEN: Production is confirmed with qty below minimum
+        ProductionConfirmationDTO.Response response = productionService.confirmProduction(request);
+
+        // THEN: Confirmation should still succeed (soft enforcement)
+        assertNotNull(response);
+        assertEquals(1L, response.getConfirmationId());
+
+        // AND: Audit service should log a BATCH_SIZE_VALIDATION warning
+        verify(auditService).logCreate(eq("BATCH_SIZE_VALIDATION"), eq(1L), contains("below minimum"));
+    }
+
+    @Test
+    @DisplayName("R-12: Should not log audit when produced qty is within batch size range")
+    void should_notLogBatchSizeAudit_when_producedQtyWithinRange() {
+        // GIVEN: A batch size config with min=10, max=100
+        BatchSizeConfig config = BatchSizeConfig.builder()
+                .configId(1L)
+                .minBatchSize(BigDecimal.valueOf(10))
+                .maxBatchSize(BigDecimal.valueOf(100))
+                .preferredBatchSize(BigDecimal.valueOf(50))
+                .unit("T")
+                .build();
+
+        when(batchSizeService.findApplicableConfig(any(), any(), any(), any()))
+                .thenReturn(Optional.of(config));
+
+        ProductionConfirmationDTO.Request request = ProductionConfirmationDTO.Request.builder()
+                .operationId(1L)
+                .materialsConsumed(List.of(
+                        ProductionConfirmationDTO.MaterialConsumption.builder()
+                                .batchId(1L)
+                                .inventoryId(1L)
+                                .quantity(BigDecimal.valueOf(30))
+                                .build()
+                ))
+                .producedQty(BigDecimal.valueOf(50)) // Within range [10, 100]
+                .scrapQty(BigDecimal.ZERO)
+                .startTime(LocalDateTime.now().minusHours(1))
+                .endTime(LocalDateTime.now())
+                .equipmentIds(List.of(1L))
+                .operatorIds(List.of(1L))
+                .build();
+
+        when(operationRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(testOperation));
+        when(holdRecordRepository.existsByEntityTypeAndEntityIdAndStatus(anyString(), anyLong(), anyString())).thenReturn(false);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+        when(batchRepository.save(any(Batch.class))).thenAnswer(i -> {
+            Batch b = i.getArgument(0);
+            b.setBatchId(2L);
+            return b;
+        });
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+        when(batchRepository.findById(1L)).thenReturn(Optional.of(testBatch));
+        when(batchRelationRepository.save(any(BatchRelation.class))).thenAnswer(i -> i.getArgument(0));
+        when(confirmationRepository.save(any(ProductionConfirmation.class))).thenAnswer(i -> {
+            ProductionConfirmation pc = i.getArgument(0);
+            pc.setConfirmationId(1L);
+            pc.setCreatedOn(LocalDateTime.now());
+            return pc;
+        });
+        when(operationRepository.save(any(Operation.class))).thenAnswer(i -> i.getArgument(0));
+        when(operationRepository.findNextOperation(anyLong(), anyInt())).thenReturn(Optional.empty());
+        when(equipmentRepository.findAllById(anyList())).thenReturn(List.of());
+        when(operatorRepository.findAllById(anyList())).thenReturn(List.of());
+        when(batchNumberService.generateBatchNumber(anyString(), anyString())).thenReturn("BATCH-TEST-001");
+
+        // WHEN: Production is confirmed with qty within range
+        ProductionConfirmationDTO.Response response = productionService.confirmProduction(request);
+
+        // THEN: Confirmation should succeed
+        assertNotNull(response);
+
+        // AND: No BATCH_SIZE_VALIDATION audit entry should be logged
+        verify(auditService, never()).logCreate(eq("BATCH_SIZE_VALIDATION"), anyLong(), anyString());
     }
 
     @Test

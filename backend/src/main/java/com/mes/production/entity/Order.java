@@ -47,6 +47,9 @@ public class Order {
     private String notes;
 
     @Column(nullable = false)
+    private Integer priority;
+
+    @Column(nullable = false)
     private String status;
 
     @Column(name = "created_on")
@@ -69,6 +72,9 @@ public class Order {
     @PrePersist
     protected void onCreate() {
         createdOn = LocalDateTime.now();
+        if (priority == null) {
+            priority = 3; // Default: MEDIUM (1=CRITICAL, 2=HIGH, 3=MEDIUM, 4=LOW, 5=BACKLOG)
+        }
         if (status == null) {
             status = "CREATED";
         }

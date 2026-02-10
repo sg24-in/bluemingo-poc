@@ -30,5 +30,7 @@ public class UpdateOrderRequest {
     @Size(max = 1000, message = "Notes must not exceed 1000 characters")
     private String notes;
 
+    private Integer priority; // 1=CRITICAL, 2=HIGH, 3=MEDIUM(default), 4=LOW, 5=BACKLOG
+
     private String status;
 }
