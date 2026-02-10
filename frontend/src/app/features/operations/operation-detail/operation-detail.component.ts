@@ -72,6 +72,8 @@ export class OperationDetailComponent implements OnInit {
         return 'status-ready';
       case 'IN_PROGRESS':
         return 'status-in-progress';
+      case 'PAUSED':
+        return 'status-paused';
       case 'CONFIRMED':
         return 'status-confirmed';
       case 'ON_HOLD':
@@ -87,6 +89,34 @@ export class OperationDetailComponent implements OnInit {
     if (!this.operation?.targetQty || this.operation.targetQty === 0) return 0;
     const confirmed = this.operation.confirmedQty || 0;
     return Math.min(100, (confirmed / this.operation.targetQty) * 100);
+  }
+
+  pauseOperation(): void {
+    if (!this.operation) return;
+
+    this.apiService.pauseOperation(this.operation.operationId).subscribe({
+      next: () => {
+        this.loadOperation(this.operation!.operationId);
+      },
+      error: (err) => {
+        console.error('Error pausing operation:', err);
+        this.error = 'Failed to pause operation';
+      }
+    });
+  }
+
+  resumeOperation(): void {
+    if (!this.operation) return;
+
+    this.apiService.resumeOperation(this.operation.operationId).subscribe({
+      next: () => {
+        this.loadOperation(this.operation!.operationId);
+      },
+      error: (err) => {
+        console.error('Error resuming operation:', err);
+        this.error = 'Failed to resume operation';
+      }
+    });
   }
 
   blockOperation(): void {

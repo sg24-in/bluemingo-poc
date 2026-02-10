@@ -15,6 +15,9 @@ export class BatchNumberFormComponent implements OnInit {
   loading = false;
   saving = false;
   error = '';
+  previewResult = '';
+  previewLoading = false;
+  previewError = '';
 
   constructor(private fb: FormBuilder, private apiService: ApiService, private route: ActivatedRoute, private router: Router) {}
 
@@ -88,4 +91,21 @@ export class BatchNumberFormComponent implements OnInit {
 
   cancel(): void { this.router.navigate(['/manage/config/batch-number']); }
   hasError(field: string): boolean { const c = this.form.get(field); return !!(c && c.invalid && c.touched); }
+
+  previewNumber(): void {
+    this.previewLoading = true;
+    this.previewError = '';
+    this.previewResult = '';
+    const val = this.form.getRawValue();
+    this.apiService.previewBatchNumber(val.operationType || undefined, val.productSku || undefined).subscribe({
+      next: (result) => {
+        this.previewResult = result.previewBatchNumber;
+        this.previewLoading = false;
+      },
+      error: (err) => {
+        this.previewError = err.error?.message || 'Failed to generate preview.';
+        this.previewLoading = false;
+      }
+    });
+  }
 }

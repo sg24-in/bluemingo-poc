@@ -83,6 +83,7 @@ public class ReceiveMaterialService {
                 .supplierId(request.getSupplierId())
                 .receivedDate(receivedDate)
                 .receiptNotes(request.getNotes())
+                .expiryDate(request.getExpiryDate())
                 .createdBy(currentUser)
                 .build();
 

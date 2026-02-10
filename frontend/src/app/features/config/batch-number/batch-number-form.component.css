@@ -3,3 +3,10 @@
 .hint { display: block; margin-top: 4px; font-size: 12px; color: #666; }
 .loading { text-align: center; padding: 60px 20px; color: #666; }
 .form-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #eee; }
+.preview-section { background: #f5f7fa; border: 1px dashed #c5cae9; border-radius: 8px; padding: 16px; }
+.preview-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.preview-badge { display: inline-block; padding: 6px 14px; background: #e8f5e9; color: #2e7d32; border-radius: 6px; font-size: 14px; font-family: monospace; font-weight: 600; letter-spacing: 0.5px; }
+.preview-error-text { color: #c62828; font-size: 13px; }
+.btn-outline { background: transparent; border: 1px solid #1976d2; color: #1976d2; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.btn-outline:hover:not(:disabled) { background: #e3f2fd; }
+.btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }

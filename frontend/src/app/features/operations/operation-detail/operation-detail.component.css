@@ -176,6 +176,11 @@
   color: #065f46;
 }
 
+.status-paused {
+  background: #e2e3f1;
+  color: #5a5b8a;
+}
+
 .status-on-hold {
   background: #fef3c7;
   color: #b45309;
@@ -301,6 +306,26 @@
 
 .btn-warning:hover {
   background: #fde68a;
+}
+
+.btn-pause {
+  background: #e2e3f1;
+  color: #5a5b8a;
+  border: 1px solid #c9cbe0;
+}
+
+.btn-pause:hover {
+  background: #c9cbe0;
+}
+
+.btn-resume {
+  background: #cce5ff;
+  color: #004085;
+  border: 1px solid #b8daff;
+}
+
+.btn-resume:hover {
+  background: #b8daff;
 }
 
 .btn-success {

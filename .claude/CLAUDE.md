@@ -350,6 +350,12 @@ psql -U postgres -c "CREATE DATABASE mes_test"
 - For database-level logic, create a separate SQL script to run manually with `psql`
 - Document manual SQL scripts in `backend/src/main/resources/manual-scripts/`
 
+**MANDATORY: Every database schema change MUST have a SQL patch:**
+- **Any time** you add/modify entity fields, add new tables, or change column types → create a numbered SQL patch in `patches/`
+- **Also update** `demo/schema.sql` with the equivalent H2-compatible DDL change
+- This applies to ALL changes, including gap fixes, bug fixes, and feature additions
+- Patch numbering: check the latest patch number and increment by 1
+
 **Patch best practices:**
 - Use simple DDL: CREATE TABLE, ALTER TABLE, CREATE INDEX
 - Use simple DML: INSERT, UPDATE, DELETE

@@ -48,6 +48,9 @@ export interface Batch {
    */
   supplierId?: string;
 
+  // Expiry tracking for perishable materials
+  expiryDate?: string; // LocalDate
+
   // Approval info
   approvedBy?: string;
   approvedOn?: string; // LocalDateTime

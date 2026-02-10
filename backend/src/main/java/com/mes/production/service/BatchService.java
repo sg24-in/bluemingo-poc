@@ -185,6 +185,7 @@ public class BatchService {
                 .createdVia(batch.getCreatedVia())
                 .supplierBatchNumber(batch.getSupplierBatchNumber())
                 .supplierId(batch.getSupplierId())
+                .expiryDate(batch.getExpiryDate())
                 // Approval info
                 .approvedBy(batch.getApprovedBy())
                 .approvedOn(batch.getApprovedOn())

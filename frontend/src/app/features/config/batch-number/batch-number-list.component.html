@@ -35,6 +35,7 @@
           <th>Reset</th>
           <th>Priority</th>
           <th>Status</th>
+          <th>Preview</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -49,6 +50,14 @@
           <td>{{ item.sequenceReset }}</td>
           <td>{{ item.priority }}</td>
           <td><span class="status-badge" [ngClass]="item.status.toLowerCase()">{{ item.status }}</span></td>
+          <td class="preview-cell">
+            <button class="btn btn-sm btn-outline" (click)="previewNumber(item)" [disabled]="previewLoading[item.configId] || item.status === 'INACTIVE'">
+              {{ previewLoading[item.configId] ? 'Loading...' : 'Preview' }}
+            </button>
+            <span class="preview-result" *ngIf="previewResults[item.configId]" [class.preview-error]="previewResults[item.configId] === 'Error'">
+              {{ previewResults[item.configId] }}
+            </span>
+          </td>
           <td class="actions">
             <button class="btn btn-sm btn-secondary" (click)="edit(item)">Edit</button>
             <button class="btn btn-sm btn-danger" (click)="openDeleteModal(item)" [disabled]="item.status === 'INACTIVE'">Delete</button>

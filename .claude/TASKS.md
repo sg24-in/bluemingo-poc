@@ -2715,6 +2715,32 @@ cd backend
 All HIGH priority gaps are complete (GAP-003, GAP-004, GAP-005, GAP-007, GAP-010).
 GAP-001 and GAP-006 also completed.
 
+### System Gap Analysis Recommendations (from MES-System-Gap-Analysis-Complete.md)
+
+| # | Recommendation | Priority | Effort | Status |
+|---|---------------|----------|--------|--------|
+| R-01 | Material reservation mechanism | CRITICAL | Large | **DONE** |
+| R-02 | BOM validation in production confirm | CRITICAL | Medium | **DONE** |
+| R-03 | deliveryDate/notes on Order | CRITICAL | Small | **DONE** |
+| R-04 | Pagination migration (12 pages) | HIGH | Medium | **DONE** (already migrated) |
+| R-06 | Batch split/merge UI | HIGH | Medium | **DONE** |
+| R-07 | Equipment hold via HoldService | HIGH | Small | **DONE** |
+| R-08 | Auto-complete orders | HIGH | Small | **DONE** |
+| R-09 | Hold cascade for orders | MEDIUM | Medium | **DONE** |
+| R-10 | Fix duplicate E2E numbers | MEDIUM | Small | **DONE** |
+| R-11 | PAUSED operation state | MEDIUM | Medium | **DONE** |
+| R-14 | Supplier tracking | LOW | Small | **DONE** (already existed) |
+| R-15 | Batch expiry dates | LOW | Small | **DONE** |
+| R-18 | Batch number preview in config UI | LOW | Small | **DONE** |
+| R-05 | Reports E2E tests | HIGH | Medium | SKIP (Reports module paused) |
+| R-12 | Batch size config → production | MEDIUM | Medium | PENDING |
+| R-13 | Consumption reversal | MEDIUM | Large | PENDING |
+| R-16 | Order priority/scheduling | LOW | Medium | PENDING |
+| R-17 | Process versioning | LOW | Large | PENDING |
+| R-19 | Mobile responsive E2E tests | LOW | Medium | PENDING |
+
+**13/19 recommendations DONE, 1 SKIPPED, 5 PENDING (all LOW/MEDIUM priority).**
+
 ---
 
 ## Next Steps

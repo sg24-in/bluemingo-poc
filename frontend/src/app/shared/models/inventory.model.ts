@@ -112,6 +112,7 @@ export interface ReceiveMaterialRequest {
   supplierBatchNumber?: string;
   supplierId?: string;
   receivedDate?: string; // LocalDate (YYYY-MM-DD)
+  expiryDate?: string; // LocalDate (YYYY-MM-DD)
   location?: string;
   notes?: string;
 }

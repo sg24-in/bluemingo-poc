@@ -369,15 +369,33 @@
                   <th>Batch #</th>
                   <th>Material ID</th>
                   <th>Available</th>
+                  <th>Reservation</th>
                   <th>Qty to Consume</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let mat of selectedMaterials; let i = index">
+                <tr *ngFor="let mat of selectedMaterials; let i = index"
+                    [class.reservation-warning-row]="getReservationWarning(mat.inventoryId)">
                   <td>{{ mat.batchNumber }}</td>
                   <td>{{ mat.materialId }}</td>
                   <td>{{ mat.availableQuantity }}</td>
+                  <td>
+                    <span class="reserved-badge" *ngIf="isReserved(mat.inventoryId)">
+                      <i class="fas fa-lock"></i> Reserved
+                    </span>
+                    <span class="reserving-badge" *ngIf="isReserving(mat.inventoryId)">
+                      <span class="spinner-sm"></span> Reserving...
+                    </span>
+                    <span class="reservation-warning-badge" *ngIf="getReservationWarning(mat.inventoryId)"
+                          [title]="getReservationWarning(mat.inventoryId)">
+                      <i class="fas fa-exclamation-triangle"></i> Not Reserved
+                    </span>
+                    <span class="no-reservation-badge"
+                          *ngIf="!isReserved(mat.inventoryId) && !isReserving(mat.inventoryId) && !getReservationWarning(mat.inventoryId)">
+                      --
+                    </span>
+                  </td>
                   <td>
                     <input
                       type="number"
@@ -396,6 +414,15 @@
                 </tr>
               </tbody>
             </table>
+            <!-- R-01: Reservation warning summary -->
+            <div class="alert alert-warning reservation-summary-warning"
+                 *ngIf="hasReservationWarnings()">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span>
+                Some materials could not be reserved and may be allocated by another session.
+                Proceed with caution to avoid double-allocation.
+              </span>
+            </div>
           </div>
 
           <div class="available-materials">

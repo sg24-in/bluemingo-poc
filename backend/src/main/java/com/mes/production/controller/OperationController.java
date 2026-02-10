@@ -111,4 +111,24 @@ public class OperationController {
         OperationDTO.StatusUpdateResponse response = operationService.unblockOperation(id);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * R-11: Pause an in-progress operation
+     */
+    @PostMapping("/{id}/pause")
+    public ResponseEntity<OperationDTO.StatusUpdateResponse> pauseOperation(@PathVariable Long id) {
+        log.info("POST /api/operations/{}/pause", id);
+        OperationDTO.StatusUpdateResponse response = operationService.pauseOperation(id);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * R-11: Resume a paused operation
+     */
+    @PostMapping("/{id}/resume")
+    public ResponseEntity<OperationDTO.StatusUpdateResponse> resumeOperation(@PathVariable Long id) {
+        log.info("POST /api/operations/{}/resume", id);
+        OperationDTO.StatusUpdateResponse response = operationService.resumeOperation(id);
+        return ResponseEntity.ok(response);
+    }
 }

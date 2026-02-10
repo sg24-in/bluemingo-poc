@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
@@ -43,7 +43,7 @@ interface OperatorSelection {
   templateUrl: './production-confirm.component.html',
   styleUrls: ['./production-confirm.component.css']
 })
-export class ProductionConfirmComponent implements OnInit {
+export class ProductionConfirmComponent implements OnInit, OnDestroy {
   operationId!: number;
   operation: any = null;
   loading = true;
@@ -78,6 +78,11 @@ export class ProductionConfirmComponent implements OnInit {
   // P14: Material Selection Modal
   showMaterialModal = false;
 
+  // R-01: Material Reservation
+  reservedInventoryIds: number[] = [];
+  reservationWarnings: { [inventoryId: number]: string } = {};
+  reservingInventoryIds: number[] = [];
+
   // P15: Apply Hold Modal
   showHoldModal = false;
 
@@ -104,6 +109,10 @@ export class ProductionConfirmComponent implements OnInit {
     this.operationId = Number(this.route.snapshot.paramMap.get('operationId'));
     this.initForm();
     this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.releaseAllReservations();
   }
 
   initForm(): void {
@@ -306,6 +315,9 @@ export class ProductionConfirmComponent implements OnInit {
   applySuggestedConsumption(): void {
     if (!this.suggestedConsumption) return;
 
+    // R-01: Release all existing reservations before applying suggestions
+    this.releaseAllReservations();
+
     // Clear existing selections
     this.selectedMaterials = [];
 
@@ -321,6 +333,8 @@ export class ProductionConfirmComponent implements OnInit {
             availableQuantity: batch.availableQuantity,
             quantityToConsume: batch.suggestedConsumption
           });
+          // R-01: Reserve each suggested material
+          this.reserveInventoryItem(batch.inventoryId, batch.availableQuantity);
         }
       }
     }
@@ -383,10 +397,17 @@ export class ProductionConfirmComponent implements OnInit {
         quantityToConsume: 0
       });
       this.validateBom();
+      // R-01: Reserve inventory to prevent double-allocation
+      this.reserveInventoryItem(inventory.inventoryId, inventory.quantity);
     }
   }
 
   removeMaterial(index: number): void {
+    const material = this.selectedMaterials[index];
+    if (material) {
+      // R-01: Release reservation when material is removed
+      this.releaseInventoryReservation(material.inventoryId);
+    }
     this.selectedMaterials.splice(index, 1);
   }
 
@@ -534,6 +555,10 @@ export class ProductionConfirmComponent implements OnInit {
         this.confirmationResult = result;
         this.success = true;
         this.submitting = false;
+        // R-01: Clear reservation tracking on success - materials are now consumed, not reserved
+        this.reservedInventoryIds = [];
+        this.reservationWarnings = {};
+        this.reservingInventoryIds = [];
       },
       error: (err) => {
         console.error('Error confirming production:', err);
@@ -544,6 +569,8 @@ export class ProductionConfirmComponent implements OnInit {
   }
 
   goBack(): void {
+    // R-01: Release all reservations when navigating away
+    this.releaseAllReservations();
     if (this.operation?.order?.orderId) {
       this.router.navigate(['/orders', this.operation.order.orderId]);
     } else {
@@ -629,6 +656,24 @@ export class ProductionConfirmComponent implements OnInit {
   }
 
   onMaterialSelectionChange(selections: MaterialSelection[]): void {
+    // R-01: Determine which items were added and which were removed
+    const oldIds = new Set(this.selectedMaterials.map(m => m.inventoryId));
+    const newIds = new Set(selections.map(s => s.inventoryId));
+
+    // Release reservations for removed materials
+    for (const oldId of oldIds) {
+      if (!newIds.has(oldId)) {
+        this.releaseInventoryReservation(oldId);
+      }
+    }
+
+    // Reserve newly added materials
+    for (const sel of selections) {
+      if (!oldIds.has(sel.inventoryId)) {
+        this.reserveInventoryItem(sel.inventoryId, sel.availableQuantity);
+      }
+    }
+
     // Convert MaterialSelection to MaterialConsumption
     this.selectedMaterials = selections.map(sel => ({
       inventoryId: sel.inventoryId,
@@ -732,6 +777,10 @@ export class ProductionConfirmComponent implements OnInit {
     this.success = false;
     this.confirmationResult = null;
     this.selectedMaterials = [];
+    // R-01: Clear reservation tracking (prior materials were consumed)
+    this.reservedInventoryIds = [];
+    this.reservationWarnings = {};
+    this.reservingInventoryIds = [];
     this.initForm();
 
     // Reload data for fresh state
@@ -753,5 +802,111 @@ export class ProductionConfirmComponent implements OnInit {
     if (target <= 0) return 0;
     const confirmed = this.confirmationResult?.producedQty || 0;
     return Math.min(100, Math.round((confirmed / target) * 100));
+  }
+
+  // ========== R-01: Material Reservation ==========
+
+  /**
+   * Check if a given inventory item has been reserved by this session.
+   */
+  isReserved(inventoryId: number): boolean {
+    return this.reservedInventoryIds.includes(inventoryId);
+  }
+
+  /**
+   * Check if a given inventory item is currently being reserved (API in flight).
+   */
+  isReserving(inventoryId: number): boolean {
+    return this.reservingInventoryIds.includes(inventoryId);
+  }
+
+  /**
+   * Check if a reservation warning exists for a given inventory item.
+   */
+  getReservationWarning(inventoryId: number): string | null {
+    return this.reservationWarnings[inventoryId] || null;
+  }
+
+  /**
+   * Check if there are any reservation warnings across all selected materials.
+   */
+  hasReservationWarnings(): boolean {
+    return Object.keys(this.reservationWarnings).length > 0;
+  }
+
+  /**
+   * Reserve a single inventory item. On success, track it in reservedInventoryIds.
+   * On failure, show a warning but allow the selection (soft enforcement for POC).
+   */
+  reserveInventoryItem(inventoryId: number, quantity: number): void {
+    // Don't re-reserve if already reserved
+    if (this.reservedInventoryIds.includes(inventoryId)) return;
+
+    const orderId = this.operation?.order?.orderId || 0;
+
+    // Track as reserving (in-flight)
+    this.reservingInventoryIds.push(inventoryId);
+    // Clear any previous warning
+    delete this.reservationWarnings[inventoryId];
+
+    this.apiService.reserveInventory(inventoryId, orderId, this.operationId, quantity).subscribe({
+      next: () => {
+        // Mark as reserved
+        if (!this.reservedInventoryIds.includes(inventoryId)) {
+          this.reservedInventoryIds.push(inventoryId);
+        }
+        // Remove from reserving
+        this.reservingInventoryIds = this.reservingInventoryIds.filter(id => id !== inventoryId);
+      },
+      error: (err) => {
+        console.warn('Failed to reserve inventory:', inventoryId, err);
+        // Soft enforcement: allow selection but show warning
+        this.reservationWarnings[inventoryId] =
+          err.error?.message || 'Could not reserve - may be allocated to another session';
+        // Remove from reserving
+        this.reservingInventoryIds = this.reservingInventoryIds.filter(id => id !== inventoryId);
+      }
+    });
+  }
+
+  /**
+   * Release a single inventory reservation.
+   */
+  releaseInventoryReservation(inventoryId: number): void {
+    if (!this.reservedInventoryIds.includes(inventoryId)) {
+      // Not reserved by us, just clean up warning
+      delete this.reservationWarnings[inventoryId];
+      return;
+    }
+
+    this.apiService.releaseReservation(inventoryId).subscribe({
+      next: () => {
+        this.reservedInventoryIds = this.reservedInventoryIds.filter(id => id !== inventoryId);
+        delete this.reservationWarnings[inventoryId];
+      },
+      error: (err) => {
+        console.warn('Failed to release reservation:', inventoryId, err);
+        // Still remove from tracking to avoid stale state
+        this.reservedInventoryIds = this.reservedInventoryIds.filter(id => id !== inventoryId);
+        delete this.reservationWarnings[inventoryId];
+      }
+    });
+  }
+
+  /**
+   * Release all reservations held by this session.
+   * Called on destroy, cancel, and before applying new suggestions.
+   */
+  releaseAllReservations(): void {
+    const idsToRelease = [...this.reservedInventoryIds];
+    for (const inventoryId of idsToRelease) {
+      this.apiService.releaseReservation(inventoryId).subscribe({
+        next: () => {},
+        error: (err) => console.warn('Failed to release reservation on cleanup:', inventoryId, err)
+      });
+    }
+    this.reservedInventoryIds = [];
+    this.reservationWarnings = {};
+    this.reservingInventoryIds = [];
   }
 }

@@ -838,6 +838,14 @@ export class ApiService {
     return this.http.post<OperationStatusUpdateResponse>(`${environment.apiUrl}/operations/${operationId}/unblock`, {});
   }
 
+  pauseOperation(operationId: number): Observable<OperationStatusUpdateResponse> {
+    return this.http.post<OperationStatusUpdateResponse>(`${environment.apiUrl}/operations/${operationId}/pause`, {});
+  }
+
+  resumeOperation(operationId: number): Observable<OperationStatusUpdateResponse> {
+    return this.http.post<OperationStatusUpdateResponse>(`${environment.apiUrl}/operations/${operationId}/resume`, {});
+  }
+
   // ============================================================
   // Customers
   // ============================================================

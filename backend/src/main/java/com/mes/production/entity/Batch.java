@@ -97,6 +97,9 @@ public class Batch {
     @Column(name = "receipt_notes", length = 500)
     private String receiptNotes;
 
+    @Column(name = "expiry_date")
+    private LocalDate expiryDate;
+
     @Column(name = "created_on")
     private LocalDateTime createdOn;
 

@@ -24,6 +24,11 @@ export class BatchNumberListComponent implements OnInit {
   deleteLoading = false;
   deleteError = '';
 
+  /** Maps configId to preview batch number string */
+  previewResults: { [configId: number]: string } = {};
+  /** Maps configId to loading state */
+  previewLoading: { [configId: number]: boolean } = {};
+
   constructor(private apiService: ApiService, private router: Router) {}
 
   ngOnInit(): void { this.loadItems(); }
@@ -54,6 +59,21 @@ export class BatchNumberListComponent implements OnInit {
   onSearchChange(term: string): void { this.searchTerm = term; this.page = 0; this.loadItems(); }
   create(): void { this.router.navigate(['/manage/config/batch-number/new']); }
   edit(item: BatchNumberConfig): void { this.router.navigate(['/manage/config/batch-number', item.configId, 'edit']); }
+
+  previewNumber(item: BatchNumberConfig): void {
+    this.previewLoading[item.configId] = true;
+    delete this.previewResults[item.configId];
+    this.apiService.previewBatchNumber(item.operationType, item.productSku).subscribe({
+      next: (result) => {
+        this.previewResults[item.configId] = result.previewBatchNumber;
+        this.previewLoading[item.configId] = false;
+      },
+      error: () => {
+        this.previewResults[item.configId] = 'Error';
+        this.previewLoading[item.configId] = false;
+      }
+    });
+  }
   openDeleteModal(item: BatchNumberConfig): void { this.itemToDelete = item; this.deleteError = ''; this.showDeleteModal = true; }
   closeDeleteModal(): void { this.showDeleteModal = false; this.itemToDelete = null; }
   confirmDelete(): void {

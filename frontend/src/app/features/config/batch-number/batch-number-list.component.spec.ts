@@ -83,7 +83,7 @@ describe('BatchNumberListComponent', () => {
   };
 
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('ApiService', ['getBatchNumberConfigsPaged', 'deleteBatchNumberConfig']);
+    const spy = jasmine.createSpyObj('ApiService', ['getBatchNumberConfigsPaged', 'deleteBatchNumberConfig', 'previewBatchNumber']);
 
     await TestBed.configureTestingModule({
       declarations: [BatchNumberListComponent],
@@ -253,6 +253,48 @@ describe('BatchNumberListComponent', () => {
 
     expect(component.loading).toBe(false);
     expect(component.items).toEqual([]);
+  });
+
+  it('should preview batch number for item', () => {
+    apiServiceSpy.getBatchNumberConfigsPaged.and.returnValue(of(mockPagedResponse));
+    apiServiceSpy.previewBatchNumber.and.returnValue(of({ previewBatchNumber: 'FUR-20260210-001', operationType: 'FURNACE' }));
+
+    fixture.detectChanges();
+
+    const item = mockItems[1]; // Furnace Config with operationType
+    component.previewNumber(item);
+
+    expect(apiServiceSpy.previewBatchNumber).toHaveBeenCalledWith('FURNACE', undefined);
+    expect(component.previewResults[item.configId]).toBe('FUR-20260210-001');
+    expect(component.previewLoading[item.configId]).toBe(false);
+  });
+
+  it('should handle preview error', () => {
+    apiServiceSpy.getBatchNumberConfigsPaged.and.returnValue(of(mockPagedResponse));
+    apiServiceSpy.previewBatchNumber.and.returnValue(
+      throwError(() => ({ error: { message: 'Preview failed' } }))
+    );
+
+    fixture.detectChanges();
+
+    const item = mockItems[0];
+    component.previewNumber(item);
+
+    expect(component.previewResults[item.configId]).toBe('Error');
+    expect(component.previewLoading[item.configId]).toBe(false);
+  });
+
+  it('should preview batch number with productSku', () => {
+    apiServiceSpy.getBatchNumberConfigsPaged.and.returnValue(of(mockPagedResponse));
+    apiServiceSpy.previewBatchNumber.and.returnValue(of({ previewBatchNumber: 'P001_00001', productSku: 'PROD-001' }));
+
+    fixture.detectChanges();
+
+    const item = mockItems[2]; // Product Specific Config with productSku
+    component.previewNumber(item);
+
+    expect(apiServiceSpy.previewBatchNumber).toHaveBeenCalledWith(undefined, 'PROD-001');
+    expect(component.previewResults[item.configId]).toBe('P001_00001');
   });
 
   it('should render app-pagination when data is present', () => {

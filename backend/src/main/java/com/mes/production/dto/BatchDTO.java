@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -34,6 +35,9 @@ public class BatchDTO {
     // Supplier/Receipt info for RM batches
     private String supplierBatchNumber;
     private String supplierId;
+
+    // Expiry tracking for perishable materials
+    private LocalDate expiryDate;
 
     // Approval info
     private String approvedBy;

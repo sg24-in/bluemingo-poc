@@ -28,7 +28,7 @@ export class OperationListComponent implements OnInit {
   filterType = '';
   searchTerm = '';
 
-  statuses = ['NOT_STARTED', 'READY', 'IN_PROGRESS', 'CONFIRMED', 'PARTIALLY_CONFIRMED', 'ON_HOLD', 'BLOCKED'];
+  statuses = ['NOT_STARTED', 'READY', 'IN_PROGRESS', 'PAUSED', 'CONFIRMED', 'PARTIALLY_CONFIRMED', 'ON_HOLD', 'BLOCKED'];
   operationTypes = ['BATCH', 'CONTINUOUS'];
 
   // Block modal
@@ -161,6 +161,32 @@ export class OperationListComponent implements OnInit {
       },
       error: (err) => {
         this.actionError = err.error?.message || 'Failed to unblock operation.';
+      }
+    });
+  }
+
+  pauseOperation(operation: Operation): void {
+    this.actionError = '';
+
+    this.apiService.pauseOperation(operation.operationId).subscribe({
+      next: () => {
+        this.loadOperations();
+      },
+      error: (err) => {
+        this.actionError = err.error?.message || 'Failed to pause operation.';
+      }
+    });
+  }
+
+  resumeOperation(operation: Operation): void {
+    this.actionError = '';
+
+    this.apiService.resumeOperation(operation.operationId).subscribe({
+      next: () => {
+        this.loadOperations();
+      },
+      error: (err) => {
+        this.actionError = err.error?.message || 'Failed to resume operation.';
       }
     });
   }

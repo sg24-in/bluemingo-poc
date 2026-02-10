@@ -168,6 +168,70 @@ public class OperationService {
                 .build();
     }
 
+    /**
+     * R-11: Pause an in-progress operation
+     */
+    @Transactional
+    public OperationDTO.StatusUpdateResponse pauseOperation(Long operationId) {
+        log.info("Pausing operation: {}", operationId);
+
+        String currentUser = getCurrentUser();
+        Operation operation = getOperationEntity(operationId);
+        String oldStatus = operation.getStatus();
+
+        if (!Operation.STATUS_IN_PROGRESS.equals(oldStatus)) {
+            throw new RuntimeException("Cannot pause operation. Only IN_PROGRESS operations can be paused. Current status: " + oldStatus);
+        }
+
+        operation.setStatus(Operation.STATUS_PAUSED);
+        operation.setUpdatedBy(currentUser);
+        operationRepository.save(operation);
+
+        log.info("Operation {} paused by {}", operationId, currentUser);
+        auditService.logStatusChange("OPERATION", operationId, oldStatus, Operation.STATUS_PAUSED);
+
+        return OperationDTO.StatusUpdateResponse.builder()
+                .operationId(operationId)
+                .previousStatus(oldStatus)
+                .newStatus(Operation.STATUS_PAUSED)
+                .message("Operation paused")
+                .updatedBy(currentUser)
+                .updatedOn(operation.getUpdatedOn())
+                .build();
+    }
+
+    /**
+     * R-11: Resume a paused operation
+     */
+    @Transactional
+    public OperationDTO.StatusUpdateResponse resumeOperation(Long operationId) {
+        log.info("Resuming operation: {}", operationId);
+
+        String currentUser = getCurrentUser();
+        Operation operation = getOperationEntity(operationId);
+        String oldStatus = operation.getStatus();
+
+        if (!Operation.STATUS_PAUSED.equals(oldStatus)) {
+            throw new RuntimeException("Cannot resume operation. Only PAUSED operations can be resumed. Current status: " + oldStatus);
+        }
+
+        operation.setStatus(Operation.STATUS_IN_PROGRESS);
+        operation.setUpdatedBy(currentUser);
+        operationRepository.save(operation);
+
+        log.info("Operation {} resumed by {}", operationId, currentUser);
+        auditService.logStatusChange("OPERATION", operationId, oldStatus, Operation.STATUS_IN_PROGRESS);
+
+        return OperationDTO.StatusUpdateResponse.builder()
+                .operationId(operationId)
+                .previousStatus(oldStatus)
+                .newStatus(Operation.STATUS_IN_PROGRESS)
+                .message("Operation resumed")
+                .updatedBy(currentUser)
+                .updatedOn(operation.getUpdatedOn())
+                .build();
+    }
+
     private Operation getOperationEntity(Long operationId) {
         return operationRepository.findById(operationId)
                 .orElseThrow(() -> new RuntimeException("Operation not found: " + operationId));

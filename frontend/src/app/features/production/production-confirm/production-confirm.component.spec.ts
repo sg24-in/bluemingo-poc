@@ -87,7 +87,9 @@ describe('ProductionConfirmComponent', () => {
       'getHoldReasons',
       'applyHold',
       'getSuggestedConsumption',
-      'previewBatchNumber'
+      'previewBatchNumber',
+      'reserveInventory',
+      'releaseReservation'
     ]);
 
     await TestBed.configureTestingModule({
@@ -130,6 +132,8 @@ describe('ProductionConfirmComponent', () => {
     apiServiceSpy.applyHold.and.returnValue(of({ holdId: 1, status: 'ACTIVE' } as any));
     apiServiceSpy.getSuggestedConsumption.and.returnValue(of({ suggestedMaterials: [], productSku: '', operationId: 0 } as any));
     apiServiceSpy.previewBatchNumber.and.returnValue(of({ batchNumber: 'BATCH-PREVIEW-001' } as any));
+    apiServiceSpy.reserveInventory.and.returnValue(of({ inventoryId: 1, state: 'RESERVED' } as any));
+    apiServiceSpy.releaseReservation.and.returnValue(of({ inventoryId: 1, state: 'AVAILABLE' } as any));
 
     fixture = TestBed.createComponent(ProductionConfirmComponent);
     component = fixture.componentInstance;
@@ -627,6 +631,123 @@ describe('ProductionConfirmComponent', () => {
       component.addMaterial(inventory);
 
       expect(component.selectedMaterials.length).toBe(1);
+    });
+  });
+
+  describe('R-01: Material Reservation', () => {
+    it('should reserve inventory when material is selected', () => {
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+
+      expect(apiServiceSpy.reserveInventory).toHaveBeenCalledWith(
+        1, // inventoryId
+        jasmine.any(Number), // orderId
+        1, // operationId
+        100 // quantity
+      );
+      expect(component.reservedInventoryIds).toContain(1);
+    });
+
+    it('should release reservation when material is removed', () => {
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+      expect(component.selectedMaterials.length).toBe(1);
+      expect(component.reservedInventoryIds).toContain(1);
+
+      component.removeMaterial(0);
+
+      expect(apiServiceSpy.releaseReservation).toHaveBeenCalledWith(1);
+      expect(component.selectedMaterials.length).toBe(0);
+      expect(component.reservedInventoryIds).not.toContain(1);
+    });
+
+    it('should release all reservations on destroy', () => {
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+      expect(component.reservedInventoryIds.length).toBe(1);
+
+      component.ngOnDestroy();
+
+      expect(apiServiceSpy.releaseReservation).toHaveBeenCalledWith(1);
+      expect(component.reservedInventoryIds.length).toBe(0);
+    });
+
+    it('should show warning when reservation fails', () => {
+      apiServiceSpy.reserveInventory.and.returnValue(
+        throwError(() => ({ error: { message: 'Already reserved by another user' } }))
+      );
+
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+
+      // Material should still be selected (soft enforcement)
+      expect(component.selectedMaterials.length).toBe(1);
+      // But should have a warning
+      expect(component.reservationWarnings[1]).toBeTruthy();
+      expect(component.hasReservationWarnings()).toBeTrue();
+    });
+
+    it('should track isReserved correctly', () => {
+      expect(component.isReserved(1)).toBeFalse();
+
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+
+      expect(component.isReserved(1)).toBeTrue();
+    });
+
+    it('should clear reservations on successful confirmation', () => {
+      const mockResult = { confirmationId: 1, outputBatchNumber: 'BATCH-OUT-001' } as any;
+      apiServiceSpy.confirmProduction.and.returnValue(of(mockResult));
+
+      // Add material and verify reservation
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+      expect(component.reservedInventoryIds.length).toBe(1);
+
+      // Set up valid form
+      const pastStart = new Date();
+      pastStart.setHours(pastStart.getHours() - 2);
+      const pastEnd = new Date();
+      pastEnd.setHours(pastEnd.getHours() - 1);
+
+      component.confirmForm.patchValue({
+        quantityProduced: 100,
+        startTime: component.formatDateTimeLocal(pastStart),
+        endTime: component.formatDateTimeLocal(pastEnd)
+      });
+      component.availableEquipment[0].selected = true;
+      component.activeOperators[0].selected = true;
+
+      component.onSubmit();
+
+      // Reservations cleared (materials now consumed)
+      expect(component.reservedInventoryIds.length).toBe(0);
+    });
+
+    it('should release all reservations when navigating back', () => {
+      spyOn(router, 'navigate');
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+      expect(component.reservedInventoryIds.length).toBe(1);
+
+      component.goBack();
+
+      expect(apiServiceSpy.releaseReservation).toHaveBeenCalledWith(1);
+      expect(component.reservedInventoryIds.length).toBe(0);
+    });
+
+    it('should not re-reserve already reserved inventory', () => {
+      const inventory = mockInventory[0];
+      component.addMaterial(inventory);
+
+      // Reset the spy call count
+      apiServiceSpy.reserveInventory.calls.reset();
+
+      // Try to reserve the same item again directly
+      component.reserveInventoryItem(1, 100);
+
+      expect(apiServiceSpy.reserveInventory).not.toHaveBeenCalled();
     });
   });
 });

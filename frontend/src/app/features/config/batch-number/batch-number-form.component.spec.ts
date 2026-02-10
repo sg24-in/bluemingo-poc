@@ -39,7 +39,8 @@ describe('BatchNumberFormComponent', () => {
     const spy = jasmine.createSpyObj('ApiService', [
       'getBatchNumberConfigById',
       'createBatchNumberConfig',
-      'updateBatchNumberConfig'
+      'updateBatchNumberConfig',
+      'previewBatchNumber'
     ]);
 
     await TestBed.configureTestingModule({
@@ -340,6 +341,71 @@ describe('BatchNumberFormComponent', () => {
       configName?.markAsTouched();
 
       expect(component.hasError('configName')).toBe(false);
+    });
+  });
+
+  describe('Preview', () => {
+    beforeEach(async () => {
+      await configureTestBed({});
+      fixture = TestBed.createComponent(BatchNumberFormComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+    });
+
+    it('should preview batch number with operationType', () => {
+      apiServiceSpy.previewBatchNumber.and.returnValue(of({ previewBatchNumber: 'FUR-20260210-001', operationType: 'FURNACE' }));
+
+      component.form.patchValue({ operationType: 'FURNACE', productSku: '' });
+      component.previewNumber();
+
+      expect(apiServiceSpy.previewBatchNumber).toHaveBeenCalledWith('FURNACE', undefined);
+      expect(component.previewResult).toBe('FUR-20260210-001');
+      expect(component.previewLoading).toBe(false);
+      expect(component.previewError).toBe('');
+    });
+
+    it('should preview batch number with productSku', () => {
+      apiServiceSpy.previewBatchNumber.and.returnValue(of({ previewBatchNumber: 'P001_00001', productSku: 'PROD-001' }));
+
+      component.form.patchValue({ operationType: '', productSku: 'PROD-001' });
+      component.previewNumber();
+
+      expect(apiServiceSpy.previewBatchNumber).toHaveBeenCalledWith(undefined, 'PROD-001');
+      expect(component.previewResult).toBe('P001_00001');
+    });
+
+    it('should preview batch number with no filters', () => {
+      apiServiceSpy.previewBatchNumber.and.returnValue(of({ previewBatchNumber: 'BATCH-20260210-001' }));
+
+      component.form.patchValue({ operationType: '', productSku: '' });
+      component.previewNumber();
+
+      expect(apiServiceSpy.previewBatchNumber).toHaveBeenCalledWith(undefined, undefined);
+      expect(component.previewResult).toBe('BATCH-20260210-001');
+    });
+
+    it('should handle preview error', () => {
+      apiServiceSpy.previewBatchNumber.and.returnValue(
+        throwError(() => ({ error: { message: 'Preview generation failed' } }))
+      );
+
+      component.previewNumber();
+
+      expect(component.previewError).toBe('Preview generation failed');
+      expect(component.previewResult).toBe('');
+      expect(component.previewLoading).toBe(false);
+    });
+
+    it('should clear previous preview on new request', () => {
+      apiServiceSpy.previewBatchNumber.and.returnValue(of({ previewBatchNumber: 'BATCH-001' }));
+
+      component.previewResult = 'OLD-VALUE';
+      component.previewError = 'old error';
+      component.previewNumber();
+
+      // On call, old values should be cleared before the result comes back
+      expect(component.previewError).toBe('');
+      expect(component.previewResult).toBe('BATCH-001');
     });
   });
 });

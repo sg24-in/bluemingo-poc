@@ -92,6 +92,18 @@
         </div>
       </div>
 
+      <div class="form-section preview-section">
+        <h3>Batch Number Preview</h3>
+        <p class="hint">Preview what the next batch number will look like based on the current configuration values.</p>
+        <div class="preview-row">
+          <button type="button" class="btn btn-outline" (click)="previewNumber()" [disabled]="previewLoading">
+            {{ previewLoading ? 'Generating...' : 'Generate Preview' }}
+          </button>
+          <span class="preview-badge" *ngIf="previewResult">{{ previewResult }}</span>
+          <span class="preview-error-text" *ngIf="previewError">{{ previewError }}</span>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">Cancel</button>
         <button type="submit" class="btn btn-primary" [disabled]="saving || form.invalid">{{ saving ? 'Saving...' : (isEditMode ? 'Update' : 'Create') }}</button>

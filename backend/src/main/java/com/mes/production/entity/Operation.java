@@ -40,6 +40,7 @@ public class Operation {
     public static final String STATUS_CONFIRMED = "CONFIRMED";
     public static final String STATUS_PARTIALLY_CONFIRMED = "PARTIALLY_CONFIRMED";
     public static final String STATUS_ON_HOLD = "ON_HOLD";
+    public static final String STATUS_PAUSED = "PAUSED";
     public static final String STATUS_BLOCKED = "BLOCKED";
 
     @Id

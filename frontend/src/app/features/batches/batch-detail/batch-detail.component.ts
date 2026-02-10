@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/co
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { ChartService, CHART_FONT } from '../../../core/services/chart.service';
-import { AllocationInfo, BatchAvailability } from '../../../shared/models';
+import { AllocationInfo, BatchAvailability, Batch, BatchSplitResponse, BatchMergeResponse } from '../../../shared/models';
 
 interface SplitPortion {
   quantity: number;
@@ -23,15 +23,18 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
   loadingGenealogy = true;
   batchId!: number;
 
-  // Split/Merge UI
-  showSplitModal = false;
-  showMergeModal = false;
+  // Split/Merge UI - inline expandable sections
+  showSplitSection = false;
+  showMergeSection = false;
   splitPortions: SplitPortion[] = [];
   splitReason = '';
+  splitResult: BatchSplitResponse | null = null;
   mergeSelectedBatches: any[] = [];
   availableBatchesForMerge: any[] = [];
+  mergeBatchIdsInput = '';
   mergeTargetBatchNumber = '';
   mergeReason = '';
+  mergeResult: BatchMergeResponse | null = null;
   error = '';
   success = '';
   submitting = false;
@@ -103,17 +106,31 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/batches', batchId]);
   }
 
-  // Split functionality
-  openSplitModal(): void {
-    this.showSplitModal = true;
-    this.splitPortions = [{ quantity: 0, suffix: 'A' }];
-    this.splitReason = '';
-    this.error = '';
-    this.success = '';
+  // ============================================================
+  // R-06: Split/Merge - Inline expandable sections
+  // ============================================================
+
+  /** Check if the batch status allows split/merge operations */
+  canShowSplitMerge(): boolean {
+    return this.batch && (this.batch.status === 'AVAILABLE' || this.batch.status === 'PRODUCED');
   }
 
-  closeSplitModal(): void {
-    this.showSplitModal = false;
+  // Split functionality
+  toggleSplitSection(): void {
+    this.showSplitSection = !this.showSplitSection;
+    if (this.showSplitSection) {
+      this.showMergeSection = false;
+      this.splitPortions = [{ quantity: 0, suffix: 'A' }, { quantity: 0, suffix: 'B' }];
+      this.splitReason = '';
+      this.splitResult = null;
+      this.error = '';
+      this.success = '';
+    }
+  }
+
+  closeSplitSection(): void {
+    this.showSplitSection = false;
+    this.splitResult = null;
   }
 
   addSplitPortion(): void {
@@ -131,10 +148,15 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
     return this.splitPortions.reduce((sum, p) => sum + (p.quantity || 0), 0);
   }
 
+  getRemainingAfterSplit(): number {
+    return (this.batch?.quantity || 0) - this.getTotalSplitQuantity();
+  }
+
   canSplit(): boolean {
-    if (!this.batch || this.batch.status !== 'AVAILABLE') return false;
+    if (!this.batch || !this.canShowSplitMerge()) return false;
     const totalSplit = this.getTotalSplitQuantity();
-    return totalSplit > 0 && totalSplit <= this.batch.quantity;
+    return totalSplit > 0 && totalSplit <= this.batch.quantity &&
+           this.splitPortions.every(p => p.quantity > 0);
   }
 
   submitSplit(): void {
@@ -154,9 +176,9 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
 
     this.apiService.splitBatch(this.batchId, request).subscribe({
       next: (result) => {
+        this.splitResult = result;
         this.success = `Batch split successfully into ${result.newBatches?.length || 0} new batches`;
         this.submitting = false;
-        this.closeSplitModal();
         this.loadBatch();
         this.loadGenealogy();
       },
@@ -167,19 +189,29 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Merge functionality
-  openMergeModal(): void {
-    this.showMergeModal = true;
-    this.mergeSelectedBatches = [];
-    this.mergeTargetBatchNumber = '';
-    this.mergeReason = '';
-    this.error = '';
-    this.success = '';
-    this.loadAvailableBatchesForMerge();
+  navigateToSplitBatch(batchId: number): void {
+    this.router.navigate(['/batches', batchId]);
   }
 
-  closeMergeModal(): void {
-    this.showMergeModal = false;
+  // Merge functionality
+  toggleMergeSection(): void {
+    this.showMergeSection = !this.showMergeSection;
+    if (this.showMergeSection) {
+      this.showSplitSection = false;
+      this.mergeSelectedBatches = [];
+      this.mergeBatchIdsInput = '';
+      this.mergeTargetBatchNumber = '';
+      this.mergeReason = '';
+      this.mergeResult = null;
+      this.error = '';
+      this.success = '';
+      this.loadAvailableBatchesForMerge();
+    }
+  }
+
+  closeMergeSection(): void {
+    this.showMergeSection = false;
+    this.mergeResult = null;
   }
 
   loadAvailableBatchesForMerge(): void {
@@ -187,9 +219,10 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
 
     this.apiService.getAvailableBatches(this.batch.materialId).subscribe({
       next: (batches) => {
-        // Filter out current batch and only show AVAILABLE batches
+        // Filter out current batch and only show AVAILABLE/PRODUCED batches
         this.availableBatchesForMerge = batches.filter(
-          b => b.batchId !== this.batchId && b.status === 'AVAILABLE'
+          b => b.batchId !== this.batchId &&
+               (b.status === 'AVAILABLE' || b.status === 'PRODUCED')
         );
       },
       error: (err) => console.error('Error loading batches for merge:', err)
@@ -209,6 +242,15 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
     return this.mergeSelectedBatches.some(b => b.batchId === batch.batchId);
   }
 
+  /** Parse comma-separated batch IDs from the text input */
+  getMergeBatchIdsFromInput(): number[] {
+    if (!this.mergeBatchIdsInput.trim()) return [];
+    return this.mergeBatchIdsInput
+      .split(',')
+      .map(s => parseInt(s.trim(), 10))
+      .filter(id => !isNaN(id) && id !== this.batchId);
+  }
+
   getTotalMergeQuantity(): number {
     const currentQty = this.batch?.quantity || 0;
     const selectedQty = this.mergeSelectedBatches.reduce((sum, b) => sum + (b.quantity || 0), 0);
@@ -216,7 +258,9 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
   }
 
   canMerge(): boolean {
-    return this.batch?.status === 'AVAILABLE' && this.mergeSelectedBatches.length > 0;
+    if (!this.batch || !this.canShowSplitMerge()) return false;
+    // Either selected batches from the list or batch IDs from the text input
+    return this.mergeSelectedBatches.length > 0 || this.getMergeBatchIdsFromInput().length > 0;
   }
 
   submitMerge(): void {
@@ -225,27 +269,34 @@ export class BatchDetailComponent implements OnInit, OnDestroy {
     this.submitting = true;
     this.error = '';
 
+    // Combine selected batch IDs from list and text input
+    const selectedIds = this.mergeSelectedBatches.map(b => b.batchId);
+    const inputIds = this.getMergeBatchIdsFromInput();
+    const allSourceIds = [this.batchId, ...new Set([...selectedIds, ...inputIds])];
+
     const request = {
-      sourceBatchIds: [this.batchId, ...this.mergeSelectedBatches.map(b => b.batchId)],
+      sourceBatchIds: allSourceIds,
       targetBatchNumber: this.mergeTargetBatchNumber || undefined,
       reason: this.mergeReason
     };
 
     this.apiService.mergeBatches(request).subscribe({
       next: (result) => {
+        this.mergeResult = result;
         this.success = `Batches merged successfully into ${result.mergedBatch?.batchNumber}`;
         this.submitting = false;
-        this.closeMergeModal();
-        // Navigate to the new merged batch
-        if (result.mergedBatch?.batchId) {
-          this.router.navigate(['/batches', result.mergedBatch.batchId]);
-        }
       },
       error: (err) => {
         this.error = err.error?.message || 'Failed to merge batches';
         this.submitting = false;
       }
     });
+  }
+
+  navigateToMergedBatch(): void {
+    if (this.mergeResult?.mergedBatch?.batchId) {
+      this.router.navigate(['/batches', this.mergeResult.mergedBatch.batchId]);
+    }
   }
 
   // ============================================================

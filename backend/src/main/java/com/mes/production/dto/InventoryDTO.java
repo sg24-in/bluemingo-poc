@@ -175,6 +175,8 @@ public class InventoryDTO {
 
         private LocalDate receivedDate;
 
+        private LocalDate expiryDate;
+
         @Size(max = 200, message = "Location must not exceed 200 characters")
         private String location;
 

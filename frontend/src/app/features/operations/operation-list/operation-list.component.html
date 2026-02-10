@@ -71,6 +71,20 @@
           </td>
           <td class="actions">
             <button
+              class="btn btn-sm btn-pause"
+              (click)="pauseOperation(op)"
+              *ngIf="op.status === 'IN_PROGRESS'"
+            >
+              Pause
+            </button>
+            <button
+              class="btn btn-sm btn-resume"
+              (click)="resumeOperation(op)"
+              *ngIf="op.status === 'PAUSED'"
+            >
+              Resume
+            </button>
+            <button
               class="btn btn-sm btn-warning"
               (click)="openBlockModal(op)"
               *ngIf="op.status !== 'BLOCKED' && op.status !== 'CONFIRMED'"
