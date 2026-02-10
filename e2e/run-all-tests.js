@@ -58,6 +58,9 @@ const { runFormValidationsTests } = require('./tests/39-form-validations.test');
 const { runWorkflowVerificationTests } = require('./tests/40-e2e-workflow-verification.test');
 const { runProductionFlowE2ETests } = require('./tests/41-production-flow-e2e.test');
 const { runNewDetailPageTests } = require('./tests/42-new-detail-pages.test');
+const { runChangePasswordTests } = require('./tests/43-change-password.test');
+const { runEntityDetailPageTests } = require('./tests/44-entity-detail-pages.test');
+const { runCrudSubmissionTests } = require('./tests/45-crud-submissions.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -180,6 +183,9 @@ async function runAllTests() {
         await runWorkflowVerificationTests(page, screenshots, results, runTest, submitActions);
         await runProductionFlowE2ETests(page, screenshots, results, runTest, submitActions);
         await runNewDetailPageTests(page, screenshots, results, runTest, submitActions);
+        await runChangePasswordTests(page, screenshots, results, runTest, submitActions);
+        await runEntityDetailPageTests(page, screenshots, results, runTest, submitActions);
+        await runCrudSubmissionTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
@@ -215,7 +221,8 @@ async function runAllTests() {
                 { path: '/#/manage/audit', name: 'audit' },
                 { path: '/#/production/history', name: 'production-history' },
                 { path: '/#/manage/processes', name: 'admin-processes' },
-                { path: '/#/reports', name: 'reports-landing' }
+                { path: '/#/reports', name: 'reports-landing' },
+                { path: '/#/change-password', name: 'change-password-page' }
             ];
 
             for (const route of routes) {

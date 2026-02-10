@@ -18,7 +18,9 @@ const ROUTES = {
     HOLDS: '/#/holds',
     EQUIPMENT: '/#/equipment',
     EQUIPMENT_NEW: '/#/equipment/new',
+    EQUIPMENT_DETAIL: (id) => `/#/equipment/${id}`,
     EQUIPMENT_EDIT: (id) => `/#/equipment/${id}/edit`,
+    INVENTORY_DETAIL: (id) => `/#/inventory/${id}`,
     INVENTORY_NEW: '/#/inventory/new',
     INVENTORY_EDIT: (id) => `/#/inventory/${id}/edit`,
     BATCH_NEW: '/#/batches/new',
@@ -27,12 +29,15 @@ const ROUTES = {
     MANAGE: '/#/manage',
     CUSTOMERS: '/#/manage/customers',
     CUSTOMER_NEW: '/#/manage/customers/new',
+    CUSTOMER_DETAIL: (id) => `/#/manage/customers/${id}`,
     CUSTOMER_EDIT: (id) => `/#/manage/customers/${id}/edit`,
     MATERIALS: '/#/manage/materials',
     MATERIAL_NEW: '/#/manage/materials/new',
+    MATERIAL_DETAIL: (id) => `/#/manage/materials/${id}`,
     MATERIAL_EDIT: (id) => `/#/manage/materials/${id}/edit`,
     PRODUCTS: '/#/manage/products',
     PRODUCT_NEW: '/#/manage/products/new',
+    PRODUCT_DETAIL: (id) => `/#/manage/products/${id}`,
     PRODUCT_EDIT: (id) => `/#/manage/products/${id}/edit`,
     BOM: '/#/manage/bom',
     BOM_TREE: (sku) => `/#/manage/bom/${sku}/tree`,
@@ -58,7 +63,8 @@ const ROUTES = {
     CONFIG_BATCH_SIZE: '/#/manage/config/batch-size',
     CONFIG_BATCH_SIZE_NEW: '/#/manage/config/batch-size/new',
     CONFIG_BATCH_SIZE_EDIT: (id) => `/#/manage/config/batch-size/${id}/edit`,
-    // Hold form
+    // Holds
+    HOLD_DETAIL: (id) => `/#/holds/${id}`,
     HOLD_NEW: '/#/holds/new',
     // Audit and Production History
     AUDIT: '/#/manage/audit',
@@ -66,6 +72,7 @@ const ROUTES = {
     // Operators
     OPERATORS: '/#/manage/operators',
     OPERATOR_NEW: '/#/manage/operators/new',
+    OPERATOR_DETAIL: (id) => `/#/manage/operators/${id}`,
     OPERATOR_EDIT: (id) => `/#/manage/operators/${id}/edit`,
     // Operations
     OPERATIONS: '/#/operations',
@@ -91,6 +98,7 @@ const ROUTES = {
     CHANGE_PASSWORD: '/#/change-password',
     USERS: '/#/manage/users',
     USER_NEW: '/#/manage/users/new',
+    USER_DETAIL: (id) => `/#/manage/users/${id}`,
     USER_EDIT: (id) => `/#/manage/users/${id}/edit`,
     // Production Landing
     PRODUCTION_LANDING: '/#/production',
