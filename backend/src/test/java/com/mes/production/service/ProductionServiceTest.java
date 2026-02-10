@@ -1,5 +1,6 @@
 package com.mes.production.service;
 
+import com.mes.production.dto.BomDTO;
 import com.mes.production.dto.ProductionConfirmationDTO;
 import com.mes.production.entity.*;
 import com.mes.production.entity.Process;
@@ -80,6 +81,12 @@ class ProductionServiceTest {
     @Mock
     private BatchSizeService batchSizeService;
 
+    @Mock
+    private OrderRepository orderRepository;
+
+    @Mock
+    private BomValidationService bomValidationService;
+
     @InjectMocks
     private ProductionService productionService;
 
@@ -112,6 +119,7 @@ class ProductionServiceTest {
                 .productName("Test Product")
                 .quantity(BigDecimal.valueOf(100))
                 .build();
+        testOrder.setLineItems(List.of(testOrderLine));
 
         // Process is design-time only (no OrderLineItem reference)
         testProcess = Process.builder()
@@ -131,6 +139,7 @@ class ProductionServiceTest {
                 .sequenceNumber(1)
                 .status("READY")
                 .build();
+        testOrderLine.setOperations(List.of(testOperation));
 
         testBatch = Batch.builder()
                 .batchId(1L)
@@ -164,6 +173,19 @@ class ProductionServiceTest {
                             null
                     );
                 });
+
+        // Default BOM validation mock - returns valid result (R-02)
+        when(bomValidationService.validateConsumption(any(BomDTO.BomValidationRequest.class)))
+                .thenReturn(BomDTO.BomValidationResult.builder()
+                        .valid(true)
+                        .productSku("TEST-SKU")
+                        .requirementChecks(List.of())
+                        .warnings(List.of())
+                        .errors(List.of())
+                        .build());
+
+        // Default order repository mock for auto-complete check (R-08)
+        when(orderRepository.findById(anyLong())).thenReturn(Optional.of(testOrder));
     }
 
     @Test

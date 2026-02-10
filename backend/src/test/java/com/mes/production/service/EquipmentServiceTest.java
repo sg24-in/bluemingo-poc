@@ -2,6 +2,7 @@ package com.mes.production.service;
 
 import com.mes.production.dto.EquipmentDTO;
 import com.mes.production.entity.Equipment;
+import com.mes.production.entity.HoldRecord;
 import com.mes.production.repository.AuditTrailRepository;
 import com.mes.production.repository.EquipmentRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,9 @@ class EquipmentServiceTest {
 
     @Mock
     private AuditTrailRepository auditTrailRepository;
+
+    @Mock
+    private com.mes.production.repository.HoldRecordRepository holdRecordRepository;
 
     @InjectMocks
     private EquipmentService equipmentService;
@@ -203,6 +207,7 @@ class EquipmentServiceTest {
             setupSecurityContext();
             when(equipmentRepository.findById(1L)).thenReturn(Optional.of(testEquipment));
             when(equipmentRepository.save(any(Equipment.class))).thenAnswer(i -> i.getArgument(0));
+            when(holdRecordRepository.save(any(HoldRecord.class))).thenAnswer(i -> i.getArgument(0));
 
             EquipmentDTO.StatusUpdateResponse result = equipmentService.putOnHold(1L, "Pending inspection");
 
@@ -211,6 +216,7 @@ class EquipmentServiceTest {
             assertEquals("ON_HOLD", result.getNewStatus());
 
             verify(equipmentRepository, times(1)).save(any(Equipment.class));
+            verify(holdRecordRepository, times(1)).save(any(HoldRecord.class));
             verify(auditService, times(1)).logStatusChange("EQUIPMENT", 1L, "AVAILABLE", "ON_HOLD");
         }
 
@@ -249,6 +255,16 @@ class EquipmentServiceTest {
             testEquipment.setHeldBy("admin@mes.com");
             when(equipmentRepository.findById(1L)).thenReturn(Optional.of(testEquipment));
             when(equipmentRepository.save(any(Equipment.class))).thenAnswer(i -> i.getArgument(0));
+            when(holdRecordRepository.findByEntityTypeAndEntityIdAndStatus("EQUIPMENT", 1L, "ACTIVE"))
+                    .thenReturn(Optional.of(HoldRecord.builder()
+                            .holdId(1L)
+                            .entityType("EQUIPMENT")
+                            .entityId(1L)
+                            .reason("Pending inspection")
+                            .appliedBy("admin@mes.com")
+                            .status("ACTIVE")
+                            .build()));
+            when(holdRecordRepository.save(any(HoldRecord.class))).thenAnswer(i -> i.getArgument(0));
 
             EquipmentDTO.StatusUpdateResponse result = equipmentService.releaseFromHold(1L);
 
@@ -256,6 +272,7 @@ class EquipmentServiceTest {
             assertEquals("AVAILABLE", result.getNewStatus());
 
             verify(equipmentRepository, times(1)).save(any(Equipment.class));
+            verify(holdRecordRepository, times(1)).save(any(HoldRecord.class));
             verify(auditService, times(1)).logStatusChange("EQUIPMENT", 1L, "ON_HOLD", "AVAILABLE");
         }
 
