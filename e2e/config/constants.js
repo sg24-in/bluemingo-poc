@@ -114,11 +114,11 @@ const ROUTES = {
     // Reports
     REPORTS: '/#/reports',
     REPORTS_PRODUCTION: '/#/reports/production',
-    REPORTS_SCRAP: '/#/reports/scrap-analysis',
-    REPORTS_INVENTORY: '/#/reports/inventory-balance',
-    REPORTS_ORDERS: '/#/reports/order-fulfillment',
+    REPORTS_SCRAP: '/#/reports/scrap',
+    REPORTS_INVENTORY: '/#/reports/inventory',
+    REPORTS_ORDERS: '/#/reports/orders',
     REPORTS_OPERATIONS: '/#/reports/operations',
-    REPORTS_EXECUTIVE: '/#/reports/executive-dashboard'
+    REPORTS_EXECUTIVE: '/#/reports/executive'
 };
 
 // CSS Selectors

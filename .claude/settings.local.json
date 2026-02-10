@@ -171,7 +171,11 @@
       "Bash(else echo \"MISSING: $f\")",
       "Bash(fi:*)",
       "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat test:*)",
-      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat:*)"
+      "Bash(D:/repositories/bluemingo-poc/backend/gradlew.bat:*)",
+      "Bash(Services-Methods)",
+      "Bash(Frontend-Pages)",
+      "Bash(Database-Schema-Ref)",
+      "Bash(Entity-DTO \")"
     ]
   }
 }

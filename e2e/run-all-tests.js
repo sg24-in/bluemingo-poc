@@ -63,6 +63,8 @@ const { runEntityDetailPageTests } = require('./tests/44-entity-detail-pages.tes
 const { runCrudSubmissionTests } = require('./tests/45-crud-submissions.test');
 // Note: 46-material-selection-modal.test.js and 47-apply-hold-modal.test.js
 // use standalone describe/it pattern (run independently, not via master runner)
+const { runReportsTests } = require('./tests/48-reports.test');
+const { runMobileResponsiveTests } = require('./tests/49-mobile-responsive.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -188,6 +190,8 @@ async function runAllTests() {
         await runChangePasswordTests(page, screenshots, results, runTest, submitActions);
         await runEntityDetailPageTests(page, screenshots, results, runTest, submitActions);
         await runCrudSubmissionTests(page, screenshots, results, runTest, submitActions);
+        await runReportsTests(page, screenshots, results, runTest, submitActions);
+        await runMobileResponsiveTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
