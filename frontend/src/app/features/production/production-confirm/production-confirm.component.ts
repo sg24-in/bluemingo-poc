@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { EMPTY, Subject, Subscription } from 'rxjs';
 import { debounceTime, switchMap, filter } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { SuggestedConsumptionResponse, SuggestedMaterial, AvailableBatch, BatchSplitPreview } from '../../../shared/models';
@@ -96,6 +96,7 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
   batchSplitPreview: BatchSplitPreview | null = null;
   loadingBatchSplitPreview = false;
   private batchSplitPreviewSubject = new Subject<number>();
+  private batchSplitSubscription?: Subscription;
 
   // P17: Collapsible Sections
   collapsedSections: { [key: string]: boolean } = {
@@ -128,14 +129,14 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
     });
 
     // R-12: Debounced batch split preview API call
-    this.batchSplitPreviewSubject.pipe(
+    this.batchSplitSubscription = this.batchSplitPreviewSubject.pipe(
       debounceTime(300),
       filter(() => !!this.batchSizeConfig?.found && !!this.batchSizeConfig?.maxBatchSize),
       switchMap((qty: number) => {
         if (!qty || qty <= 0 || qty <= (this.batchSizeConfig?.maxBatchSize || 0)) {
           this.batchSplitPreview = null;
           this.loadingBatchSplitPreview = false;
-          return [];
+          return EMPTY;
         }
         this.loadingBatchSplitPreview = true;
         const operationType = this.operation?.operationType || '';
@@ -159,6 +160,7 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.batchSplitSubscription?.unsubscribe();
     this.releaseAllReservations();
   }
 

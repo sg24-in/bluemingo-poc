@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -855,7 +855,7 @@ describe('ProductionConfirmComponent', () => {
       expect(component.batchSplitPreview).toBeNull();
     });
 
-    it('should show preview when quantity exceeds maxBatchSize', (done) => {
+    it('should show preview when quantity exceeds maxBatchSize', fakeAsync(() => {
       // Set config with maxBatchSize
       component.batchSizeConfig = { found: true, minBatchSize: 10, maxBatchSize: 100, unit: 'T' };
 
@@ -869,27 +869,25 @@ describe('ProductionConfirmComponent', () => {
       // Trigger quantity change
       component.confirmForm.patchValue({ quantityProduced: 250 });
 
-      // Wait for debounce (300ms)
-      setTimeout(() => {
-        expect(apiServiceSpy.calculateBatchSizes).toHaveBeenCalledWith(250, 'TRANSFORM', undefined, 'STEEL-001');
-        expect(component.batchSplitPreview).toBeTruthy();
-        expect(component.batchSplitPreview!.batchCount).toBe(3);
-        expect(component.batchSplitPreview!.hasPartialBatch).toBeTrue();
-        done();
-      }, 400);
-    });
+      // Advance past debounce (300ms)
+      tick(350);
 
-    it('should not show preview when quantity is within maxBatchSize', (done) => {
+      expect(apiServiceSpy.calculateBatchSizes).toHaveBeenCalledWith(250, 'TRANSFORM', undefined, 'STEEL-001');
+      expect(component.batchSplitPreview).toBeTruthy();
+      expect(component.batchSplitPreview!.batchCount).toBe(3);
+      expect(component.batchSplitPreview!.hasPartialBatch).toBeTrue();
+    }));
+
+    it('should not show preview when quantity is within maxBatchSize', fakeAsync(() => {
       component.batchSizeConfig = { found: true, minBatchSize: 10, maxBatchSize: 100, unit: 'T' };
 
       // Trigger quantity within range
       component.confirmForm.patchValue({ quantityProduced: 80 });
 
-      setTimeout(() => {
-        expect(component.batchSplitPreview).toBeNull();
-        done();
-      }, 400);
-    });
+      tick(350);
+
+      expect(component.batchSplitPreview).toBeNull();
+    }));
 
     it('should clear preview when loading new operation data', () => {
       component.batchSplitPreview = {
@@ -904,17 +902,26 @@ describe('ProductionConfirmComponent', () => {
       expect(component.batchSplitPreview).toBeNull();
     });
 
-    it('should not call API when no batch size config found', (done) => {
+    it('should not call API when no batch size config found', fakeAsync(() => {
       component.batchSizeConfig = { found: false };
       apiServiceSpy.calculateBatchSizes.calls.reset();
 
       component.confirmForm.patchValue({ quantityProduced: 500 });
 
-      setTimeout(() => {
-        expect(apiServiceSpy.calculateBatchSizes).not.toHaveBeenCalled();
-        expect(component.batchSplitPreview).toBeNull();
-        done();
-      }, 400);
+      tick(350);
+
+      expect(apiServiceSpy.calculateBatchSizes).not.toHaveBeenCalled();
+      expect(component.batchSplitPreview).toBeNull();
+    }));
+
+    it('should clean up subscription on destroy', () => {
+      // Verify subscription exists after init
+      expect((component as any).batchSplitSubscription).toBeTruthy();
+
+      component.ngOnDestroy();
+
+      // Subscription should be cleaned up (unsubscribed)
+      expect((component as any).batchSplitSubscription.closed).toBeTrue();
     });
   });
 });
