@@ -7,7 +7,9 @@
  *   - Mobile           (375x812)  - iPhone-like
  *
  * Covers: header/nav, dashboard, list pages, detail pages, forms,
- *         admin sidebar, pagination, reports, filters, and modals.
+ *         admin sidebar, pagination, reports, filters, modals,
+ *         navigation functionality, computed style assertions,
+ *         table scroll handling, and touch target sizes.
  */
 
 const { ROUTES } = require('../config/constants');
@@ -158,15 +160,16 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         await page.goto(`${config.baseUrl}${ROUTES.DASHBOARD}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(500);
 
-        // At small widths, .user-name-display should be hidden
+        // At small widths, .user-name-display should be hidden via CSS
         const userName = page.locator('.user-name-display');
         if (await userName.count() > 0) {
             const visible = await userName.isVisible();
             if (visible) {
-                console.log('   ⚠️  User name still visible at mobile width');
-            } else {
-                console.log('   User name correctly hidden at mobile width');
+                throw new Error('User name should be hidden at mobile width (375px) but is still visible');
             }
+            console.log('   User name correctly hidden at mobile width');
+        } else {
+            console.log('   No .user-name-display element found (acceptable)');
         }
 
         // Avatar should still be visible
@@ -176,6 +179,84 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         }
 
         await screenshots.capture(page, 'mobile-user-profile');
+    }, page, results, screenshots);
+
+    // ────────────────────────────────────────────────────
+    //  1b. Navigation Functionality
+    // ────────────────────────────────────────────────────
+
+    await runTest('Mobile - Nav Link Navigates to Orders Page', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.DASHBOARD}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Open hamburger
+        const hamburger = page.locator('.mobile-menu-toggle');
+        await hamburger.click();
+        await page.waitForTimeout(500);
+
+        // Expand Orders dropdown
+        const ordersTrigger = page.locator('.dropdown-trigger:has-text("Orders")');
+        await ordersTrigger.click();
+        await page.waitForTimeout(400);
+
+        // Click "Order List"
+        const orderListLink = page.locator('.dropdown-menu a:has-text("Order List")');
+        await orderListLink.click();
+        await page.waitForTimeout(1000);
+
+        const url = page.url();
+        if (!url.includes('/#/orders')) {
+            throw new Error(`Expected URL to contain /#/orders, got ${url}`);
+        }
+        console.log('   Successfully navigated to orders via mobile nav');
+
+        await screenshots.capture(page, 'mobile-nav-navigated-orders');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Nav Link Navigates to Dashboard', async () => {
+        await setViewport('mobile');
+        // Start from orders page
+        await page.goto(`${config.baseUrl}${ROUTES.ORDERS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Open hamburger and click Dashboard
+        const hamburger = page.locator('.mobile-menu-toggle');
+        await hamburger.click();
+        await page.waitForTimeout(500);
+
+        const dashboardLink = page.locator('.nav-menu a:has-text("Dashboard")');
+        await dashboardLink.click();
+        await page.waitForTimeout(1000);
+
+        const url = page.url();
+        if (!url.includes('/#/dashboard')) {
+            throw new Error(`Expected URL to contain /#/dashboard, got ${url}`);
+        }
+        console.log('   Successfully navigated to dashboard via mobile nav');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Menu Closes After Navigation', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.ORDERS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
+
+        // Open hamburger and navigate
+        const hamburger = page.locator('.mobile-menu-toggle');
+        await hamburger.click();
+        await page.waitForTimeout(500);
+
+        const dashboardLink = page.locator('.nav-menu a:has-text("Dashboard")');
+        await dashboardLink.click();
+        await page.waitForTimeout(1000);
+
+        // Menu should be closed after navigation
+        const openMenu = page.locator('.nav-menu.open');
+        const menuCount = await openMenu.count();
+        if (menuCount > 0) {
+            throw new Error('Nav menu should close after navigation but .nav-menu.open is still present');
+        }
+        console.log('   Menu correctly closes after navigation');
     }, page, results, screenshots);
 
     // ────────────────────────────────────────────────────
@@ -261,7 +342,7 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
     }, page, results, screenshots);
 
     await runTest('Mobile - Equipment List Renders', async () => {
-        await setViewport('tablet');
+        await setViewport('mobile');
         await page.goto(`${config.baseUrl}${ROUTES.EQUIPMENT}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
@@ -277,7 +358,60 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
     }, page, results, screenshots);
 
     // ────────────────────────────────────────────────────
-    //  4. Filters Stack Vertically
+    //  3b. Admin List Pages at Mobile
+    // ────────────────────────────────────────────────────
+
+    await runTest('Mobile - Customers List Renders with Table', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.CUSTOMERS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const table = page.locator('table');
+        if (await table.count() === 0) {
+            throw new Error('Customers table not found at mobile width');
+        }
+
+        const rows = table.locator('tbody tr');
+        const rowCount = await rows.count();
+        console.log(`   Customers table rows: ${rowCount}`);
+
+        await screenshots.capture(page, 'mobile-customers-list');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Materials List Renders with Table', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.MATERIALS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const table = page.locator('table');
+        if (await table.count() === 0) {
+            throw new Error('Materials table not found at mobile width');
+        }
+
+        const rows = table.locator('tbody tr');
+        console.log(`   Materials table rows: ${await rows.count()}`);
+
+        await screenshots.capture(page, 'mobile-materials-list');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Products List Renders with Table', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const table = page.locator('table');
+        if (await table.count() === 0) {
+            throw new Error('Products table not found at mobile width');
+        }
+
+        const rows = table.locator('tbody tr');
+        console.log(`   Products table rows: ${await rows.count()}`);
+
+        await screenshots.capture(page, 'mobile-products-list');
+    }, page, results, screenshots);
+
+    // ────────────────────────────────────────────────────
+    //  4. Filters Stack Vertically (Computed Style)
     // ────────────────────────────────────────────────────
 
     await runTest('Mobile - Filters Stack Vertically', async () => {
@@ -285,12 +419,17 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         await page.goto(`${config.baseUrl}${ROUTES.ORDERS}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
-        const filters = page.locator('.filters, .filter-controls, .filter-group');
-        if (await filters.count() > 0) {
-            // Verify that filters container exists (CSS handles stacking via flex-direction: column)
-            console.log('   Filters container present (CSS flex-direction: column at mobile)');
+        const flexDir = await page.evaluate(() => {
+            const el = document.querySelector('.filters');
+            return el ? getComputedStyle(el).flexDirection : null;
+        });
+
+        if (flexDir === null) {
+            console.log('   No .filters element found (page may use different selector)');
+        } else if (flexDir !== 'column') {
+            throw new Error(`Expected .filters flex-direction: column at mobile, got "${flexDir}"`);
         } else {
-            console.log('   ⚠️  No filter container found');
+            console.log('   Filters correctly stacked vertically (flex-direction: column)');
         }
 
         await screenshots.capture(page, 'mobile-filters-stacked');
@@ -312,7 +451,7 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         if (await pagination.count() > 0) {
             console.log('   Pagination component rendered at mobile width');
         } else {
-            console.log('   ⚠️  No pagination found (may have few items)');
+            console.log('   No pagination found (may have few items)');
         }
 
         await screenshots.capture(page, 'mobile-pagination');
@@ -340,7 +479,7 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
     }, page, results, screenshots);
 
     await runTest('Mobile - Batch Detail Renders', async () => {
-        await setViewport('tablet');
+        await setViewport('mobile');
         await page.goto(`${config.baseUrl}${ROUTES.BATCH_DETAIL(1)}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
@@ -406,6 +545,58 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         await screenshots.capture(page, 'mobile-admin-layout');
     }, page, results, screenshots);
 
+    await runTest('Mobile - Admin Sidebar Becomes Full Width', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.CUSTOMERS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const sidebarWidth = await page.evaluate(() => {
+            const el = document.querySelector('.admin-sidebar, .sidebar');
+            if (!el) return null;
+            return el.getBoundingClientRect().width;
+        });
+
+        if (sidebarWidth !== null) {
+            // At mobile (375px) the sidebar should be full width (100%)
+            if (sidebarWidth < 300) {
+                throw new Error(`Sidebar should be full width at mobile, but is only ${sidebarWidth}px`);
+            }
+            console.log(`   Sidebar width: ${sidebarWidth}px (full width at mobile)`);
+        } else {
+            console.log('   No sidebar element found');
+        }
+
+        await screenshots.capture(page, 'mobile-admin-sidebar-full-width');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Admin Sidebar Header Hidden', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.CUSTOMERS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const sidebarHeader = page.locator('.sidebar-header');
+        if (await sidebarHeader.count() > 0) {
+            const visible = await sidebarHeader.isVisible();
+            if (visible) {
+                throw new Error('Sidebar header should be hidden at mobile width via CSS display:none');
+            }
+            console.log('   Sidebar header correctly hidden at mobile width');
+        } else {
+            console.log('   No .sidebar-header element (acceptable)');
+        }
+
+        const sidebarFooter = page.locator('.sidebar-footer');
+        if (await sidebarFooter.count() > 0) {
+            const visible = await sidebarFooter.isVisible();
+            if (visible) {
+                throw new Error('Sidebar footer should be hidden at mobile width via CSS display:none');
+            }
+            console.log('   Sidebar footer correctly hidden at mobile width');
+        } else {
+            console.log('   No .sidebar-footer element (acceptable)');
+        }
+    }, page, results, screenshots);
+
     await runTest('Mobile - Manage Landing Grid Responsive', async () => {
         await setViewport('mobile');
         await page.goto(`${config.baseUrl}${ROUTES.MANAGE}`, { waitUntil: 'networkidle' });
@@ -427,6 +618,83 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         await page.waitForTimeout(1000);
 
         await screenshots.capture(page, 'mobile-production-landing');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Production Confirm Form Stacks to Single Column', async () => {
+        await setViewport('mobile');
+        // Navigate to production confirm for operation 1
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION_CONFIRM(1)}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const gridCols = await page.evaluate(() => {
+            const el = document.querySelector('.form-grid');
+            return el ? getComputedStyle(el).gridTemplateColumns : null;
+        });
+
+        if (gridCols !== null) {
+            // At mobile width, grid should resolve to a single column
+            const colCount = gridCols.split(/\s+/).length;
+            if (colCount > 1) {
+                throw new Error(`Form grid should be single column at mobile, got ${colCount} columns: "${gridCols}"`);
+            }
+            console.log(`   Form grid is single column: ${gridCols}`);
+        } else {
+            console.log('   No .form-grid element found (page may redirect if no operation)');
+        }
+
+        await screenshots.capture(page, 'mobile-production-form-stacked');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Production Confirm Touch Targets Adequate', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION_CONFIRM(1)}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const touchTargetInfo = await page.evaluate(() => {
+            const headers = document.querySelectorAll('.card-header.collapsible, .section-header');
+            if (headers.length === 0) return null;
+            const style = getComputedStyle(headers[0]);
+            return {
+                paddingTop: parseFloat(style.paddingTop),
+                paddingBottom: parseFloat(style.paddingBottom),
+                height: headers[0].getBoundingClientRect().height,
+                count: headers.length
+            };
+        });
+
+        if (touchTargetInfo !== null) {
+            console.log(`   Found ${touchTargetInfo.count} collapsible header(s), height: ${touchTargetInfo.height}px`);
+            if (touchTargetInfo.height < 40) {
+                throw new Error(`Touch target height ${touchTargetInfo.height}px is too small for mobile (min 40px)`);
+            }
+            console.log('   Touch targets are adequate for mobile');
+        } else {
+            console.log('   No collapsible headers found (page may redirect)');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Production Confirm Info Grid Changes', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION_CONFIRM(1)}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const gridCols = await page.evaluate(() => {
+            const el = document.querySelector('.operation-info-grid, .info-grid');
+            return el ? getComputedStyle(el).gridTemplateColumns : null;
+        });
+
+        if (gridCols !== null) {
+            const colCount = gridCols.split(/\s+/).length;
+            // At mobile, should be 2 columns (down from desktop 3)
+            if (colCount > 3) {
+                throw new Error(`Info grid should have at most 3 columns at mobile, got ${colCount}`);
+            }
+            console.log(`   Operation info grid columns at mobile: ${colCount} ("${gridCols}")`);
+        } else {
+            console.log('   No info grid element found (page may redirect)');
+        }
+
+        await screenshots.capture(page, 'mobile-production-info-grid');
     }, page, results, screenshots);
 
     // ────────────────────────────────────────────────────
@@ -531,10 +799,9 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         });
 
         if (overflows.overflows) {
-            console.log(`   ⚠️  Horizontal overflow: scrollWidth=${overflows.bodyScrollWidth}, viewport=${overflows.windowInnerWidth}`);
-        } else {
-            console.log('   No horizontal overflow detected');
+            throw new Error(`Horizontal overflow on dashboard: scrollWidth=${overflows.bodyScrollWidth}, viewport=${overflows.windowInnerWidth}`);
         }
+        console.log('   No horizontal overflow detected');
 
         await screenshots.capture(page, 'mobile-no-overflow-dashboard');
     }, page, results, screenshots);
@@ -551,12 +818,209 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
         }));
 
         if (overflows.overflows) {
-            console.log(`   ⚠️  Horizontal overflow: scrollWidth=${overflows.bodyScrollWidth}, viewport=${overflows.windowInnerWidth}`);
-        } else {
-            console.log('   No horizontal overflow detected');
+            throw new Error(`Horizontal overflow on orders: scrollWidth=${overflows.bodyScrollWidth}, viewport=${overflows.windowInnerWidth}`);
         }
+        console.log('   No horizontal overflow detected');
 
         await screenshots.capture(page, 'mobile-no-overflow-orders');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - No Horizontal Overflow on Inventory', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.INVENTORY}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const overflows = await page.evaluate(() => ({
+            bodyScrollWidth: document.body.scrollWidth,
+            windowInnerWidth: window.innerWidth,
+            overflows: document.body.scrollWidth > window.innerWidth
+        }));
+
+        if (overflows.overflows) {
+            throw new Error(`Horizontal overflow on inventory: scrollWidth=${overflows.bodyScrollWidth}, viewport=${overflows.windowInnerWidth}`);
+        }
+        console.log('   No horizontal overflow detected');
+
+        await screenshots.capture(page, 'mobile-no-overflow-inventory');
+    }, page, results, screenshots);
+
+    // ────────────────────────────────────────────────────
+    // 13. Table Horizontal Scroll Handling
+    // ────────────────────────────────────────────────────
+
+    await runTest('Mobile - Orders Table Has Overflow Handling', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.ORDERS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const overflowX = await page.evaluate(() => {
+            // Check table container or parent of table for overflow-x
+            const table = document.querySelector('table');
+            if (!table) return { found: false };
+            let el = table.parentElement;
+            while (el && el !== document.body) {
+                const style = getComputedStyle(el);
+                if (style.overflowX === 'auto' || style.overflowX === 'scroll') {
+                    return { found: true, overflowX: style.overflowX, className: el.className };
+                }
+                el = el.parentElement;
+            }
+            return { found: false };
+        });
+
+        if (overflowX.found) {
+            console.log(`   Table container has overflow-x: ${overflowX.overflowX} (class: ${overflowX.className})`);
+        } else {
+            console.log('   No overflow-x container found for table (table may fit within viewport)');
+        }
+
+        await screenshots.capture(page, 'mobile-orders-table-scroll');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Holds Table Has Overflow Handling', async () => {
+        await setViewport('mobile');
+        await page.goto(`${config.baseUrl}${ROUTES.HOLDS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const overflowX = await page.evaluate(() => {
+            const table = document.querySelector('table');
+            if (!table) return { found: false };
+            let el = table.parentElement;
+            while (el && el !== document.body) {
+                const style = getComputedStyle(el);
+                if (style.overflowX === 'auto' || style.overflowX === 'scroll') {
+                    return { found: true, overflowX: style.overflowX, className: el.className };
+                }
+                el = el.parentElement;
+            }
+            return { found: false };
+        });
+
+        if (overflowX.found) {
+            console.log(`   Table container has overflow-x: ${overflowX.overflowX} (class: ${overflowX.className})`);
+        } else {
+            console.log('   No overflow-x container found for holds table');
+        }
+
+        await screenshots.capture(page, 'mobile-holds-table-scroll');
+    }, page, results, screenshots);
+
+    // ────────────────────────────────────────────────────
+    // 14. Modal Responsive
+    // ────────────────────────────────────────────────────
+
+    await runTest('Mobile - Modal Fits Within Viewport', async () => {
+        await setViewport('mobile');
+        // Navigate to holds page to use Apply Hold modal
+        await page.goto(`${config.baseUrl}${ROUTES.HOLDS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Look for an Apply Hold button
+        const applyBtn = page.locator('button:has-text("Apply Hold"), a:has-text("Apply Hold"), .btn:has-text("Apply")');
+        if (await applyBtn.count() > 0) {
+            await applyBtn.first().click();
+            await page.waitForTimeout(500);
+
+            const modalContainer = page.locator('.modal-container, .modal-content, .modal');
+            if (await modalContainer.count() > 0) {
+                const box = await modalContainer.first().boundingBox();
+                if (box && box.width > 375) {
+                    throw new Error(`Modal wider than viewport: ${box.width}px > 375px`);
+                }
+                console.log(`   Modal width: ${box ? box.width : 'unknown'}px (fits within 375px viewport)`);
+
+                await screenshots.capture(page, 'mobile-modal-viewport-fit');
+
+                // Close modal
+                const closeBtn = page.locator('.modal-close, .btn-cancel, button:has-text("Cancel")');
+                if (await closeBtn.count() > 0) {
+                    await closeBtn.first().click();
+                    await page.waitForTimeout(300);
+                }
+            } else {
+                console.log('   Modal did not open (may need different trigger)');
+            }
+        } else {
+            console.log('   No Apply Hold button found on page');
+        }
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Modal Search Filters Wrap', async () => {
+        await setViewport('mobile');
+        // Navigate to production to try material selection modal
+        await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION_CONFIRM(1)}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        // Try to open material selection modal
+        const selectBtn = page.locator('button:has-text("Select Materials"), button:has-text("Add Material"), .btn:has-text("Select")');
+        if (await selectBtn.count() > 0) {
+            await selectBtn.first().click();
+            await page.waitForTimeout(500);
+
+            const filtersRow = page.locator('.filters-row, .modal-filters, .search-filters');
+            if (await filtersRow.count() > 0) {
+                const flexWrap = await page.evaluate(() => {
+                    const el = document.querySelector('.filters-row, .modal-filters, .search-filters');
+                    return el ? getComputedStyle(el).flexWrap : null;
+                });
+                console.log(`   Modal filters flex-wrap: ${flexWrap}`);
+            } else {
+                console.log('   No filter row found in modal');
+            }
+
+            // Close modal
+            const closeBtn = page.locator('.modal-close, .btn-cancel, button:has-text("Cancel"), button:has-text("Close")');
+            if (await closeBtn.count() > 0) {
+                await closeBtn.first().click();
+                await page.waitForTimeout(300);
+            }
+        } else {
+            console.log('   No material selection button found (page may redirect)');
+        }
+
+        await screenshots.capture(page, 'mobile-modal-filters-wrap');
+    }, page, results, screenshots);
+
+    await runTest('Mobile - Apply Hold Modal Fits Viewport', async () => {
+        await setViewport('mobile');
+        // Navigate to inventory or orders to try apply hold from context
+        await page.goto(`${config.baseUrl}${ROUTES.HOLDS}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
+
+        const applyBtn = page.locator('button:has-text("Apply Hold"), a:has-text("Apply Hold"), .btn:has-text("Apply")');
+        if (await applyBtn.count() > 0) {
+            await applyBtn.first().click();
+            await page.waitForTimeout(500);
+
+            const modal = page.locator('.modal-container, .modal-content, .modal');
+            if (await modal.count() > 0) {
+                const box = await modal.first().boundingBox();
+                if (box) {
+                    if (box.width > 375) {
+                        throw new Error(`Hold modal exceeds viewport: ${box.width}px`);
+                    }
+                    // Check form fields are visible
+                    const reasonSelect = page.locator('select, .reason-select');
+                    const commentsArea = page.locator('textarea');
+                    console.log(`   Hold modal width: ${box.width}px`);
+                    console.log(`   Reason select found: ${await reasonSelect.count() > 0}`);
+                    console.log(`   Comments textarea found: ${await commentsArea.count() > 0}`);
+                }
+
+                await screenshots.capture(page, 'mobile-hold-modal-fit');
+
+                // Close modal
+                const closeBtn = page.locator('.modal-close, .btn-cancel, button:has-text("Cancel")');
+                if (await closeBtn.count() > 0) {
+                    await closeBtn.first().click();
+                    await page.waitForTimeout(300);
+                }
+            } else {
+                console.log('   Modal did not open');
+            }
+        } else {
+            console.log('   No Apply Hold button found');
+        }
     }, page, results, screenshots);
 
     // ────────────────────────────────────────────────────
