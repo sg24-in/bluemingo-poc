@@ -34,9 +34,9 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
 
         const table = page.locator('table');
         const cards = page.locator('.process-card, .card');
-        const emptyState = page.locator('.empty-state, .no-data');
+        const emptyState = page.locator('.empty-state, .no-data').first();
 
-        const hasTable = await table.isVisible();
+        const hasTable = await table.first().isVisible();
         const hasCards = await cards.first().isVisible();
         const hasEmpty = await emptyState.isVisible();
 
@@ -129,7 +129,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Processes - Form Fields', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESS_NEW}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESS_NEW}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(500);
 
         await screenshots.capture(page, 'processes-form-fields');
@@ -221,7 +221,7 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
                 console.log('  - Delete confirmation modal displayed');
 
                 // Close modal without deleting
-                const cancelBtn = modal.locator('button:has-text("Cancel"), button.btn-secondary');
+                const cancelBtn = modal.locator('button:has-text("Cancel"), button.btn-secondary').first();
                 if (await cancelBtn.isVisible()) {
                     await cancelBtn.click();
                     await page.waitForTimeout(300);
@@ -251,11 +251,11 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
     }, page, results, screenshots);
 
     await runTest('Quality Pending - Table View', async () => {
-        await page.goto(`${config.baseUrl}${ROUTES.PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
+        await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES_QUALITY}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
-        const table = page.locator('table');
-        const emptyState = page.locator('.empty-state, .no-data');
+        const table = page.locator('table').first();
+        const emptyState = page.locator('.empty-state, .no-data').first();
 
         if (await table.isVisible()) {
             await screenshots.capture(page, 'quality-pending-table');
@@ -270,6 +270,8 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
         } else if (await emptyState.isVisible()) {
             await screenshots.capture(page, 'quality-pending-empty');
             console.log('  - No pending quality items');
+        } else {
+            console.log('  - Quality pending page loaded (no table or empty state)');
         }
     }, page, results, screenshots);
 
@@ -630,9 +632,9 @@ async function runProcessesTests(page, screenshots, results, runTest, submitActi
         await page.goto(`${config.baseUrl}${ROUTES.ADMIN_PROCESSES}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
-        const table = page.locator('table');
+        const table = page.locator('table').first();
         const cards = page.locator('.process-card, .card');
-        const emptyState = page.locator('.empty-state, .no-data');
+        const emptyState = page.locator('.empty-state, .no-data').first();
 
         const hasTable = await table.isVisible();
         const hasCards = await cards.first().isVisible();

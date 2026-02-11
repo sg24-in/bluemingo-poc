@@ -1,5 +1,7 @@
-import { Component, OnInit, HostListener } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { AuthService, User } from '../../../core/services/auth.service';
 
 @Component({
@@ -7,11 +9,12 @@ import { AuthService, User } from '../../../core/services/auth.service';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   profileMenuOpen = false;
   mobileMenuOpen = false;
   expandedDropdown: string | null = null;
+  private routerSub: Subscription | null = null;
 
   constructor(
     private authService: AuthService,
@@ -22,6 +25,18 @@ export class HeaderComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
+
+    // Close mobile menu on route navigation
+    this.routerSub = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.mobileMenuOpen = false;
+      this.expandedDropdown = null;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.routerSub?.unsubscribe();
   }
 
   // Close dropdown when clicking outside

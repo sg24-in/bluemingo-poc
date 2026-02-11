@@ -8,15 +8,42 @@
 |------|---------|
 | `.claude/CLAUDE.md` | Project context, conventions, architecture |
 | `.claude/TASKS.md` | **Active tasks, session log, next steps** |
+| `prompts/YYYY-MM-DD.md` | **Prompt & session history (daily logs)** |
 | `documents/MES-Development-Session-Log.md` | **Permanent historical record of all sessions** |
 | `documents/MES-Requirements-Gaps-Analysis.md` | Requirements gaps to implement |
 | `documents/reference/` | **Technical reference docs (keep updated!)** |
 
 ### Resuming Work
 1. Read `.claude/TASKS.md` for current sprint and in-progress tasks
-2. Check "Next Steps" section for immediate actions
-3. Update task status as you work
-4. Update TASKS.md before session ends with progress
+2. Read latest `prompts/YYYY-MM-DD.md` for recent instruction context
+3. Check "Next Steps" section for immediate actions
+4. Update task status as you work
+5. Update TASKS.md before session ends with progress
+
+### Prompt & Session History (MANDATORY)
+
+**IMPORTANT: After EVERY user instruction, update `prompts/YYYY-MM-DD.md` with the instruction and outcome.**
+
+This is a **BLOCKING requirement** - not optional. The prompt history serves as:
+- Recovery context when context overflow or session interrupts occur
+- Complete audit trail of all instructions given to the system
+- Session progress tracker for continuity across conversations
+
+**Rules:**
+1. **On session start:** Create or open `prompts/YYYY-MM-DD.md` for today's date
+2. **After each instruction:** Append a numbered entry with the instruction text and what was done
+3. **On session end:** Update the "Session Progress" section with files changed and current state
+4. **On context overflow recovery:** Read the latest prompts file to reconstruct what was happening
+
+**Entry Format:**
+```markdown
+### #N - Short description
+**Instruction:** "exact user instruction or summary"
+**Action:** What was done
+**Outcome:** Result, files created/modified, status
+```
+
+**Location:** `prompts/` folder, one file per day named `YYYY-MM-DD.md`
 
 ### Session Logging (IMPORTANT)
 

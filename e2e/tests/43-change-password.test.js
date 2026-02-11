@@ -99,7 +99,7 @@ async function runChangePasswordTests(page, screenshots, results, runTest, submi
             await newPwd.fill('abc');
             await page.waitForTimeout(300);
 
-            const strengthIndicator = page.locator('.strength-bar, .password-strength, [class*="strength"]');
+            const strengthIndicator = page.locator('.strength-bar, .password-strength, [class*="strength"]').first();
             if (await strengthIndicator.isVisible({ timeout: 2000 })) {
                 console.log('   Password strength indicator visible');
                 await screenshots.capture(page, 'change-password-weak');
@@ -110,7 +110,7 @@ async function runChangePasswordTests(page, screenshots, results, runTest, submi
             await page.waitForTimeout(300);
             await screenshots.capture(page, 'change-password-strong');
 
-            const strengthLabel = page.locator('.strength-label, .strength-text, [class*="strength"] span');
+            const strengthLabel = page.locator('.strength-label, .strength-text, [class*="strength"] span').first();
             if (await strengthLabel.isVisible({ timeout: 1000 })) {
                 const label = await strengthLabel.textContent();
                 console.log(`   Strength label: ${label.trim()}`);
@@ -133,7 +133,7 @@ async function runChangePasswordTests(page, screenshots, results, runTest, submi
             await page.waitForTimeout(500);
 
             // Check for mismatch error
-            const mismatchError = page.locator('text=match, text=Match, .password-mismatch');
+            const mismatchError = page.locator(':has-text("match"), .password-mismatch').first();
             if (await mismatchError.isVisible({ timeout: 2000 })) {
                 console.log('   Password mismatch error displayed');
             }
@@ -146,7 +146,7 @@ async function runChangePasswordTests(page, screenshots, results, runTest, submi
         await page.goto(`${config.baseUrl}${ROUTES.CHANGE_PASSWORD}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(500);
 
-        const cancelBtn = page.locator('button:has-text("Cancel"), a:has-text("Cancel"), a:has-text("Back")');
+        const cancelBtn = page.locator('button:has-text("Cancel"), a:has-text("Cancel"), a:has-text("Back")').first();
         if (await cancelBtn.isVisible({ timeout: 2000 })) {
             await cancelBtn.click();
             await page.waitForLoadState('networkidle');
@@ -167,7 +167,7 @@ async function runChangePasswordTests(page, screenshots, results, runTest, submi
         await page.goto(`${config.baseUrl}${ROUTES.CHANGE_PASSWORD}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(500);
 
-        const backLink = page.locator('a[routerLink*="profile"], a:has-text("Back to Profile"), .back-link');
+        const backLink = page.locator('a[routerLink*="profile"], a:has-text("Back to Profile"), .back-link').first();
         if (await backLink.isVisible({ timeout: 2000 })) {
             const href = await backLink.getAttribute('href') || await backLink.getAttribute('routerLink');
             console.log(`   Back link target: ${href || 'click handler'}`);

@@ -552,22 +552,22 @@ INSERT INTO process_parameters_config (operation_type, product_sku, parameter_na
 -- =====================================================
 -- STEP 14: Orders (15 orders with all statuses)
 -- =====================================================
-INSERT INTO orders (order_id, order_number, customer_id, customer_name, order_date, status, created_by) VALUES
-(1,  'ORD-2026-001', 'CUST-001', 'ABC Steel Corporation',      '2026-01-10', 'IN_PROGRESS', 'SYSTEM'),
-(2,  'ORD-2026-002', 'CUST-002', 'Global Manufacturing Ltd',   '2026-01-12', 'IN_PROGRESS', 'SYSTEM'),
-(3,  'ORD-2026-003', 'CUST-006', 'BuildRight Construction',    '2026-01-15', 'IN_PROGRESS', 'SYSTEM'),
-(4,  'ORD-2026-004', 'CUST-003', 'Pacific Metal Works',        '2026-01-18', 'CREATED',     'SYSTEM'),
-(5,  'ORD-2026-005', 'CUST-004', 'European Auto Parts GmbH',   '2026-01-20', 'COMPLETED',   'SYSTEM'),
-(6,  'ORD-2026-006', 'CUST-007', 'Nordic Steel Trading AB',    '2026-01-22', 'CREATED',     'SYSTEM'),
-(7,  'ORD-2026-007', 'CUST-008', 'Middle East Metals FZE',     '2026-01-25', 'CREATED',     'SYSTEM'),
-(8,  'ORD-2026-008', 'CUST-005', 'Asian Electronics Inc',      '2026-01-28', 'ON_HOLD',     'SYSTEM'),
-(9,  'ORD-2026-009', 'CUST-009', 'South American Steel SA',    '2026-01-30', 'CREATED',     'SYSTEM'),
-(10, 'ORD-2026-010', 'CUST-010', 'African Mining Corp',        '2026-01-31', 'CREATED',     'SYSTEM'),
-(11, 'ORD-2026-011', 'CUST-011', 'Oceanic Metals Ltd',         '2026-02-01', 'IN_PROGRESS', 'SYSTEM'),
-(12, 'ORD-2026-012', 'CUST-001', 'ABC Steel Corporation',      '2026-02-02', 'COMPLETED',   'SYSTEM'),
-(13, 'ORD-2026-013', 'CUST-002', 'Global Manufacturing Ltd',   '2026-02-03', 'COMPLETED',   'SYSTEM'),
-(14, 'ORD-2026-014', 'CUST-003', 'Pacific Metal Works',        '2026-02-04', 'CANCELLED',   'SYSTEM'),
-(15, 'ORD-2026-015', 'CUST-007', 'Nordic Steel Trading AB',    '2026-02-05', 'BLOCKED',     'SYSTEM');
+INSERT INTO orders (order_id, order_number, customer_id, customer_name, order_date, priority, status, created_by) VALUES
+(1,  'ORD-2026-001', 'CUST-001', 'ABC Steel Corporation',      '2026-01-10', 1, 'IN_PROGRESS', 'SYSTEM'),
+(2,  'ORD-2026-002', 'CUST-002', 'Global Manufacturing Ltd',   '2026-01-12', 2, 'IN_PROGRESS', 'SYSTEM'),
+(3,  'ORD-2026-003', 'CUST-006', 'BuildRight Construction',    '2026-01-15', 3, 'IN_PROGRESS', 'SYSTEM'),
+(4,  'ORD-2026-004', 'CUST-003', 'Pacific Metal Works',        '2026-01-18', 3, 'CREATED',     'SYSTEM'),
+(5,  'ORD-2026-005', 'CUST-004', 'European Auto Parts GmbH',   '2026-01-20', 2, 'COMPLETED',   'SYSTEM'),
+(6,  'ORD-2026-006', 'CUST-007', 'Nordic Steel Trading AB',    '2026-01-22', 3, 'CREATED',     'SYSTEM'),
+(7,  'ORD-2026-007', 'CUST-008', 'Middle East Metals FZE',     '2026-01-25', 3, 'CREATED',     'SYSTEM'),
+(8,  'ORD-2026-008', 'CUST-005', 'Asian Electronics Inc',      '2026-01-28', 1, 'ON_HOLD',     'SYSTEM'),
+(9,  'ORD-2026-009', 'CUST-009', 'South American Steel SA',    '2026-01-30', 3, 'CREATED',     'SYSTEM'),
+(10, 'ORD-2026-010', 'CUST-010', 'African Mining Corp',        '2026-01-31', 3, 'CREATED',     'SYSTEM'),
+(11, 'ORD-2026-011', 'CUST-011', 'Oceanic Metals Ltd',         '2026-02-01', 2, 'IN_PROGRESS', 'SYSTEM'),
+(12, 'ORD-2026-012', 'CUST-001', 'ABC Steel Corporation',      '2026-02-02', 1, 'COMPLETED',   'SYSTEM'),
+(13, 'ORD-2026-013', 'CUST-002', 'Global Manufacturing Ltd',   '2026-02-03', 2, 'COMPLETED',   'SYSTEM'),
+(14, 'ORD-2026-014', 'CUST-003', 'Pacific Metal Works',        '2026-02-04', 3, 'CANCELLED',   'SYSTEM'),
+(15, 'ORD-2026-015', 'CUST-007', 'Nordic Steel Trading AB',    '2026-02-05', 1, 'BLOCKED',     'SYSTEM');
 ALTER TABLE orders ALTER COLUMN order_id RESTART WITH 16;
 
 -- Audit trail for orders

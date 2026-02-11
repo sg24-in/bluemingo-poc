@@ -175,7 +175,9 @@
       "Bash(Services-Methods)",
       "Bash(Frontend-Pages)",
       "Bash(Database-Schema-Ref)",
-      "Bash(Entity-DTO \")"
+      "Bash(Entity-DTO \")",
+      "Bash(npx ng serve:*)",
+      "Bash(./gradlew bootJar:*)"
     ]
   }
 }

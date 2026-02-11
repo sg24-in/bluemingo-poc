@@ -55,14 +55,14 @@ async function runNewDetailPageTests(page, screenshots, results, runTest, submit
         await screenshots.capture(page, 'routing-detail-direct');
 
         // Check for routing info sections
-        const heading = page.locator('h1, h2, .page-title, .routing-name');
+        const heading = page.locator('h1, h2, .page-title, .routing-name').first();
         if (await heading.isVisible({ timeout: 3000 })) {
             const text = await heading.textContent();
             console.log(`   Page heading: ${text.trim().substring(0, 50)}`);
         }
 
         // Check for routing steps section
-        const stepsSection = page.locator('text=Steps, text=Routing Steps, h3:has-text("Steps")');
+        const stepsSection = page.locator(':has-text("Steps"), :has-text("Routing Steps"), h3:has-text("Steps")').first();
         if (await stepsSection.isVisible({ timeout: 2000 })) {
             console.log('   Routing steps section visible');
         }
@@ -146,14 +146,14 @@ async function runNewDetailPageTests(page, screenshots, results, runTest, submit
 
         await screenshots.capture(page, 'op-template-detail-direct');
 
-        const heading = page.locator('h1, h2, .page-title');
+        const heading = page.locator('h1, h2, .page-title').first();
         if (await heading.isVisible({ timeout: 3000 })) {
             const text = await heading.textContent();
             console.log(`   Page heading: ${text.trim().substring(0, 50)}`);
         }
 
         // Check for template configuration section
-        const configSection = page.locator('text=Configuration, text=Template Info, h3:has-text("Config")');
+        const configSection = page.locator(':has-text("Configuration"), :has-text("Template Info"), h3:has-text("Config")').first();
         if (await configSection.isVisible({ timeout: 2000 })) {
             console.log('   Template configuration section visible');
         }

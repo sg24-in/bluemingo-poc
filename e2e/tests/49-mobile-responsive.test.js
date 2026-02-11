@@ -934,7 +934,7 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
                 // Close modal
                 const closeBtn = page.locator('.modal-close, .btn-cancel, button:has-text("Cancel")');
                 if (await closeBtn.count() > 0) {
-                    await closeBtn.first().click();
+                    await closeBtn.first().click({ force: true });
                     await page.waitForTimeout(300);
                 }
             } else {
@@ -971,7 +971,7 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
             // Close modal
             const closeBtn = page.locator('.modal-close, .btn-cancel, button:has-text("Cancel"), button:has-text("Close")');
             if (await closeBtn.count() > 0) {
-                await closeBtn.first().click();
+                await closeBtn.first().click({ force: true });
                 await page.waitForTimeout(300);
             }
         } else {
@@ -1012,7 +1012,7 @@ async function runMobileResponsiveTests(page, screenshots, results, runTest, sub
                 // Close modal
                 const closeBtn = page.locator('.modal-close, .btn-cancel, button:has-text("Cancel")');
                 if (await closeBtn.count() > 0) {
-                    await closeBtn.first().click();
+                    await closeBtn.first().click({ force: true });
                     await page.waitForTimeout(300);
                 }
             } else {

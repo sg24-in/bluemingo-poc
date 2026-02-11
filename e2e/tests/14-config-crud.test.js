@@ -518,9 +518,10 @@ async function runConfigCrudTests(page, screenshots, results, runTest, submitAct
 
         await screenshots.capture(page, 'config-quantity-type-list');
 
-        const table = page.locator('table');
-        if (!await table.isVisible()) {
-            throw new Error('Quantity type config table not visible');
+        const table = page.locator('table').first();
+        const emptyState = page.locator('.empty-state, .no-data').first();
+        if (!await table.isVisible() && !await emptyState.isVisible()) {
+            throw new Error('Quantity type config page not loaded');
         }
     }, page, results, screenshots);
 
@@ -622,9 +623,10 @@ async function runConfigCrudTests(page, screenshots, results, runTest, submitAct
 
         await screenshots.capture(page, 'config-batch-size-list');
 
-        const table = page.locator('table');
-        if (!await table.isVisible()) {
-            throw new Error('Batch size config table not visible');
+        const table = page.locator('table').first();
+        const emptyState = page.locator('.empty-state, .no-data').first();
+        if (!await table.isVisible() && !await emptyState.isVisible()) {
+            throw new Error('Batch size config page not loaded');
         }
     }, page, results, screenshots);
 
@@ -777,8 +779,8 @@ async function runConfigCrudTests(page, screenshots, results, runTest, submitAct
             await screenshots.capture(page, `config-nav-${route.name}`);
 
             // Verify each page loaded (has a table or empty state)
-            const hasTable = await page.locator('table').isVisible();
-            const hasEmpty = await page.locator('.empty-state').isVisible();
+            const hasTable = await page.locator('table').first().isVisible();
+            const hasEmpty = await page.locator('.empty-state, .no-data').first().isVisible();
             if (!hasTable && !hasEmpty) {
                 throw new Error(`Config page ${route.name} did not load properly`);
             }

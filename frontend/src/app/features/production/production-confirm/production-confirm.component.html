@@ -282,7 +282,7 @@
             <div class="batch-size-info" *ngIf="batchSizeConfig?.found && !batchSizeWarning">
               <i class="fas fa-info-circle"></i>
               <span>
-                Batch size range: {{ batchSizeConfig.minBatchSize || 0 }} - {{ batchSizeConfig.maxBatchSize }} {{ batchSizeConfig.unit || 'T' }}
+                Batch size range: {{ batchSizeConfig?.minBatchSize || 0 }} - {{ batchSizeConfig?.maxBatchSize }} {{ batchSizeConfig?.unit || 'T' }}
               </span>
             </div>
             <!-- P05-P06: Yield Calculation Display -->

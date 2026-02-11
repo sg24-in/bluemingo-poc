@@ -7,7 +7,7 @@
       <i class="fas" [ngClass]="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
     </button>
     <nav class="nav-menu" [class.open]="mobileMenuOpen">
-      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileMenu()">
         <i class="fas fa-chart-line"></i> Dashboard
       </a>
 
@@ -17,10 +17,10 @@
           <i class="fas fa-clipboard-list"></i> Orders <i class="fas fa-chevron-down dropdown-arrow"></i>
         </a>
         <div class="dropdown-menu">
-          <a routerLink="/orders" routerLinkActive="active">
+          <a routerLink="/orders" routerLinkActive="active" (click)="closeMobileMenu()">
             <i class="fas fa-list-check"></i> Order List
           </a>
-          <a routerLink="/production" routerLinkActive="active">
+          <a routerLink="/production" routerLinkActive="active" (click)="closeMobileMenu()">
             <i class="fas fa-industry"></i> Production Confirm
           </a>
         </div>
@@ -32,10 +32,10 @@
           <i class="fas fa-cogs"></i> Manufacturing <i class="fas fa-chevron-down dropdown-arrow"></i>
         </a>
         <div class="dropdown-menu">
-          <a routerLink="/operations" routerLinkActive="active">
+          <a routerLink="/operations" routerLinkActive="active" (click)="closeMobileMenu()">
             <i class="fas fa-gears"></i> Operations
           </a>
-          <a routerLink="/equipment" routerLinkActive="active">
+          <a routerLink="/equipment" routerLinkActive="active" (click)="closeMobileMenu()">
             <i class="fas fa-wrench"></i> Equipment
           </a>
         </div>
@@ -47,10 +47,10 @@
           <i class="fas fa-boxes-stacked"></i> Inventory <i class="fas fa-chevron-down dropdown-arrow"></i>
         </a>
         <div class="dropdown-menu">
-          <a routerLink="/inventory" routerLinkActive="active">
+          <a routerLink="/inventory" routerLinkActive="active" (click)="closeMobileMenu()">
             <i class="fas fa-warehouse"></i> Stock
           </a>
-          <a routerLink="/batches" routerLinkActive="active">
+          <a routerLink="/batches" routerLinkActive="active" (click)="closeMobileMenu()">
             <i class="fas fa-cubes"></i> Batches
           </a>
         </div>
@@ -62,14 +62,14 @@
           <i class="fas fa-shield-halved"></i> Quality <i class="fas fa-chevron-down dropdown-arrow"></i>
         </a>
         <div class="dropdown-menu">
-          <a routerLink="/holds" routerLinkActive="active">
+          <a routerLink="/holds" routerLinkActive="active" (click)="closeMobileMenu()">
             <i class="fas fa-hand"></i> Holds
           </a>
         </div>
       </div>
 
       <!-- Manage (Admin) -->
-      <a routerLink="/manage" routerLinkActive="active">
+      <a routerLink="/manage" routerLinkActive="active" (click)="closeMobileMenu()">
         <i class="fas fa-sliders"></i> Manage
       </a>
     </nav>

@@ -55,7 +55,7 @@ async function runProductionHistoryTests(page, screenshots, results, runTest) {
         await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION_HISTORY}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
-        const table = page.locator('table');
+        const table = page.locator('table').first();
         const cards = page.locator('.confirmation-card, .history-card, .card');
         const emptyState = page.locator('.empty-state, .no-data, :text("No data"), :text("No confirmations")');
 
@@ -83,7 +83,7 @@ async function runProductionHistoryTests(page, screenshots, results, runTest) {
         await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION_HISTORY}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
-        const table = page.locator('table');
+        const table = page.locator('table').first();
         if (await table.isVisible()) {
             const headers = await table.locator('th').allTextContents();
             console.log('  - Table headers:', headers.join(', '));
@@ -241,7 +241,7 @@ async function runProductionHistoryTests(page, screenshots, results, runTest) {
         await page.goto(`${config.baseUrl}${ROUTES.PRODUCTION_HISTORY}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(1000);
 
-        const table = page.locator('table');
+        const table = page.locator('table').first();
         if (await table.isVisible()) {
             // Try clicking on a sortable header
             const sortableHeader = table.locator('th[class*="sort"], th:has-text("Date")').first();
