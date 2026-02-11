@@ -49,6 +49,8 @@ import {
   // Production
   ProductionConfirmationRequest,
   ProductionConfirmationResponse,
+  ProductionReversalResponse,
+  CanReverseResponse,
   // BOM
   BomTreeResponse,
   BomValidationRequest,
@@ -160,6 +162,17 @@ export class ApiService {
 
   getConfirmationsByStatus(status: string): Observable<ProductionConfirmationResponse[]> {
     return this.http.get<ProductionConfirmationResponse[]>(`${environment.apiUrl}/production/confirmations/status/${status}`);
+  }
+
+  canReverseConfirmation(confirmationId: number): Observable<CanReverseResponse> {
+    return this.http.get<CanReverseResponse>(`${environment.apiUrl}/production/confirmations/${confirmationId}/can-reverse`);
+  }
+
+  reverseConfirmation(confirmationId: number, reason: string, notes?: string): Observable<ProductionReversalResponse> {
+    return this.http.post<ProductionReversalResponse>(
+      `${environment.apiUrl}/production/confirmations/${confirmationId}/reverse`,
+      { reason, notes }
+    );
   }
 
   // ============================================================

@@ -10,7 +10,7 @@
 
 | # | Service | Lines | Key Responsibilities | Transaction Default |
 |---|---------|-------|---------------------|-------------------|
-| 1 | `ProductionService` | 812 | Production confirmation, batch generation, operation progression, BOM/param validation orchestration | Method-level `@Transactional` |
+| 1 | `ProductionService` | 1000+ | Production confirmation, batch generation, operation progression, BOM/param validation orchestration, consumption reversal (R-13) | Method-level `@Transactional` |
 | 2 | `OrderService` | 456 | Order CRUD, line item management, paginated queries, order number generation | Class-level `@Transactional(readOnly = true)` |
 | 3 | `BatchService` | 1114 | Batch lifecycle, split/merge, approval/rejection, quality, genealogy validation, quantity adjustment | Class-level `@Transactional(readOnly = true)` |
 | 4 | `InventoryService` | 510 | Inventory state management (block/unblock/scrap/reserve), CRUD, paginated queries | Class-level `@Transactional(readOnly = true)` |
@@ -103,6 +103,8 @@
 | `getConfirmationById` | `ProductionConfirmationDTO.Response getConfirmationById(Long confirmationId)` | `@Transactional(readOnly = true)` | Get single confirmation by ID |
 | `getConfirmationsByStatus` | `List<ProductionConfirmationDTO.Response> getConfirmationsByStatus(String status)` | `@Transactional(readOnly = true)` | Get confirmations filtered by status |
 | `getContinuableOperations` | `List<Map<String, Object>> getContinuableOperations()` | `@Transactional(readOnly = true)` | P13: Get IN_PROGRESS operations with partial progress |
+| `canReverseConfirmation` | `Map<String, Object> canReverseConfirmation(Long confirmationId)` | `@Transactional(readOnly = true)` | R-13: Check if confirmation can be reversed (validates status, checks downstream consumption) |
+| `reverseConfirmation` | `ProductionConfirmationDTO.ReversalResponse reverseConfirmation(ProductionConfirmationDTO.ReversalRequest request)` | `@Transactional` | R-13: 16-step reversal: validate, find output batches, check downstream, restore inputs, scrap outputs, deactivate relations, revert operation/next operation status, mark REVERSED, audit |
 
 #### Key Business Logic Rules
 
@@ -120,6 +122,8 @@
 12. **Order Auto-Completion (R-08):** When all operations across all line items of an order are CONFIRMED, order status is auto-set to COMPLETED.
 13. **Equipment Usage Logging:** Equipment usage events logged for each confirmation.
 14. **Inventory Movement Recording:** Consumption and production movements recorded for traceability.
+15. **Confirmation-Batch Linkage (R-13):** Output batches are linked to the confirmation via `confirmationId` field for reversal traceability. Uses Jackson ObjectMapper for rmConsumedJson serialization.
+16. **Consumption Reversal (R-13):** `canReverseConfirmation()` validates status is CONFIRMED or PARTIALLY_CONFIRMED and checks no downstream consumption of output batches. `reverseConfirmation()` performs a 16-step reversal: validate status, find output batches, check downstream, parse consumed inputs from rmConsumedJson, restore input inventory (CONSUMED->AVAILABLE), record REVERSAL movements, restore input batches, scrap output batches, scrap output inventory, deactivate batch relations (ACTIVE->REVERSED), reduce operation confirmed qty, revert operation status, revert next operation if needed, mark confirmation REVERSED, audit trail.
 
 #### Private/Helper Methods
 
@@ -959,6 +963,8 @@ The MES POC uses a deliberate strategy of **soft enforcement** for certain valid
 | Order delete guard (only CREATED) | `OrderService` | Throws `RuntimeException` |
 | Routing lock guard | `RoutingService` | Throws `IllegalStateException` |
 | Split/merge validation | `BatchService` | Throws `RuntimeException` |
+| Reversal status guard (R-13) | `ProductionService` | Only CONFIRMED/PARTIALLY_CONFIRMED can be reversed; throws if downstream consumed |
+| Reversal downstream check (R-13) | `ProductionService` | Output batches must not have been consumed downstream; throws `RuntimeException` |
 
 ### Soft Enforcement (Logs Warning, Continues)
 

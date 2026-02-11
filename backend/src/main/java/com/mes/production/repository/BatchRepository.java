@@ -38,6 +38,8 @@ public interface BatchRepository extends JpaRepository<Batch, Long>, JpaSpecific
     @Query("SELECT b FROM Batch b WHERE b.generatedAtOperationId = :operationId")
     List<Batch> findByGeneratedAtOperation(@Param("operationId") Long operationId);
 
+    List<Batch> findByConfirmationId(Long confirmationId);
+
     // Search with pagination
     @Query("SELECT b FROM Batch b WHERE " +
            "(:status IS NULL OR b.status = :status) AND " +

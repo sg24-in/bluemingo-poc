@@ -231,6 +231,8 @@ ResponseEntity<List<DashboardDTO.RecentActivity>> getRecentActivity(@RequestPara
 | `GET` | `/api/production/confirmations/rejected` | - | Get rejected confirmations | `List<ProductionConfirmationDTO.Response>` |
 | `GET` | `/api/production/confirmations/partial` | - | Get partial confirmations (P13) | `List<ProductionConfirmationDTO.Response>` |
 | `GET` | `/api/production/operations/continuable` | - | Operations with partial progress (P13) | `List<Map<String, Object>>` |
+| `POST` | `/api/production/confirmations/{confirmationId}/reverse` | `Map<String, String>` (`reason`, `notes`) | Reverse a production confirmation (R-13) | `ProductionConfirmationDTO.ReversalResponse` |
+| `GET` | `/api/production/confirmations/{confirmationId}/can-reverse` | - | Check if confirmation can be reversed (R-13) | `Map<String, Object>` |
 
 ---
 
@@ -947,7 +949,7 @@ This controller manages multiple configuration domains. Each domain follows the 
 | AuthController | `/api/auth` | 4 |
 | DashboardController | `/api/dashboard` | 2 |
 | OrderController | `/api/orders` | 10 |
-| ProductionController | `/api/production` | 8 |
+| ProductionController | `/api/production` | 10 |
 | OperationController | `/api/operations` | 9 |
 | BatchController | `/api/batches` | 23 |
 | BatchAllocationController | `/api/batch-allocations` | 6 |
@@ -972,7 +974,7 @@ This controller manages multiple configuration domains. Each domain follows the 
 | ReportAnalyticsController | `/api/reports/analytics` | 8 |
 | BatchSizeConfigController | `/api/batch-size-config` | 10 |
 | DatabaseResetController | `/api/admin/reset` | 8 |
-| **TOTAL** | | **~319** |
+| **TOTAL** | | **~321** |
 
 ### By HTTP Method
 

@@ -295,6 +295,9 @@ STATUS_BLOCKED = "BLOCKED"
 | rejectionReason | String | `rejection_reason` | `length=500` |
 | rejectedBy | String | `rejected_by` | |
 | rejectedOn | LocalDateTime | `rejected_on` | |
+| reversedBy | String | `reversed_by` | Added R-13 |
+| reversedOn | LocalDateTime | `reversed_on` | Added R-13 |
+| reversalReason | String | `reversal_reason` | `length=500`, Added R-13 |
 | createdOn | LocalDateTime | `created_on` | |
 | createdBy | String | `created_by` | |
 | updatedOn | LocalDateTime | `updated_on` | |
@@ -311,6 +314,7 @@ STATUS_CONFIRMED = "CONFIRMED"
 STATUS_REJECTED = "REJECTED"
 STATUS_PARTIALLY_CONFIRMED = "PARTIALLY_CONFIRMED"
 STATUS_PENDING_REVIEW = "PENDING_REVIEW"
+STATUS_REVERSED = "REVERSED"   // Added R-13
 ```
 
 **Lifecycle Callbacks:**
@@ -437,6 +441,7 @@ OUTPUT_TYPE_BYPRODUCT = "BYPRODUCT"
 | quantity | BigDecimal | `quantity` | `nullable=false, precision=15, scale=4` |
 | unit | String | `unit` | `nullable=false` |
 | generatedAtOperationId | Long | `generated_at_operation_id` | |
+| confirmationId | Long | `confirmation_id` | Added R-13, links batch to production confirmation for reversal |
 | status | String | `status` | `nullable=false` |
 | approvedBy | String | `approved_by` | |
 | approvedOn | LocalDateTime | `approved_on` | |
@@ -568,6 +573,7 @@ TYPE_PRODUCE = "PRODUCE"
 TYPE_HOLD = "HOLD"
 TYPE_RELEASE = "RELEASE"
 TYPE_SCRAP = "SCRAP"
+TYPE_REVERSAL = "REVERSAL"   // Added R-13
 
 // Status
 STATUS_EXECUTED = "EXECUTED"
@@ -1923,6 +1929,9 @@ Container class with nested static classes only.
 | rejectionReason | String |
 | rejectedBy | String |
 | rejectedOn | LocalDateTime |
+| reversedBy | String | Added R-13 |
+| reversedOn | LocalDateTime | Added R-13 |
+| reversalReason | String | Added R-13 |
 | outputBatch | BatchInfo |
 | outputBatches | List\<BatchInfo\> |
 | batchCount | Integer |
@@ -1996,6 +2005,32 @@ Container class with nested static classes only.
 | message | String |
 | updatedBy | String |
 | updatedOn | LocalDateTime |
+
+### ProductionConfirmationDTO.ReversalRequest (R-13)
+
+| Field | Type | Validation |
+|-------|------|------------|
+| confirmationId | Long | `@NotNull` |
+| reason | String | `@NotNull` |
+| notes | String | |
+
+### ProductionConfirmationDTO.ReversalResponse (R-13)
+
+| Field | Type |
+|-------|------|
+| confirmationId | Long |
+| previousStatus | String |
+| newStatus | String |
+| message | String |
+| reversedBy | String |
+| reversedOn | LocalDateTime |
+| restoredInventoryIds | List\<Long\> |
+| restoredBatchIds | List\<Long\> |
+| scrappedOutputBatchIds | List\<Long\> |
+| operationId | Long |
+| operationNewStatus | String |
+| nextOperationId | Long |
+| nextOperationNewStatus | String |
 
 ---
 

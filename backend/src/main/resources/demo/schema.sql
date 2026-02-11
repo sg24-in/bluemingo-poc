@@ -239,6 +239,9 @@ CREATE TABLE IF NOT EXISTS production_confirmation (
     rejection_reason VARCHAR(500),
     rejected_by VARCHAR(100),
     rejected_on TIMESTAMP,
+    reversed_by VARCHAR(100),
+    reversed_on TIMESTAMP,
+    reversal_reason VARCHAR(500),
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
     updated_on TIMESTAMP,
@@ -266,6 +269,7 @@ CREATE TABLE IF NOT EXISTS batches (
     received_date DATE,
     receipt_notes VARCHAR(500),
     expiry_date DATE,
+    confirmation_id BIGINT,
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
     updated_on TIMESTAMP,
@@ -603,6 +607,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_type ON inventory(inventory_type);
 CREATE INDEX IF NOT EXISTS idx_inventory_batch ON inventory(batch_id);
 CREATE INDEX IF NOT EXISTS idx_batches_status ON batches(status);
 CREATE INDEX IF NOT EXISTS idx_batches_material ON batches(material_id);
+CREATE INDEX IF NOT EXISTS idx_batches_confirmation_id ON batches(confirmation_id);
 CREATE INDEX IF NOT EXISTS idx_production_confirm_operation ON production_confirmation(confirmation_id);
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_trail(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_hold_entity ON hold_records(entity_type, entity_id);

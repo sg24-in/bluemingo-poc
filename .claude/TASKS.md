@@ -1,7 +1,7 @@
 # MES POC - Active Tasks & Session Log
 
-**Last Updated:** 2026-02-10
-**Session Status:** Active - Comprehensive Reference Documentation Complete
+**Last Updated:** 2026-02-11
+**Session Status:** Active - R-12 Batch Split Preview Complete
 
 ---
 
@@ -59,6 +59,33 @@
 |---|--------|-------|
 | -- | Seed data (30 orders, BOM trees, confirmations, etc.) | Main may have different data; create separate seed patch |
 | -- | Frontend proxy.conf.json | May be useful for main dev mode too |
+
+---
+
+## Latest Session Changes (2026-02-11 - R-12 Batch Split Preview)
+
+### R-12: Batch Size Config → Production (Frontend Preview) — DONE
+**Commits:** `9c6b4bd`, `7ad77f6` (pushed to origin/main)
+
+**Files Modified:**
+- `frontend/src/app/shared/models/production.model.ts` - Added `BatchSplitPreview` interface
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.ts` - Added debounced batch split preview logic (RxJS Subject + switchMap + EMPTY), subscription lifecycle management
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.html` - Added batch split preview UI (batch count header, chip list, partial badge, info note, loading spinner)
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.css` - Added batch-split-preview styles with mobile responsive breakpoint
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.spec.ts` - Added 6 tests in "R-12: Batch Split Preview" describe block using fakeAsync/tick
+
+**Test Status:**
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Backend | BUILD SUCCESSFUL | PASS |
+| Frontend | 1519/1519 | PASS |
+| E2E | Not re-run (additive UI only) | N/A |
+
+**Code Review Fixes (commit 7ad77f6):**
+- Fixed memory leak: stored subscription + unsubscribe in ngOnDestroy
+- Changed `return []` to `return EMPTY` for idiomatic RxJS
+- Refactored 3 async tests from setTimeout/done to fakeAsync/tick
+- Added "should clean up subscription on destroy" test
 
 ---
 
@@ -2756,13 +2783,13 @@ GAP-001 and GAP-006 also completed.
 | R-15 | Batch expiry dates | LOW | Small | **DONE** |
 | R-18 | Batch number preview in config UI | LOW | Small | **DONE** |
 | R-05 | Reports E2E tests | HIGH | Medium | SKIP (Reports module paused) |
-| R-12 | Batch size config → production | MEDIUM | Medium | PENDING |
-| R-13 | Consumption reversal | MEDIUM | Large | PENDING |
+| R-12 | Batch size config → production | MEDIUM | Medium | **DONE** |
+| R-13 | Consumption reversal | MEDIUM | Large | **DONE** |
 | R-16 | Order priority/scheduling | LOW | Medium | PENDING |
 | R-17 | Process versioning | LOW | Large | PENDING |
 | R-19 | Mobile responsive E2E tests | LOW | Medium | **DONE** |
 
-**14/19 recommendations DONE, 1 SKIPPED, 4 PENDING (all LOW/MEDIUM priority).**
+**15/19 recommendations DONE, 1 SKIPPED, 3 PENDING (all LOW priority).**
 
 ---
 

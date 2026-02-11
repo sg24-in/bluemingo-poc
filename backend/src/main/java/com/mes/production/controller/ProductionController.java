@@ -131,6 +131,34 @@ public class ProductionController {
         return ResponseEntity.ok(productionService.getContinuableOperations());
     }
 
+    /**
+     * R-13: Reverse a production confirmation (consumption reversal)
+     */
+    @PostMapping("/confirmations/{confirmationId}/reverse")
+    public ResponseEntity<ProductionConfirmationDTO.ReversalResponse> reverseConfirmation(
+            @PathVariable Long confirmationId,
+            @RequestBody java.util.Map<String, String> body) {
+        log.info("POST /api/production/confirmations/{}/reverse", confirmationId);
+
+        ProductionConfirmationDTO.ReversalRequest request = ProductionConfirmationDTO.ReversalRequest.builder()
+                .confirmationId(confirmationId)
+                .reason(body.get("reason"))
+                .notes(body.get("notes"))
+                .build();
+
+        return ResponseEntity.ok(productionService.reverseConfirmation(request));
+    }
+
+    /**
+     * R-13: Check if a confirmation can be reversed
+     */
+    @GetMapping("/confirmations/{confirmationId}/can-reverse")
+    public ResponseEntity<java.util.Map<String, Object>> canReverseConfirmation(
+            @PathVariable Long confirmationId) {
+        log.info("GET /api/production/confirmations/{}/can-reverse", confirmationId);
+        return ResponseEntity.ok(productionService.canReverseConfirmation(confirmationId));
+    }
+
     // Need to import Map
     private static final class Map {
         static java.util.Map<String, Object> of(Object... keyValues) {

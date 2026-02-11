@@ -27,6 +27,7 @@ public class ProductionConfirmation {
     public static final String STATUS_REJECTED = "REJECTED";
     public static final String STATUS_PARTIALLY_CONFIRMED = "PARTIALLY_CONFIRMED";
     public static final String STATUS_PENDING_REVIEW = "PENDING_REVIEW";
+    public static final String STATUS_REVERSED = "REVERSED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -93,6 +94,15 @@ public class ProductionConfirmation {
 
     @Column(name = "rejected_on")
     private LocalDateTime rejectedOn;
+
+    @Column(name = "reversed_by")
+    private String reversedBy;
+
+    @Column(name = "reversed_on")
+    private LocalDateTime reversedOn;
+
+    @Column(name = "reversal_reason", length = 500)
+    private String reversalReason;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn;

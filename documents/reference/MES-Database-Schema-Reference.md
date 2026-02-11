@@ -1,7 +1,7 @@
 # MES Database Schema Reference
 
 **Generated:** 2026-02-10
-**Source:** SQL Patch Analysis (50 patches)
+**Source:** SQL Patch Analysis (51 patches)
 **Database:** PostgreSQL 14+
 **Schema Management:** SQL Patch System (auto-applied on startup)
 
@@ -12,7 +12,7 @@
 | Metric | Count |
 |--------|-------|
 | Total Tables | 55 |
-| Total SQL Patches | 50 |
+| Total SQL Patches | 51 |
 | Total Indexes | 110+ |
 | Total Foreign Keys | 35+ |
 | Total Check Constraints | 30+ |
@@ -280,7 +280,7 @@ CREATE TABLE operation_templates (
 
 ### 4.4 production_confirmation
 
-Created by **Patch 001**. Modified by **Patches 003, 005, 012, 046**.
+Created by **Patch 001**. Modified by **Patches 003, 005, 012, 046, 051**.
 
 ```sql
 CREATE TABLE production_confirmation (
@@ -306,7 +306,12 @@ CREATE TABLE production_confirmation (
     updated_on         TIMESTAMP,
     updated_by         VARCHAR(100),
 
-    CONSTRAINT chk_confirm_status CHECK (status IN ('CONFIRMED', 'PARTIALLY_CONFIRMED', 'REJECTED', 'PENDING_REVIEW'))
+    -- Reversal fields (patch 051)
+    reversed_by        VARCHAR(100),
+    reversed_on        TIMESTAMP,
+    reversal_reason    VARCHAR(500),
+
+    CONSTRAINT chk_confirm_status CHECK (status IN ('CONFIRMED', 'PARTIALLY_CONFIRMED', 'REJECTED', 'PENDING_REVIEW', 'REVERSED'))
 );
 ```
 
@@ -443,7 +448,7 @@ CREATE TABLE operation_parameter_templates (
 
 ### 5.1 batches
 
-Created by **Patch 001**. Modified by **Patches 010, 024, 027, 038, 049**.
+Created by **Patch 001**. Modified by **Patches 010, 024, 027, 038, 049, 051**.
 
 ```sql
 CREATE TABLE batches (
@@ -470,6 +475,8 @@ CREATE TABLE batches (
     receipt_notes           VARCHAR(500),
     -- Expiry date (patch 049)
     expiry_date             DATE,
+    -- Confirmation linkage (patch 051)
+    confirmation_id         BIGINT REFERENCES production_confirmation(confirmation_id),
     -- Standard audit columns
     created_on              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by              VARCHAR(100),
@@ -491,6 +498,7 @@ CREATE TABLE batches (
 | `idx_batches_supplier_id` | `supplier_id` | 027 |
 | `idx_batches_received_date` | `received_date` | 027 |
 | `idx_batches_expiry_date` | `expiry_date` | 049 |
+| `idx_batches_confirmation_id` | `confirmation_id` | 051 |
 
 ### 5.2 inventory
 
@@ -563,7 +571,7 @@ CREATE TABLE inventory_movement (
     created_on      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(100),
 
-    CONSTRAINT chk_movement_type CHECK (movement_type IN ('CONSUME', 'PRODUCE', 'HOLD', 'RELEASE', 'SCRAP', 'RECEIVE', 'TRANSFER', 'ADJUST')),
+    CONSTRAINT chk_movement_type CHECK (movement_type IN ('CONSUME', 'PRODUCE', 'HOLD', 'RELEASE', 'SCRAP', 'RECEIVE', 'TRANSFER', 'ADJUST', 'REVERSAL')),
     CONSTRAINT chk_movement_status CHECK (status IN ('EXECUTED', 'PENDING', 'ON_HOLD'))
 );
 ```
@@ -588,7 +596,7 @@ CREATE TABLE batch_relations (
     created_by           VARCHAR(100),
 
     CONSTRAINT chk_relation_type CHECK (relation_type IN ('SPLIT', 'MERGE', 'CONSUME')),
-    CONSTRAINT chk_relation_status CHECK (status IN ('ACTIVE', 'CLOSED'))
+    CONSTRAINT chk_relation_status CHECK (status IN ('ACTIVE', 'CLOSED', 'REVERSED'))
 );
 ```
 
@@ -2241,6 +2249,7 @@ Values: `OPERATION`, `PROCESS`, `ORDER_LINE`, `INVENTORY`, `BATCH`, `EQUIPMENT`
 | 048 | `048_add_order_delivery_date_notes.sql` | Add delivery_date and notes columns to orders table | DDL |
 | 049 | `049_add_batch_expiry_date.sql` | Add expiry_date column to batches table with index | DDL |
 | 050 | `050_add_order_priority.sql` | Add priority INTEGER column to orders table with index | DDL+DML |
+| 051 | `051_consumption_reversal_support.sql` | Add reversed_by/reversed_on/reversal_reason to production_confirmation, add REVERSED to confirmation status constraint, add REVERSAL to inventory_movement type constraint, add confirmation_id to batches with index, add REVERSED to batch_relations status constraint | DDL |
 
 ---
 
@@ -2256,7 +2265,7 @@ Values: `OPERATION`, `PROCESS`, `ORDER_LINE`, `INVENTORY`, `BATCH`, `EQUIPMENT`
 
 ### Schema Management
 - All schema changes are applied via SQL patches in `backend/src/main/resources/patches/`
-- Patches are numbered 001-050 and executed sequentially on startup
+- Patches are numbered 001-051 and executed sequentially on startup
 - The `database_patches` table is created by `PatchService.java` (not a patch)
 - In test mode, the schema is dropped and rebuilt (DROP SCHEMA public CASCADE; CREATE SCHEMA public)
 - Patches use `IF NOT EXISTS` / `IF EXISTS` for idempotency

@@ -3,7 +3,7 @@
 **Purpose:** Permanent record of all development sessions for traceability and knowledge continuity.
 
 **Created:** 2026-02-07
-**Last Updated:** 2026-02-10
+**Last Updated:** 2026-02-11
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Focus Areas | Key Outcomes |
 |------|-------------|--------------|
+| 2026-02-11 | **R-12 Batch Split Preview** | Batch split preview in production confirm, 1519 frontend tests, 2 commits pushed |
 | 2026-02-10 | **Comprehensive Reference Documentation** | 5 new reference docs (8,061 lines total), mandatory doc maintenance rules in CLAUDE.md |
 | 2026-02-10 | **Gap Implementation Sprint** | 13/19 gap recommendations implemented: R-01 to R-18 |
 | 2026-02-10 | Detail pages, Reports, E2E tests, Gap Analysis, System Guide | Routing-detail, Op-template-detail, Reports module, 3 new E2E tests (43-45), Gap Analysis doc, System Guide doc |
@@ -21,6 +22,98 @@
 | 2026-02-06 | MES Data Model Gap Analysis, Dashboard Charts, Config Entities | 5 new patches, 11 new entities, Chart race condition fixed |
 | 2026-02-05 | BOM CRUD Backend, E2E CRUD Tests | Full BOM tree API, 22 E2E tests |
 | 2026-02-04 | Architecture Refactoring, Routing Module | Hash routing, admin layout, routing CRUD |
+
+---
+
+## Session: 2026-02-11 (R-13 Consumption Reversal)
+
+### Session Overview
+**Primary Focus:** Implement R-13 — Consumption Reversal (full-stack)
+**Key Accomplishments:**
+- Implemented full consumption reversal feature: 16-step transactional reversal logic
+- SQL patch 051 (reversed fields, REVERSED status, REVERSAL movement type, confirmation_id on batches)
+- Backend: reverseConfirmation() + canReverseConfirmation() in ProductionService, 2 new controller endpoints
+- Frontend: reversal dialog in production history, purple REVERSED status theme, 5 new unit tests
+- Fixed rmConsumedJson serialization (Map.toString() → Jackson ObjectMapper for proper JSON)
+- All tests passing: 1524 frontend, backend BUILD SUCCESSFUL
+- Updated all 6 mandatory reference documents
+
+### R-13: Consumption Reversal — DONE
+
+**Backend Files Created/Modified:**
+- `backend/src/main/resources/patches/051_consumption_reversal_support.sql` - NEW: reversed_by/on/reason, REVERSED status, REVERSAL movement, confirmation_id on batches
+- `backend/src/main/resources/demo/schema.sql` - H2-compatible DDL updates
+- `backend/.../entity/ProductionConfirmation.java` - STATUS_REVERSED + reversedBy, reversedOn, reversalReason fields
+- `backend/.../entity/Batch.java` - confirmationId field for output batch traceability
+- `backend/.../repository/BatchRepository.java` - findByConfirmationId()
+- `backend/.../dto/ProductionConfirmationDTO.java` - ReversalRequest, ReversalResponse DTOs + response reversal fields
+- `backend/.../service/ProductionService.java` - reverseConfirmation() (16-step), canReverseConfirmation(), JSON fix, confirmation-batch linkage
+- `backend/.../controller/ProductionController.java` - POST .../reverse, GET .../can-reverse
+
+**Frontend Files Modified:**
+- `frontend/.../models/production.model.ts` - ProductionReversalResponse, CanReverseResponse interfaces
+- `frontend/.../services/api.service.ts` - reverseConfirmation(), canReverseConfirmation()
+- `frontend/.../production-history/production-history.component.ts` - REVERSED status, reversal dialog, canReverse(), openReverseDialog(), confirmReversal()
+- `frontend/.../production-history/production-history.component.html` - Reversed summary card, Reverse button, reversal info section, reversal modal
+- `frontend/.../production-history/production-history.component.css` - Purple theme, modal/warning/error styles
+- `frontend/.../production-history/production-history.component.spec.ts` - 5 new tests
+
+**Key Design Decisions:**
+- Output batches are SCRAPPED (not deleted) to preserve traceability
+- Batch relations set to REVERSED status (not deleted) for genealogy audit trail
+- Input inventory/batches restored to AVAILABLE
+- Downstream consumption check blocks reversal if output was consumed in later operations
+- Legacy rmConsumedJson parsing via regex fallback for old Map.toString() format
+
+### Test Status Summary
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Backend | BUILD SUCCESSFUL | PASS |
+| Frontend | 1524/1524 | PASS |
+
+### Recommendations Progress
+- **15/19 DONE**, 1 SKIPPED, 3 PENDING (R-16 Order priority LOW, R-17 Process versioning LOW)
+
+---
+
+## Session: 2026-02-11 (R-12 Batch Split Preview)
+
+### Session Overview
+**Primary Focus:** Implement R-12 — Batch Size Config → Production (Frontend Preview)
+**Key Accomplishments:**
+- Added batch split preview to production confirmation form
+- When quantity exceeds maxBatchSize, users see how many batches will be created with their sizes
+- Debounced API calls (300ms) using RxJS Subject + switchMap
+- Fixed memory leak, adopted idiomatic RxJS (EMPTY), and used fakeAsync/tick in tests
+- All 1519 frontend tests passing
+
+### R-12: Batch Split Preview — DONE
+**Commits:** `9c6b4bd` (initial), `7ad77f6` (code review fixes)
+
+**Files Modified:**
+- `frontend/src/app/shared/models/production.model.ts` - Added `BatchSplitPreview` interface matching backend response
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.ts` - Added debounced preview logic: `batchSplitPreviewSubject` → `debounceTime(300)` → `filter` → `switchMap` to `apiService.calculateBatchSizes()`. Added subscription lifecycle (store + unsubscribe in ngOnDestroy). Clears preview on operation change.
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.html` - Added preview UI section: batch count header, chip list with sizes, partial batch badge, info note about sequential numbering, loading spinner
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.css` - Green info box styling, flex chip layout, partial badge (yellow), mobile responsive (768px stack)
+- `frontend/src/app/features/production/production-confirm/production-confirm.component.spec.ts` - 6 new tests: no preview by default, preview when qty > maxBatchSize, no preview when qty <= max, clear on operation change, no API call without config, subscription cleanup on destroy
+
+### Code Review Fixes (commit 7ad77f6)
+- **Memory leak:** Subscription was not stored/unsubscribed → added `batchSplitSubscription` property + cleanup in `ngOnDestroy`
+- **Idiomatic RxJS:** Changed `return []` to `return EMPTY` in switchMap for clarity
+- **Test reliability:** Refactored 3 tests from `setTimeout/done` to `fakeAsync/tick(350)` for deterministic timing
+
+### Test Status Summary
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Backend | BUILD SUCCESSFUL | PASS |
+| Frontend | 1519/1519 | PASS |
+| E2E | Not re-run (additive UI only) | N/A |
+
+### Implementation Notes
+- Backend already had `BatchSizeService`, `BatchSizeConfigController`, and `/api/batch-size-config/calculate` endpoint
+- Frontend already had `apiService.calculateBatchSizes()` method — just never called from production confirm
+- No backend changes needed — purely frontend feature
+- Preview only appears when `batchCount > 1` (multi-batch scenario)
 
 ---
 

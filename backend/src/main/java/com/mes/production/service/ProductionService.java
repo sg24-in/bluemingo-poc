@@ -11,15 +11,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +44,7 @@ public class ProductionService {
     private final BatchSizeService batchSizeService;
     private final OrderRepository orderRepository;
     private final BomValidationService bomValidationService;
+    private final ObjectMapper objectMapper;
 
     /**
      * Confirm production for an operation
@@ -281,7 +281,7 @@ public class ProductionService {
                 .delayMinutes(request.getDelayMinutes())
                 .delayReason(request.getDelayReason())
                 .processParametersJson(request.getProcessParameters() != null ? request.getProcessParameters().toString() : null)
-                .rmConsumedJson(rmConsumed.toString())
+                .rmConsumedJson(serializeToJson(rmConsumed))
                 .equipment(equipmentSet)
                 .operators(operatorSet)
                 .notes(request.getNotes())
@@ -291,6 +291,12 @@ public class ProductionService {
 
         confirmation = confirmationRepository.save(confirmation);
         log.info("Production confirmation created: {} with status: {}", confirmation.getConfirmationId(), confirmationStatus);
+
+        // R-13: Link output batches to this confirmation for reversal traceability
+        for (Batch outputBatch : outputBatches) {
+            outputBatch.setConfirmationId(confirmation.getConfirmationId());
+            batchRepository.save(outputBatch);
+        }
 
         // Audit: Log production confirmation creation
         auditService.logCreate("PRODUCTION_CONFIRMATION", confirmation.getConfirmationId(),
@@ -805,8 +811,350 @@ public class ProductionService {
                 .rejectionReason(confirmation.getRejectionReason())
                 .rejectedBy(confirmation.getRejectedBy())
                 .rejectedOn(confirmation.getRejectedOn())
+                .reversedBy(confirmation.getReversedBy())
+                .reversedOn(confirmation.getReversedOn())
+                .reversalReason(confirmation.getReversalReason())
                 .equipment(equipmentInfo)
                 .operators(operatorInfo)
                 .build();
+    }
+
+    // ===== R-13: Consumption Reversal =====
+
+    /**
+     * R-13: Check if a production confirmation can be reversed.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> canReverseConfirmation(Long confirmationId) {
+        ProductionConfirmation confirmation = confirmationRepository.findById(confirmationId)
+                .orElseThrow(() -> new RuntimeException("Production confirmation not found: " + confirmationId));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("confirmationId", confirmationId);
+        result.put("currentStatus", confirmation.getStatus());
+
+        // Check 1: Status must be CONFIRMED or PARTIALLY_CONFIRMED
+        boolean statusOk = ProductionConfirmation.STATUS_CONFIRMED.equals(confirmation.getStatus())
+                || ProductionConfirmation.STATUS_PARTIALLY_CONFIRMED.equals(confirmation.getStatus());
+        result.put("statusAllowsReversal", statusOk);
+
+        if (!statusOk) {
+            result.put("canReverse", false);
+            result.put("reason", "Status " + confirmation.getStatus() + " cannot be reversed");
+            result.put("blockers", List.of("Status " + confirmation.getStatus() + " cannot be reversed"));
+            return result;
+        }
+
+        // Check 2: Output batches not consumed downstream
+        List<Batch> outputBatches = batchRepository.findByConfirmationId(confirmationId);
+        List<String> blockers = new ArrayList<>();
+
+        for (Batch batch : outputBatches) {
+            List<BatchRelation> childRelations = batchRelationRepository.findChildRelations(batch.getBatchId());
+            boolean hasActiveChildren = childRelations.stream()
+                    .anyMatch(br -> "ACTIVE".equals(br.getStatus()));
+            if (hasActiveChildren) {
+                blockers.add("Batch " + batch.getBatchNumber() + " has been consumed in downstream operations");
+            }
+        }
+
+        boolean canReverse = blockers.isEmpty();
+        result.put("canReverse", canReverse);
+        result.put("blockers", blockers);
+        result.put("outputBatchCount", outputBatches.size());
+
+        return result;
+    }
+
+    /**
+     * R-13: Reverse a production confirmation (consumption reversal).
+     * This undoes all state changes made by confirmProduction().
+     */
+    @Transactional
+    public ProductionConfirmationDTO.ReversalResponse reverseConfirmation(ProductionConfirmationDTO.ReversalRequest request) {
+        log.info("Reversing production confirmation: {}", request.getConfirmationId());
+
+        String currentUser = getCurrentUser();
+
+        // Step 1: Load and validate confirmation
+        ProductionConfirmation confirmation = confirmationRepository.findById(request.getConfirmationId())
+                .orElseThrow(() -> new RuntimeException("Production confirmation not found: " + request.getConfirmationId()));
+
+        String oldStatus = confirmation.getStatus();
+
+        if (!ProductionConfirmation.STATUS_CONFIRMED.equals(oldStatus) &&
+            !ProductionConfirmation.STATUS_PARTIALLY_CONFIRMED.equals(oldStatus)) {
+            throw new RuntimeException("Cannot reverse confirmation with status: " + oldStatus +
+                    ". Only CONFIRMED or PARTIALLY_CONFIRMED confirmations can be reversed.");
+        }
+
+        // Step 2: Find output batches created by this confirmation
+        List<Batch> outputBatches = batchRepository.findByConfirmationId(confirmation.getConfirmationId());
+
+        // Step 3: Guard against cascading — check if any output batch has been consumed downstream
+        for (Batch outputBatch : outputBatches) {
+            List<BatchRelation> childRelations = batchRelationRepository.findChildRelations(outputBatch.getBatchId());
+            boolean hasActiveChildren = childRelations.stream()
+                    .anyMatch(br -> "ACTIVE".equals(br.getStatus()));
+            if (hasActiveChildren) {
+                throw new RuntimeException("Cannot reverse: Output batch " + outputBatch.getBatchNumber() +
+                        " has already been consumed in downstream operations. Reverse those operations first.");
+            }
+        }
+
+        // Step 4: Parse consumed inputs from rmConsumedJson
+        List<Long> restoredInventoryIds = new ArrayList<>();
+        List<Long> restoredBatchIds = new ArrayList<>();
+        parseAndRestoreConsumedMaterials(confirmation, currentUser, restoredInventoryIds, restoredBatchIds);
+
+        // Step 5-6: Scrap output batches and their inventory
+        List<Long> scrappedOutputBatchIds = new ArrayList<>();
+        for (Batch outputBatch : outputBatches) {
+            String oldBatchStatus = outputBatch.getStatus();
+            outputBatch.setStatus(Batch.STATUS_SCRAPPED);
+            outputBatch.setRejectionReason("Reversed: " + request.getReason());
+            outputBatch.setUpdatedBy(currentUser);
+            batchRepository.save(outputBatch);
+            scrappedOutputBatchIds.add(outputBatch.getBatchId());
+            auditService.logStatusChange("BATCH", outputBatch.getBatchId(), oldBatchStatus, Batch.STATUS_SCRAPPED);
+
+            // Scrap associated output inventory
+            List<Inventory> outputInventories = inventoryRepository.findByBatch_BatchId(outputBatch.getBatchId());
+            for (Inventory inv : outputInventories) {
+                String oldInvState = inv.getState();
+                inv.setState("SCRAPPED");
+                inv.setUpdatedBy(currentUser);
+                inventoryRepository.save(inv);
+                auditService.logStatusChange("INVENTORY", inv.getInventoryId(), oldInvState, "SCRAPPED");
+
+                // Record reversal movement for output inventory
+                inventoryMovementService.recordMovement(
+                        inv.getInventoryId(),
+                        confirmation.getOperation().getOperationId(),
+                        "REVERSAL",
+                        inv.getQuantity(),
+                        "Reversed confirmation #" + confirmation.getConfirmationId());
+            }
+        }
+
+        // Step 7: Deactivate batch relations (ACTIVE → REVERSED)
+        for (Batch outputBatch : outputBatches) {
+            // Find relations where this output batch is the child (parent→child)
+            List<BatchRelation> relations = batchRelationRepository.findParentRelations(outputBatch.getBatchId());
+            for (BatchRelation rel : relations) {
+                if ("ACTIVE".equals(rel.getStatus())) {
+                    rel.setStatus("REVERSED");
+                    batchRelationRepository.save(rel);
+                    auditService.logStatusChange("BATCH_RELATION", rel.getRelationId(), "ACTIVE", "REVERSED");
+                }
+            }
+        }
+
+        // Step 8: Revert operation status and confirmed qty
+        Operation operation = confirmation.getOperation();
+        String oldOpStatus = operation.getStatus();
+        BigDecimal previousConfirmedQty = operation.getConfirmedQty() != null
+                ? operation.getConfirmedQty() : BigDecimal.ZERO;
+        BigDecimal newConfirmedQty = previousConfirmedQty.subtract(confirmation.getProducedQty());
+        if (newConfirmedQty.compareTo(BigDecimal.ZERO) < 0) {
+            newConfirmedQty = BigDecimal.ZERO;
+        }
+        operation.setConfirmedQty(newConfirmedQty);
+
+        String newOpStatus;
+        if (newConfirmedQty.compareTo(BigDecimal.ZERO) == 0) {
+            newOpStatus = "READY";
+        } else {
+            newOpStatus = "IN_PROGRESS";
+        }
+        operation.setStatus(newOpStatus);
+        operation.setUpdatedBy(currentUser);
+        operationRepository.save(operation);
+        if (!oldOpStatus.equals(newOpStatus)) {
+            auditService.logStatusChange("OPERATION", operation.getOperationId(), oldOpStatus, newOpStatus);
+        }
+
+        // Step 9: Revert next operation if this was a full confirmation
+        Long nextOperationId = null;
+        String nextOperationNewStatus = null;
+        if (ProductionConfirmation.STATUS_CONFIRMED.equals(oldStatus)) {
+            Optional<Operation> nextOp = operationRepository.findNextOperation(
+                    operation.getOrderLineItem().getOrderLineId(), operation.getSequenceNumber());
+            if (nextOp.isPresent() && "READY".equals(nextOp.get().getStatus())) {
+                Operation next = nextOp.get();
+                next.setStatus("NOT_STARTED");
+                next.setUpdatedBy(currentUser);
+                operationRepository.save(next);
+                auditService.logStatusChange("OPERATION", next.getOperationId(), "READY", "NOT_STARTED");
+                nextOperationId = next.getOperationId();
+                nextOperationNewStatus = "NOT_STARTED";
+            }
+
+            // Revert order completion if applicable
+            revertOrderCompletionIfNeeded(operation, currentUser);
+        }
+
+        // Step 10: Mark confirmation as REVERSED
+        confirmation.setStatus(ProductionConfirmation.STATUS_REVERSED);
+        confirmation.setReversalReason(request.getReason());
+        confirmation.setReversedBy(currentUser);
+        confirmation.setReversedOn(LocalDateTime.now());
+        confirmation.setUpdatedBy(currentUser);
+        confirmationRepository.save(confirmation);
+
+        auditService.logStatusChange("PRODUCTION_CONFIRMATION",
+                confirmation.getConfirmationId(), oldStatus, ProductionConfirmation.STATUS_REVERSED);
+
+        log.info("Production confirmation {} reversed by {}", request.getConfirmationId(), currentUser);
+
+        return ProductionConfirmationDTO.ReversalResponse.builder()
+                .confirmationId(confirmation.getConfirmationId())
+                .previousStatus(oldStatus)
+                .newStatus(ProductionConfirmation.STATUS_REVERSED)
+                .message("Production confirmation reversed successfully. Reason: " + request.getReason())
+                .reversedBy(currentUser)
+                .reversedOn(confirmation.getReversedOn())
+                .restoredInventoryIds(restoredInventoryIds)
+                .restoredBatchIds(restoredBatchIds)
+                .scrappedOutputBatchIds(scrappedOutputBatchIds)
+                .operationId(operation.getOperationId())
+                .operationNewStatus(newOpStatus)
+                .nextOperationId(nextOperationId)
+                .nextOperationNewStatus(nextOperationNewStatus)
+                .build();
+    }
+
+    /**
+     * R-13: Parse consumed materials from rmConsumedJson and restore them.
+     */
+    private void parseAndRestoreConsumedMaterials(ProductionConfirmation confirmation, String currentUser,
+                                                   List<Long> restoredInventoryIds, List<Long> restoredBatchIds) {
+        String rmJson = confirmation.getRmConsumedJson();
+        if (rmJson == null || rmJson.isEmpty()) {
+            log.warn("No rmConsumedJson found for confirmation {}", confirmation.getConfirmationId());
+            return;
+        }
+
+        try {
+            // Try parsing as proper JSON first (new format)
+            Map<String, Map<String, Object>> consumed = objectMapper.readValue(rmJson,
+                    new TypeReference<Map<String, Map<String, Object>>>() {});
+
+            for (Map.Entry<String, Map<String, Object>> entry : consumed.entrySet()) {
+                Long batchId = Long.parseLong(entry.getKey());
+                Map<String, Object> details = entry.getValue();
+                Long inventoryId = ((Number) details.get("inventoryId")).longValue();
+
+                restoreInventoryAndBatch(inventoryId, batchId, confirmation, currentUser,
+                        restoredInventoryIds, restoredBatchIds);
+            }
+        } catch (Exception jsonEx) {
+            // Fallback: try parsing old Map.toString() format
+            log.warn("Could not parse rmConsumedJson as JSON for confirmation {}, trying legacy format",
+                    confirmation.getConfirmationId());
+            parseLegacyRmConsumed(rmJson, confirmation, currentUser, restoredInventoryIds, restoredBatchIds);
+        }
+    }
+
+    /**
+     * R-13: Fallback parser for legacy Map.toString() format.
+     * Format: {1={inventoryId=5, quantity=10.0, materialId=RM-001}, 2={...}}
+     */
+    private void parseLegacyRmConsumed(String rmJson, ProductionConfirmation confirmation, String currentUser,
+                                        List<Long> restoredInventoryIds, List<Long> restoredBatchIds) {
+        try {
+            // Extract batchId=inventoryId pairs using regex
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                    "(\\d+)=\\{[^}]*inventoryId=(\\d+)");
+            java.util.regex.Matcher matcher = pattern.matcher(rmJson);
+
+            while (matcher.find()) {
+                Long batchId = Long.parseLong(matcher.group(1));
+                Long inventoryId = Long.parseLong(matcher.group(2));
+
+                restoreInventoryAndBatch(inventoryId, batchId, confirmation, currentUser,
+                        restoredInventoryIds, restoredBatchIds);
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse legacy rmConsumedJson for confirmation {}: {}",
+                    confirmation.getConfirmationId(), e.getMessage());
+            throw new RuntimeException("Cannot reverse: unable to parse consumed materials data. " +
+                    "This confirmation may predate the reversal feature.");
+        }
+    }
+
+    /**
+     * R-13: Restore a single inventory item and its batch.
+     */
+    private void restoreInventoryAndBatch(Long inventoryId, Long batchId,
+                                           ProductionConfirmation confirmation, String currentUser,
+                                           List<Long> restoredInventoryIds, List<Long> restoredBatchIds) {
+        // Restore inventory: CONSUMED → AVAILABLE
+        inventoryRepository.findById(inventoryId).ifPresent(inv -> {
+            if ("CONSUMED".equals(inv.getState())) {
+                String oldState = inv.getState();
+                inv.setState("AVAILABLE");
+                inv.setUpdatedBy(currentUser);
+                inventoryRepository.save(inv);
+                auditService.logStatusChange("INVENTORY", inv.getInventoryId(), oldState, "AVAILABLE");
+                restoredInventoryIds.add(inv.getInventoryId());
+
+                // Record reversal movement
+                inventoryMovementService.recordMovement(
+                        inv.getInventoryId(),
+                        confirmation.getOperation().getOperationId(),
+                        "REVERSAL",
+                        inv.getQuantity(),
+                        "Reversed confirmation #" + confirmation.getConfirmationId());
+            }
+        });
+
+        // Restore batch: CONSUMED → AVAILABLE
+        if (!restoredBatchIds.contains(batchId)) {
+            batchRepository.findById(batchId).ifPresent(batch -> {
+                if ("CONSUMED".equals(batch.getStatus())) {
+                    String oldStatus = batch.getStatus();
+                    batch.setStatus(Batch.STATUS_AVAILABLE);
+                    batch.setUpdatedBy(currentUser);
+                    batchRepository.save(batch);
+                    auditService.logStatusChange("BATCH", batch.getBatchId(), oldStatus, Batch.STATUS_AVAILABLE);
+                    restoredBatchIds.add(batch.getBatchId());
+                }
+            });
+        }
+    }
+
+    /**
+     * R-13: Revert order from COMPLETED to IN_PROGRESS if it was auto-completed.
+     */
+    private void revertOrderCompletionIfNeeded(Operation op, String currentUser) {
+        try {
+            OrderLineItem lineItem = op.getOrderLineItem();
+            if (lineItem == null || lineItem.getOrder() == null) return;
+
+            Order order = orderRepository.findById(lineItem.getOrder().getOrderId()).orElse(null);
+            if (order == null || !"COMPLETED".equals(order.getStatus())) return;
+
+            String oldOrderStatus = order.getStatus();
+            order.setStatus("IN_PROGRESS");
+            order.setUpdatedBy(currentUser);
+            orderRepository.save(order);
+            log.info("Order {} reverted from COMPLETED to IN_PROGRESS due to reversal", order.getOrderNumber());
+            auditService.logStatusChange("ORDER", order.getOrderId(), oldOrderStatus, "IN_PROGRESS");
+        } catch (Exception e) {
+            log.warn("Could not revert order completion: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * R-13: Serialize a map to proper JSON string.
+     */
+    private String serializeToJson(Map<String, Object> map) {
+        try {
+            return objectMapper.writeValueAsString(map);
+        } catch (Exception e) {
+            log.warn("Failed to serialize to JSON, falling back to toString(): {}", e.getMessage());
+            return map.toString();
+        }
     }
 }

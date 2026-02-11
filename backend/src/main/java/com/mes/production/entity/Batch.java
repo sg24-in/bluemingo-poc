@@ -100,6 +100,9 @@ public class Batch {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
+    @Column(name = "confirmation_id")
+    private Long confirmationId;
+
     @Column(name = "created_on")
     private LocalDateTime createdOn;
 

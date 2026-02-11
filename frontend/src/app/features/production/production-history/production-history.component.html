@@ -44,6 +44,10 @@
       <span class="count">{{ countByStatus('REJECTED') }}</span>
       <span class="label">Rejected</span>
     </div>
+    <div class="summary-card reversed">
+      <span class="count">{{ countByStatus('REVERSED') }}</span>
+      <span class="label">Reversed</span>
+    </div>
   </div>
 
   <div class="table-container" *ngIf="!loading; else loadingTpl">
@@ -65,6 +69,7 @@
             (click)="toggleDetail(c)"
             [class.selected]="selectedConfirmation === c"
             [class.rejected-row]="c.status === 'REJECTED'"
+            [class.reversed-row]="c.status === 'REVERSED'"
             class="clickable-row">
           <td>{{ c.confirmationId }}</td>
           <td>{{ c.operationName || '-' }}</td>
@@ -101,7 +106,14 @@
   <div class="detail-panel card" *ngIf="selectedConfirmation">
     <div class="detail-header">
       <h3>Confirmation #{{ selectedConfirmation.confirmationId }}</h3>
-      <button class="btn btn-sm btn-secondary" (click)="selectedConfirmation = null">Close</button>
+      <div class="detail-actions">
+        <button *ngIf="canReverse(selectedConfirmation)"
+                class="btn btn-sm btn-warning"
+                (click)="openReverseDialog(selectedConfirmation)">
+          Reverse
+        </button>
+        <button class="btn btn-sm btn-secondary" (click)="selectedConfirmation = null">Close</button>
+      </div>
     </div>
 
     <div class="detail-grid">
@@ -154,6 +166,61 @@
         <div class="detail-row"><span class="detail-label">Reason:</span> {{ selectedConfirmation.rejectionReason }}</div>
         <div class="detail-row"><span class="detail-label">Rejected By:</span> {{ selectedConfirmation.rejectedBy }}</div>
         <div class="detail-row"><span class="detail-label">Rejected On:</span> {{ formatDateTime(selectedConfirmation.rejectedOn!) }}</div>
+      </div>
+
+      <div class="detail-section reversal" *ngIf="selectedConfirmation.reversalReason">
+        <h4>Reversal</h4>
+        <div class="detail-row"><span class="detail-label">Reason:</span> {{ selectedConfirmation.reversalReason }}</div>
+        <div class="detail-row"><span class="detail-label">Reversed By:</span> {{ selectedConfirmation.reversedBy }}</div>
+        <div class="detail-row"><span class="detail-label">Reversed On:</span> {{ formatDateTime(selectedConfirmation.reversedOn!) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reversal Confirmation Modal -->
+  <div class="modal-backdrop" *ngIf="showReversalDialog" (click)="closeReverseDialog()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Reverse Confirmation #{{ reversalConfirmation?.confirmationId }}</h3>
+        <button class="btn-close" (click)="closeReverseDialog()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="warning-banner">
+          This will restore consumed materials, scrap output batches, and revert operation status.
+          This action cannot be undone.
+        </div>
+
+        <div *ngIf="reversalLoading && !canReverseResult" class="loading-msg">Checking reversal eligibility...</div>
+
+        <div *ngIf="canReverseResult && !canReverseResult.canReverse" class="error-banner">
+          <strong>Cannot reverse this confirmation.</strong>
+          <div *ngIf="canReverseResult.reason">{{ canReverseResult.reason }}</div>
+          <ul *ngIf="canReverseResult.blockers?.length">
+            <li *ngFor="let b of canReverseResult.blockers">{{ b }}</li>
+          </ul>
+        </div>
+
+        <div *ngIf="reversalError" class="error-banner">{{ reversalError }}</div>
+
+        <div class="form-group" *ngIf="canReverseResult?.canReverse">
+          <label for="reversal-reason">Reason <span class="required">*</span></label>
+          <textarea id="reversal-reason" [(ngModel)]="reversalReason" rows="3"
+                    placeholder="Enter reason for reversal..."></textarea>
+        </div>
+
+        <div class="form-group" *ngIf="canReverseResult?.canReverse">
+          <label for="reversal-notes">Notes</label>
+          <textarea id="reversal-notes" [(ngModel)]="reversalNotes" rows="2"
+                    placeholder="Optional notes..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeReverseDialog()">Cancel</button>
+        <button class="btn btn-danger"
+                (click)="confirmReversal()"
+                [disabled]="!canReverseResult?.canReverse || !reversalReason.trim() || reversalLoading">
+          {{ reversalLoading ? 'Reversing...' : 'Confirm Reversal' }}
+        </button>
       </div>
     </div>
   </div>

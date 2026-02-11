@@ -45,7 +45,11 @@ describe('ProductionHistoryComponent', () => {
   ];
 
   beforeEach(async () => {
-    const apiSpy = jasmine.createSpyObj('ApiService', ['getConfirmationsByStatus']);
+    const apiSpy = jasmine.createSpyObj('ApiService', [
+      'getConfirmationsByStatus',
+      'canReverseConfirmation',
+      'reverseConfirmation'
+    ]);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -89,6 +93,7 @@ describe('ProductionHistoryComponent', () => {
     expect(apiServiceSpy.getConfirmationsByStatus).toHaveBeenCalledWith('REJECTED');
     expect(apiServiceSpy.getConfirmationsByStatus).toHaveBeenCalledWith('PENDING_REVIEW');
     expect(apiServiceSpy.getConfirmationsByStatus).toHaveBeenCalledWith('PARTIALLY_CONFIRMED');
+    expect(apiServiceSpy.getConfirmationsByStatus).toHaveBeenCalledWith('REVERSED');
   });
 
   it('should sort by confirmationId descending', () => {
@@ -147,5 +152,62 @@ describe('ProductionHistoryComponent', () => {
     apiServiceSpy.getConfirmationsByStatus.and.returnValue(throwError(() => new Error('Error')));
     component.loadConfirmations();
     expect(component.loading).toBeFalse();
+  });
+
+  it('should identify reversible confirmations', () => {
+    expect(component.canReverse({ status: 'CONFIRMED' } as any)).toBeTrue();
+    expect(component.canReverse({ status: 'PARTIALLY_CONFIRMED' } as any)).toBeTrue();
+    expect(component.canReverse({ status: 'REJECTED' } as any)).toBeFalse();
+    expect(component.canReverse({ status: 'REVERSED' } as any)).toBeFalse();
+  });
+
+  it('should open and close reversal dialog', () => {
+    apiServiceSpy.canReverseConfirmation.and.returnValue(of({
+      confirmationId: 1, currentStatus: 'CONFIRMED', canReverse: true,
+      statusAllowsReversal: true, outputBatchCount: 1
+    }));
+
+    component.openReverseDialog(mockConfirmations[0]);
+    expect(component.showReversalDialog).toBeTrue();
+    expect(component.reversalConfirmation).toBe(mockConfirmations[0]);
+
+    component.closeReverseDialog();
+    expect(component.showReversalDialog).toBeFalse();
+    expect(component.reversalConfirmation).toBeNull();
+  });
+
+  it('should call canReverseConfirmation when opening dialog', () => {
+    apiServiceSpy.canReverseConfirmation.and.returnValue(of({
+      confirmationId: 1, currentStatus: 'CONFIRMED', canReverse: true,
+      statusAllowsReversal: true, outputBatchCount: 1
+    }));
+
+    component.openReverseDialog(mockConfirmations[0]);
+    expect(apiServiceSpy.canReverseConfirmation).toHaveBeenCalledWith(1);
+  });
+
+  it('should call reverseConfirmation API on confirm', () => {
+    apiServiceSpy.canReverseConfirmation.and.returnValue(of({
+      confirmationId: 1, currentStatus: 'CONFIRMED', canReverse: true,
+      statusAllowsReversal: true, outputBatchCount: 1
+    }));
+    apiServiceSpy.reverseConfirmation.and.returnValue(of({
+      confirmationId: 1, previousStatus: 'CONFIRMED', newStatus: 'REVERSED',
+      message: 'Reversed', reversedBy: 'admin', reversedOn: '2024-01-15T14:00:00',
+      restoredInventoryIds: [1], restoredBatchIds: [1], scrappedOutputBatchIds: [2],
+      operationId: 10, operationNewStatus: 'READY'
+    }));
+
+    component.openReverseDialog(mockConfirmations[0]);
+    component.reversalReason = 'Wrong materials used';
+    component.confirmReversal();
+    expect(apiServiceSpy.reverseConfirmation).toHaveBeenCalledWith(1, 'Wrong materials used', undefined);
+  });
+
+  it('should not call reverseConfirmation without reason', () => {
+    component.reversalConfirmation = mockConfirmations[0];
+    component.reversalReason = '  ';
+    component.confirmReversal();
+    expect(apiServiceSpy.reverseConfirmation).not.toHaveBeenCalled();
   });
 });

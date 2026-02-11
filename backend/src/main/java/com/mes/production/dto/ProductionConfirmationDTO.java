@@ -114,6 +114,11 @@ public class ProductionConfirmationDTO {
         private String rejectedBy;
         private LocalDateTime rejectedOn;
 
+        // Reversal fields (R-13)
+        private String reversedBy;
+        private LocalDateTime reversedOn;
+        private String reversalReason;
+
         // Output batch info (primary batch for backward compatibility)
         private BatchInfo outputBatch;
 
@@ -218,5 +223,41 @@ public class ProductionConfirmationDTO {
         private String message;
         private String updatedBy;
         private LocalDateTime updatedOn;
+    }
+
+    // R-13: Reversal request DTO
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReversalRequest {
+        @NotNull(message = "Confirmation ID is required")
+        private Long confirmationId;
+
+        @NotNull(message = "Reversal reason is required")
+        private String reason;
+
+        private String notes;
+    }
+
+    // R-13: Reversal response DTO
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReversalResponse {
+        private Long confirmationId;
+        private String previousStatus;
+        private String newStatus;
+        private String message;
+        private String reversedBy;
+        private LocalDateTime reversedOn;
+        private List<Long> restoredInventoryIds;
+        private List<Long> restoredBatchIds;
+        private List<Long> scrappedOutputBatchIds;
+        private Long operationId;
+        private String operationNewStatus;
+        private Long nextOperationId;
+        private String nextOperationNewStatus;
     }
 }

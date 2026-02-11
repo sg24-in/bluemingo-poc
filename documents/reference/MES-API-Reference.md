@@ -11,7 +11,7 @@
 |--------|-----------|-----------|
 | Authentication | 4 | `/api/auth` |
 | Orders | 11 | `/api/orders` |
-| Production | 8 | `/api/production` |
+| Production | 10 | `/api/production` |
 | Inventory | 18 | `/api/inventory` |
 | Batches | 22 | `/api/batches` |
 | Holds | 7 | `/api/holds` |
@@ -33,7 +33,7 @@
 | Inventory Movement | 8 | `/api/inventory-movements` |
 | Batch Allocation | 6 | `/api/batch-allocations` |
 | Equipment Usage | 7 | `/api/equipment-usage` |
-| **Total** | **~247** | |
+| **Total** | **~249** | |
 
 ---
 
@@ -80,6 +80,8 @@
 | GET | `/confirmations/rejected` | Get rejected confirmations |
 | GET | `/confirmations/partial` | Get partial confirmations |
 | GET | `/operations/continuable` | Get operations that can be continued |
+| POST | `/confirmations/{confirmationId}/reverse` | Reverse a production confirmation (R-13) |
+| GET | `/confirmations/{confirmationId}/can-reverse` | Check if confirmation can be reversed (R-13) |
 
 ---
 

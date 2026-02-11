@@ -73,6 +73,11 @@ export interface ProductionConfirmationResponse {
   rejectedBy?: string;
   rejectedOn?: string; // LocalDateTime
 
+  // Reversal fields (R-13)
+  reversedBy?: string;
+  reversedOn?: string; // LocalDateTime
+  reversalReason?: string;
+
   // Output batch info (primary batch for backward compatibility)
   outputBatch?: BatchInfo;
 
@@ -164,6 +169,38 @@ export interface ProductionStatusUpdateResponse {
   message: string;
   updatedBy: string;
   updatedOn: string; // LocalDateTime
+}
+
+/**
+ * R-13: Matches ProductionConfirmationDTO.ReversalResponse
+ */
+export interface ProductionReversalResponse {
+  confirmationId: number;
+  previousStatus: string;
+  newStatus: string;
+  message: string;
+  reversedBy: string;
+  reversedOn: string;
+  restoredInventoryIds: number[];
+  restoredBatchIds: number[];
+  scrappedOutputBatchIds: number[];
+  operationId: number;
+  operationNewStatus: string;
+  nextOperationId?: number;
+  nextOperationNewStatus?: string;
+}
+
+/**
+ * R-13: Response from canReverseConfirmation endpoint
+ */
+export interface CanReverseResponse {
+  confirmationId: number;
+  currentStatus: string;
+  statusAllowsReversal: boolean;
+  canReverse: boolean;
+  reason?: string;
+  blockers?: string[];
+  outputBatchCount: number;
 }
 
 /**

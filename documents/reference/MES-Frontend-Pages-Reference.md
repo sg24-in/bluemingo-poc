@@ -244,8 +244,8 @@ All feature modules are **lazy-loaded** via `loadChildren` in the app routing mo
 | **Path prefix** | `/production` |
 | **Components** | `ProductionLandingComponent`, `ProductionConfirmComponent`, `ProductionHistoryComponent` |
 | **Layout** | MainLayout |
-| **Key features** | Landing page with available operations for confirmation, production confirmation form (material consumption, equipment/operator selection, process parameters, batch number preview, BOM suggested consumption), partial confirmation support, confirmation history |
-| **Services used** | `ApiService.getAvailableOrders()`, `getOperationDetails()`, `confirmProduction()`, `getAvailableInventory()`, `getSuggestedConsumption()`, `previewBatchNumber()`, `getAvailableEquipment()`, `getActiveOperators()`, `getProcessParameters()`, `checkBatchSizeConfig()` |
+| **Key features** | Landing page with available operations for confirmation, production confirmation form (material consumption, equipment/operator selection, process parameters, batch number preview, BOM suggested consumption), partial confirmation support, confirmation history with reversal support (R-13: Reverse button, reversal dialog with reason/notes, reversed status badge with purple theme, reversal info display) |
+| **Services used** | `ApiService.getAvailableOrders()`, `getOperationDetails()`, `confirmProduction()`, `getAvailableInventory()`, `getSuggestedConsumption()`, `previewBatchNumber()`, `getAvailableEquipment()`, `getActiveOperators()`, `getProcessParameters()`, `checkBatchSizeConfig()`, `canReverseConfirmation()`, `reverseConfirmation()` |
 
 ### InventoryModule
 
@@ -668,7 +668,9 @@ All TypeScript interfaces are located in `frontend/src/app/shared/models/` and r
 |-----------|--------|
 | `ProductionConfirmationRequest` | `operationId`, `materialsConsumed[]`, `producedQty`, `scrapQty?`, `startTime`, `endTime`, `equipmentIds[]`, `operatorIds[]`, `delayMinutes?`, `delayReason?`, `processParameters?`, `notes?`, `saveAsPartial?` |
 | `MaterialConsumption` | `batchId`, `inventoryId`, `quantity` |
-| `ProductionConfirmationResponse` | `confirmationId`, `operationId`, `operationName`, `producedQty`, `scrapQty?`, `startTime`, `endTime`, `delayMinutes?`, `delayReason?`, `processParameters?`, `notes?`, `status`, `createdOn`, `isPartial?`, `remainingQty?`, `rejectionReason?`, `outputBatch?`, `outputBatches?[]`, `batchCount?`, `hasPartialBatch?`, `nextOperation?`, `equipment?[]`, `operators?[]`, `materialsConsumed?[]` |
+| `ProductionConfirmationResponse` | `confirmationId`, `operationId`, `operationName`, `producedQty`, `scrapQty?`, `startTime`, `endTime`, `delayMinutes?`, `delayReason?`, `processParameters?`, `notes?`, `status`, `createdOn`, `isPartial?`, `remainingQty?`, `rejectionReason?`, `reversedBy?`, `reversedOn?`, `reversalReason?`, `outputBatch?`, `outputBatches?[]`, `batchCount?`, `hasPartialBatch?`, `nextOperation?`, `equipment?[]`, `operators?[]`, `materialsConsumed?[]` |
+| `ProductionReversalResponse` | `confirmationId`, `previousStatus`, `newStatus`, `message`, `reversedBy`, `reversedOn`, `restoredInventoryIds[]`, `restoredBatchIds[]`, `scrappedOutputBatchIds[]`, `operationId`, `operationNewStatus`, `nextOperationId?`, `nextOperationNewStatus?` |
+| `CanReverseResponse` | `canReverse`, `blockers[]`, `currentStatus`, `statusAllowsReversal`, `outputBatchCount` |
 | `BatchInfo` | `batchId`, `batchNumber`, `materialId`, `materialName`, `quantity`, `unit` |
 | `NextOperationInfo` | `operationId`, `operationName`, `status`, `processName` |
 
@@ -817,6 +819,8 @@ Central HTTP service for all backend API communication. All methods return `Obse
 | `confirmProduction(request)` | `ProductionConfirmationResponse` | `POST /api/production/confirm` |
 | `getConfirmationById(id)` | `ProductionConfirmationResponse` | `GET /api/production/confirmations/:id` |
 | `getConfirmationsByStatus(status)` | `ProductionConfirmationResponse[]` | `GET /api/production/confirmations/status/:status` |
+| `canReverseConfirmation(confirmationId)` | `CanReverseResponse` | `GET /api/production/confirmations/:id/can-reverse` |
+| `reverseConfirmation(confirmationId, reason, notes?)` | `ProductionReversalResponse` | `POST /api/production/confirmations/:id/reverse` |
 
 #### Inventory
 
