@@ -90,7 +90,8 @@ describe('ProductionConfirmComponent', () => {
       'previewBatchNumber',
       'reserveInventory',
       'releaseReservation',
-      'checkBatchSizeConfig'
+      'checkBatchSizeConfig',
+      'calculateBatchSizes'
     ]);
 
     await TestBed.configureTestingModule({
@@ -136,6 +137,9 @@ describe('ProductionConfirmComponent', () => {
     apiServiceSpy.reserveInventory.and.returnValue(of({ inventoryId: 1, state: 'RESERVED' } as any));
     apiServiceSpy.releaseReservation.and.returnValue(of({ inventoryId: 1, state: 'AVAILABLE' } as any));
     apiServiceSpy.checkBatchSizeConfig.and.returnValue(of({ found: false } as any));
+    apiServiceSpy.calculateBatchSizes.and.returnValue(of({
+      batchSizes: [100], batchCount: 1, totalQuantity: 100, hasPartialBatch: false
+    } as any));
 
     fixture = TestBed.createComponent(ProductionConfirmComponent);
     component = fixture.componentInstance;
@@ -843,6 +847,74 @@ describe('ProductionConfirmComponent', () => {
 
       // Should still submit (soft enforcement)
       expect(apiServiceSpy.confirmProduction).toHaveBeenCalled();
+    });
+  });
+
+  describe('R-12: Batch Split Preview', () => {
+    it('should have no preview by default', () => {
+      expect(component.batchSplitPreview).toBeNull();
+    });
+
+    it('should show preview when quantity exceeds maxBatchSize', (done) => {
+      // Set config with maxBatchSize
+      component.batchSizeConfig = { found: true, minBatchSize: 10, maxBatchSize: 100, unit: 'T' };
+
+      apiServiceSpy.calculateBatchSizes.and.returnValue(of({
+        batchSizes: [100, 100, 50],
+        batchCount: 3,
+        totalQuantity: 250,
+        hasPartialBatch: true
+      } as any));
+
+      // Trigger quantity change
+      component.confirmForm.patchValue({ quantityProduced: 250 });
+
+      // Wait for debounce (300ms)
+      setTimeout(() => {
+        expect(apiServiceSpy.calculateBatchSizes).toHaveBeenCalledWith(250, 'TRANSFORM', undefined, 'STEEL-001');
+        expect(component.batchSplitPreview).toBeTruthy();
+        expect(component.batchSplitPreview!.batchCount).toBe(3);
+        expect(component.batchSplitPreview!.hasPartialBatch).toBeTrue();
+        done();
+      }, 400);
+    });
+
+    it('should not show preview when quantity is within maxBatchSize', (done) => {
+      component.batchSizeConfig = { found: true, minBatchSize: 10, maxBatchSize: 100, unit: 'T' };
+
+      // Trigger quantity within range
+      component.confirmForm.patchValue({ quantityProduced: 80 });
+
+      setTimeout(() => {
+        expect(component.batchSplitPreview).toBeNull();
+        done();
+      }, 400);
+    });
+
+    it('should clear preview when loading new operation data', () => {
+      component.batchSplitPreview = {
+        batchSizes: [100, 50],
+        batchCount: 2,
+        totalQuantity: 150,
+        hasPartialBatch: true
+      };
+
+      component.loadData();
+
+      expect(component.batchSplitPreview).toBeNull();
+    });
+
+    it('should not call API when no batch size config found', (done) => {
+      component.batchSizeConfig = { found: false };
+      apiServiceSpy.calculateBatchSizes.calls.reset();
+
+      component.confirmForm.patchValue({ quantityProduced: 500 });
+
+      setTimeout(() => {
+        expect(apiServiceSpy.calculateBatchSizes).not.toHaveBeenCalled();
+        expect(component.batchSplitPreview).toBeNull();
+        done();
+      }, 400);
     });
   });
 });

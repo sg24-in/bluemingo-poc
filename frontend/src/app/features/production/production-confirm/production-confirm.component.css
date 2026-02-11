@@ -971,6 +971,11 @@ input[type="datetime-local"] {
     font-size: 16px;
   }
 
+  /* R-12: Mobile styles for batch split preview */
+  .batch-split-chips {
+    flex-direction: column;
+  }
+
   /* GAP-019: Mobile styles for multi-batch */
   .batches-grid {
     grid-template-columns: 1fr;
@@ -1105,6 +1110,91 @@ input[type="datetime-local"] {
 .batch-size-info i {
   font-size: 14px;
   flex-shrink: 0;
+}
+
+/* ========== R-12: Batch Split Preview ========== */
+
+.batch-split-preview {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+
+.batch-split-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2e7d32;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.batch-split-header i {
+  font-size: 16px;
+}
+
+.batch-split-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.batch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #c8e6c9;
+  color: #333;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.batch-chip.partial-chip {
+  border-color: #ffcc80;
+  background: #fff8e1;
+}
+
+.partial-badge {
+  background: #ff9800;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.batch-split-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 12px;
+}
+
+.batch-split-note i {
+  font-size: 12px;
+  color: #888;
+}
+
+.batch-split-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1565c0;
+  font-size: 13px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #e3f2fd;
+  border-radius: 6px;
 }
 
 /* ========== BF-10: Material Added Feedback ========== */

@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, switchMap, filter } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
-import { SuggestedConsumptionResponse, SuggestedMaterial, AvailableBatch } from '../../../shared/models';
+import { SuggestedConsumptionResponse, SuggestedMaterial, AvailableBatch, BatchSplitPreview } from '../../../shared/models';
 import { MaterialSelection, InventoryItem } from '../../../shared/components/material-selection-modal/material-selection-modal.component';
 import { EntityType } from '../../../shared/components/apply-hold-modal/apply-hold-modal.component';
 
@@ -90,6 +92,11 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
   batchSizeConfig: { found: boolean; minBatchSize?: number; maxBatchSize?: number; preferredBatchSize?: number; unit?: string } | null = null;
   batchSizeWarning: string = '';
 
+  // R-12: Batch Split Preview
+  batchSplitPreview: BatchSplitPreview | null = null;
+  loadingBatchSplitPreview = false;
+  private batchSplitPreviewSubject = new Subject<number>();
+
   // P17: Collapsible Sections
   collapsedSections: { [key: string]: boolean } = {
     operationDetails: false,
@@ -114,9 +121,40 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
     this.initForm();
     this.loadData();
 
-    // R-12: Listen for quantity changes to update batch size warning
-    this.confirmForm.get('quantityProduced')?.valueChanges.subscribe(() => {
+    // R-12: Listen for quantity changes to update batch size warning and split preview
+    this.confirmForm.get('quantityProduced')?.valueChanges.subscribe((qty) => {
       this.checkBatchSizeWarning();
+      this.batchSplitPreviewSubject.next(qty);
+    });
+
+    // R-12: Debounced batch split preview API call
+    this.batchSplitPreviewSubject.pipe(
+      debounceTime(300),
+      filter(() => !!this.batchSizeConfig?.found && !!this.batchSizeConfig?.maxBatchSize),
+      switchMap((qty: number) => {
+        if (!qty || qty <= 0 || qty <= (this.batchSizeConfig?.maxBatchSize || 0)) {
+          this.batchSplitPreview = null;
+          this.loadingBatchSplitPreview = false;
+          return [];
+        }
+        this.loadingBatchSplitPreview = true;
+        const operationType = this.operation?.operationType || '';
+        const productSku = this.operation?.order?.productSku || '';
+        return this.apiService.calculateBatchSizes(qty, operationType, undefined, productSku);
+      })
+    ).subscribe({
+      next: (result: any) => {
+        if (result && result.batchCount > 1) {
+          this.batchSplitPreview = result;
+        } else {
+          this.batchSplitPreview = null;
+        }
+        this.loadingBatchSplitPreview = false;
+      },
+      error: () => {
+        this.batchSplitPreview = null;
+        this.loadingBatchSplitPreview = false;
+      }
     });
   }
 
@@ -188,6 +226,7 @@ export class ProductionConfirmComponent implements OnInit, OnDestroy {
 
   loadData(): void {
     this.loading = true;
+    this.batchSplitPreview = null;
 
     // Load operation details
     this.apiService.getOperationDetails(this.operationId).subscribe({

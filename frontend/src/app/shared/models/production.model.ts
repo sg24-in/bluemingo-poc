@@ -165,3 +165,22 @@ export interface ProductionStatusUpdateResponse {
   updatedBy: string;
   updatedOn: string; // LocalDateTime
 }
+
+/**
+ * Matches: BatchSizeService.BatchSizeResult
+ * Response from /api/batch-size-config/calculate
+ */
+export interface BatchSplitPreview {
+  batchSizes: number[];
+  batchCount: number;
+  totalQuantity: number;
+  hasPartialBatch: boolean;
+  configUsed?: {
+    configId: number;
+    operationType: string;
+    maxBatchSize: number;
+    minBatchSize: number;
+    preferredBatchSize: number;
+    unit: string;
+  };
+}
