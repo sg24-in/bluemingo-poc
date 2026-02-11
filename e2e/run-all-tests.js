@@ -65,6 +65,10 @@ const { runCrudSubmissionTests } = require('./tests/45-crud-submissions.test');
 // use standalone describe/it pattern (run independently, not via master runner)
 const { runReportsTests } = require('./tests/48-reports.test');
 const { runMobileResponsiveTests } = require('./tests/49-mobile-responsive.test');
+const { runResponsiveBreakpointTests } = require('./tests/50-responsive-breakpoints.test');
+const { runAuthSecurityTests } = require('./tests/51-auth-security.test');
+const { runApiErrorHandlingTests } = require('./tests/52-api-error-handling.test');
+const { runPageLevelValidationTests } = require('./tests/53-page-level-validation.test');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -192,6 +196,10 @@ async function runAllTests() {
         await runCrudSubmissionTests(page, screenshots, results, runTest, submitActions);
         await runReportsTests(page, screenshots, results, runTest, submitActions);
         await runMobileResponsiveTests(page, screenshots, results, runTest, submitActions);
+        await runResponsiveBreakpointTests(page, screenshots, results, runTest, submitActions);
+        await runAuthSecurityTests(page, screenshots, results, runTest, submitActions);
+        await runApiErrorHandlingTests(page, screenshots, results, runTest, submitActions);
+        await runPageLevelValidationTests(page, screenshots, results, runTest, submitActions);
 
         // Navigation flow test
         console.log('\n' + '─'.repeat(50));
