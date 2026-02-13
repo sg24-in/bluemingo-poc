@@ -76,7 +76,8 @@ export const ProductionConfirmationStatus = {
   CONFIRMED: 'CONFIRMED',
   REJECTED: 'REJECTED',
   PARTIALLY_CONFIRMED: 'PARTIALLY_CONFIRMED',
-  PENDING_REVIEW: 'PENDING_REVIEW'
+  PENDING_REVIEW: 'PENDING_REVIEW',
+  REVERSED: 'REVERSED'
 } as const;
 export type ProductionConfirmationStatusType = typeof ProductionConfirmationStatus[keyof typeof ProductionConfirmationStatus];
 
