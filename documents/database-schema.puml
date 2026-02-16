@@ -1,0 +1,914 @@
+@startuml MES_Database_Schema
+!theme plain
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam class {
+    BackgroundColor #FEFECE
+    BorderColor #A80036
+    ArrowColor #A80036
+    HeaderBackgroundColor #D0D0FF
+}
+
+title MES Production Confirmation - Complete Database Schema
+footer Generated from JPA Entities | %date("yyyy-MM-dd")
+
+' ============================================================
+' CORE BUSINESS ENTITIES
+' ============================================================
+
+package "Core Business" #E8F5E9 {
+
+    entity "users" as users {
+        * **user_id** : BIGINT <<PK>>
+        --
+        email : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        password_hash : VARCHAR(255) <<NOT NULL>>
+        name : VARCHAR(255) <<NOT NULL>>
+        employee_id : VARCHAR(255)
+        status : VARCHAR(255) <<NOT NULL>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "customers" as customers {
+        * **customer_id** : BIGINT <<PK>>
+        --
+        customer_code : VARCHAR(50) <<UNIQUE, NOT NULL>>
+        customer_name : VARCHAR(200) <<NOT NULL>>
+        contact_person : VARCHAR(100)
+        email : VARCHAR(100)
+        phone : VARCHAR(50)
+        address : VARCHAR(500)
+        city : VARCHAR(100)
+        country : VARCHAR(100)
+        tax_id : VARCHAR(50)
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "materials" as materials {
+        * **material_id** : BIGINT <<PK>>
+        --
+        material_code : VARCHAR(50) <<UNIQUE, NOT NULL>>
+        material_name : VARCHAR(200) <<NOT NULL>>
+        description : VARCHAR(500)
+        material_type : VARCHAR(20) <<NOT NULL>> {RM|IM|FG|WIP}
+        base_unit : VARCHAR(20) <<NOT NULL, DEFAULT 'T'>>
+        material_group : VARCHAR(50)
+        sku : VARCHAR(50)
+        standard_cost : DECIMAL(15,4)
+        cost_currency : VARCHAR(3) <<DEFAULT 'USD'>>
+        min_stock_level : DECIMAL(15,4)
+        max_stock_level : DECIMAL(15,4)
+        reorder_point : DECIMAL(15,4)
+        lead_time_days : INTEGER
+        shelf_life_days : INTEGER
+        storage_conditions : VARCHAR(255)
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "products" as products {
+        * **product_id** : BIGINT <<PK>>
+        --
+        sku : VARCHAR(50) <<UNIQUE, NOT NULL>>
+        product_name : VARCHAR(200) <<NOT NULL>>
+        description : VARCHAR(500)
+        product_category : VARCHAR(100)
+        product_group : VARCHAR(100)
+        base_unit : VARCHAR(20) <<NOT NULL, DEFAULT 'T'>>
+        weight_per_unit : DECIMAL(15,4)
+        weight_unit : VARCHAR(10)
+        standard_price : DECIMAL(15,4)
+        price_currency : VARCHAR(3) <<DEFAULT 'USD'>>
+        min_order_qty : DECIMAL(15,4)
+        lead_time_days : INTEGER
+        material_id : BIGINT <<FK>>
+        default_process_id : BIGINT <<FK>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+}
+
+' ============================================================
+' ORDER MANAGEMENT
+' ============================================================
+
+package "Order Management" #E3F2FD {
+
+    entity "orders" as orders {
+        * **order_id** : BIGINT <<PK>>
+        --
+        order_number : VARCHAR(255) <<UNIQUE>>
+        customer_id : VARCHAR(255)
+        customer_name : VARCHAR(255)
+        customer_ref_id : BIGINT <<FK, NOT NULL>>
+        order_date : DATE <<NOT NULL>>
+        delivery_date : DATE
+        notes : VARCHAR(1000)
+        priority : INTEGER <<NOT NULL, DEFAULT 3>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'CREATED'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "order_line_items" as order_line_items {
+        * **order_line_id** : BIGINT <<PK>>
+        --
+        order_id : BIGINT <<FK, NOT NULL>>
+        product_sku : VARCHAR(255) <<NOT NULL>>
+        product_name : VARCHAR(255)
+        quantity : DECIMAL(15,4) <<NOT NULL>>
+        unit : VARCHAR(255) <<NOT NULL, DEFAULT 'T'>>
+        delivery_date : DATE
+        process_id : BIGINT
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'CREATED'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+}
+
+' ============================================================
+' PRODUCTION / PROCESS
+' ============================================================
+
+package "Production" #FFF3E0 {
+
+    entity "processes" as processes {
+        * **process_id** : BIGINT <<PK>>
+        --
+        process_name : VARCHAR(100) <<NOT NULL>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'DRAFT'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "operations" as operations {
+        * **operation_id** : BIGINT <<PK>>
+        --
+        process_id : BIGINT <<FK>>
+        order_line_id : BIGINT <<FK>>
+        routing_step_id : BIGINT <<FK>>
+        operation_template_id : BIGINT <<FK>>
+        operation_name : VARCHAR(255) <<NOT NULL>>
+        operation_code : VARCHAR(255)
+        operation_type : VARCHAR(255)
+        sequence_number : INTEGER <<NOT NULL, DEFAULT 1>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'NOT_STARTED'>>
+        target_qty : DECIMAL(15,4)
+        confirmed_qty : DECIMAL(15,4)
+        block_reason : VARCHAR(500)
+        blocked_by : VARCHAR(255)
+        blocked_on : TIMESTAMP
+        start_time : TIMESTAMP
+        end_time : TIMESTAMP
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "production_confirmation" as production_confirmation {
+        * **confirmation_id** : BIGINT <<PK>>
+        --
+        operation_id : BIGINT <<FK, NOT NULL>>
+        produced_qty : DECIMAL(15,4) <<NOT NULL>>
+        scrap_qty : DECIMAL(15,4) <<DEFAULT 0>>
+        start_time : TIMESTAMP <<NOT NULL>>
+        end_time : TIMESTAMP <<NOT NULL>>
+        delay_minutes : INTEGER <<DEFAULT 0>>
+        delay_reason : VARCHAR(255)
+        process_parameters_json : TEXT
+        rm_consumed_json : TEXT
+        notes : VARCHAR(1000)
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'CONFIRMED'>>
+        rejection_reason : VARCHAR(500)
+        rejected_by : VARCHAR(255)
+        rejected_on : TIMESTAMP
+        reversed_by : VARCHAR(255)
+        reversed_on : TIMESTAMP
+        reversal_reason : VARCHAR(500)
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "consumed_materials" as consumed_materials {
+        * **consumption_id** : BIGINT <<PK>>
+        --
+        confirmation_id : BIGINT <<FK, NOT NULL>>
+        inventory_id : BIGINT <<FK>>
+        batch_id : BIGINT <<FK>>
+        material_id : VARCHAR(255) <<NOT NULL>>
+        material_name : VARCHAR(255)
+        quantity_consumed : DECIMAL(15,4) <<NOT NULL>>
+        unit : VARCHAR(255) <<NOT NULL>>
+        consumed_by : VARCHAR(255)
+        consumed_on : TIMESTAMP
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+    }
+
+    entity "produced_outputs" as produced_outputs {
+        * **output_id** : BIGINT <<PK>>
+        --
+        confirmation_id : BIGINT <<FK, NOT NULL>>
+        batch_id : BIGINT <<FK>>
+        inventory_id : BIGINT <<FK>>
+        material_id : VARCHAR(255) <<NOT NULL>>
+        material_name : VARCHAR(255)
+        quantity_produced : DECIMAL(15,4) <<NOT NULL>>
+        unit : VARCHAR(255) <<NOT NULL>>
+        is_primary_output : BOOLEAN <<DEFAULT true>>
+        output_type : VARCHAR(255) <<DEFAULT 'GOOD'>> {GOOD|SCRAP|REWORK|BYPRODUCT}
+        produced_by : VARCHAR(255)
+        produced_on : TIMESTAMP
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+    }
+
+    entity "process_parameter_values" as process_parameter_values {
+        * **value_id** : BIGINT <<PK>>
+        --
+        confirmation_id : BIGINT <<FK, NOT NULL>>
+        config_id : BIGINT <<FK>>
+        parameter_name : VARCHAR(255) <<NOT NULL>>
+        parameter_value : DECIMAL(15,4)
+        string_value : VARCHAR(500)
+        unit : VARCHAR(255)
+        min_limit : DECIMAL(15,4)
+        max_limit : DECIMAL(15,4)
+        is_within_spec : BOOLEAN <<DEFAULT true>>
+        deviation_reason : VARCHAR(500)
+        recorded_by : VARCHAR(255)
+        recorded_on : TIMESTAMP
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+    }
+
+    entity "confirmation_equipment" as confirmation_equipment {
+        confirmation_id : BIGINT <<FK>>
+        equipment_id : BIGINT <<FK>>
+    }
+
+    entity "confirmation_operators" as confirmation_operators {
+        confirmation_id : BIGINT <<FK>>
+        operator_id : BIGINT <<FK>>
+    }
+}
+
+' ============================================================
+' INVENTORY & BATCH
+' ============================================================
+
+package "Inventory & Batch" #FCE4EC {
+
+    entity "inventory" as inventory {
+        * **inventory_id** : BIGINT <<PK>>
+        --
+        material_id : VARCHAR(255) <<NOT NULL>>
+        material_name : VARCHAR(255)
+        inventory_type : VARCHAR(255) <<NOT NULL>>
+        inventory_form : VARCHAR(255)
+        state : VARCHAR(255) <<NOT NULL, DEFAULT 'AVAILABLE'>>
+        quantity : DECIMAL(15,4) <<NOT NULL>>
+        unit : VARCHAR(255) <<NOT NULL, DEFAULT 'T'>>
+        batch_id : BIGINT <<FK>>
+        location : VARCHAR(255)
+        current_temperature : DECIMAL(10,2)
+        moisture_content : DECIMAL(5,2)
+        density : DECIMAL(10,4)
+        block_reason : VARCHAR(500)
+        blocked_by : VARCHAR(255)
+        blocked_on : TIMESTAMP
+        scrap_reason : VARCHAR(500)
+        scrapped_by : VARCHAR(255)
+        scrapped_on : TIMESTAMP
+        reserved_for_order_id : BIGINT
+        reserved_for_operation_id : BIGINT
+        reserved_by : VARCHAR(255)
+        reserved_on : TIMESTAMP
+        reserved_qty : DECIMAL(15,4)
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "batches" as batches {
+        * **batch_id** : BIGINT <<PK>>
+        --
+        batch_number : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        material_id : VARCHAR(255) <<NOT NULL>>
+        material_name : VARCHAR(255)
+        quantity : DECIMAL(15,4) <<NOT NULL>>
+        unit : VARCHAR(255) <<NOT NULL, DEFAULT 'T'>>
+        generated_at_operation_id : BIGINT
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'QUALITY_PENDING'>>
+        approved_by : VARCHAR(255)
+        approved_on : TIMESTAMP
+        rejection_reason : VARCHAR(500)
+        rejected_by : VARCHAR(255)
+        rejected_on : TIMESTAMP
+        created_via : VARCHAR(50) {PRODUCTION|SPLIT|MERGE|MANUAL|SYSTEM|RECEIPT}
+        supplier_batch_number : VARCHAR(100)
+        supplier_id : VARCHAR(50)
+        received_date : DATE
+        receipt_notes : VARCHAR(500)
+        expiry_date : DATE
+        confirmation_id : BIGINT
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "batch_relations" as batch_relations {
+        * **relation_id** : BIGINT <<PK>>
+        --
+        parent_batch_id : BIGINT <<FK, NOT NULL>>
+        child_batch_id : BIGINT <<FK, NOT NULL>>
+        operation_id : BIGINT
+        relation_type : VARCHAR(255) <<NOT NULL, DEFAULT 'MERGE'>>
+        quantity_consumed : DECIMAL(15,4) <<NOT NULL>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+    }
+
+    entity "batch_quantity_adjustments" as batch_quantity_adjustments {
+        * **adjustment_id** : BIGINT <<PK>>
+        --
+        batch_id : BIGINT <<FK, NOT NULL>>
+        old_quantity : DECIMAL(15,4) <<NOT NULL>>
+        new_quantity : DECIMAL(15,4) <<NOT NULL>>
+        adjustment_reason : VARCHAR(500) <<NOT NULL>>
+        adjustment_type : VARCHAR(50) <<NOT NULL>> {CORRECTION|INVENTORY_COUNT|DAMAGE|SCRAP_RECOVERY|SYSTEM}
+        adjusted_by : VARCHAR(100) <<NOT NULL>>
+        adjusted_on : TIMESTAMP
+    }
+
+    entity "batch_order_allocation" as batch_order_allocation {
+        * **allocation_id** : BIGINT <<PK>>
+        --
+        batch_id : BIGINT <<FK, NOT NULL>>
+        order_line_id : BIGINT <<FK, NOT NULL>>
+        allocated_qty : DECIMAL(15,4) <<NOT NULL>>
+        timestamp : TIMESTAMP <<NOT NULL>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ALLOCATED'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+    }
+
+    entity "inventory_movement" as inventory_movement {
+        * **movement_id** : BIGINT <<PK>>
+        --
+        operation_id : BIGINT <<FK>>
+        inventory_id : BIGINT <<FK, NOT NULL>>
+        movement_type : VARCHAR(20) <<NOT NULL>> {CONSUME|PRODUCE|HOLD|RELEASE|SCRAP}
+        quantity : DECIMAL(15,4) <<NOT NULL>>
+        timestamp : TIMESTAMP <<NOT NULL>>
+        reason : VARCHAR(255)
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'EXECUTED'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+    }
+
+    entity "operation_equipment_usage" as operation_equipment_usage {
+        * **usage_id** : BIGINT <<PK>>
+        --
+        operation_id : BIGINT <<FK, NOT NULL>>
+        equipment_id : BIGINT <<FK, NOT NULL>>
+        start_time : TIMESTAMP
+        end_time : TIMESTAMP
+        operator_id : BIGINT <<FK>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'LOGGED'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+    }
+}
+
+' ============================================================
+' DESIGN-TIME TEMPLATES
+' ============================================================
+
+package "Design-Time Templates" #F3E5F5 {
+
+    entity "routing" as routing {
+        * **routing_id** : BIGINT <<PK>>
+        --
+        process_id : BIGINT <<FK>>
+        routing_name : VARCHAR(100) <<NOT NULL>>
+        routing_type : VARCHAR(20) <<NOT NULL, DEFAULT 'SEQUENTIAL'>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "routing_steps" as routing_steps {
+        * **routing_step_id** : BIGINT <<PK>>
+        --
+        routing_id : BIGINT <<FK, NOT NULL>>
+        operation_template_id : BIGINT <<FK>>
+        sequence_number : INTEGER <<NOT NULL>>
+        is_parallel : BOOLEAN <<DEFAULT false>>
+        mandatory_flag : BOOLEAN <<DEFAULT true>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        produces_output_batch : BOOLEAN <<DEFAULT true>>
+        allows_split : BOOLEAN <<DEFAULT false>>
+        allows_merge : BOOLEAN <<DEFAULT false>>
+        operation_name : VARCHAR(100)
+        operation_type : VARCHAR(50)
+        operation_code : VARCHAR(50)
+        target_qty : DECIMAL(15,4)
+        description : VARCHAR(500)
+        estimated_duration_minutes : INTEGER
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "operation_templates" as operation_templates {
+        * **operation_template_id** : BIGINT <<PK>>
+        --
+        operation_name : VARCHAR(100) <<NOT NULL>>
+        operation_code : VARCHAR(50)
+        operation_type : VARCHAR(50) <<NOT NULL>>
+        quantity_type : VARCHAR(20) <<DEFAULT 'DISCRETE'>>
+        default_equipment_type : VARCHAR(50)
+        description : VARCHAR(500)
+        estimated_duration_minutes : INTEGER
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "bill_of_material" as bill_of_material {
+        * **bom_id** : BIGINT <<PK>>
+        --
+        product_sku : VARCHAR(255) <<NOT NULL>>
+        bom_version : VARCHAR(255) <<DEFAULT 'V1'>>
+        material_id : VARCHAR(255) <<NOT NULL>>
+        material_name : VARCHAR(255)
+        quantity_required : DECIMAL(15,4) <<NOT NULL>>
+        unit : VARCHAR(255) <<NOT NULL, DEFAULT 'T'>>
+        yield_loss_ratio : DECIMAL(10,4) <<DEFAULT 1>>
+        sequence_level : INTEGER <<NOT NULL, DEFAULT 1>>
+        parent_bom_id : BIGINT
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+}
+
+' ============================================================
+' MASTER DATA / EQUIPMENT / OPERATORS
+' ============================================================
+
+package "Equipment & Personnel" #E0F2F1 {
+
+    entity "equipment" as equipment {
+        * **equipment_id** : BIGINT <<PK>>
+        --
+        equipment_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        name : VARCHAR(255) <<NOT NULL>>
+        equipment_type : VARCHAR(255) <<NOT NULL, DEFAULT 'BATCH'>>
+        equipment_category : VARCHAR(255)
+        capacity : DECIMAL(15,4)
+        capacity_unit : VARCHAR(255)
+        location : VARCHAR(255)
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'AVAILABLE'>>
+        maintenance_reason : VARCHAR(500)
+        maintenance_start : TIMESTAMP
+        maintenance_by : VARCHAR(255)
+        expected_maintenance_end : TIMESTAMP
+        hold_reason : VARCHAR(500)
+        hold_start : TIMESTAMP
+        held_by : VARCHAR(255)
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "operators" as operators {
+        * **operator_id** : BIGINT <<PK>>
+        --
+        operator_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        name : VARCHAR(255) <<NOT NULL>>
+        department : VARCHAR(255)
+        shift : VARCHAR(255)
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+}
+
+' ============================================================
+' HOLDS & QUALITY
+' ============================================================
+
+package "Holds & Quality" #FFF9C4 {
+
+    entity "hold_records" as hold_records {
+        * **hold_id** : BIGINT <<PK>>
+        --
+        entity_type : VARCHAR(255) <<NOT NULL>> {OPERATION|PROCESS|ORDER_LINE|INVENTORY|BATCH|EQUIPMENT}
+        entity_id : BIGINT <<NOT NULL>>
+        reason : VARCHAR(255) <<NOT NULL>>
+        comments : TEXT
+        applied_by : VARCHAR(255) <<NOT NULL>>
+        applied_on : TIMESTAMP <<NOT NULL>>
+        released_by : VARCHAR(255)
+        released_on : TIMESTAMP
+        release_comments : TEXT
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+    }
+
+    entity "hold_reasons" as hold_reasons {
+        * **reason_id** : BIGINT <<PK>>
+        --
+        reason_code : VARCHAR(50) <<UNIQUE, NOT NULL>>
+        reason_description : VARCHAR(255) <<NOT NULL>>
+        applicable_to : VARCHAR(100)
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "delay_reasons" as delay_reasons {
+        * **reason_id** : BIGINT <<PK>>
+        --
+        reason_code : VARCHAR(50) <<UNIQUE, NOT NULL>>
+        reason_description : VARCHAR(255) <<NOT NULL>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+}
+
+' ============================================================
+' REFERENCE / MASTER DATA
+' ============================================================
+
+package "Reference Data" #F1F8E9 {
+
+    entity "departments" as departments {
+        * **department_id** : BIGINT <<PK>>
+        --
+        department_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        department_name : VARCHAR(255) <<NOT NULL>>
+        description : VARCHAR(255)
+        manager_name : VARCHAR(255)
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "locations" as locations {
+        * **location_id** : BIGINT <<PK>>
+        --
+        location_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        location_name : VARCHAR(255) <<NOT NULL>>
+        location_type : VARCHAR(255) <<NOT NULL, DEFAULT 'WAREHOUSE'>>
+        parent_location_id : BIGINT <<FK, self-ref>>
+        address : VARCHAR(255)
+        capacity : DECIMAL(15,4)
+        capacity_unit : VARCHAR(255)
+        is_temperature_controlled : BOOLEAN
+        min_temperature : DECIMAL(5,2)
+        max_temperature : DECIMAL(5,2)
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "material_groups" as material_groups {
+        * **group_id** : BIGINT <<PK>>
+        --
+        group_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        group_name : VARCHAR(255) <<NOT NULL>>
+        description : VARCHAR(255)
+        parent_group_id : BIGINT <<FK, self-ref>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "product_categories" as product_categories {
+        * **category_id** : BIGINT <<PK>>
+        --
+        category_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        category_name : VARCHAR(255) <<NOT NULL>>
+        description : VARCHAR(255)
+        parent_category_id : BIGINT <<FK, self-ref>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "product_groups" as product_groups {
+        * **group_id** : BIGINT <<PK>>
+        --
+        group_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        group_name : VARCHAR(255) <<NOT NULL>>
+        description : VARCHAR(255)
+        category_id : BIGINT <<FK>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "operation_types" as operation_types {
+        * **type_id** : BIGINT <<PK>>
+        --
+        type_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        type_name : VARCHAR(255) <<NOT NULL>>
+        description : VARCHAR(255)
+        default_duration_minutes : INTEGER
+        requires_equipment : BOOLEAN <<DEFAULT true>>
+        requires_operator : BOOLEAN <<DEFAULT true>>
+        produces_output : BOOLEAN <<DEFAULT true>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "shifts" as shifts {
+        * **shift_id** : BIGINT <<PK>>
+        --
+        shift_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        shift_name : VARCHAR(255) <<NOT NULL>>
+        start_time : TIME
+        end_time : TIME
+        description : VARCHAR(255)
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+
+    entity "attribute_definitions" as attribute_definitions {
+        * **attribute_id** : BIGINT <<PK>>
+        --
+        attribute_code : VARCHAR(255) <<UNIQUE, NOT NULL>>
+        attribute_name : VARCHAR(255) <<NOT NULL>>
+        description : VARCHAR(255)
+        data_type : VARCHAR(255) <<NOT NULL, DEFAULT 'STRING'>>
+        entity_type : VARCHAR(255) <<NOT NULL>>
+        unit : VARCHAR(255)
+        min_value : DECIMAL(15,4)
+        max_value : DECIMAL(15,4)
+        allowed_values : TEXT
+        is_required : BOOLEAN <<DEFAULT false>>
+        is_searchable : BOOLEAN <<DEFAULT true>>
+        display_order : INTEGER <<DEFAULT 1>>
+        status : VARCHAR(255) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(255)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(255)
+    }
+}
+
+' ============================================================
+' CONFIGURATION
+' ============================================================
+
+package "Configuration" #EFEBE9 {
+
+    entity "batch_number_config" as batch_number_config {
+        * **config_id** : BIGINT <<PK>>
+        --
+        config_name : VARCHAR(100) <<UNIQUE, NOT NULL>>
+        operation_type : VARCHAR(50)
+        product_sku : VARCHAR(100)
+        prefix : VARCHAR(50) <<NOT NULL, DEFAULT 'BATCH'>>
+        include_operation_code : BOOLEAN
+        operation_code_length : INTEGER
+        separator : VARCHAR(5) <<NOT NULL, DEFAULT '-'>>
+        date_format : VARCHAR(20)
+        include_date : BOOLEAN
+        sequence_length : INTEGER <<NOT NULL, DEFAULT 3>>
+        sequence_reset : VARCHAR(20)
+        priority : INTEGER <<DEFAULT 100>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "process_parameters_config" as process_parameters_config {
+        * **config_id** : BIGINT <<PK>>
+        --
+        operation_type : VARCHAR(50) <<NOT NULL>>
+        product_sku : VARCHAR(100)
+        parameter_name : VARCHAR(100) <<NOT NULL>>
+        parameter_type : VARCHAR(30) <<NOT NULL, DEFAULT 'DECIMAL'>>
+        unit : VARCHAR(20)
+        min_value : DECIMAL(15,4)
+        max_value : DECIMAL(15,4)
+        default_value : DECIMAL(15,4)
+        is_required : BOOLEAN <<DEFAULT false>>
+        display_order : INTEGER <<DEFAULT 1>>
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "batch_size_config" as batch_size_config {
+        * **config_id** : BIGINT <<PK>>
+        --
+        material_id : VARCHAR(50)
+        operation_type : VARCHAR(50)
+        equipment_type : VARCHAR(50)
+        product_sku : VARCHAR(50)
+        min_batch_size : DECIMAL(15,4)
+        max_batch_size : DECIMAL(15,4) <<NOT NULL>>
+        preferred_batch_size : DECIMAL(15,4)
+        unit : VARCHAR(20) <<DEFAULT 'T'>>
+        allow_partial_batch : BOOLEAN <<DEFAULT true>>
+        is_active : BOOLEAN <<DEFAULT true>>
+        priority : INTEGER <<DEFAULT 0>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+
+    entity "quantity_type_config" as quantity_type_config {
+        * **config_id** : BIGINT <<PK>>
+        --
+        config_name : VARCHAR(100) <<UNIQUE, NOT NULL>>
+        material_code : VARCHAR(50)
+        operation_type : VARCHAR(50)
+        equipment_type : VARCHAR(50)
+        quantity_type : VARCHAR(20) <<NOT NULL, DEFAULT 'DECIMAL'>>
+        decimal_precision : INTEGER <<NOT NULL, DEFAULT 4>>
+        rounding_rule : VARCHAR(20) <<NOT NULL, DEFAULT 'HALF_UP'>>
+        min_quantity : DECIMAL(15,4)
+        max_quantity : DECIMAL(15,4)
+        unit : VARCHAR(20)
+        status : VARCHAR(20) <<NOT NULL, DEFAULT 'ACTIVE'>>
+        created_on : TIMESTAMP
+        created_by : VARCHAR(100)
+        updated_on : TIMESTAMP
+        updated_by : VARCHAR(100)
+    }
+}
+
+' ============================================================
+' SYSTEM / AUDIT
+' ============================================================
+
+package "System & Audit" #ECEFF1 {
+
+    entity "audit_trail" as audit_trail {
+        * **audit_id** : BIGINT <<PK>>
+        --
+        entity_type : VARCHAR(50) <<NOT NULL>>
+        entity_id : BIGINT <<NOT NULL>>
+        field_name : VARCHAR(100)
+        old_value : TEXT
+        new_value : TEXT
+        action : VARCHAR(30) <<NOT NULL>>
+        changed_by : VARCHAR(100) <<NOT NULL>>
+        timestamp : TIMESTAMP <<NOT NULL>>
+    }
+
+    entity "database_patches" as database_patches {
+        * **id** : BIGINT <<PK>>
+        --
+        patch_number : INTEGER <<UNIQUE, NOT NULL>>
+        patch_name : VARCHAR(255) <<NOT NULL>>
+        file_name : VARCHAR(255) <<NOT NULL>>
+        applied_on : TIMESTAMP <<NOT NULL>>
+        applied_by : VARCHAR(255)
+        execution_time_ms : BIGINT
+        checksum : VARCHAR(255)
+        success : BOOLEAN <<NOT NULL>>
+        error_message : TEXT
+    }
+}
+
+
+' ============================================================
+' RELATIONSHIPS
+' ============================================================
+
+' --- Core Business ---
+products ||--o| materials : "material_id"
+products ||--o| processes : "default_process_id"
+
+' --- Order Management ---
+orders ||--|| customers : "customer_ref_id"
+orders ||--|{ order_line_items : "order_id"
+
+' --- Production Flow ---
+operations }|--o| processes : "process_id"
+operations }|--o| order_line_items : "order_line_id"
+operations }|--o| routing_steps : "routing_step_id"
+operations }|--o| operation_templates : "operation_template_id"
+
+production_confirmation }|--|| operations : "operation_id"
+operations ||--|{ production_confirmation
+
+consumed_materials }|--|| production_confirmation : "confirmation_id"
+consumed_materials }|--o| inventory : "inventory_id"
+consumed_materials }|--o| batches : "batch_id"
+
+produced_outputs }|--|| production_confirmation : "confirmation_id"
+produced_outputs }|--o| batches : "batch_id"
+produced_outputs }|--o| inventory : "inventory_id"
+
+process_parameter_values }|--|| production_confirmation : "confirmation_id"
+process_parameter_values }|--o| process_parameters_config : "config_id"
+
+' --- Many-to-Many (Join Tables) ---
+production_confirmation ||--|{ confirmation_equipment
+confirmation_equipment }|--|| equipment
+
+production_confirmation ||--|{ confirmation_operators
+confirmation_operators }|--|| operators
+
+' --- Inventory & Batch ---
+inventory }|--o| batches : "batch_id"
+
+batch_relations }|--|| batches : "parent_batch_id"
+batch_relations }|--|| batches : "child_batch_id"
+
+batch_quantity_adjustments }|--|| batches : "batch_id"
+
+batch_order_allocation }|--|| batches : "batch_id"
+batch_order_allocation }|--|| order_line_items : "order_line_id"
+
+inventory_movement }|--o| operations : "operation_id"
+inventory_movement }|--|| inventory : "inventory_id"
+
+operation_equipment_usage }|--|| operations : "operation_id"
+operation_equipment_usage }|--|| equipment : "equipment_id"
+operation_equipment_usage }|--o| operators : "operator_id"
+
+' --- Design-Time Templates ---
+routing }|--o| processes : "process_id"
+routing ||--|{ routing_steps : "routing_id"
+routing_steps }|--o| operation_templates : "operation_template_id"
+
+' --- BOM (self-referential via parent_bom_id) ---
+bill_of_material }|--o| bill_of_material : "parent_bom_id"
+
+' --- Reference Data (self-referential hierarchies) ---
+locations }|--o| locations : "parent_location_id"
+material_groups }|--o| material_groups : "parent_group_id"
+product_categories }|--o| product_categories : "parent_category_id"
+product_groups }|--o| product_categories : "category_id"
+
+@enduml
