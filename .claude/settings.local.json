@@ -177,7 +177,9 @@
       "Bash(Database-Schema-Ref)",
       "Bash(Entity-DTO \")",
       "Bash(npx ng serve:*)",
-      "Bash(./gradlew bootJar:*)"
+      "Bash(./gradlew bootJar:*)",
+      "Bash(md-to-pdf:*)",
+      "Bash(start \"\" \"D:\\\\repositories\\\\bluemingo-poc\\\\documents\\\\MES-Screenshot-Evidence.pdf\")"
     ]
   }
 }
